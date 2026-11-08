@@ -11,21 +11,21 @@ class RegisterResponse implements RegisterResponseContract
     /**
      * Create an HTTP response that represents the object.
      *
-     * All new accounts (both buyers and sellers) start as pending and unverified.
-     * After registration, users are logged out and redirected to the email
-     * verification page to confirm their email address.
+     * For logistics/courier registrations: redirect directly to pending approval page.
+     * Email verification can happen later when they try to login.
      */
     public function toResponse($request)
     {
         $user = Auth::user();
-        $email = $user?->email;
 
         // Immediately logout the newly registered user
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        // Use a standard redirect - let the frontend handle it via onSuccess
-        return redirect()->route('otp.show', ['email' => $email]);
+        // Redirect directly to pending approval page for sellers/logistics
+        // They don't need email verification before approval
+        return redirect()->route('register.pending')
+            ->with('message', 'Registration submitted! Please wait for admin approval. You will receive an email notification once your account is approved.');
     }
 }

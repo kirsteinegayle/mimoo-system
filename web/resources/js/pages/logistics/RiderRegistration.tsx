@@ -1,4 +1,4 @@
-﻿import { Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { ReactNode } from 'react';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
@@ -99,7 +99,7 @@ export default function RiderRegistration() {
                                 className="inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm text-white px-6 py-3 rounded-full font-semibold hover:bg-white/20 transition"
                             >
                                 Contact Us
-                                <span>â†’</span>
+                                <span></span>
                             </a>
                         </div>
                     </div>

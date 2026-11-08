@@ -1,6 +1,10 @@
-﻿import { Link, useForm } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import StepProgress from '../../components/registration/StepProgress';
+import MultiSelectChips from '../../components/registration/MultiSelectChips';
+import ServiceChips from '../../components/registration/ServiceChips';
+import RadioCards from '../../components/registration/RadioCards';
+import * as psgcApi from '../../services/psgcApi';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
 const fontCalibri = { fontFamily: 'Calibri, sans-serif' };
@@ -9,16 +13,8 @@ const fontSFCompact = { fontFamily: "'SF Compact', -apple-system, BlinkMacSystem
 
 const TOTAL_STEPS = 4;
 const MAX_FILE_MB = 5;
-const PH_MOBILE_RE = /^09\d{9}$/;
+const PH_MOBILE_RE = /^(09|\+639)\d{9}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const NCR_NAME = "National Capital Region (NCR)";
-
-const NCR_DISTRICTS = [
-    '1st District (Manila)',
-    '2nd District (Marikina, Pasig, Quezon City - East)',
-    '3rd District (Caloocan, Malabon, Navotas, Valenzuela)',
-    '4th District (Las Piñas, Muntinlupa, Parañaque, Pasay, Taguig)',
-];
 
 const SIDEBAR_STEPS = [
     'Company information and contact details',
@@ -27,20 +23,10 @@ const SIDEBAR_STEPS = [
     'Service coverage and operations',
 ];
 
-const VEHICLE_TYPES = [
-    'Motorcycle',
-    'Bicycle',
-    'E-bike',
-    'Tricycle',
-    'Car',
-    'Van',
-];
-
 // PSGC API Types
 interface Region { code: string; name: string; }
 interface Province { code: string; name: string; regionCode: string }
 interface CityMunicipality { code: string; name: string; provinceCode: string }
-interface Barangay { code: string; name: string; cityCode: string }
 
 type FormShape = {
     // Step 1: Company Information
@@ -69,11 +55,11 @@ type FormShape = {
     rep_valid_id: File | null;
     proof_of_address: File | null;
     
-    // Step 4: Service Coverage
-    regions_served: string;
-    provinces_served: string;
-    cities_served: string;
-    delivery_services: string;
+    // Step 4: Service Coverage (now arrays internally)
+    regions_served: string[];
+    provinces_served: string[];
+    cities_served: string[];
+    delivery_services: string[];
     pickup_available: string;
     estimated_delivery_time: string;
     
@@ -100,13 +86,13 @@ const FIELD_LABEL: Partial<Record<FieldName, string>> = {
     business_registration_number: 'Registration Number',
     business_address: 'Business Address',
     business_email: 'Business Email',
-    company_contact_number: 'Contact Number',
+    company_contact_number: 'Company Contact Number',
     company_website: 'Website',
     company_logo: 'Company Logo',
     rep_full_name: 'Full Name',
     rep_position: 'Position',
     rep_email: 'Email Address',
-    rep_contact_number: 'Contact Number',
+    rep_contact_number: 'Representative Contact Number',
     username: 'Username',
     password: 'Password',
     password_confirmation: 'Confirm Password',
@@ -124,18 +110,6 @@ const FIELD_LABEL: Partial<Record<FieldName, string>> = {
     privacy_policy_accepted: 'Privacy Policy',
 };
 
-function calculateAge(birthday: string): number {
-    if (!birthday) return 0;
-    const birthDate = new Date(birthday);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-    }
-    return age;
-}
-
 function optionalFileError(f: File | null): string | undefined {
     if (!f) return undefined;
     if (!/\.(pdf|jpe?g|png)$/i.test(f.name)) return 'Use a PDF, JPG or PNG file.';
@@ -152,54 +126,149 @@ function requiredFileError(f: File | null): string | undefined {
 
 function validate(step: number, d: FormShape): Errs {
     const e: Errs = {};
+    
     if (step === 1) {
-        if (!d.company_name.trim()) e.company_name = 'Enter company name.';
-        if (!d.trade_name.trim()) e.trade_name = 'Enter trade name.';
-        if (!d.business_registration_number.trim()) e.business_registration_number = 'Enter registration number.';
-        if (!d.business_address.trim()) e.business_address = 'Enter business address.';
-        if (!EMAIL_RE.test(d.business_email.trim())) e.business_email = 'Enter a valid email address.';
-        if (!PH_MOBILE_RE.test(d.company_contact_number.trim())) e.company_contact_number = 'Enter a valid PH mobile number (09XXXXXXXXX).';
+        if (!d.company_name.trim()) {
+            e.company_name = 'Enter your courier company name.';
+        }
+        
+        if (!d.trade_name.trim()) {
+            e.trade_name = 'Enter your business or trade name.';
+        }
+        
+        if (!d.business_registration_number.trim()) {
+            e.business_registration_number = 'Enter your DTI/SEC registration number.';
+        }
+        
+        const address = d.business_address.trim();
+        if (!address) {
+            e.business_address = 'Enter your complete business address.';
+        } else if (address.length < 10) {
+            e.business_address = 'Enter a complete address (at least 10 characters).';
+        }
+        
+        const bizEmail = d.business_email.trim();
+        if (!bizEmail) {
+            e.business_email = 'Enter your business email address.';
+        } else if (!EMAIL_RE.test(bizEmail)) {
+            e.business_email = 'Enter a valid email address, like company@example.com';
+        }
+        
+        const contactNum = d.company_contact_number.trim();
+        if (!contactNum) {
+            e.company_contact_number = 'Enter your company contact number.';
+        } else if (!PH_MOBILE_RE.test(contactNum.replace(/[\s\-]/g, ''))) {
+            e.company_contact_number = 'Enter a valid PH mobile number (09XXXXXXXXX or +639XXXXXXXXX)';
+        }
+        
+        const website = d.company_website.trim();
+        if (website && !website.match(/^https?:\/\/.+\..+/i)) {
+            e.company_website = 'Enter a valid website URL starting with http:// or https://';
+        }
+        
         const logoErr = optionalFileError(d.company_logo);
         if (logoErr) e.company_logo = logoErr;
     }
+    
     if (step === 2) {
-        if (!d.rep_full_name.trim()) e.rep_full_name = 'Enter full name.';
-        if (!d.rep_position.trim()) e.rep_position = 'Enter position/designation.';
-        if (!EMAIL_RE.test(d.rep_email.trim())) e.rep_email = 'Enter a valid email address.';
-        if (!PH_MOBILE_RE.test(d.rep_contact_number.trim())) e.rep_contact_number = 'Enter a valid PH mobile number (09XXXXXXXXX).';
-        if (!d.username.trim()) e.username = 'Enter username.';
-        else if (d.username.length < 4) e.username = 'Username must be at least 4 characters.';
-        if (d.password.length < 8) e.password = 'Use at least 8 characters.';
-        const hasUpper = /[A-Z]/.test(d.password);
-        const hasLower = /[a-z]/.test(d.password);
-        const hasNumber = /\d/.test(d.password);
-        const hasSpecial = /[^A-Za-z0-9]/.test(d.password);
-        if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
-            e.password = 'Password must include uppercase, lowercase, number, and special character.';
+        const fullName = d.rep_full_name.trim();
+        if (!fullName) {
+            e.rep_full_name = 'Enter the representative\'s full name.';
+        } else if (!/^[a-zA-Z\s\-'.]+$/.test(fullName)) {
+            e.rep_full_name = 'Name can only contain letters, spaces, hyphens, apostrophes, and periods.';
+        } else if (fullName.length < 3) {
+            e.rep_full_name = 'Enter a valid full name (at least 3 characters).';
         }
-        if (!d.password_confirmation || d.password_confirmation !== d.password)
-            e.password_confirmation = "Passwords don't match.";
+        
+        if (!d.rep_position.trim()) {
+            e.rep_position = 'Enter the representative\'s position or designation.';
+        }
+        
+        const repEmail = d.rep_email.trim();
+        if (!repEmail) {
+            e.rep_email = 'Enter the representative\'s email address.';
+        } else if (!EMAIL_RE.test(repEmail)) {
+            e.rep_email = 'Enter a valid email address, like name@example.com';
+        }
+        
+        const repContact = d.rep_contact_number.trim();
+        if (!repContact) {
+            e.rep_contact_number = 'Enter the representative\'s contact number.';
+        } else if (!PH_MOBILE_RE.test(repContact.replace(/[\s\-]/g, ''))) {
+            e.rep_contact_number = 'Enter a valid PH mobile number (09XXXXXXXXX or +639XXXXXXXXX)';
+        }
+        
+        const username = d.username.trim();
+        if (!username) {
+            e.username = 'Enter a username.';
+        } else if (username.length < 4) {
+            e.username = 'Username must be at least 4 characters long.';
+        } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            e.username = 'Username can only contain letters, numbers, and underscores.';
+        }
+        
+        if (!d.password) {
+            e.password = 'Enter a password.';
+        } else if (d.password.length < 8) {
+            e.password = 'Password must be at least 8 characters long.';
+        } else {
+            const hasUpper = /[A-Z]/.test(d.password);
+            const hasLower = /[a-z]/.test(d.password);
+            const hasNumber = /\d/.test(d.password);
+            const hasSpecial = /[^A-Za-z0-9]/.test(d.password);
+            if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+                e.password = 'Password must include uppercase, lowercase, number, and special character.';
+            }
+        }
+        
+        if (!d.password_confirmation) {
+            e.password_confirmation = 'Confirm your password.';
+        } else if (d.password_confirmation !== d.password) {
+            e.password_confirmation = 'Passwords don\'t match. Please re-enter.';
+        }
     }
+    
     if (step === 3) {
         const dtiErr = requiredFileError(d.dti_sec_certificate);
         if (dtiErr) e.dti_sec_certificate = dtiErr;
+        
         const mayorErr = requiredFileError(d.mayors_permit);
         if (mayorErr) e.mayors_permit = mayorErr;
+        
         const operatingErr = optionalFileError(d.operating_permits);
         if (operatingErr) e.operating_permits = operatingErr;
+        
         const idErr = requiredFileError(d.rep_valid_id);
         if (idErr) e.rep_valid_id = idErr;
+        
         const proofErr = requiredFileError(d.proof_of_address);
         if (proofErr) e.proof_of_address = proofErr;
     }
+    
     if (step === 4) {
-        if (!d.regions_served.trim()) e.regions_served = 'Enter regions served.';
-        if (!d.provinces_served.trim()) e.provinces_served = 'Enter provinces served.';
-        if (!d.cities_served.trim()) e.cities_served = 'Enter cities/municipalities served.';
-        if (!d.delivery_services.trim()) e.delivery_services = 'Enter available delivery services.';
-        if (!d.pickup_available) e.pickup_available = 'Select pickup availability.';
-        if (!d.privacy_policy_accepted) e.privacy_policy_accepted = 'You must accept the Privacy Policy.';
+        if (d.regions_served.length === 0) {
+            e.regions_served = 'Select at least one region you serve.';
+        }
+        
+        // provinces_served is optional (NCR has no provinces)
+        
+        if (d.cities_served.length === 0) {
+            e.cities_served = 'Select at least one city or municipality you serve.';
+        }
+        
+        if (d.delivery_services.length === 0) {
+            e.delivery_services = 'Select at least one delivery service you offer.';
+        }
+        
+        if (!d.pickup_available) {
+            e.pickup_available = 'Select whether you offer pickup service.';
+        }
+        
+        if (!d.privacy_policy_accepted) {
+            e.privacy_policy_accepted = 'You must accept the Privacy Policy to continue.';
+        }
     }
+    
     return e;
 }
 
@@ -323,9 +392,11 @@ function FileField({
 export default function CourierRegistration() {
     const [step, setStep] = useState(1);
     const [clientErrors, setClientErrors] = useState<Errs>({});
+    const [serverErrors, setServerErrors] = useState<Record<string, string[]>>({});
+    const [submitting, setSubmitting] = useState(false);
     const headingRef = useRef<HTMLHeadingElement>(null);
 
-    const { data, setData, post, processing, errors } = useForm<FormShape>({
+    const [data, setDataRaw] = useState<FormShape>({
         company_name: '',
         trade_name: '',
         business_registration_number: '',
@@ -346,56 +417,148 @@ export default function CourierRegistration() {
         operating_permits: null,
         rep_valid_id: null,
         proof_of_address: null,
-        regions_served: '',
-        provinces_served: '',
-        cities_served: '',
-        delivery_services: '',
+        regions_served: [],
+        provinces_served: [],
+        cities_served: [],
+        delivery_services: [],
         pickup_available: '',
         estimated_delivery_time: '',
         privacy_policy_accepted: false,
-        account_type: 'courier_company',
+        account_type: 'logistics',
     });
 
-    const allErrors: Errs = { ...(errors as Errs), ...clientErrors };
+    const allErrors: Errs = { ...clientErrors };
+    // Merge server errors (take first message)
+    Object.keys(serverErrors).forEach((key) => {
+        if (serverErrors[key] && serverErrors[key].length > 0) {
+            allErrors[key as FieldName] = serverErrors[key][0];
+        }
+    });
+
     const err = (f: FieldName) => allErrors[f];
-    const summary = (Object.keys(clientErrors) as FieldName[]).filter((f) => clientErrors[f]);
+    const summary = (Object.keys(allErrors) as FieldName[]).filter((f) => allErrors[f]);
 
-    // Return to step with first error
+    // PSGC API State
+    const [psgcRegions, setPsgcRegions] = useState<Array<{ name: string; code: string }>>([]);
+    const [psgcProvinces, setPsgcProvinces] = useState<Array<{ name: string; code: string }>>([]);
+    const [psgcCities, setPsgcCities] = useState<Array<{ name: string; code: string }>>([]);
+    const [regionsLoading, setRegionsLoading] = useState(false);
+    const [provincesLoading, setProvincesLoading] = useState(false);
+    const [citiesLoading, setCitiesLoading] = useState(false);
+    const [regionsError, setRegionsError] = useState<string>();
+    const [provincesError, setProvincesError] = useState<string>();
+    const [citiesError, setCitiesError] = useState<string>();
+
+    const regionNameToCodeMap = useRef(new Map<string, string>());
+    const provinceNameToCodeMap = useRef(new Map<string, string>());
+
+    // Load regions when Step 4 opens
     useEffect(() => {
-        const steps = (Object.keys(errors) as FieldName[]).map((f) => FIELD_STEP[f]).filter(Boolean) as number[];
-        if (steps.length) setStep(Math.min(...steps));
-    }, [errors]);
+        if (step === 4 && psgcRegions.length === 0 && !regionsLoading) {
+            setRegionsLoading(true);
+            psgcApi.fetchRegions().then(({ data: apiData, error }) => {
+                setPsgcRegions(apiData);
+                setRegionsError(error);
+                apiData.forEach(r => regionNameToCodeMap.current.set(r.name, r.code));
+                setRegionsLoading(false);
+            });
+        }
+    }, [step]);
 
-    // Auto-fill for testing
-    const autoFill = () => {
-        setData({
-            ...data,
-            company_name: 'Mimoo Express Courier Services Inc.',
-            trade_name: 'Mimoo Express',
-            business_registration_number: 'SEC-2024-0000123',
-            business_address: '123 Courier Street, Barangay San Miguel, Makati City, Metro Manila',
-            business_email: 'info@mimooexpress.ph',
-            company_contact_number: '09171234567',
-            company_website: 'https://www.mimooexpress.ph',
-            rep_full_name: 'Juan Dela Cruz',
-            rep_position: 'Operations Manager',
-            rep_email: 'juan.delacruz@mimooexpress.ph',
-            rep_contact_number: '09178765432',
-            username: 'jdelacruz_mimoo',
-            password: 'TestPass123!',
-            password_confirmation: 'TestPass123!',
-            regions_served: 'NCR, Region III, Region IV-A',
-            provinces_served: 'Metro Manila, Bulacan, Cavite, Laguna',
-            cities_served: 'Manila, Quezon City, Makati, Taguig, Pasig, San Jose Del Monte, Bacoor, Santa Rosa',
-            delivery_services: 'Same-Day Delivery, Next-Day Delivery, Standard Delivery, Express Delivery, COD Service',
-            pickup_available: 'yes',
-            estimated_delivery_time: '1-3 business days (Standard), Same day (Express)',
-        });
-    };
+    // Load provinces when regions are selected
+    useEffect(() => {
+        if (step === 4 && data.regions_served.length > 0) {
+            const selectedRegionCodes = data.regions_served
+                .map(name => regionNameToCodeMap.current.get(name))
+                .filter((code): code is string => !!code);
 
-    const set = <K extends FieldName>(key: K, value: FormShape[K]) => {
-        setData(key, value as any);
-        if (clientErrors[key]) setClientErrors((c) => ({ ...c, [key]: undefined }));
+            if (selectedRegionCodes.length > 0) {
+                setProvincesLoading(true);
+                setPsgcProvinces([]);
+                setProvincesError(undefined);
+
+                Promise.all([
+                    psgcApi.fetchProvinces(selectedRegionCodes),
+                    psgcApi.fetchCitiesByRegion(selectedRegionCodes)
+                ]).then(([provincesResult, citiesResult]) => {
+                    setPsgcProvinces(provincesResult.data);
+                    setProvincesError(provincesResult.error);
+                    provincesResult.data.forEach(p => provinceNameToCodeMap.current.set(p.name, p.code));
+                    setProvincesLoading(false);
+                });
+            } else {
+                setPsgcProvinces([]);
+                setProvincesError(undefined);
+            }
+        }
+    }, [step, data.regions_served]);
+
+    // Load cities when provinces or regions are selected
+    useEffect(() => {
+        if (step === 4) {
+            const selectedRegionCodes = data.regions_served
+                .map(name => regionNameToCodeMap.current.get(name))
+                .filter((code): code is string => !!code);
+            
+            const selectedProvinceCodes = data.provinces_served
+                .map(name => provinceNameToCodeMap.current.get(name))
+                .filter((code): code is string => !!code);
+
+            if (selectedProvinceCodes.length > 0 || selectedRegionCodes.length > 0) {
+                setCitiesLoading(true);
+                setPsgcCities([]);
+                setCitiesError(undefined);
+
+                const promises = [];
+                if (selectedProvinceCodes.length > 0) {
+                    promises.push(psgcApi.fetchCitiesByProvince(selectedProvinceCodes));
+                }
+                if (selectedRegionCodes.length > 0) {
+                    promises.push(psgcApi.fetchCitiesByRegion(selectedRegionCodes));
+                }
+
+                Promise.all(promises).then((results) => {
+                    const allCities = results.flatMap(r => r.data);
+                    const errors = results.map(r => r.error).filter(Boolean);
+                    const uniqueCities = Array.from(
+                        new Map(allCities.map(city => [city.code, city])).values()
+                    );
+                    setPsgcCities(uniqueCities);
+                    setCitiesError(errors.length > 0 ? errors.join('; ') : undefined);
+                    setCitiesLoading(false);
+                });
+            } else {
+                setPsgcCities([]);
+                setCitiesError(undefined);
+            }
+        }
+    }, [step, data.regions_served, data.provinces_served]);
+
+    // Return to step with first error when server errors arrive
+    useEffect(() => {
+        const errorFields = Object.keys(serverErrors);
+        if (errorFields.length > 0) {
+            const steps = errorFields
+                .map((f) => FIELD_STEP[f as FieldName])
+                .filter(Boolean) as number[];
+            if (steps.length) {
+                setStep(Math.min(...steps));
+            }
+        }
+    }, [serverErrors]);
+
+    const setData = <K extends keyof FormShape>(key: K, value: FormShape[K]) => {
+        setDataRaw(prev => ({ ...prev, [key]: value }));
+        if (clientErrors[key]) {
+            setClientErrors((c) => ({ ...c, [key]: undefined }));
+        }
+        if (serverErrors[key]) {
+            setServerErrors((s) => {
+                const copy = { ...s };
+                delete copy[key];
+                return copy;
+            });
+        }
     };
 
     const goTo = (n: number) => {
@@ -407,24 +570,130 @@ export default function CourierRegistration() {
         const e = validate(step, data);
         if (Object.keys(e).length) {
             setClientErrors(e);
+            setTimeout(() => {
+                const firstError = document.querySelector('[aria-invalid="true"]');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    (firstError as HTMLElement).focus();
+                }
+            }, 100);
             return;
         }
         setClientErrors({});
-        if (step < TOTAL_STEPS) goTo(step + 1);
-        else {
-            const email = data.rep_email.trim();
-            
-            setTimeout(() => {
-                post('/register/courier-company', {
-                    forceFormData: true,
-                    onSuccess: () => {
-                        window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
-                    },
-                    onError: (errors) => {
-                        console.error('Registration failed:', errors);
-                    },
-                });
-            }, 100);
+        if (step < TOTAL_STEPS) {
+            goTo(step + 1);
+        } else {
+            submitRegistration();
+        }
+    };
+
+    const submitRegistration = async () => {
+        setSubmitting(true);
+        setServerErrors({});
+
+        const formData = new FormData();
+
+        // Step 1 fields
+        formData.append('company_name', data.company_name.trim());
+        formData.append('trade_name', data.trade_name.trim());
+        formData.append('sec_registration_no', data.business_registration_number.trim());
+        formData.append('business_address', data.business_address.trim());
+        formData.append('business_email', data.business_email.trim());
+        formData.append('company_contact_number', data.company_contact_number.trim());
+        if (data.company_website.trim()) {
+            formData.append('company_website', data.company_website.trim());
+        }
+        if (data.company_logo) {
+            formData.append('company_logo', data.company_logo);
+        }
+
+        // Step 2 fields
+        formData.append('rep_full_name', data.rep_full_name.trim());
+        // Split for compatibility only (no fake fallbacks)
+        const nameParts = data.rep_full_name.trim().split(' ', 2);
+        formData.append('first_name', nameParts[0] || '');
+        if (nameParts[1]) {
+            formData.append('last_name', nameParts[1]);
+        }
+        formData.append('contact_position', data.rep_position.trim());
+        formData.append('email', data.rep_email.trim());
+        formData.append('rep_contact_number', data.rep_contact_number.trim());
+        if (data.username.trim()) {
+            formData.append('username', data.username.trim());
+        }
+        formData.append('password', data.password);
+        formData.append('password_confirmation', data.password_confirmation);
+        formData.append('account_type', 'logistics');
+
+        // Normalized contact_number for system use (backend will normalize)
+        formData.append('contact_number', data.rep_contact_number.trim());
+
+        // Step 3 files
+        if (data.dti_sec_certificate) {
+            formData.append('sec_certificate', data.dti_sec_certificate);
+        }
+        if (data.mayors_permit) {
+            formData.append('business_permit', data.mayors_permit);
+        }
+        if (data.operating_permits) {
+            formData.append('operating_permits', data.operating_permits);
+        }
+        if (data.rep_valid_id) {
+            formData.append('valid_id', data.rep_valid_id);
+        }
+        if (data.proof_of_address) {
+            formData.append('proof_of_address', data.proof_of_address);
+        }
+
+        // Step 4 arrays
+        data.regions_served.forEach((region, index) => {
+            formData.append(`regions_served[${index}]`, region);
+        });
+        data.provinces_served.forEach((province, index) => {
+            formData.append(`provinces_served[${index}]`, province);
+        });
+        data.cities_served.forEach((city, index) => {
+            formData.append(`cities_served[${index}]`, city);
+        });
+        data.delivery_services.forEach((service, index) => {
+            formData.append(`delivery_services[${index}]`, service);
+        });
+        formData.append('pickup_available', data.pickup_available);
+        if (data.estimated_delivery_time.trim()) {
+            formData.append('estimated_delivery_time', data.estimated_delivery_time.trim());
+        }
+        formData.append('privacy_policy_accepted', data.privacy_policy_accepted ? '1' : '0');
+
+        try {
+            const response = await fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                },
+                body: formData,
+                credentials: 'same-origin',
+            });
+
+            if (response.ok) {
+                // Success - redirect to pending page
+                window.location.href = '/register/pending';
+            } else if (response.status === 422) {
+                // Validation errors
+                const json = await response.json();
+                if (json.errors) {
+                    setServerErrors(json.errors);
+                    setSubmitting(false);
+                }
+            } else {
+                // Other error
+                const text = await response.text();
+                alert(`Registration failed: ${response.status} ${response.statusText}`);
+                setSubmitting(false);
+            }
+        } catch (error) {
+            alert(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            setSubmitting(false);
         }
     };
 
@@ -440,7 +709,7 @@ export default function CourierRegistration() {
         goNext();
     };
 
-    const focusField = (f: FieldName) => document.getElementById(f)?.focus();
+    const focusField = (f: FieldName) => document.getElementById(f as string)?.focus();
 
     const stepTitles = ['Company Information', 'Authorized Representative', 'Business Documents', 'Service Coverage'];
 
@@ -519,22 +788,13 @@ export default function CourierRegistration() {
             {/* Main content */}
             <div className="flex-1 min-h-screen lg:h-screen overflow-y-auto bg-[#F8F6FC] p-4 sm:p-6 md:p-8 lg:p-12 xl:p-16">
                 <div className="max-w-3xl mx-auto lg:mx-0">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-xl md:text-2xl font-bold text-gray-900" style={fontSyncopate}>
-                                courier company registration
-                            </h2>
-                            <p className="text-gray-500 mt-1 text-sm">
-                                Register your courier/logistics company.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={autoFill}
-                            className="shrink-0 px-4 py-2 bg-yellow-400 text-gray-900 text-xs font-semibold rounded-lg hover:bg-yellow-500 transition"
-                        >
-                            Auto-fill (Test)
-                        </button>
+                    <div>
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-900" style={fontSyncopate}>
+                            courier company registration
+                        </h2>
+                        <p className="text-gray-500 mt-1 text-sm">
+                            Register your courier/logistics company.
+                        </p>
                     </div>
                     <p className="text-gray-500 mt-1 text-xs">
                         Fields marked <span className="text-red-600">*</span> are required.
@@ -551,7 +811,7 @@ export default function CourierRegistration() {
                                     <li key={f}>
                                         <button type="button" onClick={() => focusField(f)} className="underline">
                                             {FIELD_LABEL[f]}
-                                        </button>
+                                        </button>: {allErrors[f]}
                                     </li>
                                 ))}
                             </ul>
@@ -576,9 +836,10 @@ export default function CourierRegistration() {
                                         id="company_name"
                                         type="text"
                                         value={data.company_name}
-                                        onChange={(e) => set('company_name', e.target.value)}
+                                        onChange={(e) => setData('company_name', e.target.value)}
                                         autoComplete="organization"
                                         placeholder="e.g., ABC Logistics Inc."
+                                        aria-invalid={!!err('company_name')}
                                         className={inputCls(err('company_name'))}
                                     />
                                 </Field>
@@ -588,8 +849,9 @@ export default function CourierRegistration() {
                                         id="trade_name"
                                         type="text"
                                         value={data.trade_name}
-                                        onChange={(e) => set('trade_name', e.target.value)}
+                                        onChange={(e) => setData('trade_name', e.target.value)}
                                         placeholder="e.g., ABC Express"
+                                        aria-invalid={!!err('trade_name')}
                                         className={inputCls(err('trade_name'))}
                                     />
                                 </Field>
@@ -600,7 +862,7 @@ export default function CourierRegistration() {
                                     hint="PDF, JPG, or PNG (Max 5MB) - Optional"
                                     file={data.company_logo}
                                     error={err('company_logo')}
-                                    onPick={(f) => set('company_logo', f)}
+                                    onPick={(f) => setData('company_logo', f)}
                                 />
 
                                 <Field label="Business Registration Number" htmlFor="business_registration_number" required error={err('business_registration_number')}>
@@ -608,8 +870,9 @@ export default function CourierRegistration() {
                                         id="business_registration_number"
                                         type="text"
                                         value={data.business_registration_number}
-                                        onChange={(e) => set('business_registration_number', e.target.value)}
+                                        onChange={(e) => setData('business_registration_number', e.target.value)}
                                         placeholder="e.g., SEC-2024-0000123 or DTI-12345678"
+                                        aria-invalid={!!err('business_registration_number')}
                                         className={inputCls(err('business_registration_number'))}
                                     />
                                 </Field>
@@ -619,8 +882,9 @@ export default function CourierRegistration() {
                                         id="business_address"
                                         rows={3}
                                         value={data.business_address}
-                                        onChange={(e) => set('business_address', e.target.value)}
+                                        onChange={(e) => setData('business_address', e.target.value)}
                                         placeholder="e.g., 123 Main Street, Barangay Centro, Makati City, Metro Manila"
+                                        aria-invalid={!!err('business_address')}
                                         className={inputCls(err('business_address'))}
                                     />
                                 </Field>
@@ -630,9 +894,10 @@ export default function CourierRegistration() {
                                         id="business_email"
                                         type="email"
                                         value={data.business_email}
-                                        onChange={(e) => set('business_email', e.target.value)}
+                                        onChange={(e) => setData('business_email', e.target.value)}
                                         autoComplete="email"
                                         placeholder="info@yourcompany.ph"
+                                        aria-invalid={!!err('business_email')}
                                         className={inputCls(err('business_email'))}
                                     />
                                 </Field>
@@ -642,11 +907,11 @@ export default function CourierRegistration() {
                                         id="company_contact_number"
                                         type="tel"
                                         inputMode="numeric"
-                                        maxLength={13}
                                         value={data.company_contact_number}
-                                        onChange={(e) => set('company_contact_number', e.target.value.replace(/[^\d+]/g, ''))}
+                                        onChange={(e) => setData('company_contact_number', e.target.value.replace(/[^\d+]/g, ''))}
                                         autoComplete="tel"
                                         placeholder="09XXXXXXXXX"
+                                        aria-invalid={!!err('company_contact_number')}
                                         className={inputCls(err('company_contact_number'))}
                                     />
                                 </Field>
@@ -656,9 +921,10 @@ export default function CourierRegistration() {
                                         id="company_website"
                                         type="url"
                                         value={data.company_website}
-                                        onChange={(e) => set('company_website', e.target.value)}
+                                        onChange={(e) => setData('company_website', e.target.value)}
                                         placeholder="https://www.yourcompany.ph"
-                                        className={inputCls()}
+                                        aria-invalid={!!err('company_website')}
+                                        className={inputCls(err('company_website'))}
                                     />
                                 </Field>
                             </div>
@@ -677,9 +943,10 @@ export default function CourierRegistration() {
                                         id="rep_full_name"
                                         type="text"
                                         value={data.rep_full_name}
-                                        onChange={(e) => set('rep_full_name', e.target.value)}
+                                        onChange={(e) => setData('rep_full_name', e.target.value)}
                                         autoComplete="name"
                                         placeholder="e.g., Juan Dela Cruz"
+                                        aria-invalid={!!err('rep_full_name')}
                                         className={inputCls(err('rep_full_name'))}
                                     />
                                 </Field>
@@ -689,8 +956,9 @@ export default function CourierRegistration() {
                                         id="rep_position"
                                         type="text"
                                         value={data.rep_position}
-                                        onChange={(e) => set('rep_position', e.target.value)}
+                                        onChange={(e) => setData('rep_position', e.target.value)}
                                         placeholder="e.g., Operations Manager, CEO"
+                                        aria-invalid={!!err('rep_position')}
                                         className={inputCls(err('rep_position'))}
                                     />
                                 </Field>
@@ -700,9 +968,10 @@ export default function CourierRegistration() {
                                         id="rep_email"
                                         type="email"
                                         value={data.rep_email}
-                                        onChange={(e) => set('rep_email', e.target.value)}
+                                        onChange={(e) => setData('rep_email', e.target.value)}
                                         autoComplete="email"
                                         placeholder="representative@yourcompany.ph"
+                                        aria-invalid={!!err('rep_email')}
                                         className={inputCls(err('rep_email'))}
                                     />
                                 </Field>
@@ -712,27 +981,24 @@ export default function CourierRegistration() {
                                         id="rep_contact_number"
                                         type="tel"
                                         inputMode="numeric"
-                                        maxLength={13}
                                         value={data.rep_contact_number}
-                                        onChange={(e) => set('rep_contact_number', e.target.value.replace(/[^\d+]/g, ''))}
+                                        onChange={(e) => setData('rep_contact_number', e.target.value.replace(/[^\d+]/g, ''))}
                                         autoComplete="tel"
                                         placeholder="09XXXXXXXXX"
+                                        aria-invalid={!!err('rep_contact_number')}
                                         className={inputCls(err('rep_contact_number'))}
                                     />
                                 </Field>
 
-                                <div className="border-t border-gray-200 pt-4 mt-6">
-                                    <h4 className="text-sm font-semibold text-gray-800 mb-3">Account Credentials</h4>
-                                </div>
-
-                                <Field label="Username" htmlFor="username" required error={err('username')} hint="Minimum 4 characters">
+                                <Field label="Username" htmlFor="username" required error={err('username')} hint="For identification purposes">
                                     <input
                                         id="username"
                                         type="text"
                                         value={data.username}
-                                        onChange={(e) => set('username', e.target.value)}
+                                        onChange={(e) => setData('username', e.target.value)}
                                         autoComplete="username"
-                                        placeholder="e.g., jdelacruz_courier"
+                                        placeholder="e.g., jdelacruz_mimoo"
+                                        aria-invalid={!!err('username')}
                                         className={inputCls(err('username'))}
                                     />
                                 </Field>
@@ -741,7 +1007,7 @@ export default function CourierRegistration() {
                                     <PasswordInput
                                         id="password"
                                         value={data.password}
-                                        onChange={(v) => set('password', v)}
+                                        onChange={(v) => setData('password', v)}
                                         error={err('password')}
                                         autoComplete="new-password"
                                     />
@@ -751,7 +1017,7 @@ export default function CourierRegistration() {
                                     <PasswordInput
                                         id="password_confirmation"
                                         value={data.password_confirmation}
-                                        onChange={(v) => set('password_confirmation', v)}
+                                        onChange={(v) => setData('password_confirmation', v)}
                                         error={err('password_confirmation')}
                                         autoComplete="new-password"
                                     />
@@ -762,191 +1028,191 @@ export default function CourierRegistration() {
                         {/* STEP 3: Business Documents */}
                         {step === 3 && (
                             <div className="space-y-5">
-                                <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-900">
-                                    <p className="font-semibold mb-1">📋 Required for approval</p>
-                                    <p>Admin will review uploaded documents and approve or reject the application.</p>
-                                </div>
-
                                 <FileField
                                     id="dti_sec_certificate"
-                                    label="DTI or SEC Registration Certificate"
+                                    label="DTI/SEC Certificate"
                                     hint="PDF, JPG, or PNG (Max 5MB)"
                                     file={data.dti_sec_certificate}
                                     error={err('dti_sec_certificate')}
-                                    onPick={(f) => set('dti_sec_certificate', f)}
+                                    onPick={(f) => setData('dti_sec_certificate', f)}
                                     required
                                 />
 
                                 <FileField
                                     id="mayors_permit"
-                                    label="Mayor's / Business Permit"
+                                    label="Mayor's Permit / Business Permit"
                                     hint="PDF, JPG, or PNG (Max 5MB)"
                                     file={data.mayors_permit}
                                     error={err('mayors_permit')}
-                                    onPick={(f) => set('mayors_permit', f)}
+                                    onPick={(f) => setData('mayors_permit', f)}
                                     required
                                 />
 
                                 <FileField
                                     id="operating_permits"
-                                    label="Other Applicable Operating Permits or Licenses"
+                                    label="Operating Permits"
                                     hint="PDF, JPG, or PNG (Max 5MB) - Optional"
                                     file={data.operating_permits}
                                     error={err('operating_permits')}
-                                    onPick={(f) => set('operating_permits', f)}
+                                    onPick={(f) => setData('operating_permits', f)}
                                 />
 
                                 <FileField
                                     id="rep_valid_id"
-                                    label="Valid ID of Authorized Representative"
+                                    label="Representative's Valid ID"
                                     hint="PDF, JPG, or PNG (Max 5MB)"
                                     file={data.rep_valid_id}
                                     error={err('rep_valid_id')}
-                                    onPick={(f) => set('rep_valid_id', f)}
+                                    onPick={(f) => setData('rep_valid_id', f)}
                                     required
                                 />
 
                                 <FileField
                                     id="proof_of_address"
-                                    label="Proof of Business Address"
+                                    label="Proof of Address"
                                     hint="PDF, JPG, or PNG (Max 5MB)"
                                     file={data.proof_of_address}
                                     error={err('proof_of_address')}
-                                    onPick={(f) => set('proof_of_address', f)}
+                                    onPick={(f) => setData('proof_of_address', f)}
                                     required
                                 />
                             </div>
                         )}
 
-                        {/* STEP 4: Service Coverage */}
+                        {/* STEP 4: Service Coverage - USING MULTI-SELECT COMPONENTS */}
                         {step === 4 && (
                             <div className="space-y-5">
-                                <div className="rounded-xl bg-purple-50 border border-purple-200 p-4 text-sm text-purple-900">
-                                    <p className="font-semibold mb-1">📍 Operational Details</p>
-                                    <p>Tell us about your service coverage and delivery capabilities.</p>
+                                <div>
+                                    <MultiSelectChips
+                                        label="Regions Served"
+                                        required={true}
+                                        options={psgcRegions.map(r => r.name)}
+                                        selected={data.regions_served}
+                                        onChange={(regions) => setData('regions_served', regions)}
+                                        placeholder="Select regions"
+                                        loading={regionsLoading}
+                                        errorMessage={regionsError}
+                                        error={err('regions_served')}
+                                    />
                                 </div>
 
-                                <Field label="Regions Served" htmlFor="regions_served" required error={err('regions_served')} hint="e.g., NCR, Region III, Region IV-A">
-                                    <textarea
-                                        id="regions_served"
-                                        rows={2}
-                                        value={data.regions_served}
-                                        onChange={(e) => set('regions_served', e.target.value)}
-                                        placeholder="List the regions where you operate"
-                                        className={inputCls(err('regions_served'))}
+                                <div>
+                                    <MultiSelectChips
+                                        label="Provinces Served"
+                                        helperText="Optional for NCR"
+                                        options={psgcProvinces.map(p => p.name)}
+                                        selected={data.provinces_served}
+                                        onChange={(provinces) => setData('provinces_served', provinces)}
+                                        placeholder="Select provinces or add custom"
+                                        allowCustom={true}
+                                        loading={provincesLoading}
+                                        errorMessage={provincesError}
+                                        error={err('provinces_served')}
                                     />
-                                </Field>
+                                </div>
 
-                                <Field label="Provinces Served" htmlFor="provinces_served" required error={err('provinces_served')} hint="e.g., Metro Manila, Bulacan, Cavite">
-                                    <textarea
-                                        id="provinces_served"
-                                        rows={2}
-                                        value={data.provinces_served}
-                                        onChange={(e) => set('provinces_served', e.target.value)}
-                                        placeholder="List the provinces where you operate"
-                                        className={inputCls(err('provinces_served'))}
+                                <div>
+                                    <MultiSelectChips
+                                        label="Cities / Municipalities Served"
+                                        required={true}
+                                        options={psgcCities.map(c => c.name)}
+                                        selected={data.cities_served}
+                                        onChange={(cities) => setData('cities_served', cities)}
+                                        placeholder="Select cities or add custom"
+                                        allowCustom={true}
+                                        loading={citiesLoading}
+                                        errorMessage={citiesError}
+                                        error={err('cities_served')}
                                     />
-                                </Field>
+                                </div>
 
-                                <Field label="Cities / Municipalities Served" htmlFor="cities_served" required error={err('cities_served')} hint="e.g., Manila, Quezon City, Makati">
-                                    <textarea
-                                        id="cities_served"
-                                        rows={3}
-                                        value={data.cities_served}
-                                        onChange={(e) => set('cities_served', e.target.value)}
-                                        placeholder="List the cities/municipalities where you operate"
-                                        className={inputCls(err('cities_served'))}
+                                <div>
+                                    <label className="text-sm font-medium text-gray-800 mb-1.5 block">
+                                        Delivery Services Offered <span className="text-red-600">*</span>
+                                    </label>
+                                    <ServiceChips
+                                        label=""
+                                        options={['Standard Delivery', 'Express Delivery', 'Same-Day Delivery', 'Next-Day Delivery', 'International Shipping', 'Cash on Delivery (COD)']}
+                                        selected={data.delivery_services}
+                                        onChange={(services) => setData('delivery_services', services)}
+                                        allowCustom={true}
                                     />
-                                </Field>
+                                    {err('delivery_services') && (
+                                        <span className="text-xs font-medium text-red-600 mt-1 block">{err('delivery_services')}</span>
+                                    )}
+                                </div>
 
-                                <Field label="Available Delivery Services" htmlFor="delivery_services" required error={err('delivery_services')} hint="e.g., Same-Day, Next-Day, Standard, COD">
-                                    <textarea
-                                        id="delivery_services"
-                                        rows={2}
-                                        value={data.delivery_services}
-                                        onChange={(e) => set('delivery_services', e.target.value)}
-                                        placeholder="List the delivery services you offer"
-                                        className={inputCls(err('delivery_services'))}
+                                <div>
+                                    <RadioCards
+                                        label="Pickup Service Available?"
+                                        required={true}
+                                        options={[
+                                            { value: 'yes', label: 'Yes, we offer pickup service' },
+                                            { value: 'no', label: 'No pickup service' },
+                                        ]}
+                                        selected={data.pickup_available}
+                                        onChange={(value) => setData('pickup_available', value)}
+                                        error={err('pickup_available')}
                                     />
-                                </Field>
+                                </div>
 
-                                <Field label="Pickup Availability" htmlFor="pickup_available" required error={err('pickup_available')}>
-                                    <select
-                                        id="pickup_available"
-                                        value={data.pickup_available}
-                                        onChange={(e) => set('pickup_available', e.target.value)}
-                                        className={inputCls(err('pickup_available'))}
-                                    >
-                                        <option value="">Select pickup availability</option>
-                                        <option value="yes">Yes, we offer pickup service</option>
-                                        <option value="no">No, drop-off only</option>
-                                        <option value="selected_areas">Available in selected areas only</option>
-                                    </select>
-                                </Field>
-
-                                <Field label="Estimated Delivery Time" htmlFor="estimated_delivery_time" hint="Optional">
+                                <Field label="Estimated Delivery Time" htmlFor="estimated_delivery_time" hint="e.g., 1-3 business days">
                                     <input
                                         id="estimated_delivery_time"
                                         type="text"
                                         value={data.estimated_delivery_time}
-                                        onChange={(e) => set('estimated_delivery_time', e.target.value)}
-                                        placeholder="e.g., 1-3 business days, Same day for Metro Manila"
-                                        className={inputCls()}
+                                        onChange={(e) => setData('estimated_delivery_time', e.target.value)}
+                                        placeholder="e.g., Same day (Express), 1-3 days (Standard)"
+                                        aria-invalid={!!err('estimated_delivery_time')}
+                                        className={inputCls(err('estimated_delivery_time'))}
                                     />
                                 </Field>
 
-                                <div className="rounded-xl bg-[#F1EDFB] border border-[#DDD5EE] p-4 mt-6">
-                                    <label className="flex items-start gap-3 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={data.privacy_policy_accepted}
-                                            onChange={(e) => set('privacy_policy_accepted', e.target.checked)}
-                                            className="mt-0.5 rounded border-[#B4A7D6] text-[#3B1F6B] focus:ring-[#9B5DE5]"
-                                        />
-                                        <span className="text-sm text-gray-700">
-                                            I accept the{' '}
-                                            <Link href="/privacy-policy" target="_blank" className="text-[#3B1F6B] font-semibold hover:underline">
-                                                Privacy Policy
-                                            </Link>
-                                            {' '}and understand that my application will be reviewed by the admin.
-                                        </span>
+                                <div className="flex items-start gap-3 rounded-xl border border-[#DDD5EE] bg-white p-4">
+                                    <input
+                                        id="privacy_policy_accepted"
+                                        type="checkbox"
+                                        checked={data.privacy_policy_accepted}
+                                        onChange={(e) => setData('privacy_policy_accepted', e.target.checked)}
+                                        className="mt-0.5 w-4 h-4 text-[#3B1F6B] rounded border-gray-300 focus:ring-[#3B1F6B]"
+                                        aria-invalid={!!err('privacy_policy_accepted')}
+                                    />
+                                    <label htmlFor="privacy_policy_accepted" className="text-sm text-gray-700">
+                                        I have read and agree to the{' '}
+                                        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#3B1F6B] underline">
+                                            Privacy Policy
+                                        </a>{' '}
+                                        and{' '}
+                                        <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#3B1F6B] underline">
+                                            Terms of Service
+                                        </a>
+                                        . <span className="text-red-600">*</span>
                                     </label>
-                                    {err('privacy_policy_accepted') && (
-                                        <p className="text-xs font-medium text-red-600 mt-2">{err('privacy_policy_accepted')}</p>
-                                    )}
                                 </div>
-
-                                <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-sm text-blue-900">
-                                    <p className="font-semibold mb-1">📧 After submission:</p>
-                                    <p>Please wait for admin approval, which will be sent to your representative's email address.</p>
-                                </div>
+                                {err('privacy_policy_accepted') && (
+                                    <span className="text-xs font-medium text-red-600 block">{err('privacy_policy_accepted')}</span>
+                                )}
                             </div>
                         )}
 
-                        {/* Navigation */}
-                        <div className="flex items-center gap-4 mt-8">
+                        {/* Navigation buttons */}
+                        <div className="mt-8 flex items-center justify-between gap-4">
                             {step > 1 && (
                                 <button
                                     type="button"
                                     onClick={goBack}
-                                    disabled={processing}
-                                    className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition"
+                                    disabled={submitting}
+                                    className="rounded-lg border-2 border-[#DDD5EE] bg-white px-6 py-3 text-sm font-semibold text-gray-800 hover:border-[#3B1F6B] hover:text-[#3B1F6B] transition disabled:opacity-50"
                                 >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                                    </svg>
-                                    Back
+                                    ← Back
                                 </button>
                             )}
                             <button
                                 type="submit"
-                                disabled={processing}
-                                className="flex items-center gap-2 px-5 py-3 rounded-full bg-[#3B1F6B] text-white text-sm font-semibold hover:bg-[#2E1854] disabled:opacity-50 transition ml-auto"
+                                disabled={submitting}
+                                className="ml-auto rounded-lg bg-[#3B1F6B] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2E1854] transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {processing ? 'Submitting...' : step === TOTAL_STEPS ? 'Complete Registration' : 'Continue'}
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M5 12h14M12 5l7 7-7 7" />
-                                </svg>
+                                {submitting ? 'Submitting...' : step < TOTAL_STEPS ? 'Continue →' : 'Submit Application'}
                             </button>
                         </div>
                     </form>
@@ -955,5 +1221,3 @@ export default function CourierRegistration() {
         </div>
     );
 }
-
-CourierRegistration.layout = (page: ReactNode) => page;

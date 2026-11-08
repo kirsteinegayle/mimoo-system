@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\ProductController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -24,14 +25,17 @@ Route::get('/logistics', function () {
 })->name('logistics.landing');
 
 Route::middleware(['auth', 'verified', 'approved'])->group(function () {
-    // Generic dashboard - redirect based on account type
+    // Generic dashboard - redirect based on role
     Route::get('dashboard', function () {
         $user = auth()->user();
         
-        return match ($user->account_type) {
+        return match ($user->role ?? $user->account_type) {
             'seller' => redirect()->route('seller.dashboard'),
-            'logistics' => redirect()->route('logistics.dashboard'),
-            default => redirect('/homepage'), // Buyers go to homepage
+            'logistics_staff' => redirect()->route('logistics.dashboard'),
+            'courier' => redirect()->route('courier.dashboard'),
+            'admin' => redirect()->route('admin.dashboard'),
+            'buyer' => redirect('/homepage'),
+            default => redirect('/homepage'),
         };
     })->name('dashboard');
     
@@ -73,14 +77,415 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                 'contact_person' => trim($user->contact_first_name . ' ' . $user->contact_last_name),
             ],
         ]);
-    })->name('logistics.dashboard');
+    })->name('logistics.dashboard')->middleware('role:logistics_staff');
+    
+    // Courier Dashboard - for approved courier companies ONLY
+    Route::get('/courier/dashboard', function () {
+        $user = auth()->user();
+        
+        // Mock stats for now - replace with real data later
+        $stats = [
+            'incoming_shipments' => 15,
+            'pending_pickups' => 8,
+            'in_transit' => 42,
+            'deliveries_today' => 23,
+            'exceptions' => 3,
+        ];
+        
+        return Inertia::render('courier/CourierDashboard', [
+            'auth' => [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'account_type' => $user->account_type,
+                ],
+            ],
+            'company' => [
+                'name' => $user->company_name ?? $user->business_name ?? 'Courier Company',
+                'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? '')),
+            ],
+            'stats' => $stats,
+        ]);
+    })->name('courier.dashboard')->middleware('role:courier');
+    
+    // Courier - Incoming Shipments (with full functionality)
+    Route::get('/courier/incoming-shipments', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'index'])->name('courier.incoming-shipments')->middleware('role:courier');
+    Route::get('/api/courier/shipments/{id}', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'show'])->middleware('role:courier');
+    Route::post('/api/courier/shipments/{id}/accept', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'accept'])->middleware('role:courier');
+    Route::post('/api/courier/shipments/{id}/reject', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'reject'])->middleware('role:courier');
+    
+    // Courier - Pickup Management (with full functionality)
+    Route::get('/courier/pickup-management', [\App\Http\Controllers\Courier\PickupManagementController::class, 'index'])->name('courier.pickup-management')->middleware('role:courier');
+    Route::get('/api/courier/pickups/{id}', [\App\Http\Controllers\Courier\PickupManagementController::class, 'show'])->middleware('role:courier');
+    Route::post('/api/courier/pickups/{id}/schedule', [\App\Http\Controllers\Courier\PickupManagementController::class, 'schedule'])->middleware('role:courier');
+    Route::post('/api/courier/pickups/{id}/assign-personnel', [\App\Http\Controllers\Courier\PickupManagementController::class, 'assignPersonnel'])->middleware('role:courier');
+    Route::post('/api/courier/pickups/{id}/reschedule', [\App\Http\Controllers\Courier\PickupManagementController::class, 'reschedule'])->middleware('role:courier');
+    Route::post('/api/courier/pickups/{id}/cancel', [\App\Http\Controllers\Courier\PickupManagementController::class, 'cancel'])->middleware('role:courier');
+    Route::post('/api/courier/pickups/{id}/record-failed', [\App\Http\Controllers\Courier\PickupManagementController::class, 'recordFailed'])->middleware('role:courier');
+    Route::post('/api/courier/pickups/{id}/confirm', [\App\Http\Controllers\Courier\PickupManagementController::class, 'confirmPickup'])->middleware('role:courier');
+    
+    // Courier - Parcel Scanning
+    Route::get('/courier/parcel-scanning', function () {
+        $user = auth()->user();
+        return Inertia::render('courier/ParcelScanning', [
+            'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
+            'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
+        ]);
+    })->name('courier.parcel-scanning')->middleware('role:courier');
+    
+    // Courier - Sorting & Transfers
+    Route::get('/courier/sorting-transfers', function () {
+        $user = auth()->user();
+        return Inertia::render('courier/SortingTransfers', [
+            'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
+            'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
+        ]);
+    })->name('courier.sorting-transfers')->middleware('role:courier');
+    
+    // Courier - Branch & Facility
+    Route::get('/courier/branch-facility', [\App\Http\Controllers\Courier\FacilityController::class, 'index'])->name('courier.branch-facility')->middleware('role:courier');
+    Route::post('/courier/branch-facility', [\App\Http\Controllers\Courier\FacilityController::class, 'store'])->name('courier.facility.store')->middleware('role:courier');
+    Route::post('/courier/branch-facility/generate', [\App\Http\Controllers\Courier\FacilityController::class, 'generateFromServiceAreas'])->name('courier.facility.generate')->middleware('role:courier');
+    Route::put('/courier/branch-facility/{facility}', [\App\Http\Controllers\Courier\FacilityController::class, 'update'])->name('courier.facility.update')->middleware('role:courier');
+    Route::delete('/courier/branch-facility/{facility}', [\App\Http\Controllers\Courier\FacilityController::class, 'destroy'])->name('courier.facility.destroy')->middleware('role:courier');
+    
+    // Courier - Parcel Scanning
+    Route::get('/courier/parcel-scanning', function () {
+        $courier = auth()->user();
+        
+        $facilities = \App\Models\CourierFacility::where('courier_id', $courier->id)
+            ->where('status', 'Active')
+            ->orderBy('facility_type', 'asc')
+            ->orderBy('facility_name', 'asc')
+            ->get()
+            ->map(function ($facility) {
+                return [
+                    'id' => $facility->id,
+                    'facility_name' => $facility->facility_name,
+                    'facility_code' => $facility->facility_code,
+                    'facility_type' => $facility->facility_type,
+                    'city' => $facility->city,
+                    'region' => $facility->region,
+                ];
+            });
+        
+        return inertia('courier/ParcelScanning', [
+            'auth' => [
+                'user' => [
+                    'id' => $courier->id,
+                    'name' => $courier->first_name . ' ' . $courier->last_name,
+                    'email' => $courier->email,
+                    'account_type' => $courier->account_type,
+                ],
+            ],
+            'company' => [
+                'name' => $courier->company_name ?? $courier->business_name ?? 'Courier Company',
+                'contact_person' => $courier->first_name . ' ' . $courier->last_name,
+            ],
+            'facilities' => $facilities,
+        ]);
+    })->name('courier.parcel-scanning')->middleware('role:courier');
+    
+    // API: Get parcel details by waybill number (for courier scanner)
+    Route::get('/api/courier/parcel/{waybillNumber}', function ($waybillNumber) {
+        \Log::info('Courier scanning waybill: ' . $waybillNumber);
+        
+        // Find order by waybill number
+        $order = \App\Models\Order::where('waybill_number', $waybillNumber)
+            ->with(['buyer', 'items.product'])
+            ->first();
+        
+        if (!$order) {
+            return response()->json([
+                'error' => 'Parcel not found',
+                'message' => 'No parcel found with waybill number: ' . $waybillNumber
+            ], 404);
+        }
+        
+        // Calculate total weight from order items
+        $totalWeight = $order->items->sum(function ($item) {
+            return ($item->product->weight ?? 0) * $item->quantity;
+        });
+        
+        return response()->json([
+            'waybill_number' => $order->waybill_number,
+            'order_number' => 'ORD-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
+            'buyer_name' => $order->shipping_name ?? $order->buyer->name ?? 'Unknown',
+            'buyer_address' => $order->shipping_address,
+            'buyer_city' => $order->shipping_municipality_city,
+            'buyer_barangay' => $order->shipping_barangay,
+            'buyer_phone' => $order->shipping_phone,
+            'seller_name' => $order->items->first()->product->seller->business_name ?? $order->items->first()->product->seller->name ?? 'Unknown Seller',
+            'weight' => round($totalWeight, 2),
+            'payment_method' => strtoupper($order->payment_method),
+            'total_amount' => $order->total,
+            'destination' => $order->shipping_municipality_city . ', ' . $order->shipping_province,
+            'status' => $order->status,
+        ]);
+    })->middleware('role:courier');
+    
+    // API: Scan and receive parcel at facility
+    Route::post('/api/courier/scan-parcel', function (Illuminate\Http\Request $request) {
+        $validated = $request->validate([
+            'waybill_number' => 'required|string',
+            'facility_id' => 'required|exists:courier_facilities,id',
+        ]);
+        
+        $courier = auth()->user();
+        $facility = \App\Models\CourierFacility::findOrFail($validated['facility_id']);
+        
+        // Verify facility belongs to this courier
+        if ($facility->courier_id !== $courier->id) {
+            return response()->json([
+                'error' => 'Unauthorized',
+                'message' => 'This facility does not belong to your company.'
+            ], 403);
+        }
+        
+        // Find order by waybill
+        $order = \App\Models\Order::where('waybill_number', $validated['waybill_number'])->first();
+        
+        if (!$order) {
+            \Log::warning('Parcel scan failed - waybill not found', [
+                'waybill_number' => $validated['waybill_number'],
+                'courier_id' => $courier->id,
+                'facility_id' => $validated['facility_id'],
+            ]);
+            
+            return response()->json([
+                'error' => 'Parcel not found',
+                'message' => 'No parcel found with waybill number: ' . $validated['waybill_number'] . '. Please verify the waybill number and try again.'
+            ], 404);
+        }
+        
+        // Verify order is assigned to this courier
+        if ($order->assigned_courier_id && $order->assigned_courier_id !== $courier->id) {
+            return response()->json([
+                'error' => 'Unauthorized',
+                'message' => 'This parcel is assigned to a different courier company.'
+            ], 403);
+        }
+        
+        // Create scan record
+        \App\Models\ShipmentScan::create([
+            'order_id' => $order->id,
+            'waybill_number' => $validated['waybill_number'],
+            'courier_id' => $courier->id,
+            'facility_id' => $validated['facility_id'],
+            'scan_type' => 'received',
+            'scanned_by' => $courier->first_name . ' ' . $courier->last_name,
+        ]);
+        
+        // Update order tracking status and current location
+        $facilityType = $facility->facility_type;
+        $facilityTypeLabel = match($facilityType) {
+            'main_hub' => 'Main Hub',
+            'sorting_hub' => 'Sorting Hub',
+            'branch' => 'Branch',
+            default => ucfirst(str_replace('_', ' ', $facilityType)),
+        };
+        
+        $trackingMessage = "Parcel scanned at {$facility->facility_name} ({$facilityTypeLabel})";
+        if ($facility->municipality_city) {
+            $trackingMessage .= " in {$facility->municipality_city}";
+        }
+        
+        $order->update([
+            'current_facility_id' => $validated['facility_id'],
+        ]);
+        
+        $order->updateTracking('scanned_at_facility', $trackingMessage);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Parcel received successfully at ' . $facility->facility_name,
+            'order_id' => $order->id,
+            'waybill_number' => $order->waybill_number,
+        ]);
+    })->middleware('role:courier');
+    
+    // API: Get received parcels for a facility
+    Route::get('/api/courier/facility/{facilityId}/received-parcels', function ($facilityId) {
+        $courier = auth()->user();
+        $facility = \App\Models\CourierFacility::findOrFail($facilityId);
+        
+        // Verify facility belongs to this courier
+        if ($facility->courier_id !== $courier->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        // Get latest scan per waybill at this facility
+        $receivedScans = \App\Models\ShipmentScan::where('facility_id', $facilityId)
+            ->where('scan_type', 'received')
+            ->with(['order.buyer', 'order.items.product'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('waybill_number')
+            ->map(function ($scans) {
+                $latestScan = $scans->first();
+                
+                // Check if parcel was scanned at another facility after this one
+                $laterScan = \App\Models\ShipmentScan::where('waybill_number', $latestScan->waybill_number)
+                    ->where('facility_id', '!=', $latestScan->facility_id)
+                    ->where('created_at', '>', $latestScan->created_at)
+                    ->exists();
+                
+                if ($laterScan) {
+                    return null; // Parcel moved to another facility (archived)
+                }
+                
+                $order = $latestScan->order;
+                $totalWeight = $order->items->sum(function ($item) {
+                    return ($item->product->weight ?? 0) * $item->quantity;
+                });
+                
+                return [
+                    'id' => $latestScan->id,
+                    'waybill_number' => $latestScan->waybill_number,
+                    'order_number' => 'ORD-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
+                    'buyer_name' => $order->shipping_name ?? $order->buyer->name ?? 'Unknown',
+                    'buyer_address' => $order->shipping_address,
+                    'destination' => $order->shipping_municipality_city,
+                    'weight' => round($totalWeight, 2),
+                    'payment_method' => strtoupper($order->payment_method),
+                    'total_amount' => $order->total,
+                    'status' => $order->status,
+                    'received_at' => $latestScan->created_at->format('M d, Y h:i A'),
+                    'scanned_by' => $latestScan->scanned_by,
+                ];
+            })
+            ->filter() // Remove nulls (archived parcels)
+            ->values();
+        
+        return response()->json($receivedScans);
+    })->middleware('role:courier');
+    
+    // API: Get archived parcels for a facility
+    Route::get('/api/courier/facility/{facilityId}/archived-parcels', function ($facilityId) {
+        $courier = auth()->user();
+        $facility = \App\Models\CourierFacility::findOrFail($facilityId);
+        
+        // Verify facility belongs to this courier
+        if ($facility->courier_id !== $courier->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        // Get parcels that were received at this facility but later scanned elsewhere
+        $archivedScans = \App\Models\ShipmentScan::where('facility_id', $facilityId)
+            ->where('scan_type', 'received')
+            ->with(['order.buyer', 'order.items.product'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('waybill_number')
+            ->map(function ($scans) use ($facilityId) {
+                $facilityReceiveScan = $scans->first();
+                
+                // Find scan at another facility after this one
+                $transferScan = \App\Models\ShipmentScan::where('waybill_number', $facilityReceiveScan->waybill_number)
+                    ->where('facility_id', '!=', $facilityId)
+                    ->where('created_at', '>', $facilityReceiveScan->created_at)
+                    ->with('facility')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                if (!$transferScan) {
+                    return null; // Still at this facility (not archived)
+                }
+                
+                $order = $facilityReceiveScan->order;
+                $totalWeight = $order->items->sum(function ($item) {
+                    return ($item->product->weight ?? 0) * $item->quantity;
+                });
+                
+                return [
+                    'id' => $facilityReceiveScan->id,
+                    'waybill_number' => $facilityReceiveScan->waybill_number,
+                    'order_number' => 'ORD-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
+                    'buyer_name' => $order->shipping_name ?? $order->buyer->name ?? 'Unknown',
+                    'destination' => $order->shipping_municipality_city,
+                    'weight' => round($totalWeight, 2),
+                    'status' => $order->status,
+                    'received_at' => $facilityReceiveScan->created_at->format('M d, Y h:i A'),
+                    'transferred_to' => $transferScan->facility->facility_name,
+                    'transferred_at' => $transferScan->created_at->format('M d, Y h:i A'),
+                ];
+            })
+            ->filter() // Remove nulls (still at facility)
+            ->values();
+        
+        return response()->json($archivedScans);
+    })->middleware('role:courier');
+    
+    // Courier - Rider Management
+    Route::get('/courier/rider-management', function () {
+        $user = auth()->user();
+        return Inertia::render('courier/RiderManagement', [
+            'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
+            'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
+        ]);
+    })->name('courier.rider-management')->middleware('role:courier');
+    
+    // Courier - Delivery Management
+    Route::get('/courier/delivery-management', function () {
+        $user = auth()->user();
+        return Inertia::render('courier/DeliveryManagement', [
+            'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
+            'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
+        ]);
+    })->name('courier.delivery-management')->middleware('role:courier');
+    
+    // Courier - COD & Remittance
+    Route::get('/courier/cod-remittance', function () {
+        $user = auth()->user();
+        return Inertia::render('courier/CODRemittance', [
+            'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
+            'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
+        ]);
+    })->name('courier.cod-remittance')->middleware('role:courier');
+    
+    // Courier - Reports
+    Route::get('/courier/reports', function () {
+        $user = auth()->user();
+        return Inertia::render('courier/Reports', [
+            'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
+            'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
+        ]);
+    })->name('courier.reports')->middleware('role:courier');
+    
+    // Courier - Support
+    Route::get('/courier/support', function () {
+        $user = auth()->user();
+        return Inertia::render('courier/Support', [
+            'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
+            'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
+        ]);
+    })->name('courier.support')->middleware('role:courier');
+    
+    // Courier - Messages
+    Route::get('/courier/messages', function () {
+        $user = auth()->user();
+        return Inertia::render('courier/Messages', [
+            'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
+            'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
+        ]);
+    })->name('courier.messages')->middleware('role:courier');
+    
+    // Courier - Company Settings
+    Route::get('/courier/settings', function () {
+        $user = auth()->user();
+        return Inertia::render('courier/CompanySettings', [
+            'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
+            'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
+        ]);
+    })->name('courier.settings')->middleware('role:courier');
     
     // Logistics Incoming Parcels
     Route::get('/logistics/incoming-parcels', function () {
         $user = auth()->user();
         
-        // Fetch real orders with status "packed" from database (packed = ready for pickup)
-        $incomingOrders = \App\Models\Order::where('status', 'packed')
+        // Fetch orders with status "shipped" (scanned QR + confirmed, awaiting pickup from logistics)
+        $incomingOrders = \App\Models\Order::where('status', 'shipped')
             ->with(['items.product'])
             ->orderBy('updated_at', 'desc')
             ->get()
@@ -98,6 +503,21 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     }
                 }
                 
+                // Normalize payment method (database stores "cod", "gcash", etc. in lowercase)
+                $paymentMethod = strtolower($order->payment_method ?? 'cod');
+                $paymentMethodDisplay = match($paymentMethod) {
+                    'cod' => 'Cash on Delivery',
+                    'gcash' => 'GCash',
+                    'paymaya' => 'PayMaya',
+                    'card' => 'Credit/Debit Card',
+                    default => 'Cash on Delivery',
+                };
+                
+                // Compute estimated weight (0.3kg per item if no weight in database)
+                $estimatedWeight = $order->items->sum(function ($item) {
+                    return $item->quantity * 0.3; // Assume 0.3kg per item
+                });
+                
                 return [
                     'id' => $order->id,
                     'order_number' => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
@@ -107,11 +527,11 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     'buyer_address' => $order->shipping_address ?? 'N/A',
                     'seller_name' => $sellerName,
                     'total_amount' => $order->total ?? 0,
-                    'payment_method' => $order->payment_method ?? 'Cash on Delivery',
+                    'payment_method' => $paymentMethodDisplay,
                     'items_count' => $order->items->count(),
-                    'weight' => $order->weight ?? 0,
+                    'weight' => round($estimatedWeight, 1),
                     'shipped_at' => $order->updated_at->format('M d, Y H:i'),
-                    'status' => 'packed',
+                    'status' => 'shipped',
                 ];
             });
         
@@ -167,6 +587,21 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             }
         }
         
+        // Normalize payment method (database stores "cod", "gcash", etc. in lowercase)
+        $paymentMethod = strtolower($order->payment_method ?? 'cod');
+        $paymentMethodDisplay = match($paymentMethod) {
+            'cod' => 'Cash on Delivery',
+            'gcash' => 'GCash',
+            'paymaya' => 'PayMaya',
+            'card' => 'Credit/Debit Card',
+            default => 'Cash on Delivery',
+        };
+        
+        // Compute estimated weight (0.3kg per item)
+        $estimatedWeight = $order->items->sum(function ($item) {
+            return $item->quantity * 0.3;
+        });
+        
         return response()->json([
             'parcel' => [
                 'id' => $order->id,
@@ -177,9 +612,9 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                 'buyer_address' => $order->shipping_address ?? 'N/A',
                 'seller_name' => $sellerName,
                 'total_amount' => $order->total,
-                'payment_method' => $order->payment_method ?? 'Cash on Delivery',
+                'payment_method' => $paymentMethodDisplay,
                 'items_count' => $order->items->count(),
-                'weight' => $order->weight ?? 0,
+                'weight' => round($estimatedWeight, 1),
                 'shipped_at' => $order->updated_at->toISOString(),
                 'status' => $order->status,
             ],
@@ -208,7 +643,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         ]);
     });
     
-    // API: Confirm parcel received at logistics hub (packed → in_transit)
+    // API: Confirm parcel received at logistics hub (packed → shipped)
     Route::post('/api/logistics/parcel/{id}/confirm', function ($id) {
         $order = \App\Models\Order::findOrFail($id);
         
@@ -220,8 +655,11 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             ], 400);
         }
         
-        // Update order status to in_transit
-        $order->update(['status' => 'in_transit']);
+        // Update order status to shipped (in transit to buyer)
+        $order->update(['status' => 'shipped']);
+        
+        // Update tracking status for buyer visibility
+        $order->updateTracking('received_logistics', 'Parcel received by logistics');
         
         \Log::info('Parcel confirmed received at logistics hub', [
             'order_id' => $order->id,
@@ -284,29 +722,36 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::get('/logistics/courier-applications', function () {
         $user = auth()->user();
         
-        // Mock data for now - replace with real data later
-        $applications = [
-            [
-                'id' => 1,
-                'company_name' => 'Mimoo Express Courier Services Inc.',
-                'trade_name' => 'Mimoo Express',
-                'business_email' => 'info@mimooexpress.ph',
-                'rep_full_name' => 'Juan Dela Cruz',
-                'rep_position' => 'Operations Manager',
-                'status' => 'pending',
-                'submitted_at' => 'Nov 3, 2026',
-            ],
-            [
-                'id' => 2,
-                'company_name' => 'Swift Logistics Corporation',
-                'trade_name' => 'Swift Delivery',
-                'business_email' => 'contact@swiftlogistics.ph',
-                'rep_full_name' => 'Maria Santos',
-                'rep_position' => 'CEO',
-                'status' => 'approved',
-                'submitted_at' => 'Nov 1, 2026',
-            ],
-        ];
+        // Fetch courier applications only (not logistics staff)
+        $applications = \App\Models\User::where('account_type', 'logistics')
+            ->where('role', 'courier')
+            ->orderByRaw("FIELD(status, 'pending', 'approved', 'rejected')")
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($courier) {
+                // Build full name (prefer rep_full_name, fall back to split)
+                $fullName = $courier->rep_full_name 
+                    ?? trim(($courier->first_name ?? '') . ' ' . ($courier->last_name ?? '')) 
+                    ?: $courier->name 
+                    ?: 'Not provided';
+                
+                // Get company name with fallbacks
+                $companyName = $courier->company_name 
+                    ?? $courier->trade_name 
+                    ?? $courier->business_name 
+                    ?? $fullName;
+                
+                return [
+                    'id' => $courier->id,
+                    'company_name' => $companyName,
+                    'trade_name' => $courier->trade_name ?? $courier->company_name ?? 'Not provided',
+                    'business_email' => $courier->business_email ?? $courier->email,
+                    'rep_full_name' => $fullName,
+                    'rep_position' => $courier->contact_position ?? 'Not provided',
+                    'status' => $courier->status,
+                    'submitted_at' => $courier->created_at->format('M d, Y'),
+                ];
+            });
         
         return Inertia::render('logistics/CourierApplications', [
             'auth' => [
@@ -321,12 +766,197 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         ]);
     })->name('logistics.courier-applications');
     
+    // View single courier application details
+    Route::get('/logistics/courier-applications/{id}', function ($id) {
+        $user = auth()->user();
+        
+        $courier = \App\Models\User::where('account_type', 'logistics')
+            ->where('role', 'courier')
+            ->where('id', $id)
+            ->firstOrFail();
+        
+        // Helper to parse legacy service_areas if new fields are empty
+        $serviceAreas = $courier->service_areas ?? [];
+        $regionsServed = $courier->regions_served;
+        $provincesServed = $courier->provinces_served;
+        $citiesServed = $courier->cities_served;
+        
+        // If new fields are empty but legacy service_areas exists, parse it
+        if (empty($regionsServed) && empty($provincesServed) && empty($citiesServed) && !empty($serviceAreas)) {
+            $regionsServed = \App\Helpers\ServiceAreaParser::extractRegions($serviceAreas);
+            $provincesServed = \App\Helpers\ServiceAreaParser::extractProvinces($serviceAreas);
+            $citiesServed = \App\Helpers\ServiceAreaParser::extractCities($serviceAreas);
+        }
+        
+        // NEW fields have priority, fall back to old for backward compat
+        $application = [
+            // Basic info
+            'id' => $courier->id,
+            'status' => $courier->status ?? 'pending',
+            'submitted_at' => $courier->created_at->format('F d, Y g:i A'),
+            'updated_at' => $courier->updated_at->format('F d, Y g:i A'),
+            'approved_at' => $courier->approved_at ? $courier->approved_at->format('F d, Y g:i A') : null,
+            
+            // Step 1: Company Information
+            'company_name' => $courier->company_name ?? 'Not provided',
+            'trade_name' => $courier->trade_name ?? 'Not provided',
+            'business_registration_number' => $courier->sec_registration_no ?? 'Not provided',
+            'business_address' => $courier->business_address ?? $courier->street_address ?? 'Not provided',
+            'business_email' => $courier->business_email ?? 'Not provided',
+            'company_contact_number' => $courier->company_contact_number ?? 'Not provided',
+            'rep_contact_number' => $courier->rep_contact_number ?? 'Not provided',
+            'company_website' => $courier->company_website ?? 'Not provided',
+            'company_logo' => $courier->company_logo,
+            
+            // Step 2: Authorized Representative
+            'rep_full_name' => $courier->rep_full_name ?? trim(($courier->first_name ?? '') . ' ' . ($courier->last_name ?? '')) ?: 'Not provided',
+            'rep_first_name' => $courier->contact_first_name ?? $courier->first_name ?? 'Not provided',
+            'rep_last_name' => $courier->contact_last_name ?? $courier->last_name ?? 'Not provided',
+            'rep_position' => $courier->contact_position ?? 'Not provided',
+            'rep_email' => $courier->email,
+            'rep_contact_number' => $courier->rep_contact_number ?? $courier->contact_number ?? 'Not provided',
+            'rep_sex' => $courier->sex ?? 'Not specified',
+            'rep_birthday' => $courier->birthday ?? 'Not provided',
+            'username' => $courier->username ?? 'Not provided',
+            
+            // Step 3: Business Documents
+            'dti_sec_certificate' => $courier->sec_certificate,
+            'mayors_permit' => $courier->business_permit,
+            'operating_permits' => $courier->operating_permits,
+            'rep_valid_id' => $courier->valid_id,
+            'proof_of_address' => $courier->proof_of_address,
+            
+            // Step 4: Service Coverage - Handle both new and legacy formats
+            'regions_served' => $regionsServed ?? [],
+            'provinces_served' => $provincesServed ?? [],
+            'cities_served' => $citiesServed ?? [],
+            'delivery_services' => $courier->delivery_services ?? [], // Cast handles old comma strings
+            'pickup_available' => $courier->pickup_available ?? 'Not specified',
+            'estimated_delivery_time' => $courier->estimated_delivery_time ?? 'Not specified',
+            
+            // Legacy service_areas (for old records)
+            'service_areas_legacy' => $courier->service_areas ?? [],
+            
+            // Other
+            'region' => $courier->region ?? 'Not provided',
+            'province' => $courier->province ?? null,
+            'municipality_city' => $courier->municipality_city ?? 'Not provided',
+            'barangay' => $courier->barangay ?? 'Not provided',
+            'postal_code' => $courier->postal_code ?? null,
+            'privacy_policy_accepted' => $courier->privacy_policy_accepted ?? false,
+            'verification_status' => $courier->verification_status ?? 'unverified',
+        ];
+        
+        return Inertia::render('logistics/CourierApplicationDetail', [
+            'auth' => [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'account_type' => $user->account_type,
+                ],
+            ],
+            'application' => $application,
+        ]);
+    })->name('logistics.courier-application-detail');
+    
+    // API: Approve courier application
+    Route::post('/api/logistics/courier-applications/{id}/approve', function ($id) {
+        $courier = \App\Models\User::findOrFail($id);
+        
+        // Validate that this is a logistics account
+        if ($courier->account_type !== 'logistics') {
+            return response()->json([
+                'error' => 'This account is not a courier/logistics account',
+            ], 400);
+        }
+        
+        // Validate that it's pending
+        if ($courier->status !== 'pending') {
+            return response()->json([
+                'error' => 'Application is not pending',
+                'current_status' => $courier->status,
+            ], 400);
+        }
+        
+        // Approve the courier
+        $courier->update([
+            'status' => 'approved',
+            'approved_at' => now(),
+        ]);
+        
+        \Log::info('Courier application approved', [
+            'courier_id' => $courier->id,
+            'company_name' => $courier->business_name ?? $courier->name,
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+        ]);
+        
+        // TODO: Send email notification to courier about approval
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Courier application approved successfully',
+            'courier' => [
+                'id' => $courier->id,
+                'status' => $courier->status,
+                'approved_at' => $courier->approved_at,
+            ],
+        ]);
+    });
+    
+    // API: Reject courier application
+    Route::post('/api/logistics/courier-applications/{id}/reject', function (Illuminate\Http\Request $request, $id) {
+        $courier = \App\Models\User::findOrFail($id);
+        
+        // Validate that this is a logistics account
+        if ($courier->account_type !== 'logistics') {
+            return response()->json([
+                'error' => 'This account is not a courier/logistics account',
+            ], 400);
+        }
+        
+        // Validate that it's pending
+        if ($courier->status !== 'pending') {
+            return response()->json([
+                'error' => 'Application is not pending',
+                'current_status' => $courier->status,
+            ], 400);
+        }
+        
+        $reason = $request->input('reason', 'Application rejected by logistics team');
+        
+        // Reject the courier
+        $courier->update([
+            'status' => 'rejected',
+        ]);
+        
+        \Log::info('Courier application rejected', [
+            'courier_id' => $courier->id,
+            'company_name' => $courier->business_name ?? $courier->name,
+            'reason' => $reason,
+            'rejected_by' => auth()->id(),
+            'rejected_at' => now(),
+        ]);
+        
+        // TODO: Send email notification to courier about rejection with reason
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Courier application rejected',
+            'courier' => [
+                'id' => $courier->id,
+                'status' => $courier->status,
+            ],
+        ]);
+    });
+    
     // Logistics Sort & Assign
     Route::get('/logistics/sort-assign', function () {
         $user = auth()->user();
         
-        // Fetch orders with status "in_transit" (confirmed at logistics hub, ready for sorting)
-        $transitOrders = \App\Models\Order::where('status', 'in_transit')
+        // Fetch orders with status "shipped" (confirmed at logistics hub, ready for sorting)
+        $transitOrders = \App\Models\Order::where('status', 'shipped')
             ->with(['items.product'])
             ->orderBy('updated_at', 'desc')
             ->get()
@@ -344,14 +974,44 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     }
                 }
                 
-                // Extract barangay from shipping address
+                // Extract barangay AND municipality/city from shipping address
                 $address = $order->shipping_address ?? '';
                 $barangay = 'Unknown';
+                $city = 'Unknown';
+                
+                // Extract barangay
                 if (preg_match('/Brgy\.?\s+([^,]+)/i', $address, $matches)) {
                     $barangay = trim($matches[1]);
                 } elseif (preg_match('/Barangay\s+([^,]+)/i', $address, $matches)) {
                     $barangay = trim($matches[1]);
                 }
+                
+                // Extract city/municipality (usually the second-to-last or last part before region)
+                $addressParts = array_map('trim', explode(',', $address));
+                if (count($addressParts) >= 2) {
+                    // Try to find city/municipality (usually after barangay)
+                    // Format: Street, Barangay, City, Province/Region
+                    $city = $addressParts[count($addressParts) - 2] ?? 'Unknown'; // Second to last
+                    
+                    // Clean up common patterns
+                    $city = preg_replace('/^(City of|Municipality of)\s+/i', '', $city);
+                    $city = trim($city);
+                }
+                
+                // Normalize payment method (database stores "cod", "gcash", etc. in lowercase)
+                $paymentMethod = strtolower($order->payment_method ?? 'cod');
+                $paymentMethodDisplay = match($paymentMethod) {
+                    'cod' => 'Cash on Delivery',
+                    'gcash' => 'GCash',
+                    'paymaya' => 'PayMaya',
+                    'card' => 'Credit/Debit Card',
+                    default => 'Cash on Delivery',
+                };
+                
+                // Compute estimated weight (0.3kg per item)
+                $estimatedWeight = $order->items->sum(function ($item) {
+                    return $item->quantity * 0.3;
+                });
                 
                 return [
                     'id' => $order->id,
@@ -361,27 +1021,42 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     'buyer_phone' => $order->shipping_phone ?? 'N/A',
                     'buyer_address' => $order->shipping_address ?? 'N/A',
                     'barangay' => $barangay,
+                    'city' => $city, // Add city/municipality for matching
                     'seller_name' => $sellerName,
                     'total_amount' => $order->total ?? 0,
-                    'payment_method' => $order->payment_method ?? 'Cash on Delivery',
+                    'payment_method' => $paymentMethodDisplay,
                     'items_count' => $order->items->count(),
-                    'weight' => $order->weight ?? 0,
+                    'weight' => round($estimatedWeight, 1),
                     'confirmed_at' => $order->updated_at->format('M d, Y H:i'),
-                    'status' => 'in_transit',
+                    'status' => 'shipped',
                 ];
             });
         
-        // Fetch approved courier/logistics companies
+        // Fetch approved courier/logistics companies with their service areas
+        // ONLY fetch users with role='courier' (not logistics_staff)
         $approvedCouriers = \App\Models\User::where('account_type', 'logistics')
+            ->where('role', 'courier') // Only couriers, not logistics_staff
             ->where('status', 'approved')
             ->orderBy('company_name')
             ->get()
             ->map(function ($courier) {
+                // Parse service_areas JSON (array of barangays/municipalities the courier services)
+                $serviceAreas = [];
+                if ($courier->service_areas) {
+                    $serviceAreas = is_string($courier->service_areas) 
+                        ? json_decode($courier->service_areas, true) 
+                        : $courier->service_areas;
+                }
+                
                 return [
                     'id' => $courier->id,
                     'name' => $courier->company_name ?? $courier->business_name ?? $courier->name,
                     'contact_person' => trim(($courier->contact_first_name ?? '') . ' ' . ($courier->contact_last_name ?? '')),
                     'email' => $courier->email,
+                    'service_areas' => $serviceAreas ?? [], // Array of barangays/cities they service
+                    'region' => $courier->region,
+                    'province' => $courier->province,
+                    'municipality_city' => $courier->municipality_city,
                 ];
             });
         
@@ -402,6 +1077,131 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'couriers' => $approvedCouriers,
         ]);
     })->name('logistics.sort-assign');
+    
+    // API: Assign parcels to courier
+    Route::post('/api/logistics/assign-to-courier', function (Illuminate\Http\Request $request) {
+        $validated = $request->validate([
+            'parcel_ids' => 'required|array|min:1',
+            'parcel_ids.*' => 'integer|exists:orders,id',
+            'courier_id' => 'required|integer|exists:users,id',
+        ]);
+        
+        $user = auth()->user();
+        $courierId = $validated['courier_id'];
+        $parcelIds = $validated['parcel_ids'];
+        
+        // Verify courier exists and is approved
+        $courier = \App\Models\User::where('id', $courierId)
+            ->where('account_type', 'logistics')
+            ->where('role', 'courier')
+            ->where('status', 'approved')
+            ->first();
+        
+        if (!$courier) {
+            return response()->json(['error' => 'Invalid courier selected'], 400);
+        }
+        
+        try {
+            DB::beginTransaction();
+            
+            $assignedCount = 0;
+            $skippedCount = 0;
+            $errors = [];
+            
+            foreach ($parcelIds as $orderId) {
+                $order = \App\Models\Order::find($orderId);
+                
+                if (!$order) {
+                    $errors[] = "Order #$orderId not found";
+                    $skippedCount++;
+                    continue;
+                }
+                
+                // Check if order is in correct status (shipped = confirmed at logistics hub)
+                if ($order->status !== 'shipped') {
+                    $errors[] = "Order {$order->waybill_number} is not ready for assignment (status: {$order->status})";
+                    $skippedCount++;
+                    continue;
+                }
+                
+                // Check if already assigned
+                $existingAssignment = \App\Models\ShipmentAssignment::where('order_id', $orderId)
+                    ->active()
+                    ->first();
+                
+                if ($existingAssignment) {
+                    $errors[] = "Order {$order->waybill_number} is already assigned";
+                    $skippedCount++;
+                    continue;
+                }
+                
+                // Create shipment assignment
+                $assignment = \App\Models\ShipmentAssignment::create([
+                    'order_id' => $orderId,
+                    'courier_id' => $courierId,
+                    'assigned_by' => $user->id,
+                    'assigned_at' => now(),
+                    'assignment_status' => 'pending', // Courier needs to accept/reject
+                    'acceptance_deadline' => now()->addHours(24), // 24 hours to accept
+                    'pickup_status' => 'pending_pickup',
+                    'weight' => $order->items->sum(function ($item) {
+                        return $item->quantity * 0.3; // Estimated weight
+                    }),
+                ]);
+                
+                // Add history
+                $assignment->addHistory('assigned', $user->id, "Assigned to {$courier->company_name}");
+                
+                // Update order status to 'in_transit' (assigned to courier)
+                $order->update([
+                    'status' => 'in_transit',
+                    'assigned_courier_id' => $courierId,
+                    'courier_assigned_at' => now(),
+                ]);
+                
+                // Update tracking status for buyer visibility
+                $courierName = $courier->company_name ?? $courier->business_name ?? 'courier';
+                $order->updateTracking('assigned_courier', "Parcel assigned to {$courierName}");
+                
+                $assignedCount++;
+                
+                \Log::info('Parcel assigned to courier', [
+                    'order_id' => $orderId,
+                    'waybill_number' => $order->waybill_number,
+                    'courier_id' => $courierId,
+                    'courier_name' => $courier->company_name,
+                    'assigned_by' => $user->id,
+                ]);
+            }
+            
+            DB::commit();
+            
+            $message = "Successfully assigned $assignedCount parcel(s) to {$courier->company_name}";
+            if ($skippedCount > 0) {
+                $message .= " ($skippedCount skipped)";
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'assigned_count' => $assignedCount,
+                'skipped_count' => $skippedCount,
+                'errors' => $errors,
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Failed to assign parcels to courier', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to assign parcels: ' . $e->getMessage(),
+            ], 500);
+        }
+    });
+
     
     // Logistics Delivery Monitoring
     Route::get('/logistics/delivery-monitoring', function () {
@@ -738,6 +1538,12 @@ Route::get('/register/logistics', function () {
 })->name('register.logistics');
 
 Route::get('/register/courier', function () {
+    // Force logout if already authenticated
+    if (Auth::check()) {
+        Auth::logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+    }
     return Inertia::render('logistics/CourierRegistration');
 })->name('register.courier');
 
@@ -1016,6 +1822,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/api/cart/items', [\App\Http\Controllers\CartController::class, 'addItem']);
     Route::patch('/api/cart/items/{id}', [\App\Http\Controllers\CartController::class, 'updateItem']);
     Route::delete('/api/cart/items/{id}', [\App\Http\Controllers\CartController::class, 'removeItem']);
+    
+    // Wishlist
+    Route::get('/wishlist', [\App\Http\Controllers\WishlistController::class, 'show'])->name('wishlist');
+    Route::get('/api/wishlist', [\App\Http\Controllers\WishlistController::class, 'index']);
+    Route::get('/api/wishlist/count', [\App\Http\Controllers\WishlistController::class, 'count']);
+    Route::post('/api/wishlist/check', [\App\Http\Controllers\WishlistController::class, 'check']);
+    Route::post('/api/wishlist/items', [\App\Http\Controllers\WishlistController::class, 'addItem']);
+    Route::delete('/api/wishlist/items/{id}', [\App\Http\Controllers\WishlistController::class, 'removeItem']);
+    Route::post('/api/wishlist/toggle', [\App\Http\Controllers\WishlistController::class, 'toggleItem']);
     
     // Orders
     Route::post('/api/orders', [\App\Http\Controllers\OrderController::class, 'store']);

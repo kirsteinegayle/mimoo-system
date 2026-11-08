@@ -3,12 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\BuyerAddress;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ReturnRequest;
+use App\Models\Review;
 use App\Models\StockLog;
+use App\Models\Voucher;
+use App\Models\VoucherUsage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -56,11 +61,39 @@ class BuyerOrderController extends Controller
 
     private function formatOrder(Order $order, bool $detail = false): array
     {
-        $items = $order->items->map(function ($item) use ($detail) {
+        // Reviews for this order's items (one per item) — Module 3
+        $reviews = Review::whereIn('order_item_id', $order->items->pluck('id'))
+            ->get()->keyBy('order_item_id');
+        $reviewWindowOpen = $order->status === 'completed'
+            && $order->updated_at->copy()->addDays(Review::REVIEW_WINDOW_DAYS)->isFuture();
+
+        // Latest return request — Module 4
+        $latestReturn = ReturnRequest::where('order_id', $order->id)->latest('id')->first();
+        $hasOpenReturn = $latestReturn && $latestReturn->isOpen();
+        $canReturn = in_array($order->status, ['shipped', 'completed'], true)
+            && $order->updated_at->copy()->addDays(ReturnRequest::REQUEST_WINDOW_DAYS)->isFuture()
+            && ! $hasOpenReturn;
+
+        $items = $order->items->map(function ($item) use ($detail, $reviews, $reviewWindowOpen) {
+            $review = $reviews->get($item->id);
             $row = [
+                'review'           => $review ? [
+                    'id'       => $review->id,
+                    'rating'   => $review->rating,
+                    'comment'  => $review->comment,
+                    'can_edit' => $review->canBeEdited(),
+                ] : null,
+                'can_review'       => ! $review && $reviewWindowOpen,
                 'id'               => $item->id,
                 'product_id'       => $item->product_id,
                 'product_name'     => $item->product_name,
+                // Real numeric seller id (used by the app to open the store)
+                'seller_id'        => $item->seller_id,
+                'seller_name'      => $item->seller
+                    ? (! empty($item->seller->business_name)
+                        ? $item->seller->business_name
+                        : trim($item->seller->first_name . ' ' . $item->seller->last_name))
+                    : null,
                 'image_url'        => $item->product ? $this->imageUrl($item->product) : null,
                 'quantity'         => $item->quantity,
                 'unit_price'       => (float) $item->unit_price,
@@ -84,6 +117,9 @@ class BuyerOrderController extends Controller
             'shipping_name'    => $order->shipping_name,
             'shipping_address' => $order->shipping_address,
             'shipping_phone'   => $order->shipping_phone,
+            'return_status'    => $latestReturn?->status,
+            'return_id'        => $latestReturn?->id,
+            'can_return'       => $canReturn,
             'items'            => $items->values(),
         ];
     }
@@ -103,17 +139,33 @@ class BuyerOrderController extends Controller
         $validated = $request->validate([
             // Mobile: only cod is accepted; 422 for gcash/paymongo
             'payment_method'   => ['required', 'in:cod'],
-            'shipping_name'    => ['required', 'string', 'max:255'],
-            'shipping_address' => ['required', 'string', 'max:500'],
-            'shipping_phone'   => ['required', 'string', 'max:20'],
+            // address_id (address book) — when present, shipping_* are copied
+            // from the saved address at order time (snapshot). Legacy clients
+            // that send shipping_* directly still work.
+            'address_id'       => ['nullable', 'integer'],
+            'shipping_name'    => ['required_without:address_id', 'nullable', 'string', 'max:255'],
+            'shipping_address' => ['required_without:address_id', 'nullable', 'string', 'max:500'],
+            'shipping_phone'   => ['required_without:address_id', 'nullable', 'string', 'max:20'],
             'idempotency_key'  => ['nullable', 'string', 'max:64'],
             'cart_item_ids'    => ['nullable', 'array'],
             'cart_item_ids.*'  => ['integer'],
+            'voucher_code'     => ['nullable', 'string', 'max:50'],
         ], [
             'payment_method.in' => 'GCash is not available yet. Please choose Cash on Delivery.',
         ]);
 
         $user = $request->user();
+
+        // ── Address book snapshot ─────────────────────────────────────────────
+        if (! empty($validated['address_id'])) {
+            $address = BuyerAddress::where('buyer_id', $user->id)->find($validated['address_id']);
+            if (! $address) {
+                return response()->json(['message' => 'Address not found.'], 404);
+            }
+            $validated['shipping_name']    = $address->recipient_name;
+            $validated['shipping_address'] = mb_substr($address->fullAddress(), 0, 500);
+            $validated['shipping_phone']   = $address->phone;
+        }
 
         // ── Idempotency: return existing order instead of a new one ──────────
         // Mirrors web OrderController@store idempotency check
@@ -249,6 +301,46 @@ class BuyerOrderController extends Controller
             }
 
             // 5. Create order (mirrors web)
+            $voucherDiscount = 0.0;
+            $voucherUsage    = null;
+            $appliedVoucher  = null;
+
+            if (! empty($validated['voucher_code'])) {
+                $code    = strtoupper(trim($validated['voucher_code']));
+                $voucher = Voucher::where('code', $code)->first();
+
+                if (! $voucher || ! $voucher->isValid()) {
+                    DB::rollBack();
+                    return response()->json(['message' => 'Invalid or expired voucher code.'], 422);
+                }
+
+                $vu = VoucherUsage::where('voucher_id', $voucher->id)
+                    ->where('user_id', $user->id)
+                    ->first();
+
+                if (! $vu) {
+                    DB::rollBack();
+                    return response()->json(['message' => 'You need to claim this voucher first.'], 422);
+                }
+
+                if ($vu->used_at !== null) {
+                    DB::rollBack();
+                    return response()->json(['message' => 'You have already used this voucher.'], 422);
+                }
+
+                if ($total < $voucher->min_purchase) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Minimum spend of ₱' . number_format($voucher->min_purchase, 2) . ' required for this voucher.',
+                    ], 422);
+                }
+
+                $voucherDiscount = (float) $voucher->calculateDiscount($total);
+                $total           = max(0, round($total - $voucherDiscount, 2));
+                $voucherUsage    = $vu;
+                $appliedVoucher  = $voucher;
+            }
+
             $order = Order::create([
                 'buyer_id'        => $user->id,
                 'total'           => $total,
@@ -265,6 +357,15 @@ class BuyerOrderController extends Controller
                 $item['order_id'] = $order->id;
             }
             OrderItem::insert($orderItems);
+
+            // Record voucher usage (mirrors web OrderController)
+            if ($appliedVoucher && $voucherUsage) {
+                $voucherUsage->update([
+                    'order_id'        => $order->id,
+                    'discount_amount' => $voucherDiscount,
+                    'used_at'         => now(),
+                ]);
+            }
 
             // 6. Update StockLog reference_id with the new order id — mirrors web
             StockLog::where('reference_id', null)
@@ -285,10 +386,11 @@ class BuyerOrderController extends Controller
             Log::info("Mobile order {$order->id} placed by buyer {$user->id}");
 
             return response()->json([
-                'message'      => 'Order placed successfully!',
-                'order_id'     => $order->id,
-                'order_number' => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
-                'total'        => (float) $total,
+                'message'          => 'Order placed successfully!',
+                'order_id'         => $order->id,
+                'order_number'     => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
+                'voucher_discount' => $voucherDiscount,
+                'total'            => (float) $order->total,
             ], 201);
 
         } catch (\Throwable $e) {
@@ -299,6 +401,86 @@ class BuyerOrderController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // POST /api/buyer/checkout/preview
+    //
+    // Returns merchandise total, discount, and final total without placing an
+    // order. Also returns why a voucher is not applicable ("Spend ₱X more").
+    // ─────────────────────────────────────────────────────────────────────────
+    public function checkoutPreview(Request $request): JsonResponse
+    {
+        if ($err = $this->buyerGuard($request)) return $err;
+
+        $request->validate([
+            'voucher_code' => ['nullable', 'string', 'max:50'],
+            'cart_item_ids'=> ['nullable', 'array'],
+            'cart_item_ids.*' => ['integer'],
+        ]);
+
+        $user = $request->user();
+
+        // Load cart
+        $cart = Cart::with('items.product')
+            ->where('buyer_id', $user->id)
+            ->first();
+
+        $cartItems = $cart?->items ?? collect();
+        if (! empty($request->input('cart_item_ids'))) {
+            $cartItems = $cartItems->filter(
+                fn ($i) => in_array($i->id, $request->input('cart_item_ids'))
+            );
+        }
+
+        $merchandise = $cartItems->sum(function ($item) {
+            $product = $item->product;
+            if (! $product) return 0;
+            $price = $product->sale_price ?? $product->price;
+            return (float) $price * $item->quantity;
+        });
+
+        $discount      = 0.0;
+        $voucherStatus = null; // null = no voucher provided
+
+        if (! empty($request->input('voucher_code'))) {
+            $code    = strtoupper(trim($request->input('voucher_code')));
+            $voucher = Voucher::where('code', $code)->first();
+
+            if (! $voucher) {
+                $voucherStatus = 'Voucher not found.';
+            } elseif ($voucher->status !== 'active' || now()->gt($voucher->valid_until)) {
+                $voucherStatus = 'This voucher has expired.';
+            } elseif (now()->lt($voucher->valid_from)) {
+                $voucherStatus = 'This voucher is not yet available.';
+            } else {
+                $vu = VoucherUsage::where('voucher_id', $voucher->id)
+                    ->where('user_id', $user->id)
+                    ->first();
+                if (! $vu) {
+                    $voucherStatus = 'You need to claim this voucher first.';
+                } elseif ($vu->used_at !== null) {
+                    $voucherStatus = 'You have already used this voucher.';
+                } elseif ($merchandise < $voucher->min_purchase) {
+                    $gap = $voucher->min_purchase - $merchandise;
+                    $voucherStatus = 'Spend ₱' . number_format($gap, 2) . ' more to use this voucher.';
+                } else {
+                    $discount      = (float) $voucher->calculateDiscount($merchandise);
+                    $voucherStatus = 'applied';
+                }
+            }
+        }
+
+        $total = max(0, round($merchandise - $discount, 2));
+
+        return response()->json([
+            'data' => [
+                'merchandise_total' => round($merchandise, 2),
+                'voucher_discount'  => $discount,
+                'total'             => $total,
+                'voucher_status'    => $voucherStatus,
+            ],
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // GET /api/buyer/orders
     // Paginated list of the buyer's own orders. Optional ?status= filter.
     // ─────────────────────────────────────────────────────────────────────────
@@ -306,7 +488,7 @@ class BuyerOrderController extends Controller
     {
         if ($err = $this->buyerGuard($request)) return $err;
 
-        $query = Order::with(['items.product'])
+        $query = Order::with(['items.product', 'items.seller:id,business_name,first_name,last_name'])
             ->where('buyer_id', $request->user()->id)
             ->orderBy('created_at', 'desc');
 
@@ -336,7 +518,7 @@ class BuyerOrderController extends Controller
     {
         if ($err = $this->buyerGuard($request)) return $err;
 
-        $order = Order::with(['items.product'])
+        $order = Order::with(['items.product', 'items.seller:id,business_name,first_name,last_name'])
             ->where('buyer_id', $request->user()->id)
             ->find($id);
 
@@ -345,6 +527,53 @@ class BuyerOrderController extends Controller
         }
 
         return response()->json(['data' => $this->formatOrder($order, true)]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // POST /api/buyer/orders/{id}/receive
+    // Buyer confirms delivery: shipped → completed.
+    //   404 if not the buyer's order; 200 (idempotent) if already completed;
+    //   422 if not shipped, or if the order has an open return request.
+    // The Order model's updated hook creates the "Order completed" notification.
+    // ─────────────────────────────────────────────────────────────────────────
+    public function receive(Request $request, int $id): JsonResponse
+    {
+        if ($err = $this->buyerGuard($request)) return $err;
+
+        $result = DB::transaction(function () use ($request, $id) {
+            $order = Order::where('buyer_id', $request->user()->id)
+                ->lockForUpdate()
+                ->find($id);
+
+            if (! $order) {
+                return response()->json(['message' => 'Order not found.'], 404);
+            }
+            if ($order->status === 'completed') {
+                return response()->json(['message' => 'Order already received.'], 200);
+            }
+            if ($order->status !== 'shipped') {
+                return response()->json([
+                    'message' => 'Only shipped orders can be marked as received.',
+                    'errors'  => ['order' => ['Only shipped orders can be marked as received.']],
+                ], 422);
+            }
+            if ($order->hasOpenReturn()) {
+                return response()->json([
+                    'message' => 'This order has an open return request and cannot be marked as received yet.',
+                    'errors'  => ['order' => ['This order has an open return request and cannot be marked as received yet.']],
+                ], 422);
+            }
+
+            $order->update(['status' => 'completed']);
+
+            return response()->json(['message' => 'Order received. Thank you!']);
+        });
+
+        if ($result->getStatusCode() === 200) {
+            Log::info("Mobile order {$id} received by buyer {$request->user()->id}");
+        }
+
+        return $result;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -415,6 +644,29 @@ class BuyerOrderController extends Controller
             }
 
             $order->update(['status' => 'cancelled']);
+
+            // Restore voucher if one was used on this order
+            $voucherUsage = VoucherUsage::where('order_id', $order->id)->first();
+            if ($voucherUsage) {
+                $voucher = Voucher::find($voucherUsage->voucher_id);
+                if ($voucher && $voucher->valid_until->gt(now())) {
+                    // Reset the usage record back to claimed-only (not used)
+                    $voucherUsage->update([
+                        'order_id'        => null,
+                        'discount_amount' => null,
+                        'used_at'         => null,
+                    ]);
+                    // Decrement global usage_count
+                    $voucher->decrement('usage_count');
+                    // If voucher was auto-expired due to usage limit, re-activate
+                    if ($voucher->status === 'expired'
+                        && $voucher->usage_limit !== null
+                        && $voucher->fresh()->usage_count < $voucher->usage_limit)
+                    {
+                        $voucher->update(['status' => 'active']);
+                    }
+                }
+            }
 
             DB::commit();
 

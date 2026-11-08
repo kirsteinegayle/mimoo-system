@@ -1,6 +1,6 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
- * @see routes/web.php:966
+ * @see routes/web.php:1772
  * @route '/category/{category}'
  */
 export const show = (args: { category: string | number } | [category: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -14,7 +14,7 @@ show.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:966
+ * @see routes/web.php:1772
  * @route '/category/{category}'
  */
 show.url = (args: { category: string | number } | [category: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -41,7 +41,7 @@ show.url = (args: { category: string | number } | [category: string | number ] |
 }
 
 /**
- * @see routes/web.php:966
+ * @see routes/web.php:1772
  * @route '/category/{category}'
  */
 show.get = (args: { category: string | number } | [category: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -49,7 +49,7 @@ show.get = (args: { category: string | number } | [category: string | number ] |
     method: 'get',
 })
 /**
- * @see routes/web.php:966
+ * @see routes/web.php:1772
  * @route '/category/{category}'
  */
 show.head = (args: { category: string | number } | [category: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -58,7 +58,7 @@ show.head = (args: { category: string | number } | [category: string | number ] 
 })
 
     /**
- * @see routes/web.php:966
+ * @see routes/web.php:1772
  * @route '/category/{category}'
  */
     const showForm = (args: { category: string | number } | [category: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -67,7 +67,7 @@ show.head = (args: { category: string | number } | [category: string | number ] 
     })
 
             /**
- * @see routes/web.php:966
+ * @see routes/web.php:1772
  * @route '/category/{category}'
  */
         showForm.get = (args: { category: string | number } | [category: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -75,7 +75,7 @@ show.head = (args: { category: string | number } | [category: string | number ] 
             method: 'get',
         })
             /**
- * @see routes/web.php:966
+ * @see routes/web.php:1772
  * @route '/category/{category}'
  */
         showForm.head = (args: { category: string | number } | [category: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

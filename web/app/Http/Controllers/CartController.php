@@ -159,9 +159,16 @@ class CartController extends Controller
             $cart = Cart::getOrCreateForBuyer($user->id);
 
             // Check if product+variant already in cart
+            $variantIdToCheck = $validated['variant_id'] ?? null;
             $cartItem = CartItem::where('cart_id', $cart->id)
                 ->where('product_id', $product->id)
-                ->where('variant_id', $validated['variant_id'] ?? null)
+                ->where(function($query) use ($variantIdToCheck) {
+                    if ($variantIdToCheck === null) {
+                        $query->whereNull('variant_id');
+                    } else {
+                        $query->where('variant_id', $variantIdToCheck);
+                    }
+                })
                 ->first();
 
             if ($cartItem) {
@@ -185,12 +192,18 @@ class CartController extends Controller
                 $message = 'Cart updated successfully.';
             } else {
                 // Create new cart item
-                $cartItem = CartItem::create([
+                $cartItemData = [
                     'cart_id' => $cart->id,
                     'product_id' => $product->id,
-                    'variant_id' => $validated['variant_id'] ?? null,
                     'quantity' => $requestedQuantity,
-                ]);
+                ];
+                
+                // Only add variant_id if it's set
+                if (isset($validated['variant_id']) && $validated['variant_id']) {
+                    $cartItemData['variant_id'] = $validated['variant_id'];
+                }
+                
+                $cartItem = CartItem::create($cartItemData);
                 
                 // Store variant snapshot if variant selected
                 if ($variantData) {

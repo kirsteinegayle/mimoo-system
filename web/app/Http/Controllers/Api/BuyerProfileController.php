@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Rules\PhilippineMobile;
 use App\Rules\ValidName;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Buyer profile read/update — Sanctum Bearer auth.
@@ -31,7 +30,7 @@ class BuyerProfileController extends Controller
         'last_name',
         'middle_initial',
         'sex',
-        'contact_number',
+        // contact_number removed — use POST /api/buyer/change-phone/request instead
         'birthday',
         'region',
         'province',
@@ -44,21 +43,30 @@ class BuyerProfileController extends Controller
     // ── Shared profile shape ──────────────────────────────────────────────────
     private function profileData($user): array
     {
+        $photoUrl = null;
+        if (! empty($user->profile_photo)) {
+            $photoUrl = url(Storage::url($user->profile_photo));
+        }
+
         return [
-            'id'               => $user->id,
-            'first_name'       => $user->first_name,
-            'last_name'        => $user->last_name,
-            'middle_initial'   => $user->middle_initial,
-            'email'            => $user->email,
-            'contact_number'   => $user->contact_number,
-            'birthday'         => $user->birthday?->format('Y-m-d'),
-            'sex'              => $user->sex,
-            'region'           => $user->region,
-            'province'         => $user->province,
-            'district'         => $user->district,
-            'municipality_city'=> $user->municipality_city,
-            'barangay'         => $user->barangay,
-            'street_address'   => $user->street_address,
+            'id'                => $user->id,
+            'first_name'        => $user->first_name,
+            'last_name'         => $user->last_name,
+            // Display name — the website profile edits `name` only, so the app
+            // shows this to reflect web changes (additive field).
+            'name'              => $user->name,
+            'middle_initial'    => $user->middle_initial,
+            'email'             => $user->email,
+            'contact_number'    => $user->contact_number,
+            'birthday'          => $user->birthday?->format('Y-m-d'),
+            'sex'               => $user->sex,
+            'region'            => $user->region,
+            'province'          => $user->province,
+            'district'          => $user->district,
+            'municipality_city' => $user->municipality_city,
+            'barangay'          => $user->barangay,
+            'street_address'    => $user->street_address,
+            'profile_photo_url' => $photoUrl,
         ];
     }
 
@@ -98,10 +106,8 @@ class BuyerProfileController extends Controller
         $user = $request->user();
 
         // Normalize contact_number before validation (same as web registration)
+        // Normalize name fields before validation
         $input = $request->only(self::UPDATABLE);
-        if (isset($input['contact_number'])) {
-            $input['contact_number'] = PhilippineMobile::normalize($input['contact_number']);
-        }
         if (isset($input['first_name'])) {
             $input['first_name'] = trim($input['first_name']);
         }
@@ -114,13 +120,7 @@ class BuyerProfileController extends Controller
             'last_name'       => ['nullable', 'string', new ValidName()],
             'middle_initial'  => ['nullable', 'string', 'max:1'],
             'sex'             => ['nullable', 'in:male,female'],
-            // contact_number unique, ignoring own record
-            'contact_number'  => [
-                'nullable',
-                'string',
-                new PhilippineMobile(),
-                Rule::unique('users', 'contact_number')->ignore($user->id),
-            ],
+            // contact_number no longer updatable via PUT /profile — use change-phone flow
             // birthday: before:-18 years, consistent with web registration
             'birthday'        => ['nullable', 'date', 'before:-18 years'],
             'region'          => ['nullable', 'string', 'max:100'],
@@ -130,8 +130,7 @@ class BuyerProfileController extends Controller
             'barangay'        => ['nullable', 'string', 'max:100'],
             'street_address'  => ['nullable', 'string', 'max:255'],
         ], [
-            'birthday.before'           => 'You must be at least 18 years old.',
-            'contact_number.unique'     => 'Mobile number is already in use.',
+            'birthday.before' => 'You must be at least 18 years old.',
         ])->validate();
 
         // Also update the computed `name` field for backward compat

@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.verified' => EnsureAdminSession::class,
             'approved' => \App\Http\Middleware\EnsureAccountApproved::class,
+            'role' => \App\Http\Middleware\EnsureRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

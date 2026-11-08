@@ -68,6 +68,7 @@ export default function Cart() {
   const [updating, setUpdating] = useState<number | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [availableVouchers, setAvailableVouchers] = useState<any[]>([]);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const [loadingVouchers, setLoadingVouchers] = useState(false);
 
   const peso = (n: number) => '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -123,6 +124,14 @@ export default function Cart() {
     }
   }
 
+  // Fetch cart on mount
+  useEffect(() => {
+    fetchCart();
+    if (user && user.account_type === 'buyer') {
+      fetchWishlistCount();
+    }
+  }, []);
+
   async function fetchCart() {
     try {
       const response = await fetch('/api/cart');
@@ -136,6 +145,16 @@ export default function Cart() {
       toast.error('Failed to load cart');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchWishlistCount() {
+    try {
+      const response = await fetch('/api/wishlist/count');
+      const data = await response.json();
+      setWishlistCount(data.count || 0);
+    } catch (error) {
+      console.error('Failed to fetch wishlist count:', error);
     }
   }
 
@@ -246,7 +265,7 @@ export default function Cart() {
     return (
       <div className="min-h-screen bg-[#f5f4f8] font-[Syne]">
         <Head title="My Cart" />
-        <BuyerHeader user={user} onLogout={handleLogout} cartCount={0} />
+        <BuyerHeader user={user} onLogout={handleLogout} cartCount={0} wishlistCount={wishlistCount} />
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-700 mx-auto"></div>
@@ -275,6 +294,7 @@ export default function Cart() {
         user={user}
         onLogout={handleLogout}
         cartCount={cart?.total_items || 0}
+        wishlistCount={wishlistCount}
       />
 
       <main className="max-w-[1100px] mx-auto px-6 py-6 pb-16">

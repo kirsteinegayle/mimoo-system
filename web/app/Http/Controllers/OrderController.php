@@ -409,12 +409,13 @@ class OrderController extends Controller
     private function getOrdersData(): array
     {
         return Order::where('buyer_id', Auth::id())
-            ->with(['items.product', 'items.seller'])
+            ->with(['items.product', 'items.seller', 'assignedCourier'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn($order) => [
                 'id' => $order->id,
                 'order_number' => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
+                'waybill_number' => $order->waybill_number,
                 'total' => (float) $order->total,
                 'status' => $order->status,
                 'payment_status' => $order->payment_status,
@@ -422,6 +423,10 @@ class OrderController extends Controller
                 'item_count' => $order->items->count(),
                 'created_at' => $order->created_at->format('M d, Y'),
                 'can_cancel' => $order->canBeCancelled(),
+                // Tracking information
+                'tracking_message' => $order->tracking_message,
+                'tracking_updated_at' => $order->tracking_updated_at?->format('M d, Y h:i A'),
+                'assigned_courier_name' => $order->assignedCourier ? ($order->assignedCourier->company_name ?? $order->assignedCourier->business_name) : null,
                 'items' => $order->items->map(fn($item) => [
                     'id' => $item->id,
                     'product_id' => $item->product_id,
@@ -443,7 +448,7 @@ class OrderController extends Controller
      */
     public function show(int $id): Response
     {
-        $order = Order::with('items.product')->findOrFail($id);
+        $order = Order::with(['items.product', 'assignedCourier', 'currentFacility'])->findOrFail($id);
 
         // Ensure buyer can only see their own order
         if ($order->buyer_id !== Auth::id()) {
@@ -454,6 +459,7 @@ class OrderController extends Controller
             'order' => [
                 'id' => $order->id,
                 'order_number' => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
+                'waybill_number' => $order->waybill_number,
                 'total' => (float) $order->total,
                 'status' => $order->status,
                 'payment_status' => $order->payment_status,
@@ -463,6 +469,12 @@ class OrderController extends Controller
                 'shipping_phone' => $order->shipping_phone,
                 'created_at' => $order->created_at->format('M d, Y h:i A'),
                 'can_cancel' => $order->canBeCancelled(),
+                // Tracking information
+                'tracking_status' => $order->tracking_status,
+                'tracking_message' => $order->tracking_message,
+                'tracking_updated_at' => $order->tracking_updated_at?->format('M d, Y h:i A'),
+                'assigned_courier_name' => $order->assignedCourier ? ($order->assignedCourier->company_name ?? $order->assignedCourier->business_name) : null,
+                'current_facility_name' => $order->currentFacility ? $order->currentFacility->facility_name : null,
                 'items' => $order->items->map(fn($item) => [
                     'id' => $item->id,
                     'product_id' => $item->product_id,

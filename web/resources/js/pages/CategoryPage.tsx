@@ -48,10 +48,12 @@ export default function CategoryPage({ auth, category, products: initialProducts
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [loading, setLoading] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
   useEffect(() => {
     if (user && user.account_type === 'buyer') {
       fetchCartCount();
+      fetchWishlistCount();
     }
   }, []);
 
@@ -62,6 +64,16 @@ export default function CategoryPage({ auth, category, products: initialProducts
       setCartCount(data.count || 0);
     } catch (error) {
       console.error('Failed to fetch cart count:', error);
+    }
+  }
+
+  async function fetchWishlistCount() {
+    try {
+      const response = await fetch('/api/wishlist/count');
+      const data = await response.json();
+      setWishlistCount(data.count || 0);
+    } catch (error) {
+      console.error('Failed to fetch wishlist count:', error);
     }
   }
 
@@ -81,6 +93,7 @@ export default function CategoryPage({ auth, category, products: initialProducts
         user={user}
         onLogout={handleLogout}
         cartCount={cartCount}
+        wishlistCount={wishlistCount}
         currentCategory={category}
       />
 

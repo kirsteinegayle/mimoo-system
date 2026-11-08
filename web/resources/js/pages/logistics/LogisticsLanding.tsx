@@ -1,4 +1,4 @@
-﻿import { Link, useForm } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import { FormEvent, ReactNode, useState, useEffect } from 'react';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
@@ -335,7 +335,7 @@ export default function LogisticsLanding() {
                                                         className={`w-full flex items-center justify-center gap-2 bg-gradient-to-r ${card.color} hover:opacity-90 disabled:opacity-60 text-white text-sm font-semibold px-5 py-3 rounded-full transition`}
                                                     >
                                                         {processing ? 'Logging in...' : `Log in as ${card.role}`}
-                                                        {!processing && <span>â†’</span>}
+                                                        {!processing && <span></span>}
                                                     </button>
                                                 </form>
 
@@ -503,7 +503,7 @@ export default function LogisticsLanding() {
                                 </ul>
                                 <Link href={role.link} className="inline-flex items-center gap-2 text-[#3B1F6B] font-semibold text-sm hover:gap-3 transition-all">
                                     {role.cta}
-                                    <span>â†’</span>
+                                    <span></span>
                                 </Link>
                             </div>
                         ))}
@@ -527,7 +527,7 @@ export default function LogisticsLanding() {
                                 className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-[#3B1F6B] text-sm font-semibold px-5 py-2.5 rounded-full transition"
                             >
                                 Join the team
-                                <span>â†’</span>
+                                <span></span>
                             </Link>
                         </div>
 
@@ -725,7 +725,7 @@ export default function LogisticsLanding() {
                             className="inline-flex items-center gap-2 bg-[#9B5DE5] hover:bg-[#8B4FD1] text-white text-sm font-semibold px-6 py-3 rounded-full transition"
                         >
                             Join the team
-                            <span>â†’</span>
+                            <span></span>
                         </Link>
                     </div>
                 </div>

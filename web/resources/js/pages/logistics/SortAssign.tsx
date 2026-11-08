@@ -1,4 +1,4 @@
-﻿import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { ReactNode, useState } from 'react';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
@@ -12,6 +12,7 @@ interface ParcelData {
     buyer_phone: string;
     buyer_address: string;
     barangay: string;
+    city: string; // Municipality/City for courier matching
     seller_name: string;
     total_amount: number;
     payment_method: string;
@@ -26,6 +27,10 @@ interface CourierData {
     name: string;
     contact_person: string;
     email: string;
+    service_areas: string[]; // Array of barangays/cities they service
+    region: string;
+    province: string;
+    municipality_city: string;
 }
 
 interface Props {
@@ -50,6 +55,52 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [selectedParcels, setSelectedParcels] = useState<number[]>([]);
     const [selectedCourier, setSelectedCourier] = useState<string>('');
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [assigning, setAssigning] = useState(false);
+
+    // Get eligible couriers based on selected parcels' cities/municipalities
+    const getEligibleCouriers = () => {
+        if (selectedParcels.length === 0) {
+            // No parcels selected - show all couriers
+            return couriers;
+        }
+
+        // Get cities/municipalities of selected parcels
+        const selectedCities = new Set<string>();
+        parcels.forEach(parcel => {
+            if (selectedParcels.includes(parcel.id)) {
+                selectedCities.add(parcel.city);
+            }
+        });
+
+        // Filter couriers that service at least one of the selected cities
+        // If courier has no service_areas defined, they are eligible for all (fallback)
+        const eligible = couriers.filter(courier => {
+            if (!courier.service_areas || courier.service_areas.length === 0) {
+                // No service areas defined - courier services everywhere (temporary fallback)
+                return true;
+            }
+
+            // Check if courier services any of the selected cities/municipalities
+            // Match by city/municipality name (case-insensitive)
+            return Array.from(selectedCities).some(city => 
+                courier.service_areas.some(area => {
+                    const areaLower = area.toLowerCase();
+                    const cityLower = city.toLowerCase();
+                    
+                    // Match if area contains city OR city contains area
+                    // Examples:
+                    // - "City of Calamba" matches "Calamba"
+                    // - "Santa Cruz" matches "City of Santa Cruz"
+                    return areaLower.includes(cityLower) || cityLower.includes(areaLower);
+                })
+            );
+        });
+
+        return eligible;
+    };
+
+    const eligibleCouriers = getEligibleCouriers();
 
     const handleLogout = () => {
         router.post('/logout');
@@ -92,7 +143,7 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
         }
     };
 
-    const handleAssign = () => {
+    const handleAssign = async () => {
         if (selectedParcels.length === 0) {
             alert('Please select at least one parcel');
             return;
@@ -101,8 +152,52 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
             alert('Please select a courier');
             return;
         }
-        alert(`Assigning ${selectedParcels.length} parcel(s) to ${selectedCourier}...`);
-        // TODO: Call backend API to assign parcels
+        
+        // Show confirmation modal
+        setShowAssignModal(true);
+    };
+    
+    const confirmAssign = async () => {
+        setAssigning(true);
+        
+        try {
+            const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+            const response = await fetch('/api/logistics/assign-to-courier', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || '',
+                },
+                body: JSON.stringify({
+                    parcel_ids: selectedParcels,
+                    courier_id: parseInt(selectedCourier),
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                setShowAssignModal(false);
+                alert(data.message || 'Parcels assigned successfully!');
+                
+                // Show errors if any
+                if (data.errors && data.errors.length > 0) {
+                    console.warn('Assignment errors:', data.errors);
+                }
+                
+                // Reload page to refresh parcel list
+                router.reload();
+            } else {
+                setShowAssignModal(false);
+                alert(data.error || 'Failed to assign parcels');
+            }
+        } catch (error) {
+            console.error('Assignment error:', error);
+            setShowAssignModal(false);
+            alert('Failed to assign parcels. Please try again.');
+        } finally {
+            setAssigning(false);
+        }
     };
 
     const navItems = [
@@ -448,6 +543,9 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
                                                 <div className="text-sm font-medium text-blue-900">
                                                     {selectedParcels.length} parcel(s) selected
                                                 </div>
+                                                <div className="text-xs text-blue-700 mt-1">
+                                                    {eligibleCouriers.length} eligible courier(s) for selected destinations
+                                                </div>
                                             </div>
                                         )}
 
@@ -459,14 +557,19 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
                                                 onChange={(e) => setSelectedCourier(e.target.value)}
                                             >
                                                 <option value="" className="text-gray-900">-- Select Courier --</option>
-                                                {couriers.length > 0 ? (
-                                                    couriers.map((courier) => (
+                                                {eligibleCouriers.length > 0 ? (
+                                                    eligibleCouriers.map((courier) => (
                                                         <option key={courier.id} value={courier.id} className="text-gray-900">
                                                             {courier.name}
                                                         </option>
                                                     ))
                                                 ) : (
-                                                    <option disabled className="text-gray-500">No approved couriers available</option>
+                                                    <option disabled className="text-gray-500">
+                                                        {selectedParcels.length > 0 
+                                                            ? 'No couriers service the selected destinations' 
+                                                            : 'No approved couriers available'
+                                                        }
+                                                    </option>
                                                 )}
                                             </select>
 
@@ -511,6 +614,99 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
                     </main>
                 </div>
             </div>
+            
+            {/* Assignment Confirmation Modal */}
+            {showAssignModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !assigning && setShowAssignModal(false)}>
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        {/* Icon */}
+                        <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-600">
+                                <circle cx="5.5" cy="17.5" r="3.5"/>
+                                <circle cx="18.5" cy="17.5" r="3.5"/>
+                                <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
+                            </svg>
+                        </div>
+                        
+                        {/* Title */}
+                        <h3 className="text-2xl font-bold text-center text-gray-900 mb-2" style={fontSyncopate}>
+                            Confirm Assignment
+                        </h3>
+                        
+                        {/* Description */}
+                        <p className="text-center text-gray-600 mb-6">
+                            You are about to assign <span className="font-bold text-gray-900">{selectedParcels.length} parcel(s)</span> to:
+                        </p>
+                        
+                        {/* Courier Info Card */}
+                        <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4 mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                    {eligibleCouriers.find(c => c.id.toString() === selectedCourier)?.name.charAt(0) || 'C'}
+                                </div>
+                                <div>
+                                    <div className="font-bold text-gray-900">
+                                        {eligibleCouriers.find(c => c.id.toString() === selectedCourier)?.name || 'Courier'}
+                                    </div>
+                                    <div className="text-sm text-gray-600">
+                                        {eligibleCouriers.find(c => c.id.toString() === selectedCourier)?.email || ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Info Note */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+                            <div className="flex gap-2">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-600 flex-shrink-0 mt-0.5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="16" x2="12" y2="12"/>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                </svg>
+                                <div className="text-sm text-blue-800">
+                                    <p className="font-semibold mb-1">What happens next?</p>
+                                    <ul className="text-xs space-y-1">
+                                        <li>• Courier will receive assignment notification</li>
+                                        <li>• They have 24 hours to accept or reject</li>
+                                        <li>• Parcels will move to "In Transit" status</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Action Buttons */}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowAssignModal(false)}
+                                disabled={assigning}
+                                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmAssign}
+                                disabled={assigning}
+                                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {assigning ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Assigning...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                        Confirm Assignment
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

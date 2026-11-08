@@ -83,6 +83,14 @@ class Product extends Model
     }
 
     /**
+     * Get buyer reviews for this product.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
      * Get total units sold.
      */
     public function getTotalSoldAttribute(): int

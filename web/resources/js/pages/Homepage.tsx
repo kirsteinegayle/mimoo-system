@@ -9,6 +9,7 @@ import {
   Search,
   ShoppingCart,
   LogOut,
+  Heart,
 } from "lucide-react";
 import { SignupModal } from "@/components/signup-modal";
 import { toast } from "sonner";
@@ -695,6 +696,7 @@ function Header({
   avatarUrl = null,
   notificationCount = 5,
   cartCount = 0,
+  wishlistCount = 0,
   categories = [],
   onSearch,
   onLogout,
@@ -705,6 +707,7 @@ function Header({
   avatarUrl?: string | null;
   notificationCount?: number;
   cartCount?: number;
+  wishlistCount?: number;
   categories?: Category[];
   onSearch?: (query: string, category?: string) => void;
   onLogout?: () => void;
@@ -963,7 +966,7 @@ function Header({
             </div>
           </form>
 
-          {/* Bell + cart, side by side on the same row as the search bar */}
+          {/* Bell + Wishlist + Cart, side by side on the same row as the search bar */}
           <div className="flex shrink-0 items-center gap-4 sm:gap-5">
             <button
               aria-label="Notifications"
@@ -972,6 +975,15 @@ function Header({
               <Bell className="h-5 w-5" />
               <CountBadge count={notificationCount} />
             </button>
+
+            <Link
+              href="/wishlist"
+              aria-label="Wishlist"
+              className="relative flex items-center text-white transition-colors hover:text-white/80"
+            >
+              <Heart className="h-5 w-5" />
+              <CountBadge count={wishlistCount} />
+            </Link>
 
             <Link
               href="/cart"
@@ -1002,6 +1014,7 @@ export default function Homepage({ auth, initialProducts = [], filters = {}, vou
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [activeFilters, setActiveFilters] = useState(filters);
   const [voucherList, setVoucherList] = useState(vouchers);
@@ -1059,6 +1072,7 @@ export default function Homepage({ auth, initialProducts = [], filters = {}, vou
   useEffect(() => {
     if (user && user.account_type === 'buyer') {
       fetchCartCount();
+      fetchWishlistCount();
     }
   }, []);
 
@@ -1069,6 +1083,16 @@ export default function Homepage({ auth, initialProducts = [], filters = {}, vou
       setCartCount(data.count || 0);
     } catch (error) {
       console.error('Failed to fetch cart count:', error);
+    }
+  }
+
+  async function fetchWishlistCount() {
+    try {
+      const response = await fetch('/api/wishlist/count');
+      const data = await response.json();
+      setWishlistCount(data.count || 0);
+    } catch (error) {
+      console.error('Failed to fetch wishlist count:', error);
     }
   }
 
@@ -1169,6 +1193,7 @@ export default function Homepage({ auth, initialProducts = [], filters = {}, vou
         username={user ? user.name : "Guest"} 
         onLogout={user ? handleLogout : undefined}
         cartCount={cartCount}
+        wishlistCount={wishlistCount}
         categories={CATEGORIES}
         onSearch={handleSearch}
         onCategoryFilter={handleCategoryFilter}

@@ -1,4 +1,4 @@
-﻿import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { ReactNode, useState, useRef, useEffect } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 
@@ -57,7 +57,10 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
     };
 
     const handleQRCodeSuccess = async (decodedText: string) => {
-        console.log('QR Code scanned:', decodedText);
+        console.log('🔴 QR Code scanned RAW:', decodedText);
+        console.log('🔴 QR Code scanned LENGTH:', decodedText.length);
+        console.log('🔴 QR Code scanned BYTES:', Array.from(decodedText).map(c => c.charCodeAt(0)));
+        
         setScannedParcel(decodedText);
         setLastScan(decodedText);
         
@@ -625,15 +628,15 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
                                                         <div className="col-span-2 space-y-3">
                                                             <div className="flex justify-between">
                                                                 <span className="text-xs font-semibold text-gray-500">Order Number</span>
-                                                                <span className="text-sm font-medium">{scannedOrderData.order_number}</span>
+                                                                <span className="text-sm font-medium text-gray-900">{scannedOrderData.order_number}</span>
                                                             </div>
                                                             <div className="flex justify-between">
                                                                 <span className="text-xs font-semibold text-gray-500">Buyer</span>
-                                                                <span className="text-sm font-medium">{scannedOrderData.buyer_name}</span>
+                                                                <span className="text-sm font-medium text-gray-900">{scannedOrderData.buyer_name}</span>
                                                             </div>
                                                             <div className="flex justify-between">
                                                                 <span className="text-xs font-semibold text-gray-500">Contact Number</span>
-                                                                <span className="text-sm font-medium">{scannedOrderData.buyer_phone}</span>
+                                                                <span className="text-sm font-medium text-gray-900">{scannedOrderData.buyer_phone}</span>
                                                             </div>
                                                             <div className="flex justify-between">
                                                                 <span className="text-xs font-semibold text-gray-500">Payment</span>
@@ -643,7 +646,7 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
                                                             </div>
                                                             <div className="flex justify-between">
                                                                 <span className="text-xs font-semibold text-gray-500">Delivery Address</span>
-                                                                <span className="text-sm font-medium text-right">{scannedOrderData.buyer_address}</span>
+                                                                <span className="text-sm font-medium text-right text-gray-900">{scannedOrderData.buyer_address}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -718,11 +721,11 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
                                             )}
                                         </div>
 
-                                        {/* Awaiting Pickup Parcels Table */}
+                                        {/* Confirmed Parcels Table */}
                                         <div className="border-t border-gray-200 pt-6 mt-6">
                                             <div className="mb-4">
-                                                <h3 className="text-lg font-bold text-gray-900 mb-1" style={fontSyncopate}>Awaiting Pickup</h3>
-                                                <p className="text-sm text-gray-500">Orders ready for pickup from sellers ({incomingParcels.length} parcels)</p>
+                                                <h3 className="text-lg font-bold text-gray-900 mb-1" style={fontSyncopate}>Confirmed Parcels</h3>
+                                                <p className="text-sm text-gray-500">Scanned and confirmed parcels ready for sorting ({incomingParcels.length} parcels)</p>
                                             </div>
                                             
                                             {incomingParcels.length === 0 ? (
@@ -733,8 +736,8 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
                                                         <circle cx="17" cy="17" r="3"/>
                                                         <circle cx="7" cy="7" r="3"/>
                                                     </svg>
-                                                    <p className="text-sm font-medium text-gray-900 mb-1">No parcels awaiting pickup</p>
-                                                    <p className="text-xs text-gray-500">Parcels will appear here when sellers mark orders as packed</p>
+                                                    <p className="text-sm font-medium text-gray-900 mb-1">No confirmed parcels yet</p>
+                                                    <p className="text-xs text-gray-500">Scan QR codes and confirm to see parcels here</p>
                                                 </div>
                                             ) : (
                                                 <div className="space-y-3">

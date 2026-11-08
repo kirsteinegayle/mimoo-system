@@ -32,9 +32,80 @@ export default function CourierApplications({ auth, applications = [] }: Props) 
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
     const [selectedApp, setSelectedApp] = useState<CourierApplication | null>(null);
+    const [isApproving, setIsApproving] = useState(false);
+    const [isRejecting, setIsRejecting] = useState(false);
 
     const handleLogout = () => {
         router.post('/logout');
+    };
+    
+    const handleApprove = async (courierId: number) => {
+        if (!confirm('Are you sure you want to approve this courier application?')) {
+            return;
+        }
+        
+        setIsApproving(true);
+        
+        try {
+            const response = await fetch(`/api/logistics/courier-applications/${courierId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert('Courier application approved! They can now access the courier dashboard.');
+                setSelectedApp(null);
+                router.reload(); // Reload page to refresh data
+            } else {
+                alert(data.error || 'Failed to approve application');
+            }
+        } catch (error) {
+            console.error('Error approving courier:', error);
+            alert('Network error. Please try again.');
+        } finally {
+            setIsApproving(false);
+        }
+    };
+    
+    const handleReject = async (courierId: number) => {
+        const reason = prompt('Enter rejection reason (optional):');
+        
+        if (reason === null) {
+            return; // User cancelled
+        }
+        
+        setIsRejecting(true);
+        
+        try {
+            const response = await fetch(`/api/logistics/courier-applications/${courierId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ reason: reason || 'Application rejected by logistics team' }),
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert('Courier application rejected.');
+                setSelectedApp(null);
+                router.reload(); // Reload page to refresh data
+            } else {
+                alert(data.error || 'Failed to reject application');
+            }
+        } catch (error) {
+            console.error('Error rejecting courier:', error);
+            alert('Network error. Please try again.');
+        } finally {
+            setIsRejecting(false);
+        }
     };
 
     const filteredApplications = applications.filter(app => {
@@ -341,12 +412,12 @@ export default function CourierApplications({ auth, applications = [] }: Props) 
                                                         {getStatusBadge(app.status)}
                                                     </td>
                                                     <td className="px-4 py-4 text-right">
-                                                        <button
-                                                            onClick={() => setSelectedApp(app)}
+                                                        <Link
+                                                            href={`/logistics/courier-applications/${app.id}`}
                                                             className="text-xs font-semibold text-[#3B1F6B] hover:underline"
                                                         >
                                                             View Details
-                                                        </button>
+                                                        </Link>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -408,11 +479,19 @@ export default function CourierApplications({ auth, applications = [] }: Props) 
                             <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
                                 {selectedApp.status === 'pending' && (
                                     <>
-                                        <button className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition">
-                                            Approve Application
+                                        <button 
+                                            onClick={() => handleApprove(selectedApp.id)}
+                                            disabled={isApproving || isRejecting}
+                                            className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition"
+                                        >
+                                            {isApproving ? 'Approving...' : 'Approve Application'}
                                         </button>
-                                        <button className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition">
-                                            Reject Application
+                                        <button 
+                                            onClick={() => handleReject(selectedApp.id)}
+                                            disabled={isApproving || isRejecting}
+                                            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition"
+                                        >
+                                            {isRejecting ? 'Rejecting...' : 'Reject Application'}
                                         </button>
                                     </>
                                 )}

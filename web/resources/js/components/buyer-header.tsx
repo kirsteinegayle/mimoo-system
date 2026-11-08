@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { Link, router } from "@inertiajs/react";
-import { Bell, Search, ShoppingCart, LogOut, Package } from "lucide-react";
+import { Bell, Search, ShoppingCart, LogOut, Package, Heart } from "lucide-react";
 
 interface BuyerHeaderProps {
   user?: any;
   cartCount?: number;
+  wishlistCount?: number;
   notificationCount?: number;
   onSearch?: (query: string) => void;
   onLogout?: () => void;
@@ -39,6 +40,7 @@ function CountBadge({ count }: { count: number }) {
 export function BuyerHeader({
   user,
   cartCount = 0,
+  wishlistCount = 0,
   notificationCount = 5,
   onSearch,
   onLogout,
@@ -183,6 +185,27 @@ export function BuyerHeader({
               <Bell className="h-5 w-5" />
               <CountBadge count={notificationCount} />
             </button>
+
+            {/* Wishlist — Link for logged-in, button for guests */}
+            {isLoggedIn ? (
+              <Link
+                href="/wishlist"
+                aria-label="Wishlist"
+                className="relative flex items-center text-white transition-colors hover:text-white/80"
+              >
+                <Heart className="h-5 w-5" />
+                <CountBadge count={wishlistCount} />
+              </Link>
+            ) : (
+              <button
+                onClick={onGuestAction}
+                aria-label="Wishlist"
+                className="relative flex items-center text-white transition-colors hover:text-white/80"
+              >
+                <Heart className="h-5 w-5" />
+                <CountBadge count={wishlistCount} />
+              </button>
+            )}
 
             {/* Cart — Link for logged-in, button for guests */}
             {isLoggedIn ? (

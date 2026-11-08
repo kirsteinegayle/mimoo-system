@@ -43,6 +43,7 @@ interface OrderItem {
 interface Order {
   id: number;
   order_number: string;
+  waybill_number?: string | null;
   total: number;
   status: string; // pending | paid | shipped | completed | cancelled | failed
   payment_status: string;
@@ -51,6 +52,9 @@ interface Order {
   item_count: number;
   created_at: string;
   can_cancel: boolean;
+  tracking_message?: string | null;
+  tracking_updated_at?: string | null;
+  assigned_courier_name?: string | null;
   items: OrderItem[];
 }
 
@@ -80,7 +84,8 @@ const TABS: { key: TabKey; label: string; icon: typeof Wallet; empty: string }[]
 function tabOf(o: Order): Exclude<TabKey, "all"> {
   if (o.status === "cancelled" || o.status === "failed") return "cancelled";
   if (o.status === "completed") return "to_review"; // delivered; button switches to "Edit review" once reviewed
-  if (o.status === "shipped") return "to_receive";
+  if (o.status === "in_transit") return "to_receive"; // assigned to courier and in transit
+  if (o.status === "shipped") return "to_receive"; // confirmed by logistics
   if (o.status === "packed") return "to_ship"; // packed but not yet picked up by courier
   if (o.status === "paid") return "to_ship";
   // pending: online payments still need paying, COD goes straight to "To Ship"
@@ -92,6 +97,7 @@ const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
   to_pay: { text: "Awaiting payment", cls: "bg-yellow-50 text-yellow-800 border-yellow-200" },
   to_ship: { text: "Preparing to ship", cls: "bg-blue-50 text-blue-800 border-blue-200" },
   packed: { text: "Packed, waiting for pickup", cls: "bg-indigo-50 text-indigo-800 border-indigo-200" },
+  in_transit: { text: "In transit", cls: "bg-purple-50 text-purple-800 border-purple-200" },
   to_receive: { text: "On the way", cls: "bg-purple-50 text-purple-800 border-purple-200" },
   to_review: { text: "Delivered", cls: "bg-green-50 text-green-800 border-green-200" },
   cancelled: { text: "Cancelled", cls: "bg-red-50 text-red-700 border-red-200" },
@@ -342,6 +348,24 @@ export default function MyPurchases() {
                           {order.item_count} {order.item_count === 1 ? "item" : "items"}
                         </div>
                         <div>Placed on {order.created_at}</div>
+                        {order.waybill_number && (
+                          <div className="text-[0.76rem] font-mono text-[#4B2E7E]">
+                            {order.waybill_number}
+                          </div>
+                        )}
+                        {order.tracking_message && (
+                          <div className="flex items-start gap-2 mt-2 text-[0.82rem] text-[#4B2E7E] bg-purple-50 px-3 py-2 rounded-lg border border-purple-200">
+                            <Truck className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <div className="font-medium">{order.tracking_message}</div>
+                              {order.tracking_updated_at && (
+                                <div className="text-[0.72rem] text-[#6E6570] mt-0.5">
+                                  {order.tracking_updated_at}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 

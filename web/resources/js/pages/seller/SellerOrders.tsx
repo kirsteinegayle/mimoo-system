@@ -54,6 +54,7 @@ interface SellerOrder {
   tracking?: Tracking | null;
   delivered_on?: string | null;
   is_new?: boolean;
+  total?: number; // Total from backend (includes items + shipping)
 }
 
 interface PageProps {
@@ -83,8 +84,17 @@ const DONE_MSG: Record<string, string> = {
 
 const peso = (n: number) => "₱" + n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const subtotal = (o: SellerOrder) => o.items.reduce((s, i) => s + i.qty * i.price, 0);
-const orderTotal = (o: SellerOrder) => subtotal(o) + (o.shipping ?? 0);
-const waybillNo = (o: SellerOrder) => o.waybill_no || "MMO-" + o.order_number.replace("#", "");
+const orderTotal = (o: SellerOrder) => o.total ?? (subtotal(o) + (o.shipping ?? 0)); // Use backend total if available
+const waybillNo = (o: SellerOrder) => {
+  const waybill = o.waybill_no || "MMO-" + o.order_number.replace("#", "");
+  console.log('waybillNo function called:', {
+    order_id: o.id,
+    order_number: o.order_number,
+    waybill_no_from_object: o.waybill_no,
+    computed_result: waybill,
+  });
+  return waybill;
+};
 const defaultWeight = (o: SellerOrder) => o.weight ?? Math.round(o.items.reduce((s, i) => s + i.qty * 0.3, 0) * 10) / 10;
 
 const S = { fill: "none", viewBox: "0 0 24 24" } as const;
@@ -146,6 +156,9 @@ function Waybill({ o, weight }: { o: SellerOrder; weight: number }) {
     computed_waybill_no: no,
   });
   
+  // Additional log RIGHT before QR code generation
+  console.log(`🔷 QR CODE VALUE FOR ORDER ${o.id}: "${no}"`);
+  
   return (
     <div className="wb">
       <div className="wb-top"><span className="wb-brand">MIMOO.</span><span className="wb-tag">Shipping label · Standard</span></div>
@@ -156,7 +169,7 @@ function Waybill({ o, weight }: { o: SellerOrder; weight: number }) {
             <div className="no">{no}</div>
           </div>
           <div style={{ width: '80px', height: '80px', border: '2px solid #ddd', padding: '4px', background: 'white', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <QRCodeSVG value={no} size={72} level="L" />
+            <QRCodeSVG value={no} size={72} level="M" />
           </div>
         </div>
       </div>
@@ -411,7 +424,7 @@ export default function SellerOrders({ orders: initial }: PageProps) {
         date: order.created_at,
         created_at: order.created_at,
         payment: order.payment_method || 'Cash on Delivery',
-        shipping: 50, // Default shipping fee
+        shipping: 0, // Not used - total from backend already includes shipping
         note: order.note || null,
         items: order.items || [],
         weight: null,
@@ -420,6 +433,7 @@ export default function SellerOrders({ orders: initial }: PageProps) {
         tracking: null,
         delivered_on: null,
         is_new: false,
+        total: order.total, // Add total from backend
       }));
       
       setOrders(mappedOrders);

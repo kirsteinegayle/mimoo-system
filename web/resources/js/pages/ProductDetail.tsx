@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
-import { Star, ChevronRight, Minus, Plus, Package, ShoppingCart, Flag } from "lucide-react";
+import { Star, ChevronRight, Minus, Plus, Package, ShoppingCart, Flag, Heart } from "lucide-react";
 import { BuyerHeader } from "@/components/buyer-header";
 import { toast } from "sonner";
 
@@ -234,6 +234,9 @@ function ProductInfo({
   onReportProduct,
   selectedVariant,
   onVariantChange,
+  inWishlist,
+  wishlistLoading,
+  toggleWishlist,
 }: { 
   product: ProductDetailProps['product']; 
   role: UserRole;
@@ -241,6 +244,9 @@ function ProductInfo({
   onReportProduct: () => void;
   selectedVariant: Record<string, string>;
   onVariantChange: (selection: Record<string, string>) => void;
+  inWishlist: boolean;
+  wishlistLoading: boolean;
+  toggleWishlist: () => void;
 }) {
   const [quantity, setQuantity] = useState(1);
   
@@ -421,36 +427,65 @@ function ProductInfo({
       )}
 
       {role === "buyer" && effectiveStock > 0 && (
-        <div className="flex gap-2">
-          <button 
-            onClick={handleAddToCart}
-            disabled={!isVariantComplete}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-violet-900 py-2.5 text-sm font-semibold text-violet-900 transition-colors hover:bg-violet-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Add to cart
-          </button>
-          <button 
-            onClick={async () => {
-              if (product.has_variants && !isVariantComplete) {
-                toast.error('Please select all options');
-                return;
-              }
-              // Add to cart with REPLACE mode (for Buy Now)
-              const cartItemData = await onAddToCart(quantity, currentVariant?.id, true);
-              
-              if (cartItemData && cartItemData.id) {
-                // Redirect to checkout with only this item selected
-                setTimeout(() => {
-                  router.visit(`/checkout?items=${cartItemData.id}`);
-                }, 500);
-              }
-            }}
-            disabled={!isVariantComplete}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-violet-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Buy now
-          </button>
+        <div className="space-y-3">
+          {/* Warning message if variants not selected */}
+          {product.has_variants && !isVariantComplete && (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <p className="text-sm font-medium text-amber-800">
+                ⚠️ Please select all product options above before adding to cart
+              </p>
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            <button
+              onClick={toggleWishlist}
+              disabled={wishlistLoading || (product.has_variants && !isVariantComplete)}
+              className={`flex items-center justify-center rounded-lg border p-2.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                inWishlist
+                  ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
+                  : 'border-neutral-300 text-neutral-600 hover:bg-neutral-50'
+              }`}
+              aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+            >
+              {wishlistLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <Heart className={`h-4 w-4 ${inWishlist ? 'fill-current' : ''}`} />
+              )}
+            </button>
+            <button 
+              onClick={handleAddToCart}
+              disabled={!isVariantComplete}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-violet-900 py-2.5 text-sm font-semibold text-violet-900 transition-colors hover:bg-violet-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!isVariantComplete ? 'Please select all product options first' : 'Add to cart'}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Add to cart
+            </button>
+            <button 
+              onClick={async () => {
+                if (product.has_variants && !isVariantComplete) {
+                  toast.error('Please select all options first');
+                  return;
+                }
+                // Add to cart with REPLACE mode (for Buy Now)
+                const cartItemData = await onAddToCart(quantity, currentVariant?.id, true);
+                
+                if (cartItemData && cartItemData.id) {
+                  // Redirect to checkout with only this item selected
+                  setTimeout(() => {
+                    router.visit(`/checkout?items=${cartItemData.id}`);
+                  }, 500);
+                }
+              }}
+              disabled={!isVariantComplete}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-violet-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!isVariantComplete ? 'Please select all product options first' : 'Buy now'}
+            >
+              Buy now
+            </button>
+          </div>
         </div>
       )}
 
@@ -568,6 +603,9 @@ export default function ProductDetail({ auth, product }: ProductDetailProps) {
   const user = auth?.user;
   const role: UserRole = user?.account_type ? (user.account_type as UserRole) : "guest";
   const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
+  const [inWishlist, setInWishlist] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<Record<string, string>>({});
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('misleading');
@@ -597,8 +635,17 @@ export default function ProductDetail({ auth, product }: ProductDetailProps) {
   useEffect(() => {
     if (user && user.account_type === 'buyer') {
       fetchCartCount();
+      fetchWishlistCount();
+      checkInWishlist();
     }
   }, []);
+
+  // Check wishlist status when variant changes
+  useEffect(() => {
+    if (user && user.account_type === 'buyer') {
+      checkInWishlist();
+    }
+  }, [selectedVariant]);
 
   async function fetchCartCount() {
     try {
@@ -607,6 +654,84 @@ export default function ProductDetail({ auth, product }: ProductDetailProps) {
       setCartCount(data.count || 0);
     } catch (error) {
       console.error('Failed to fetch cart count:', error);
+    }
+  }
+
+  async function fetchWishlistCount() {
+    try {
+      const response = await fetch('/api/wishlist/count');
+      const data = await response.json();
+      setWishlistCount(data.count || 0);
+    } catch (error) {
+      console.error('Failed to fetch wishlist count:', error);
+    }
+  }
+
+  async function checkInWishlist() {
+    try {
+      const response = await fetch('/api/wishlist/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        },
+        body: JSON.stringify({
+          product_id: product.id,
+          variant_id: currentVariant?.id,
+        }),
+      });
+      const data = await response.json();
+      setInWishlist(data.in_wishlist || false);
+    } catch (error) {
+      console.error('Failed to check wishlist:', error);
+    }
+  }
+
+  async function toggleWishlist() {
+    if (!user) {
+      router.visit('/login');
+      return;
+    }
+
+    if (user.account_type !== 'buyer') {
+      toast.error('Only buyers can use wishlist');
+      return;
+    }
+
+    // If product has variants but none selected, show error
+    if (product.has_variants && !currentVariant) {
+      toast.error('Please select product options first');
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      const response = await fetch('/api/wishlist/toggle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        },
+        body: JSON.stringify({
+          product_id: product.id,
+          variant_id: currentVariant?.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setInWishlist(data.in_wishlist);
+        setWishlistCount(data.wishlist_count || 0);
+        toast.success(data.message || (data.in_wishlist ? 'Added to wishlist' : 'Removed from wishlist'));
+      } else {
+        toast.error(data.error || 'Failed to update wishlist');
+      }
+    } catch (error) {
+      console.error('Wishlist toggle error:', error);
+      toast.error('Failed to update wishlist');
+    } finally {
+      setWishlistLoading(false);
     }
   }
 
@@ -717,6 +842,7 @@ export default function ProductDetail({ auth, product }: ProductDetailProps) {
         user={user}
         onLogout={handleLogout}
         cartCount={cartCount}
+        wishlistCount={wishlistCount}
       />
 
       <main className="mx-auto max-w-[1100px] bg-white px-6 py-6 sm:py-8">
@@ -739,6 +865,9 @@ export default function ProductDetail({ auth, product }: ProductDetailProps) {
             onReportProduct={handleReportProduct}
             selectedVariant={selectedVariant}
             onVariantChange={setSelectedVariant}
+            inWishlist={inWishlist}
+            wishlistLoading={wishlistLoading}
+            toggleWishlist={toggleWishlist}
           />
         </div>
 

@@ -22,10 +22,44 @@ class ProductController extends Controller
 
     private function visibleQuery()
     {
-        return Product::with('seller:id,business_name,first_name,last_name')
+        return Product::with('seller:id,business_name,first_name,last_name,name,profile_photo')
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
             ->where('status', 'active')
             ->where('approval_status', 'approved');
         // SoftDeletes trait automatically excludes deleted_at IS NOT NULL rows.
+    }
+
+    /**
+     * Adds total_sold exactly like the web homepage (routes/web.php '/homepage'):
+     * SUM(quantity) of order items whose order is not cancelled/failed and was
+     * created in the last 7 days.
+     */
+    private function withTotalSold($query)
+    {
+        return $query->withCount(['orderItems as total_sold' => function ($q) {
+            $q->selectRaw('COALESCE(SUM(quantity), 0)')
+                ->whereHas('order', function ($o) {
+                    $o->where('status', '!=', 'cancelled')
+                        ->where('status', '!=', 'failed')
+                        ->where('created_at', '>=', now()->subDays(7));
+                });
+        }]);
+    }
+
+    /** Store photo URL served through GET /api/buyer/seller-photo/{type}/{filename}. */
+    public static function sellerPhotoUrl(?string $path): ?string
+    {
+        if (empty($path)) {
+            return null;
+        }
+        if (str_starts_with($path, 'store_photos/profiles/')) {
+            return url('/api/buyer/seller-photo/profile/' . basename($path));
+        }
+        if (str_starts_with($path, 'store_photos/covers/')) {
+            return url('/api/buyer/seller-photo/cover/' . basename($path));
+        }
+        return null; // anything else is not served
     }
 
     // ── Build absolute image URL for a given product + index ─────────────────
@@ -85,9 +119,17 @@ class ProductController extends Controller
             'seller_id'      => $product->seller_id,
             'seller_name'    => $product->seller
                 ? ($product->seller->business_name
-                    ?? trim($product->seller->first_name . ' ' . $product->seller->last_name))
+                    ?: ($product->seller->name
+                        ?: trim($product->seller->first_name . ' ' . $product->seller->last_name)))
                 : null,
+            // Same definition as the web homepage (7-day sold count)
+            'total_sold'     => (int) ($product->total_sold ?? 0),
             'has_variants'   => (bool) $product->has_variants,
+            // Real review aggregates (null avg when there are no reviews)
+            'rating_avg'     => $product->reviews_avg_rating !== null
+                ? round((float) $product->reviews_avg_rating, 1)
+                : null,
+            'rating_count'   => (int) ($product->reviews_count ?? 0),
         ];
     }
 
@@ -104,9 +146,11 @@ class ProductController extends Controller
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
+                // Same fields as the web homepage search
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('category', 'like', "%{$search}%");
+                  ->orWhere('category', 'like', "%{$search}%")
+                  ->orWhere('brand', 'like', "%{$search}%");
             });
         }
 
@@ -120,16 +164,22 @@ class ProductController extends Controller
             $query->where('seller_id', (int) $request->input('seller_id'));
         }
 
-        // Sort
-        switch ($request->input('sort', 'newest')) {
+        $this->withTotalSold($query);
+
+        // Sort — default 'popular' mirrors the web homepage ordering
+        // (total_sold desc, then newest).
+        switch ($request->input('sort', 'popular')) {
+            case 'newest':
+                $query->orderBy('created_at', 'desc');
+                break;
             case 'price_asc':
                 $query->orderByRaw('COALESCE(sale_price, price) ASC');
                 break;
             case 'price_desc':
                 $query->orderByRaw('COALESCE(sale_price, price) DESC');
                 break;
-            default: // newest
-                $query->orderBy('created_at', 'desc');
+            default: // popular
+                $query->orderBy('total_sold', 'desc')->orderBy('created_at', 'desc');
         }
 
         $perPage  = min((int) $request->input('per_page', 12), 50);
@@ -148,12 +198,35 @@ class ProductController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // GET /api/buyer/categories
+    // Distinct categories of buyer-visible products, with product counts.
+    // ─────────────────────────────────────────────────────────────────────────
+    public function categories(): JsonResponse
+    {
+        $rows = Product::where('status', 'active')
+            ->where('approval_status', 'approved')
+            ->whereNotNull('category')
+            ->where('category', '!=', '')
+            ->selectRaw('category, COUNT(*) as product_count')
+            ->groupBy('category')
+            ->orderBy('category')
+            ->get();
+
+        return response()->json([
+            'data' => $rows->map(fn ($r) => [
+                'name'          => $r->category,
+                'product_count' => (int) $r->product_count,
+            ])->values(),
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // GET /api/buyer/products/{id}
     // Single product detail.
     // ─────────────────────────────────────────────────────────────────────────
     public function show(int $id): JsonResponse
     {
-        $product = $this->visibleQuery()->findOrFail($id);
+        $product = $this->withTotalSold($this->visibleQuery())->findOrFail($id);
 
         $images = $product->images ?? [];
         $imageUrls = [];
@@ -182,6 +255,9 @@ class ProductController extends Controller
                 'is_low_stock'   => $product->isLowStock(),
                 'low_stock_threshold' => $product->low_stock_threshold,
                 'created_at'     => $product->created_at->toISOString(),
+                'main_image_index' => (int) ($product->main_image_index ?? 0),
+                // Same as web product page seller block
+                'seller_profile_photo_url' => self::sellerPhotoUrl($product->seller?->profile_photo),
             ]),
         ]);
     }
