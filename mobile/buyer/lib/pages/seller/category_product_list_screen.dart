@@ -287,14 +287,7 @@ class _CategoryProductCard extends StatelessWidget {
                       style:
                           _pjs(size: 12, weight: FontWeight.w600, height: 1.3)),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.star_rounded,
-                          size: 11, color: Colors.amber.shade500),
-                      Text(' ${product.rating}',
-                          style: _pjs(size: 11, weight: FontWeight.w600)),
-                    ],
-                  ),
+                  // Rating hidden — StoreProduct has no real review data.
                   const SizedBox(height: 4),
                   Text('₱${product.price.toStringAsFixed(0)}',
                       style: _pjs(

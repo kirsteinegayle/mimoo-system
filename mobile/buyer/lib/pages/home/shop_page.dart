@@ -1,14 +1,20 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/product.dart';
 import '../../services/product_repository.dart';
+import '../../services/api_service.dart';
+import '../../services/category_repository.dart';
+import '../../widgets/mimoo_logo.dart';
+import '../../widgets/motion.dart';
 import '../../state/auth_service.dart';
 import '../../state/wishlist_provider.dart';
 import '../auth/login_page.dart';
 import 'product_detail_page.dart';
 import '../../state/cart_provider.dart';
 import '../notifications/notifications_page.dart';
+import '../../widgets/notification_badge.dart';
 import '../search/search_page.dart';
 import '../account/account_settings_page.dart';
 import '../../utils/animations.dart';
@@ -49,6 +55,7 @@ class _FlashProduct {
   final String imageUrl;
 }
 
+// ignore: unused_element
 const _flashProducts = [
   _FlashProduct(
     name: 'ANC Wireless Headphones',
@@ -111,20 +118,11 @@ class _CategoryItem {
   final String label;
 }
 
-const _categories = [
-  _CategoryItem(icon: Icons.star_outline_rounded, label: 'All'),
-  _CategoryItem(icon: Icons.pets_outlined, label: 'Pet Supplies'),
-  _CategoryItem(icon: Icons.devices_outlined, label: 'Electronics'),
-  _CategoryItem(icon: Icons.woman_outlined, label: "Women's"),
-  _CategoryItem(icon: Icons.man_outlined, label: "Men's"),
-  _CategoryItem(icon: Icons.child_friendly_outlined, label: 'Kids & Baby'),
-  _CategoryItem(icon: Icons.yard_outlined, label: 'Home & Garden'),
-  _CategoryItem(icon: Icons.directions_run_outlined, label: 'Sports'),
-  _CategoryItem(icon: Icons.health_and_safety_outlined, label: 'Health'),
-  _CategoryItem(icon: Icons.menu_book_outlined, label: 'Books'),
-  _CategoryItem(icon: Icons.restaurant_outlined, label: 'Food'),
-  _CategoryItem(icon: Icons.chair_outlined, label: 'Furniture'),
-  _CategoryItem(icon: Icons.diamond_outlined, label: 'Jewelry'),
+// Same categories and labels as the website (exact products.category values,
+// see services/category_repository.dart). Index 0 = All.
+final _categories = [
+  const _CategoryItem(icon: Icons.star_outline_rounded, label: 'All'),
+  ...kWebCategories.map((c) => _CategoryItem(icon: c.icon, label: c.name)),
 ];
 
 // ── Shop Page ─────────────────────────────────────────────────────────────────
@@ -138,6 +136,7 @@ class ShopPage extends StatefulWidget {
 
 class _ShopPageState extends State<ShopPage> {
   late PageController _bannerPageCtrl;
+  // ignore: prefer_final_fields
   int _bannerIndex = 0;
   Timer? _bannerTimer;
 
@@ -145,45 +144,29 @@ class _ShopPageState extends State<ShopPage> {
   List<Product> _recommended = [];
   bool _recLoading = true;
   String? _recError;
+
+  /// Selected category (exact products.category value); null = All.
+  String? _category;
   int _recPage = 1;
   bool _recHasMore = false;
   bool _recLoadingMore = false;
 
-  final List<_BannerData> _banners = const [
-    _BannerData(
-      tag: '✨ New Drop',
-      title: 'Seoul Spring',
-      subtitle: 'Fresh Urban Aesthetics\n& Linen Essentials.',
-      description:
-          'Effortless silhouettes with instant\nsame-day express drop off.',
-      cta: 'Explore Now',
-      ctaIcon: Icons.bolt,
-      imageUrl: 'https://picsum.photos/seed/banner1/200/200',
-      gradient: [Color(0xFF34175B), Color(0xFF6B38D4)],
-    ),
-    _BannerData(
-      tag: '🔥 Super Payday Sale',
-      title: 'Up to 70% Off',
-      subtitle: 'Shop from trusted local sellers,\nall in one place.',
-      description:
-          'Discover curated tech, minimalist\nlifestyle goods & verified artisans.',
-      cta: 'Claim Voucher',
-      ctaIcon: Icons.arrow_forward,
-      imageUrl: 'https://picsum.photos/seed/banner2/200/200',
-      gradient: [Color(0xFF1E0042), Color(0xFF34175B)],
-    ),
-    _BannerData(
-      tag: '⚡ Flash Tech',
-      title: 'Up to 60% Off',
-      subtitle: 'Smart Home &\nNoise Cancelling Audio.',
-      description:
-          'Verified high-performance gear\nwith 24-month local warranty.',
-      cta: 'Shop Audio',
-      ctaIcon: Icons.headphones,
-      imageUrl: 'https://picsum.photos/seed/banner3/200/200',
-      gradient: [Color(0xFF570014), Color(0xFF34175B)],
-    ),
+  // ── Hero banner slides ────────────────────────────────────────────────────
+  // 3 real images from assets/images/ (banner_hero_* from the design team).
+  // NOTE: banner_hero_1.png is 821.5 KB — larger than ideal but kept as-is
+  // per task instructions (do not modify originals >300 KB).
+  static const _heroSlides = <_HeroSlide>[
+    _HeroSlide(asset: 'assets/images/banner_hero_1.png'),
+    _HeroSlide(asset: 'assets/images/banner_hero_2.jpg'),
+    _HeroSlide(asset: 'assets/images/banner_hero_3.jpg'),
   ];
+
+  // ── Old fake banner data (hidden — kept for reference) ──────────────────────
+  // final List<_BannerData> _banners = const [
+  //   _BannerData(tag: '✨ New Drop', ...picsum...),
+  //   _BannerData(tag: '🔥 Super Payday Sale', ...picsum...),
+  //   _BannerData(tag: '⚡ Flash Tech', ...picsum...),
+  // ];
 
   @override
   void initState() {
@@ -206,7 +189,9 @@ class _ShopPageState extends State<ShopPage> {
       final page = await ProductRepository.instance.fetchProducts(
         page: _recPage,
         perPage: 12,
-        sort: 'newest',
+        // Same ordering as the web homepage (best-selling 7 days, then newest)
+        sort: 'popular',
+        category: _category,
       );
       if (!mounted) return;
       setState(() {
@@ -220,7 +205,7 @@ class _ShopPageState extends State<ShopPage> {
       if (!mounted) return;
       setState(() {
         _recLoading = false;
-        _recError = 'Could not load products. Tap to retry.';
+        _recError = ApiService.friendlyError(e);
       });
     }
   }
@@ -235,7 +220,9 @@ class _ShopPageState extends State<ShopPage> {
       final page = await ProductRepository.instance.fetchProducts(
         page: _recPage,
         perPage: 12,
-        sort: 'newest',
+        // Same ordering as the web homepage (best-selling 7 days, then newest)
+        sort: 'popular',
+        category: _category,
       );
       if (!mounted) return;
       setState(() {
@@ -254,9 +241,11 @@ class _ShopPageState extends State<ShopPage> {
 
   void _startAutoScroll() {
     _bannerTimer?.cancel();
-    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+    _bannerTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted || !_bannerPageCtrl.hasClients) return;
-      final next = (_bannerIndex + 1) % _banners.length;
+      final next = (_bannerIndex + 1) % _heroSlides.length;
+      // Update index immediately so dots reflect the new slide right away.
+      setState(() => _bannerIndex = next);
       _bannerPageCtrl.animateToPage(
         next,
         duration: const Duration(milliseconds: 500),
@@ -287,7 +276,9 @@ class _ShopPageState extends State<ShopPage> {
               SliverToBoxAdapter(child: _buildCategoryRow()),
               SliverToBoxAdapter(child: _buildQuickChips()),
               SliverToBoxAdapter(child: _buildFlashSaleSection()),
-              SliverToBoxAdapter(child: _buildPromoBanner()),
+              // Promo banner hidden — fake "FREE Shipping today only" offer,
+              // not on the website and no backend.
+              // SliverToBoxAdapter(child: _buildPromoBanner()),
               SliverToBoxAdapter(child: _buildRecommendedHeader()),
               _buildRecommendedGrid(),
               SliverToBoxAdapter(child: _buildLoadMoreFooter()),
@@ -313,15 +304,8 @@ class _ShopPageState extends State<ShopPage> {
           children: [
             Row(
               children: [
-                Text(
-                  'mimoo',
-                  style: GoogleFonts.plusJakartaSans(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                ),
+                // Brand logo (framed tile — logo has an opaque background)
+                const MimooLogo(size: 58, framed: true),
                 const Spacer(),
                 Text(
                   'Home',
@@ -345,16 +329,8 @@ class _ShopPageState extends State<ShopPage> {
                         child: Icon(Icons.notifications_none_outlined,
                             color: Colors.white, size: 22),
                       ),
-                      Positioned(
-                        right: 2,
-                        top: 2,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                              color: Color(0xFFFF3B5C), shape: BoxShape.circle),
-                        ),
-                      ),
+                      // Real unread count (hidden when 0)
+                      const NotificationBadge(),
                     ],
                   ),
                 ),
@@ -414,31 +390,69 @@ class _ShopPageState extends State<ShopPage> {
     );
   }
 
-  // ── Hero Banner ─────────────────────────────────────────────────────────────
+  // ── Hero Banner (pure images, 3 slides, mouse-draggable on Chrome) ──────────
 
   Widget _buildBanner() {
     return Column(
       children: [
         SizedBox(
           height: 210,
-          child: PageView.builder(
-            controller: _bannerPageCtrl,
-            itemCount: _banners.length,
-            onPageChanged: (i) => setState(() => _bannerIndex = i),
-            itemBuilder: (_, i) => _BannerCard(
-              banner: _banners[i],
-              index: i,
-              currentIndex: _bannerIndex,
-              total: _banners.length,
+          // ScrollConfiguration: enable mouse drag on Flutter Web.
+          // Without PointerDeviceKind.mouse, Chrome users can only swipe on
+          // touch screens — mouse drag does nothing.
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(
+              dragDevices: {
+                PointerDeviceKind.touch,
+                PointerDeviceKind.mouse,
+              },
+            ),
+            child: PageView.builder(
+              controller: _bannerPageCtrl,
+              itemCount: _heroSlides.length,
+              physics: const BouncingScrollPhysics(),
+              onPageChanged: (i) => setState(() => _bannerIndex = i),
+              itemBuilder: (_, i) {
+                final slide = _heroSlides[i];
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.asset(
+                      slide.asset!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 210,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: MimooColors.surfaceChip,
+                        height: 210,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
         const SizedBox(height: 8),
-        BannerDots(
-          currentIndex: _bannerIndex,
-          total: _banners.length,
-          activeColor: MimooColors.primaryContainer,
-          inactiveColor: const Color(0xFFCCC4D1),
+        // Dot indicators
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_heroSlides.length, (i) {
+            final isActive = i == _bannerIndex;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: isActive ? 24 : 8,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isActive
+                    ? MimooColors.primaryContainer
+                    : const Color(0xFFCCC4D1),
+                borderRadius: BorderRadius.circular(9999),
+              ),
+            );
+          }),
         ),
       ],
     );
@@ -476,7 +490,15 @@ class _ShopPageState extends State<ShopPage> {
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (_, i) => _CategoryChip(
                 item: _categories[i],
-                isSelected: i == 0,
+                isSelected: i == 0
+                    ? _category == null
+                    : _categories[i].label == _category,
+                onTap: () {
+                  final next = i == 0 ? null : _categories[i].label;
+                  if (next == _category) return;
+                  setState(() => _category = next);
+                  _loadRecommended(refresh: true);
+                },
               ),
             ),
           ),
@@ -488,83 +510,20 @@ class _ShopPageState extends State<ShopPage> {
   // ── Quick Chips ──────────────────────────────────────────────────────────────
 
   Widget _buildQuickChips() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Row(
-        children: const [
-          _QuickChip(
-              icon: '⚡',
-              label: 'Flash Sale',
-              tag: 'HOT',
-              tagColor: MimooColors.flash),
-          SizedBox(width: 8),
-          _QuickChip(
-              icon: '✨',
-              label: 'New In',
-              tag: 'DAILY',
-              tagColor: MimooColors.secondary),
-          SizedBox(width: 8),
-          _QuickChip(
-              icon: '🎟️',
-              label: 'Vouchers',
-              tag: '-\$15 OFF',
-              tagColor: MimooColors.secondaryBright),
-          SizedBox(width: 8),
-          _QuickChip(
-              icon: '🔥',
-              label: 'Top Picks',
-              tag: 'TREND',
-              tagColor: MimooColors.secondary),
-        ],
-      ),
-    );
+    // Quick chips hidden — all 4 have fake tags ("HOT", "DAILY", "-$15 OFF", "TREND").
+    return const SizedBox.shrink();
   }
 
   // ── Flash Sale Section ───────────────────────────────────────────────────────
 
   Widget _buildFlashSaleSection() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 16, 12, 4),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.bolt, color: MimooColors.flash, size: 18),
-              const SizedBox(width: 4),
-              Text('Flash Sale',
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: MimooColors.onSurface)),
-              const SizedBox(width: 8),
-              const _CountdownTimer(),
-              const Spacer(),
-              Text('See All',
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      color: MimooColors.secondary,
-                      fontWeight: FontWeight.w600)),
-              const Icon(Icons.arrow_forward,
-                  size: 14, color: MimooColors.secondary),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 220,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _flashProducts.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (_, i) => _FlashCard(product: _flashProducts[i]),
-            ),
-          ),
-        ],
-      ),
-    );
+    // Flash Sale section hidden — no sale_end_date column, fake countdown timer + fake products.
+    return const SizedBox.shrink();
   }
 
   // ── Promo Banner (below Flash Sales) ─────────────────────────────────────────
 
+  // ignore: unused_element
   Widget _buildPromoBanner() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
@@ -662,7 +621,7 @@ class _ShopPageState extends State<ShopPage> {
                   color: MimooColors.onSurface)),
           Row(
             children: [
-              Text('Newest',
+              Text(_category ?? 'Best sellers',
                   style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
                       color: MimooColors.secondary,
@@ -715,7 +674,7 @@ class _ShopPageState extends State<ShopPage> {
               const SizedBox(height: 12),
               FilledButton.tonal(
                 onPressed: () => _loadRecommended(refresh: true),
-                child: Text('Retry',
+                child: Text('Try again',
                     style: GoogleFonts.plusJakartaSans(
                         fontSize: 13, fontWeight: FontWeight.w700)),
               ),
@@ -757,9 +716,13 @@ class _ShopPageState extends State<ShopPage> {
         delegate: SliverChildBuilderDelegate(
           (ctx, i) {
             final p = _recommended[i];
+            // Fade/slide in once per product (not on every rebuild/scroll),
+            // plus a subtle press effect.
             return StaggeredItem(
               index: i,
-              child: _ApiProductCard(
+              id: 'home-${p.id}',
+              child: PressScale(
+                child: _ApiProductCard(
                 product: p,
                 onTap: () {
                   final cart = CartProvider.of(ctx);
@@ -799,6 +762,7 @@ class _ShopPageState extends State<ShopPage> {
                     duration: const Duration(seconds: 1),
                   ));
                 },
+              ),
               ),
             );
           },
@@ -872,6 +836,13 @@ class _BannerData {
   final List<Color> gradient;
 }
 
+// ── Hero Slide (matching web Homepage HeroMainBanner) ──────────────────────────
+class _HeroSlide {
+  const _HeroSlide({this.asset});
+  final String? asset; // null = placeholder (no image)
+}
+
+// ignore: unused_element
 class _BannerCard extends StatelessWidget {
   const _BannerCard({
     required this.banner,
@@ -1121,14 +1092,16 @@ class _BannerCard extends StatelessWidget {
 // ── Category Chip ─────────────────────────────────────────────────────────────
 
 class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({required this.item, this.isSelected = false});
+  const _CategoryChip(
+      {required this.item, this.isSelected = false, this.onTap});
   final _CategoryItem item;
   final bool isSelected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
@@ -1164,6 +1137,7 @@ class _CategoryChip extends StatelessWidget {
 
 // ── Quick Chip ────────────────────────────────────────────────────────────────
 
+// ignore: unused_element
 class _QuickChip extends StatelessWidget {
   const _QuickChip({
     required this.icon,
@@ -1225,17 +1199,19 @@ class _CountdownTimer extends StatefulWidget {
 }
 
 class _CountdownTimerState extends State<_CountdownTimer> {
+  // ignore: prefer_final_fields
   int _seconds = 2 * 3600 + 45 * 60 + 18;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && _seconds > 0) {
-        setState(() => _seconds--);
-      }
-    });
+    // Flash sale countdown disabled — no sale_end_date column in DB.
+    // _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+    //   if (mounted && _seconds > 0) {
+    //     setState(() => _seconds--);
+    //   }
+    // });
   }
 
   @override
@@ -1301,6 +1277,7 @@ class _TimeBlock extends StatelessWidget {
 
 // ── Flash Card ────────────────────────────────────────────────────────────────
 
+// ignore: unused_element
 class _FlashCard extends StatelessWidget {
   const _FlashCard({required this.product});
   final _FlashProduct product;
@@ -1311,8 +1288,6 @@ class _FlashCard extends StatelessWidget {
         price: product.price,
         imageUrl: product.imageUrl,
         category: 'Flash Sale',
-        rating: 4.8,
-        reviewCount: product.claimed * 10,
       );
 
   @override
@@ -1462,11 +1437,6 @@ class _RecommendedCardState extends State<_RecommendedCard> {
         price: widget.product.price,
         imageUrl: widget.product.imageUrl,
         category: widget.product.badge,
-        rating: widget.product.rating,
-        reviewCount: int.tryParse(widget.product.reviews
-                .replaceAll('k', '000')
-                .replaceAll('.', '')) ??
-            0,
       );
 
   void _goToDetail(BuildContext ctx) {
@@ -1644,19 +1614,7 @@ class _RecommendedCardState extends State<_RecommendedCard> {
                               color: MimooColors.onSurface,
                               height: 1.3)),
                       const SizedBox(height: 4),
-                      // Rating
-                      Row(
-                        children: [
-                          const Icon(Icons.star_rounded,
-                              size: 11, color: MimooColors.starColor),
-                          const SizedBox(width: 2),
-                          Text(
-                              '${widget.product.rating} (${widget.product.reviews})',
-                              style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 9,
-                                  color: MimooColors.onSurfaceVariant)),
-                        ],
-                      ),
+                      // Rating hidden — sample card, no real reviews.
                       const SizedBox(height: 8),
                       // Price + add button
                       Row(
@@ -1880,6 +1838,21 @@ class _ApiProductCard extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                               color: MimooColors.onSurface,
                               height: 1.3)),
+                      // Real rating (hidden when there are no reviews)
+                      if (product.reviewCount > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 3),
+                          child: Row(children: [
+                            const Icon(Icons.star_rounded,
+                                size: 11, color: MimooColors.starColor),
+                            const SizedBox(width: 2),
+                            Text(
+                                '${product.rating.toStringAsFixed(1)} (${product.reviewCount})',
+                                style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 9,
+                                    color: MimooColors.onSurfaceVariant)),
+                          ]),
+                        ),
                       const Spacer(),
                       // Price
                       Row(

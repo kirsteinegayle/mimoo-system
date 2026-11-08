@@ -15,7 +15,7 @@ class ProductRepository {
   /// [perPage]  — items per page (default 12, max 50 enforced by API)
   /// [category] — filter by category string (pass null for all)
   /// [search]   — full-text search
-  /// [sort]     — 'newest' | 'price_asc' | 'price_desc'
+  /// [sort]     — 'popular' (web homepage order) | 'newest' | 'price_asc' | 'price_desc'
   Future<ProductPage> fetchProducts({
     int page = 1,
     int perPage = 12,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/product.dart';
 import '../../services/product_repository.dart';
+import '../../services/api_service.dart';
 import '../../state/cart_provider.dart';
 import '../../state/wishlist_provider.dart';
 import '../home/product_detail_page.dart';
@@ -113,7 +114,7 @@ class _SearchPageState extends State<SearchPage> {
         if (!mounted) return;
         setState(() {
           _loading = false;
-          _error = 'Could not load results. Tap to retry.';
+          _error = ApiService.friendlyError(e);
         });
       }
     });

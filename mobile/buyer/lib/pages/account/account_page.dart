@@ -3,6 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 import '../orders/orders_page.dart';
 import '../orders/track_order_page.dart';
 import 'account_settings_page.dart';
+import 'address_book_page.dart';
+import 'following_page.dart';
+import '../../widgets/mimoo_logo.dart';
+import '../voucher/voucher_wallet_page.dart';
+import '../notifications/notifications_page.dart';
+import '../chat/chat_page.dart';
+import '../orders/return_request_pages.dart';
 import '../../state/auth_service.dart';
 import '../../state/wishlist_provider.dart';
 import '../../state/cart_provider.dart';
@@ -65,8 +72,9 @@ class AccountPage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Row(
         children: [
-          Icon(Icons.shopping_bag_outlined, color: _kPrimary, size: 22),
-          const SizedBox(width: 8),
+          // Brand logo on a light app bar → framed tile with soft shadow
+          const MimooLogo(size: 46, framed: true),
+          const SizedBox(width: 10),
           Text('Account',
               style: _pjs(size: 18, weight: FontWeight.w800, color: _kText)),
         ],
@@ -157,11 +165,17 @@ class _MemberZone extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text(AuthService.instance.buyerName ?? 'Buyer',
-                              style: _pjs(
-                                  size: 18,
-                                  weight: FontWeight.w800,
-                                  color: Colors.white)),
+                          // Rebuilds when the name changes (incl. web edits).
+                          ValueListenableBuilder<String?>(
+                            valueListenable:
+                                AuthService.instance.buyerNameListenable,
+                            builder: (_, name, __) => Text(
+                                name ?? AuthService.instance.buyerName ?? 'Buyer',
+                                style: _pjs(
+                                    size: 18,
+                                    weight: FontWeight.w800,
+                                    color: Colors.white)),
+                          ),
                           const SizedBox(width: 6),
                           Icon(Icons.verified, size: 15, color: _kGreen),
                         ],
@@ -387,9 +401,10 @@ class _OrderShortcuts extends StatelessWidget {
 // ── My Services ───────────────────────────────────────────────────────────────
 class _MyServices extends StatelessWidget {
   static const _row2 = [
-    ('Invite Perks', Icons.card_giftcard_outlined, '+₱100', Color(0xFFFF6B00)),
-    ('Help Center\n24/7 FAQ', Icons.help_outline, '', _kSecondary),
-    ('Live Deals\nUp to 70%', Icons.bolt, '', _kFlash),
+    ('Returns\n& Refunds', Icons.assignment_return_outlined, '', Color(0xFFFF6B00)),
+    // "Help Center" and "Live Deals" removed — not on the web, no backend.
+    ('Notifications', Icons.notifications_none_outlined, '', _kSecondary),
+    ('Messages\nChat', Icons.chat_bubble_outline, '', _kFlash),
     ('Settings\nSecurity', Icons.settings_outlined, '', _kText),
   ];
 
@@ -401,15 +416,15 @@ class _MyServices extends StatelessWidget {
       builder: (context, _) {
         final wishCount = wishlist.count;
         final row1 = [
-          ('Vouchers', Icons.local_offer_outlined, '3 New', _kFlash),
+          ('Vouchers', Icons.local_offer_outlined, '', _kFlash),
           (
             'Wishlist\n$wishCount item${wishCount == 1 ? '' : 's'}',
             Icons.favorite_outline,
             '',
             _kFlash
           ),
-          ('Recent\n8 Items', Icons.history_outlined, '', _kText),
-          ('Official Mall\n100% Legit', Icons.store_outlined, '', _kGreen),
+          ('Addresses\nAddress Book', Icons.location_on_outlined, '', _kText),
+          ('Following\nStores', Icons.store_outlined, '', _kGreen),
         ];
         return Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -470,10 +485,35 @@ class _MyServices extends StatelessWidget {
                   ),
                 ),
               );
-            } else if (label.startsWith('Help')) {
+            } else if (label.startsWith('Addresses')) {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const AccountSettingsPage()),
+                MaterialPageRoute(builder: (_) => const AddressBookPage()),
+              );
+            } else if (label.startsWith('Following')) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FollowingPage()),
+              );
+            } else if (label.startsWith('Returns')) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ReturnsListPage()),
+              );
+            } else if (label.startsWith('Vouchers')) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const VoucherWalletPage()),
+              );
+            } else if (label.startsWith('Notifications')) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationsPage()),
+              );
+            } else if (label.startsWith('Messages')) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChatPage()),
               );
             } else {
               final messages = {

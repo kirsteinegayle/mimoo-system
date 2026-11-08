@@ -21,6 +21,10 @@ class Product {
     this.variantOptions,
     this.variants,
     this.images = const [],
+    this.sku,
+    this.weight,
+    this.totalSold = 0,
+    this.sellerPhotoUrl,
   });
 
   // ── Core fields (used by cart, wishlist, product_card — keep as-is) ────────
@@ -33,7 +37,7 @@ class Product {
   final String imageUrl;
   final String category;
 
-  /// 0.0 means "no ratings yet" — UI should hide the rating row when == 0.
+  /// From rating_avg / rating_count. Hide the rating row when reviewCount == 0.
   final double rating;
   final int reviewCount;
 
@@ -53,6 +57,16 @@ class Product {
 
   /// All image URLs for the detail carousel (may be empty).
   final List<String> images;
+
+  /// Detail-only fields (same as the web product page).
+  final String? sku;
+  final double? weight;
+
+  /// Units sold in the last 7 days (same definition as the web homepage).
+  final int totalSold;
+
+  /// Store profile photo (served by /api/buyer/seller-photo/...).
+  final String? sellerPhotoUrl;
 
   double get effectivePrice => salePrice ?? price;
 
@@ -83,9 +97,13 @@ class Product {
               ?.map((e) => e as String)
               .toList() ??
           const [],
-      // Ratings not in DB yet; always 0 until a ratings table is added.
-      rating: 0.0,
-      reviewCount: 0,
+      sku: json['sku'] as String?,
+      weight: (json['weight'] as num?)?.toDouble(),
+      totalSold: (json['total_sold'] as num?)?.toInt() ?? 0,
+      sellerPhotoUrl: json['seller_profile_photo_url'] as String?,
+      // Real review aggregates (rating_avg is null when there are no reviews).
+      rating: (json['rating_avg'] as num?)?.toDouble() ?? 0.0,
+      reviewCount: (json['rating_count'] as num?)?.toInt() ?? 0,
     );
   }
 }

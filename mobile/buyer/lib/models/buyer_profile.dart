@@ -17,6 +17,7 @@ class BuyerProfile {
     this.municipalityCity,
     this.barangay,
     this.streetAddress,
+    this.profilePhotoUrl,
   });
 
   final int id;
@@ -25,7 +26,7 @@ class BuyerProfile {
   final String? middleInitial;
   final String email;
   final String? contactNumber;
-  final String? birthday; // YYYY-MM-DD
+  final String? birthday;
   final String? sex;
   final String? region;
   final String? province;
@@ -33,6 +34,7 @@ class BuyerProfile {
   final String? municipalityCity;
   final String? barangay;
   final String? streetAddress;
+  final String? profilePhotoUrl;
 
   String get fullName => '$firstName $lastName'.trim();
 
@@ -51,6 +53,7 @@ class BuyerProfile {
         municipalityCity: j['municipality_city'] as String?,
         barangay: j['barangay'] as String?,
         streetAddress: j['street_address'] as String?,
+        profilePhotoUrl: j['profile_photo_url'] as String?,
       );
 
   Map<String, dynamic> toUpdateJson() {
@@ -58,7 +61,7 @@ class BuyerProfile {
     if (firstName.isNotEmpty) m['first_name'] = firstName;
     if (lastName.isNotEmpty) m['last_name'] = lastName;
     if (middleInitial != null) m['middle_initial'] = middleInitial;
-    if (contactNumber != null) m['contact_number'] = contactNumber;
+    // contact_number intentionally excluded — use change-phone flow
     if (birthday != null) m['birthday'] = birthday;
     if (sex != null) m['sex'] = sex;
     if (region != null) m['region'] = region;

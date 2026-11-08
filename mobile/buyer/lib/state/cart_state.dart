@@ -40,6 +40,10 @@ class CartState extends ChangeNotifier {
       ? _dbItems.fold(0, (s, i) => s + i.quantity)
       : _localItems.fold(0, (s, i) => s + i.quantity);
 
+  /// Number of distinct cart lines — same as the web navbar cart badge
+  /// (Cart::total_items = items()->count()).
+  int get lineCount => _isLoggedIn ? _dbItems.length : _localItems.length;
+
   double get totalPrice => _isLoggedIn
       ? _dbItems.fold(0.0, (s, i) => s + i.lineTotal)
       : _localItems.fold(0.0, (s, i) => s + i.product.price * i.quantity);

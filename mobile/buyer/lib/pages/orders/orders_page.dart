@@ -8,6 +8,7 @@ import 'cancel_reason_page.dart';
 import 'what_happened_page.dart';
 import 'return_refund_models.dart';
 import 'refund_details_screen.dart';
+import 'real_order_actions.dart';
 import '../../data/sample_products.dart';
 import '../../models/product.dart';
 import '../../models/order.dart' as api_order;
@@ -87,6 +88,7 @@ class _OrderItem {
     this.completedDate,
     this.dbId,
     this.canCancel = false,
+    this.apiOrder,
   });
 
   final String orderId;
@@ -108,6 +110,9 @@ class _OrderItem {
 
   /// Whether the server allows cancellation for this order.
   final bool canCancel;
+
+  /// Full API order (real orders only) — used for review / return actions.
+  final api_order.Order? apiOrder;
 }
 
 // ── Sample data ───────────────────────────────────────────────────────────────
@@ -401,7 +406,7 @@ class _OrdersPageState extends State<OrdersPage>
       final first = o.items.isNotEmpty ? o.items.first : null;
       return _OrderItem(
         orderId: o.orderNumber,
-        storeName: 'Order ${o.orderNumber}',
+        storeName: first?.sellerName ?? 'Order ${o.orderNumber}',
         storeBadge: '',
         productName: first?.productName ?? 'Order ${o.orderNumber}',
         productSub: first?.variantId ?? '',
@@ -414,6 +419,7 @@ class _OrdersPageState extends State<OrdersPage>
         paymentInfo: o.paymentMethod.toUpperCase(),
         dbId: o.id,
         canCancel: o.canCancel,
+        apiOrder: o,
       );
     }).toList();
   }
@@ -503,7 +509,8 @@ class _OrdersPageState extends State<OrdersPage>
                                 onRefresh: _load,
                                 child: _OrderList(
                                     orders: _filtered(i),
-                                    onRated: () => setState(() {}),
+                                    // Reload so review / return state is fresh.
+                                    onRated: () => _load(),
                                     onCancelled: _load),
                               )),
                     ),
@@ -847,6 +854,16 @@ class _OrderCard extends StatelessWidget {
     );
   }
 
+  int? get _storeSellerId {
+    final items = order.apiOrder?.items ?? const [];
+    return items.isEmpty ? null : items.first.sellerId;
+  }
+
+  String? get _storeSellerName {
+    final items = order.apiOrder?.items ?? const [];
+    return items.isEmpty ? null : items.first.sellerName;
+  }
+
   Widget _buildStoreHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
@@ -862,16 +879,19 @@ class _OrderCard extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => SellerStorePage(
-                    sellerId:
-                        order.storeName.toLowerCase().replaceAll(' ', '-'),
-                    sellerName: order.storeName,
-                  ),
-                ),
-              ),
+              // Opens the store only with the real numeric seller_id of the
+              // order's first item; sample orders (no id) are not tappable.
+              onTap: _storeSellerId == null
+                  ? null
+                  : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SellerStorePage(
+                            sellerId: '$_storeSellerId',
+                            sellerName: _storeSellerName ?? order.storeName,
+                          ),
+                        ),
+                      ),
               child: Text(order.storeName,
                   style: _pjs(size: 13, weight: FontWeight.w700)),
             ),
@@ -1376,8 +1396,10 @@ class _OrderCard extends StatelessWidget {
           ],
         );
       }
-      // For all other statuses, show no action buttons for real orders.
-      return const SizedBox.shrink();
+      // Other statuses: real Rate / Request Return / Return Status actions.
+      return order.apiOrder != null
+          ? RealOrderActions(order: order.apiOrder!, onChanged: onRated)
+          : const SizedBox.shrink();
     }
 
     switch (order.status) {

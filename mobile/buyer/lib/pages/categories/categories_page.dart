@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/product.dart';
 import '../../services/product_repository.dart';
+import '../../services/api_service.dart';
+import '../../services/category_repository.dart';
+import '../../widgets/mimoo_logo.dart';
 import '../../state/auth_service.dart';
 import '../../state/wishlist_provider.dart';
 import '../auth/login_page.dart';
@@ -9,6 +12,7 @@ import '../home/product_detail_page.dart';
 import '../../state/cart_provider.dart';
 import '../../utils/animations.dart';
 import '../notifications/notifications_page.dart';
+import '../../widgets/notification_badge.dart';
 import '../account/account_settings_page.dart';
 import '../search/search_page.dart';
 
@@ -36,48 +40,10 @@ TextStyle _pjs({
         height: height,
         decoration: decoration);
 
-// ── Category grid data ────────────────────────────────────────────────────────
-class _CatItem {
-  const _CatItem(
-      {required this.label, required this.icon, required this.color});
-  final String label;
-  final IconData icon;
-  final Color color;
-}
-
-const _cats = [
-  _CatItem(
-      label: "Women's\nFashion",
-      icon: Icons.woman_outlined,
-      color: Color(0xFF6B38D4)),
-  _CatItem(
-      label: "Men's\nStreetwear",
-      icon: Icons.man_outlined,
-      color: Color(0xFF34175B)),
-  _CatItem(
-      label: "Electronics &\nAudio",
-      icon: Icons.headphones_outlined,
-      color: Color(0xFF0066CC)),
-  _CatItem(
-      label: "Shoes & Kicks",
-      icon: Icons.sports_hockey_outlined,
-      color: Color(0xFFFF3B5C)),
-  _CatItem(
-      label: "Beauty & Care",
-      icon: Icons.spa_outlined,
-      color: Color(0xFFE91E8C)),
-  _CatItem(
-      label: "Home & Living",
-      icon: Icons.chair_outlined,
-      color: Color(0xFF1DB966)),
-  _CatItem(
-      label: "Bags & Packs",
-      icon: Icons.shopping_bag_outlined,
-      color: Color(0xFF8B5CF6)),
-  _CatItem(
-      label: "Sports Gear",
-      icon: Icons.sports_soccer_outlined,
-      color: Color(0xFFFF6B00)),
+// ── Category tile colours (cycled) ───────────────────────────────────────────
+const _catColors = [
+  Color(0xFF6B38D4), Color(0xFF34175B), Color(0xFF0066CC), Color(0xFFFF3B5C),
+  Color(0xFFE91E8C), Color(0xFF1DB966), Color(0xFF8B5CF6), Color(0xFFFF6B00),
 ];
 
 // ── Categories Page ───────────────────────────────────────────────────────────
@@ -94,12 +60,27 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   // ── API state ────────────────────────────────────────────────────────────
   List<Product> _products = [];
+
+  /// Same categories as the website; selected = exact products.category.
+  List<BuyerCategory> _categoryList = kWebCategories;
+  String? _category;
   bool _loading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    _load();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    final list = await CategoryRepository.instance.fetch();
+    if (mounted) setState(() => _categoryList = list);
+  }
+
+  void _selectCategory(String? name) {
+    setState(() => _category = _category == name ? null : name);
     _load();
   }
 
@@ -123,6 +104,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       final page = await ProductRepository.instance.fetchProducts(
         perPage: 30,
         sort: _apiSort,
+        category: _category,
       );
       if (!mounted) return;
       setState(() {
@@ -133,7 +115,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Could not load products. Tap to retry.';
+        _error = ApiService.friendlyError(e);
       });
     }
   }
@@ -143,16 +125,22 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return Scaffold(
       backgroundColor: _kSurface,
       body: SafeArea(
-        child: CustomScrollView(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await Future.wait([_load(), _loadCategories()]);
+          },
+          child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(child: _buildHeader()),
             SliverToBoxAdapter(child: _buildSortRow()),
             SliverToBoxAdapter(child: _buildExploreCats()),
             SliverToBoxAdapter(child: _buildTrendingHeader()),
             _buildProductGrid(),
-            SliverToBoxAdapter(child: _buildVoucherBanner()),
+            // Voucher banner hidden — fake "₱150 OFF" offer, no backend.
+            // SliverToBoxAdapter(child: _buildVoucherBanner()),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
+          ),
         ),
       ),
     );
@@ -167,24 +155,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
         children: [
           Row(
             children: [
-              // mimoo logo text + MARKET sub
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('mimoo',
-                      style: GoogleFonts.plusJakartaSans(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -0.5)),
-                  Text('MARKET',
-                      style: GoogleFonts.plusJakartaSans(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white60,
-                          letterSpacing: 0.5)),
-                ],
-              ),
+              // Brand logo (framed tile — logo has an opaque background)
+              const MimooLogo(size: 58, framed: true),
               const Spacer(),
               Text('Categories',
                   style: GoogleFonts.plusJakartaSans(
@@ -205,16 +177,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
                       child: Icon(Icons.notifications_none_outlined,
                           color: Colors.white, size: 22),
                     ),
-                    Positioned(
-                      right: 2,
-                      top: 2,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                            color: Color(0xFFFF3B5C), shape: BoxShape.circle),
-                      ),
-                    ),
+                    // Real unread count (hidden when 0)
+                    const NotificationBadge(),
                   ],
                 ),
               ),
@@ -344,7 +308,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
                 ],
               ),
               GestureDetector(
-                onTap: () {},
+                // "View All" clears the category filter
+                onTap: () => _selectCategory(null),
                 child: Row(
                   children: [
                     Text('View All',
@@ -366,7 +331,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
             mainAxisSpacing: 14,
             crossAxisSpacing: 8,
             childAspectRatio: 0.85,
-            children: _cats.map((c) => _CatChip(cat: c)).toList(),
+            children: [
+              for (var i = 0; i < _categoryList.length; i++)
+                _CatChip(
+                  cat: _categoryList[i],
+                  color: _catColors[i % _catColors.length],
+                  selected: _categoryList[i].name == _category,
+                  onTap: () => _selectCategory(_categoryList[i].name),
+                ),
+            ],
           ),
         ],
       ),
@@ -382,7 +355,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
         children: [
           Row(
             children: [
-              Text('All Products',
+              Text(_category ?? 'All Products',
                   style: _pjs(size: 15, weight: FontWeight.w800)),
               const SizedBox(width: 8),
               if (!_loading && _error == null)
@@ -564,6 +537,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   // ── Voucher banner ───────────────────────────────────────────────────────────
+  // ignore: unused_element
   Widget _buildVoucherBanner() {
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
@@ -624,13 +598,20 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
 // ── Category chip ─────────────────────────────────────────────────────────────
 class _CatChip extends StatelessWidget {
-  const _CatChip({required this.cat});
-  final _CatItem cat;
+  const _CatChip(
+      {required this.cat,
+      required this.color,
+      required this.selected,
+      required this.onTap});
+  final BuyerCategory cat;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -638,14 +619,15 @@ class _CatChip extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: cat.color.withValues(alpha: 0.1),
+              color: color.withValues(alpha: selected ? 0.25 : 0.1),
               borderRadius: BorderRadius.circular(14),
+              border: selected ? Border.all(color: color, width: 2) : null,
             ),
-            child: Icon(cat.icon, size: 26, color: cat.color),
+            child: Icon(cat.icon, size: 26, color: color),
           ),
           const SizedBox(height: 5),
           Text(
-            cat.label,
+            cat.name,
             style: _pjs(
                 size: 10, weight: FontWeight.w600, color: _kText, height: 1.3),
             textAlign: TextAlign.center,

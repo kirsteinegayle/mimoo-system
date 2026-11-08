@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/api_service.dart';
 
@@ -58,6 +59,31 @@ class AuthService {
 
   bool get isLoggedIn => _isLoggedIn;
   String? get buyerName => _buyerName;
+
+  /// Notifies widgets (e.g. the Account header) when the display name changes.
+  final ValueNotifier<String?> buyerNameListenable = ValueNotifier<String?>(null);
+
+  /// Re-reads GET /api/buyer/profile so edits made on the website (which
+  /// changes users.name / email only) show up in the app on refresh/resume.
+  /// Silent on failure.
+  Future<void> refreshProfile() async {
+    if (!_isLoggedIn || ApiService.token == null) return;
+    try {
+      final res = await ApiService.get('/buyer/profile') as Map<String, dynamic>;
+      final d = res['data'] as Map<String, dynamic>? ?? {};
+      final webName = (d['name'] as String? ?? '').trim();
+      final fullName =
+          '${d['first_name'] ?? ''} ${d['last_name'] ?? ''}'.trim();
+      final display = webName.isNotEmpty ? webName : fullName;
+      if (display.isNotEmpty && display != _buyerName) {
+        _buyerName = display;
+        buyerNameListenable.value = _buyerName;
+        await _storage.write(key: _keyBuyerName, value: _buyerName);
+      }
+    } catch (_) {
+      // offline / server down — keep cached name
+    }
+  }
   String? get buyerId => _buyerId;
   String? get contactNumber => _contactNumber;
   String? get streetAddress => _streetAddress;
@@ -105,6 +131,7 @@ class AuthService {
     if (token != null && token.isNotEmpty) {
       ApiService.token = token;
       _buyerName = await _storage.read(key: _keyBuyerName);
+      buyerNameListenable.value = _buyerName;
       _buyerId = await _storage.read(key: _keyBuyerId);
       _contactNumber = await _storage.read(key: _keyContact);
       _streetAddress = await _storage.read(key: _keyStreet);
@@ -144,6 +171,7 @@ class AuthService {
       final ln = user['last_name'] as String? ?? '';
       if (fn.isNotEmpty || ln.isNotEmpty) {
         _buyerName = '$fn $ln'.trim();
+        buyerNameListenable.value = _buyerName;
       }
       if (user['id'] != null) {
         _buyerId = user['id'].toString();
@@ -218,6 +246,7 @@ class AuthService {
     ApiService.token = token;
     _isLoggedIn = true;
     _buyerName = buyerName;
+    buyerNameListenable.value = _buyerName;
     _buyerId = buyerId;
     _contactNumber = contactNumber;
     _streetAddress = streetAddress;
@@ -233,6 +262,14 @@ class AuthService {
   /// to mark the session as authenticated without a real token.
   /// Remove this once all screens use the real API.
   void login() => _isLoggedIn = true;
+
+  /// Update the cached email after a successful change-email verify.
+  /// Used by AccountSettingsPage to keep the displayed email in sync.
+  Future<void> updateEmail(String newEmail) async {
+    // Email is not cached in secure storage as a separate key, but buyerName
+    // doesn't include it. No-op for now — profile is reloaded after email change.
+    // If a separate _keyEmail were added we'd persist here.
+  }
 
   // ── Logout ────────────────────────────────────────────────────────────────
 
@@ -251,6 +288,7 @@ class AuthService {
     ApiService.token = null;
     _isLoggedIn = false;
     _buyerName = null;
+    buyerNameListenable.value = _buyerName;
     _buyerId = null;
     _contactNumber = null;
     _streetAddress = null;

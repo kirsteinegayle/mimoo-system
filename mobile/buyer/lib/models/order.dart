@@ -73,6 +73,13 @@ class OrderItem {
     required this.subtotal,
     this.variantId,
     this.variantSnapshot,
+    this.sellerId,
+    this.sellerName,
+    this.canReview = false,
+    this.reviewId,
+    this.reviewRating,
+    this.reviewComment,
+    this.reviewCanEdit = false,
     // Legacy fields kept for backward-compat with OrderState
     this.price = 0.0,
     this.variation,
@@ -88,6 +95,17 @@ class OrderItem {
   final double subtotal;
   final String? variantId;
   final Map<String, dynamic>? variantSnapshot;
+
+  /// Real numeric seller id / store name (null for legacy data).
+  final int? sellerId;
+  final String? sellerName;
+
+  // Reviews (Module 3)
+  final bool canReview;
+  final int? reviewId;
+  final int? reviewRating;
+  final String? reviewComment;
+  final bool reviewCanEdit;
 
   // Legacy
   final double price;
@@ -105,6 +123,13 @@ class OrderItem {
         variantId: j['variant_id'] as String?,
         variantSnapshot: j['variant_snapshot'] as Map<String, dynamic>?,
         price: (j['unit_price'] as num?)?.toDouble() ?? 0.0,
+        sellerId: (j['seller_id'] as num?)?.toInt(),
+        sellerName: j['seller_name'] as String?,
+        canReview: j['can_review'] == true,
+        reviewId: ((j['review'] as Map?)?['id'] as num?)?.toInt(),
+        reviewRating: ((j['review'] as Map?)?['rating'] as num?)?.toInt(),
+        reviewComment: (j['review'] as Map?)?['comment'] as String?,
+        reviewCanEdit: (j['review'] as Map?)?['can_edit'] == true,
       );
 }
 
@@ -124,6 +149,9 @@ class Order {
     required this.shippingAddress,
     required this.shippingPhone,
     required this.items,
+    this.returnStatus,
+    this.returnId,
+    this.canReturn = false,
     // Legacy
     this.totalAmount = 0.0,
     this.placedAt,
@@ -146,6 +174,11 @@ class Order {
   final String? shippingAddress;
   final String? shippingPhone;
   final List<OrderItem> items;
+
+  // Returns (Module 4): latest return request status, null when none.
+  final String? returnStatus;
+  final int? returnId;
+  final bool canReturn;
 
   // Legacy fields kept for OrderState compatibility
   final double totalAmount;
@@ -173,5 +206,8 @@ class Order {
             .toList(),
         totalAmount: (j['total'] as num?)?.toDouble() ?? 0.0,
         placedAt: DateTime.tryParse(j['created_at'] as String? ?? ''),
+        returnStatus: j['return_status'] as String?,
+        returnId: (j['return_id'] as num?)?.toInt(),
+        canReturn: j['can_return'] == true,
       );
 }

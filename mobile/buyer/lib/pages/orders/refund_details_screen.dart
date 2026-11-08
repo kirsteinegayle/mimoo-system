@@ -138,7 +138,7 @@ final Map<String, RefundRequest> _sampleRequests = {
     paymentMethod: 'mimooPay Balance',
     storeName: 'MAANGE Official Shop',
     storeBadge: 'Mall',
-    sellerId: 'maange-official',
+    sellerId: '',
     productName:
         'MAANGE Makeup Brush Set with Soft Synthetic Bristles for Effortless Base Makeup',
     productSub: 'Black, 3pcs',
@@ -163,7 +163,7 @@ final Map<String, RefundRequest> _sampleRequests = {
     paymentMethod: 'GCash',
     storeName: 'TechZone Direct',
     storeBadge: 'PREFERRED',
-    sellerId: 'techzone-direct',
+    sellerId: '',
     productName: 'Wireless ANC Earbuds Pro 2nd Gen',
     productSub: 'Matte Black',
     productImageSeed: 'earbuds',
@@ -184,7 +184,7 @@ final Map<String, RefundRequest> _sampleRequests = {
     paymentMethod: 'GCash',
     storeName: 'SportHub PH',
     storeBadge: 'PREFERRED',
-    sellerId: 'sporthub-ph',
+    sellerId: '',
     productName: 'CloudStep Cushion Running Shoes',
     productSub: 'White/Volt, Size 42',
     productImageSeed: 'shoes2',
@@ -448,15 +448,19 @@ class _RefundDetailsScreenState extends State<RefundDetailsScreen> {
         children: [
           // Seller row
           GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => SellerStorePage(
-                  sellerId: req.sellerId,
-                  sellerName: req.storeName,
-                ),
-              ),
-            ),
+            // Only a real numeric seller id opens the store; the sample
+            // refund data has none, so the link is disabled.
+            onTap: int.tryParse(req.sellerId) == null
+                ? null
+                : () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SellerStorePage(
+                          sellerId: req.sellerId,
+                          sellerName: req.storeName,
+                        ),
+                      ),
+                    ),
             child: Row(
               children: [
                 if (req.storeBadge.isNotEmpty)

@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../home/product_detail_page.dart';
 import '../../models/product.dart';
+import '../../services/api_service.dart';
+import '../../services/follow_repository.dart';
+import '../chat/chat_screen.dart';
 import 'flash_deals_screen.dart';
 import 'category_product_list_screen.dart';
 
@@ -16,6 +19,7 @@ const _kChip = Color(0xFFEFE9FD);
 const _kBorder = Color(0xFFDDD8F0);
 const _kText = Color(0xFF1A1035);
 const _kSubtext = Color(0xFF8A84A3);
+// ignore: unused_element
 const _kOrange = Color(0xFFFF6B00);
 const _kGreen = Color(0xFF1DB966);
 
@@ -48,6 +52,51 @@ class _SellerCategory {
   final int count;
 }
 
+// ── Real API data from GET /api/buyer/sellers/{id} ────────────────────────────
+class SellerApiData {
+  const SellerApiData({
+    required this.id,
+    required this.displayName,
+    this.profilePhotoUrl,
+    this.coverPhotoUrl,
+    required this.joinedDate,
+    required this.totalProducts,
+    this.lineOfBusiness,
+    this.location,
+    this.followersCount = 0,
+    this.isFollowing = false,
+    this.totalSold = 0,
+  });
+
+  final int id;
+  final String displayName;
+  final String? profilePhotoUrl;
+  final String? coverPhotoUrl;
+  final String joinedDate;
+  final int totalProducts;
+  final String? lineOfBusiness;
+  final String? location;
+  final int followersCount;
+  final bool isFollowing;
+
+  /// Units sold across non-cancelled orders (same stat as the web store).
+  final int totalSold;
+
+  factory SellerApiData.fromJson(Map<String, dynamic> j) => SellerApiData(
+        id: (j['id'] as num).toInt(),
+        displayName: j['display_name'] as String? ?? '',
+        profilePhotoUrl: j['profile_photo_url'] as String?,
+        coverPhotoUrl: j['cover_photo_url'] as String?,
+        joinedDate: j['joined_date'] as String? ?? '',
+        totalProducts: (j['total_products'] as num?)?.toInt() ?? 0,
+        lineOfBusiness: j['line_of_business'] as String?,
+        location: j['location'] as String?,
+        followersCount: (j['followers_count'] as num?)?.toInt() ?? 0,
+        isFollowing: j['is_following'] == true,
+        totalSold: (j['total_sold'] as num?)?.toInt() ?? 0,
+      );
+}
+
 class StoreProduct {
   const StoreProduct({
     required this.id,
@@ -60,6 +109,7 @@ class StoreProduct {
     required this.discount,
     this.isFulfilled = false,
     this.badge = '',
+    this.imageUrl = '', // real image URL from API (replaces picsum)
   });
   final String id;
   final String name;
@@ -71,6 +121,7 @@ class StoreProduct {
   final int discount;
   final bool isFulfilled;
   final String badge;
+  final String imageUrl; // empty = use picsum fallback (for old fake data)
 }
 
 class StoreReview {
@@ -115,6 +166,9 @@ class SellerInfo {
     required this.reviews,
     required this.sellerCategories,
     this.isFollowed = false,
+    // Real API fields (null when using hardcoded fake data)
+    this.profilePhotoUrl,
+    this.location,
   });
 
   final String id;
@@ -134,9 +188,13 @@ class SellerInfo {
   final List<StoreReview> reviews;
   final List<_SellerCategory> sellerCategories;
   final bool isFollowed;
+  // Real API fields
+  final String? profilePhotoUrl;
+  final String? location;
 }
 
-// ── Sample data ───────────────────────────────────────────────────────────────
+// ── Sample data (hidden — kept for reference; replaced by real API) ──────────
+// ignore: unused_element
 final Map<String, SellerInfo> _sellerData = {
   'geeso-official': SellerInfo(
     id: 'geeso-official',
@@ -400,6 +458,7 @@ final Map<String, SellerInfo> _sellerData = {
   ),
 };
 
+// ignore: unused_element
 SellerInfo _fallbackSeller(String sellerId, String sellerName) {
   return SellerInfo(
     id: sellerId,
@@ -440,7 +499,10 @@ Product storeProductToProduct(StoreProduct p) => Product(
       id: p.id.hashCode,
       name: p.name,
       price: p.price,
-      imageUrl: 'https://picsum.photos/seed/${p.imageSeed}/300/300',
+      salePrice: p.originalPrice > p.price ? p.price : null,
+      imageUrl: p.imageUrl.isNotEmpty
+          ? p.imageUrl
+          : 'https://picsum.photos/seed/${p.imageSeed}/300/300',
       category: 'Store',
       rating: p.rating,
       reviewCount: 0,
@@ -466,9 +528,20 @@ class SellerStorePage extends StatefulWidget {
 class _SellerStorePageState extends State<SellerStorePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
-  late SellerInfo _seller;
-  bool _isFollowed = false;
 
+  // ── API state ──────────────────────────────────────────────────────────────
+  bool _loading = true;
+  String? _error;
+  bool _notFound = false;
+  SellerApiData? _apiData;
+  List<Product> _products = [];
+
+  // ── Local UI state ─────────────────────────────────────────────────────────
+  bool _isFollowed = false;
+  int _followers = 0;
+  bool _followBusy = false;
+
+  // ignore: prefer_final_fields
   int _saleSeconds = 1 * 3600 + 26 * 60 + 45;
   Timer? _timer;
 
@@ -478,17 +551,84 @@ class _SellerStorePageState extends State<SellerStorePage>
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: _tabs.length, vsync: this);
-    _seller = _sellerData[widget.sellerId] ??
-        _fallbackSeller(widget.sellerId, widget.sellerName);
-    _isFollowed = _seller.isFollowed;
+    _loadSeller();
 
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_saleSeconds > 0) {
-        setState(() => _saleSeconds--);
-      } else {
-        _timer?.cancel();
-      }
+    // Flash sale countdown disabled — no sale_end_date column in DB.
+    // _timer = Timer.periodic(...)
+  }
+
+  Future<void> _loadSeller() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+      _notFound = false;
     });
+    try {
+      // Parse sellerId as int (API uses numeric IDs).
+      final idInt = int.tryParse(widget.sellerId);
+      if (idInt == null) {
+        setState(() {
+          _loading = false;
+          _notFound = true;
+        });
+        return;
+      }
+
+      // Load seller profile first; if it fails (404, etc.) stop here.
+      // Token is sent (when logged in) so the server can return is_following.
+      final sellerRes = await ApiService.get(
+        '/buyer/sellers/$idInt',
+      ) as Map<String, dynamic>;
+
+      if (!mounted) return;
+
+      // Load seller's products using the seller_id query param.
+      final productsRes = await ApiService.get(
+        '/buyer/products',
+        // Same products and order as the web store (newest first).
+        queryParameters: {
+          'seller_id': '$idInt',
+          'per_page': '50',
+          'page': '1',
+          'sort': 'newest',
+        },
+        includeAuth: false,
+      ) as Map<String, dynamic>;
+
+      if (!mounted) return;
+
+      final products = (productsRes['data'] as List<dynamic>)
+          .map((e) => Product.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+      setState(() {
+        _apiData =
+            SellerApiData.fromJson(sellerRes['data'] as Map<String, dynamic>);
+        _isFollowed = _apiData!.isFollowing;
+        _followers = _apiData!.followersCount;
+        _products = products;
+        _loading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      if (e.statusCode == 404) {
+        setState(() {
+          _loading = false;
+          _notFound = true;
+        });
+      } else {
+        setState(() {
+          _loading = false;
+          _error = e.message;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = ApiService.friendlyError(e);
+      });
+    }
   }
 
   @override
@@ -505,28 +645,186 @@ class _SellerStorePageState extends State<SellerStorePage>
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  /// Build a SellerInfo from real API data + real products.
+  /// Fake fields (followers, rating, reviews, etc.) use neutral placeholders
+  /// and empty lists — they are hidden by the tabs.
+  SellerInfo _buildSellerInfo() {
+    final api = _apiData!;
+    // Convert real Product list to StoreProduct list for the existing tab widgets.
+    final storeProducts = _products
+        .map((p) => StoreProduct(
+              id: p.id.toString(),
+              name: p.name,
+              price: p.effectivePrice,
+              originalPrice: p.price,
+              imageSeed: '', // not used — imageUrl used instead
+              rating: 0.0, // hidden in tabs
+              sold: '', // hidden in tabs
+              discount: p.isOnSale && p.salePrice != null
+                  ? ((1 - p.salePrice! / p.price) * 100).round()
+                  : 0,
+              imageUrl: p.imageUrl,
+            ))
+        .toList();
+
+    return SellerInfo(
+      id: api.id.toString(),
+      name: api.displayName,
+      badge: '', // hidden — no seller badge column
+      tagline: api.lineOfBusiness ?? '',
+      avatarSeed: '', // not used — profilePhotoUrl used instead
+      bannerSeed: '', // not used
+      profilePhotoUrl: api.profilePhotoUrl,
+      rating: 0.0, // hidden
+      followers: '', // hidden
+      chatResponse: '', // hidden
+      positiveRating: '', // hidden
+      totalProducts: api.totalProducts,
+      joinedDate: _formatJoinedDate(api.joinedDate),
+      location: api.location,
+      categories: const ['All'],
+      products: storeProducts,
+      reviews: const [], // hidden — no reviews table
+      sellerCategories: const [], // hidden — no categories endpoint
+    );
+  }
+
+  String _formatJoinedDate(String iso) {
+    try {
+      final dt = DateTime.parse(iso);
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
+      return '${months[dt.month - 1]} ${dt.year}';
+    } catch (_) {
+      return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // ── Loading state ──────────────────────────────────────────────────────
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: _kSurface,
+        appBar: AppBar(
+          backgroundColor: _kCard,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: _kText),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator(color: _kPrimary)),
+      );
+    }
+
+    // ── 404 state ──────────────────────────────────────────────────────────
+    if (_notFound) {
+      return Scaffold(
+        backgroundColor: _kSurface,
+        appBar: AppBar(
+          backgroundColor: _kCard,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: _kText),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.storefront_outlined, size: 56, color: _kSubtext),
+                const SizedBox(height: 16),
+                Text('Seller not found',
+                    style: _pjs(size: 18, weight: FontWeight.w800)),
+                const SizedBox(height: 8),
+                Text(
+                    'This store may have been removed or is no longer available.',
+                    textAlign: TextAlign.center,
+                    style: _pjs(size: 13, color: _kSubtext, height: 1.5)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ── Error state ────────────────────────────────────────────────────────
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: _kSurface,
+        appBar: AppBar(
+          backgroundColor: _kCard,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: _kText),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.wifi_off_outlined, size: 56, color: _kSubtext),
+                const SizedBox(height: 16),
+                Text(_error!,
+                    textAlign: TextAlign.center,
+                    style: _pjs(size: 13, color: _kSubtext, height: 1.5)),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: _loadSeller,
+                  style: FilledButton.styleFrom(backgroundColor: _kPrimary),
+                  child: Text('Retry',
+                      style: _pjs(
+                          size: 14,
+                          weight: FontWeight.w700,
+                          color: Colors.white)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ── Loaded state ───────────────────────────────────────────────────────
+    final seller = _buildSellerInfo();
+
     return Scaffold(
       backgroundColor: _kSurface,
       appBar: _buildAppBar(),
       body: Column(
         children: [
-          // Non-scrolling: profile header
-          _buildProfileHeader(),
-          // Non-scrolling: chat button
+          _buildCover(),
+          _buildProfileHeader(seller),
+          _buildStats(),
           _buildChatButton(),
-          // Non-scrolling: tab bar
           _buildTabBar(),
-          // Scrolling: tab content
           Expanded(
             child: TabBarView(
               controller: _tabCtrl,
               children: [
-                _ShopTab(seller: _seller, countdown: _countdown),
-                _ProductsTab(seller: _seller),
-                _ReviewsTab(seller: _seller),
-                _CategoriesTab(seller: _seller),
+                _ShopTab(seller: seller, countdown: _countdown),
+                _ProductsTab(seller: seller),
+                _ReviewsTab(seller: seller),
+                _CategoriesTab(seller: seller),
               ],
             ),
           ),
@@ -578,14 +876,49 @@ class _SellerStorePageState extends State<SellerStorePage>
     );
   }
 
-  Widget _buildProfileHeader() {
+  /// Cover photo (same as web store). Hidden when the seller has none.
+  Widget _buildCover() {
+    final url = _apiData?.coverPhotoUrl;
+    if (url == null || url.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 110,
+      width: double.infinity,
+      child: Image.network(url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+    );
+  }
+
+  /// Real store stats: products, sold, followers (web shows products + sold).
+  Widget _buildStats() {
+    final api = _apiData;
+    if (api == null) return const SizedBox.shrink();
+    Widget stat(String v, String l) => Expanded(
+          child: Column(children: [
+            Text(v, style: _pjs(size: 14, weight: FontWeight.w800)),
+            Text(l, style: _pjs(size: 11, color: _kSubtext)),
+          ]),
+        );
+    return Container(
+      color: _kCard,
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+      child: Row(children: [
+        stat('${api.totalProducts}', 'Products'),
+        stat('${api.totalSold}', 'Sold'),
+        stat('$_followers', 'Followers'),
+      ]),
+    );
+  }
+
+  Widget _buildProfileHeader(SellerInfo seller) {
+    final photoUrl = _apiData?.profilePhotoUrl;
     return Container(
       color: _kCard,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Avatar
+          // Avatar — real photo or storefront icon placeholder
           Container(
             width: 52,
             height: 52,
@@ -595,70 +928,55 @@ class _SellerStorePageState extends State<SellerStorePage>
               border: Border.all(color: _kBorder, width: 1.5),
             ),
             child: ClipOval(
-              child: Image.network(
-                'https://picsum.photos/seed/${_seller.avatarSeed}/100/100',
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
-                    Icons.storefront_outlined,
-                    size: 26,
-                    color: _kPrimary),
-              ),
+              child: photoUrl != null && photoUrl.isNotEmpty
+                  ? Image.network(
+                      photoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(
+                          Icons.storefront_outlined,
+                          size: 26,
+                          color: _kPrimary),
+                    )
+                  : const Icon(Icons.storefront_outlined,
+                      size: 26, color: _kPrimary),
             ),
           ),
           const SizedBox(width: 10),
-          // Name + badge + stats
+          // Name + location
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        _seller.name,
-                        style: _pjs(size: 15, weight: FontWeight.w800),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (_seller.badge.isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _kChip,
-                          borderRadius: BorderRadius.circular(5),
-                          border: Border.all(color: _kSecondary),
-                        ),
+                Text(
+                  seller.name,
+                  style: _pjs(size: 15, weight: FontWeight.w800),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                // Show location + joined date instead of fake followers/rating
+                if ((_apiData?.location ?? '').isNotEmpty)
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_outlined,
+                          size: 12, color: _kSubtext),
+                      const SizedBox(width: 2),
+                      Flexible(
                         child: Text(
-                          _seller.badge,
-                          style: _pjs(
-                              size: 10,
-                              weight: FontWeight.w700,
-                              color: _kSecondary),
+                          _apiData!.location!,
+                          style: _pjs(size: 11, color: _kSubtext),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Icon(Icons.star_rounded,
-                        size: 13, color: Colors.amber.shade500),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${_seller.rating}',
-                      style: _pjs(size: 12, weight: FontWeight.w700),
-                    ),
-                    Flexible(
-                      child: Text(
-                        '  •  ${_seller.tagline}',
-                        style: _pjs(size: 11, color: _kSubtext),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                  ),
+                if (seller.joinedDate.isNotEmpty)
+                  Text(
+                    'Joined ${seller.joinedDate}',
+                    style: _pjs(size: 11, color: _kSubtext),
+                  ),
+                Text(
+                  '$_followers follower${_followers == 1 ? '' : 's'}',
+                  style: _pjs(size: 11, color: _kSubtext),
                 ),
               ],
             ),
@@ -666,7 +984,7 @@ class _SellerStorePageState extends State<SellerStorePage>
           const SizedBox(width: 8),
           // Follow button
           ElevatedButton(
-            onPressed: () => setState(() => _isFollowed = !_isFollowed),
+            onPressed: _followBusy ? null : _toggleFollow,
             style: ElevatedButton.styleFrom(
               backgroundColor: _isFollowed ? _kSurface : _kPrimary,
               foregroundColor: _isFollowed ? _kPrimary : Colors.white,
@@ -691,6 +1009,51 @@ class _SellerStorePageState extends State<SellerStorePage>
     );
   }
 
+  Future<void> _toggleFollow() async {
+    final id = _apiData?.id;
+    if (id == null) return;
+    if (ApiService.token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Please log in to follow stores.'),
+        backgroundColor: _kPrimary,
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+    final wasFollowing = _isFollowed;
+    // Optimistic update; reverted on failure.
+    setState(() {
+      _followBusy = true;
+      _isFollowed = !wasFollowing;
+      _followers = (_followers + (wasFollowing ? -1 : 1)).clamp(0, 1 << 31);
+    });
+    try {
+      final st = wasFollowing
+          ? await FollowRepository.instance.unfollow(id)
+          : await FollowRepository.instance.follow(id);
+      if (!mounted) return;
+      setState(() {
+        _isFollowed = st.isFollowing;
+        _followers = st.followersCount;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isFollowed = wasFollowing;
+        _followers = (_followers + (wasFollowing ? 1 : -1)).clamp(0, 1 << 31);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e is ApiException
+            ? e.message
+            : 'Could not update follow. Please try again.'),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+      ));
+    } finally {
+      if (mounted) setState(() => _followBusy = false);
+    }
+  }
+
   Widget _buildChatButton() {
     return Container(
       color: _kCard,
@@ -699,13 +1062,14 @@ class _SellerStorePageState extends State<SellerStorePage>
         width: double.infinity,
         height: 42,
         child: ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: _apiData == null
+              ? null
+              : () => openSellerChat(context, sellerId: _apiData!.id),
           icon: const Icon(Icons.chat_bubble_outline,
               size: 16, color: Colors.white),
-          label: Text(
-            'Chat with Seller',
-            style: _pjs(size: 14, weight: FontWeight.w700, color: Colors.white),
-          ),
+          label: Text('Chat with Seller',
+              style:
+                  _pjs(size: 14, weight: FontWeight.w700, color: Colors.white)),
           style: ElevatedButton.styleFrom(
             backgroundColor: _kPrimary,
             elevation: 0,
@@ -748,20 +1112,22 @@ class _ShopTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final flashProducts =
-        seller.products.where((p) => p.badge == 'FLASH').toList();
+    // Flash deals hidden — no sale_end_date column in DB.
+    // final flashProducts = seller.products.where((p) => p.badge == 'FLASH').toList();
     final allProducts = seller.products;
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (flashProducts.isNotEmpty) ...[
-            _buildFlashDealsSection(context, flashProducts),
-            const SizedBox(height: 8),
-          ],
-          _buildVoucherBanner(context),
-          const SizedBox(height: 8),
+          // Flash deals section hidden — no sale_end_date column.
+          // if (flashProducts.isNotEmpty) ...[
+          //   _buildFlashDealsSection(context, flashProducts),
+          //   const SizedBox(height: 8),
+          // ],
+          // Voucher banner hidden — no buyer voucher API endpoint yet.
+          // _buildVoucherBanner(context),
+          // const SizedBox(height: 8),
           _buildRecommendedSection(context, allProducts),
           const SizedBox(height: 24),
         ],
@@ -769,9 +1135,10 @@ class _ShopTab extends StatelessWidget {
     );
   }
 
+  // ignore: unused_element
   Widget _buildFlashDealsSection(
       BuildContext context, List<StoreProduct> products) {
-    final parts = countdown.split(':');
+    // final parts = countdown.split(':'); // countdown hidden — no sale_end_date in DB
     return Container(
       color: _kCard,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
@@ -803,14 +1170,14 @@ class _ShopTab extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              // Countdown blocks
-              if (parts.length == 3) ...[
-                _CountBlock(parts[0]),
-                _ColonSep(),
-                _CountBlock(parts[1]),
-                _ColonSep(),
-                _CountBlock(parts[2]),
-              ],
+              // Countdown blocks hidden — no sale_end_date column in DB.
+              // if (parts.length == 3) ...[
+              //   _CountBlock(parts[0]),
+              //   _ColonSep(),
+              //   _CountBlock(parts[1]),
+              //   _ColonSep(),
+              //   _CountBlock(parts[2]),
+              // ],
               const Spacer(),
               GestureDetector(
                 onTap: () => Navigator.push(
@@ -840,6 +1207,7 @@ class _ShopTab extends StatelessWidget {
     );
   }
 
+  // ignore: unused_element
   Widget _buildVoucherBanner(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
@@ -1030,7 +1398,9 @@ class _FlashProductRow extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
-                    'https://picsum.photos/seed/${product.imageSeed}/200/200',
+                    product.imageUrl.isNotEmpty
+                        ? product.imageUrl
+                        : 'https://picsum.photos/seed/${product.imageSeed}/200/200',
                     width: 90,
                     height: 90,
                     fit: BoxFit.cover,
@@ -1038,23 +1408,24 @@ class _FlashProductRow extends StatelessWidget {
                         Container(width: 90, height: 90, color: _kChip),
                   ),
                 ),
-                Positioned(
-                  top: 5,
-                  left: 5,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _kOrange,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: Text('3 DAYS',
-                        style: _pjs(
-                            size: 8,
-                            weight: FontWeight.w800,
-                            color: Colors.white)),
-                  ),
-                ),
+                // "3 DAYS" badge hidden — no sale end date in DB.
+                // Positioned(
+                //   top: 5,
+                //   left: 5,
+                //   child: Container(
+                //     padding:
+                //         const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                //     decoration: BoxDecoration(
+                //       color: _kOrange,
+                //       borderRadius: BorderRadius.circular(3),
+                //     ),
+                //     child: Text('3 DAYS',
+                //         style: _pjs(
+                //             size: 8,
+                //             weight: FontWeight.w800,
+                //             color: Colors.white)),
+                //   ),
+                // ),
                 Positioned(
                   bottom: 5,
                   left: 5,
@@ -1099,14 +1470,7 @@ class _FlashProductRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: _pjs(size: 12, height: 1.4)),
                   const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      Icon(Icons.star_rounded,
-                          size: 11, color: Colors.amber.shade500),
-                      Text(' (${product.rating})',
-                          style: _pjs(size: 11, color: _kSubtext)),
-                    ],
-                  ),
+                  // Rating hidden — StoreProduct has no real review data.
                   const SizedBox(height: 3),
                   Row(
                     children: [
@@ -1127,46 +1491,47 @@ class _FlashProductRow extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  // Selling fast progress bar
-                  Stack(
-                    children: [
-                      Container(
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: _kBorder,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                      FractionallySizedBox(
-                        widthFactor: 0.75,
-                        child: Container(
-                          height: 5,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [_kSecondary, _kFlash],
-                            ),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
+                  // Selling fast progress bar hidden — no claimed/sold data in DB.
+                  // Stack(
+                  //   children: [
+                  //     Container(
+                  //       height: 5,
+                  //       decoration: BoxDecoration(
+                  //         color: _kBorder,
+                  //         borderRadius: BorderRadius.circular(3),
+                  //       ),
+                  //     ),
+                  //     FractionallySizedBox(
+                  //       widthFactor: 0.75,
+                  //       child: Container(
+                  //         height: 5,
+                  //         decoration: BoxDecoration(
+                  //           gradient: const LinearGradient(
+                  //             colors: [_kSecondary, _kFlash],
+                  //           ),
+                  //           borderRadius: BorderRadius.circular(3),
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
+                  // const SizedBox(height: 4),
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: _kFlash.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                        child: Text('SELLING FAST',
-                            style: _pjs(
-                                size: 8,
-                                weight: FontWeight.w800,
-                                color: _kFlash)),
-                      ),
+                      // "SELLING FAST" label hidden — no sold rate data in DB.
+                      // Container(
+                      //   padding: const EdgeInsets.symmetric(
+                      //       horizontal: 5, vertical: 1),
+                      //   decoration: BoxDecoration(
+                      //     color: _kFlash.withValues(alpha: 0.12),
+                      //     borderRadius: BorderRadius.circular(3),
+                      //   ),
+                      //   child: Text('SELLING FAST',
+                      //       style: _pjs(
+                      //           size: 8,
+                      //           weight: FontWeight.w800,
+                      //           color: _kFlash)),
+                      // ),
                       const Spacer(),
                       GestureDetector(
                         onTap: () => Navigator.push(
@@ -1467,7 +1832,9 @@ class _EnhancedProductCard extends StatelessWidget {
                   child: AspectRatio(
                     aspectRatio: 1,
                     child: Image.network(
-                      'https://picsum.photos/seed/${product.imageSeed}/300/300',
+                      product.imageUrl.isNotEmpty
+                          ? product.imageUrl
+                          : 'https://picsum.photos/seed/${product.imageSeed}/300/300',
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: _kChip,
@@ -1629,16 +1996,14 @@ class _EnhancedProductCard extends StatelessWidget {
                             decoration: TextDecoration.underline)),
                   ),
                   const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      Icon(Icons.star_rounded,
-                          size: 11, color: Colors.amber.shade500),
-                      Text(' ${product.rating}',
-                          style: _pjs(size: 11, weight: FontWeight.w600)),
-                      Text('  ${product.sold}',
-                          style: _pjs(size: 10, color: _kSubtext)),
-                    ],
-                  ),
+                  // Rating + sold hidden — no reviews/sold table in DB yet.
+                  // Row(
+                  //   children: [
+                  //     Icon(Icons.star_rounded, size: 11, color: Colors.amber.shade500),
+                  //     Text(' ${product.rating}', style: _pjs(size: 11, weight: FontWeight.w600)),
+                  //     Text('  ${product.sold}', style: _pjs(size: 10, color: _kSubtext)),
+                  //   ],
+                  // ),
                 ],
               ),
             ),
@@ -2274,7 +2639,9 @@ class _StoreProductCard extends StatelessWidget {
                   child: AspectRatio(
                     aspectRatio: 1,
                     child: Image.network(
-                      'https://picsum.photos/seed/${product.imageSeed}/300/300',
+                      product.imageUrl.isNotEmpty
+                          ? product.imageUrl
+                          : 'https://picsum.photos/seed/${product.imageSeed}/300/300',
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: _kChip,
@@ -2343,19 +2710,19 @@ class _StoreProductCard extends StatelessWidget {
                       style:
                           _pjs(size: 12, weight: FontWeight.w600, height: 1.3)),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.star_rounded,
-                          size: 11, color: Colors.amber.shade500),
-                      Text(' ${product.rating}',
-                          style: _pjs(size: 11, weight: FontWeight.w600)),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
+                  // Rating + sold hidden — no reviews/sold table in DB yet.
+                  // Row(
+                  //   children: [
+                  //     Icon(Icons.star_rounded, size: 11, color: Colors.amber.shade500),
+                  //     Text(' ${product.rating}', style: _pjs(size: 11, weight: FontWeight.w600)),
+                  //   ],
+                  // ),
+                  // const SizedBox(height: 4),
                   Text('₱${product.price.toStringAsFixed(0)}',
                       style: _pjs(
                           size: 14, weight: FontWeight.w800, color: _kText)),
-                  Text(product.sold, style: _pjs(size: 10, color: _kSubtext)),
+                  // product.sold hidden — fake data.
+                  // Text(product.sold, style: _pjs(size: 10, color: _kSubtext)),
                 ],
               ),
             ),
@@ -2369,6 +2736,7 @@ class _StoreProductCard extends StatelessWidget {
 // ═════════════════════════════════════════════════════════════════════════════
 // COUNTDOWN WIDGETS
 // ═════════════════════════════════════════════════════════════════════════════
+// ignore: unused_element
 class _CountBlock extends StatelessWidget {
   const _CountBlock(this.value);
   final String value;
@@ -2389,6 +2757,7 @@ class _CountBlock extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _ColonSep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

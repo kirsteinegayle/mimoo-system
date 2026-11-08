@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, debugPrint;
 import 'package:http/http.dart' as http;
 
 /// Central HTTP client for all calls to the mimoo Laravel backend.
@@ -41,10 +41,37 @@ class ApiService {
   static String? token;
 
   /// Request timeout.
-  /// 45 s in debug (dev server cold-start can be slow); 15 s in release.
+  /// 45 s in debug (first request to `php artisan serve` can take ~30 s);
+  /// 30 s in release.
   // ignore: prefer_const_declarations
   static final Duration _timeout =
-      kDebugMode ? const Duration(seconds: 45) : const Duration(seconds: 15);
+      kDebugMode ? const Duration(seconds: 45) : const Duration(seconds: 30);
+
+  /// One user-facing message for any error thrown by this client.
+  /// Screens show this with a "Try again" button instead of crashing.
+  static String friendlyError(Object e) {
+    if (e is ApiException) {
+      if (e.statusCode == 401) return 'Your session has expired. Please log in again.';
+      if (e.statusCode == 404) return e.message.isNotEmpty ? e.message : 'Not found.';
+      if (e.statusCode >= 500) return 'Server error (${e.statusCode}). Please try again.';
+      return e.message;
+    }
+    final t = e.toString();
+    if (t.contains('TimeoutException')) {
+      return 'The server is taking too long to respond. Please try again.';
+    }
+    if (t.contains('SocketException') ||
+        t.contains('ClientException') ||
+        t.contains('Failed to fetch') ||
+        t.contains('Connection refused') ||
+        t.contains('XMLHttpRequest')) {
+      return 'Cannot reach the server. Check that the backend is running and try again.';
+    }
+    if (t.contains('FormatException') || t.contains('is not a subtype')) {
+      return 'Unexpected response from the server.';
+    }
+    return 'Something went wrong. Please try again.';
+  }
 
   // ── Headers ──────────────────────────────────────────────────────────────
 
@@ -142,10 +169,80 @@ class ApiService {
     return _handleResponse(res);
   }
 
+  /// Multipart POST — sends [bytes] as a file field named [fieldName].
+  /// Works on Flutter Web (no dart:io needed — uses bytes directly).
+  static Future<dynamic> postMultipart(
+    String endpoint, {
+    required String fieldName,
+    required List<int> bytes,
+    required String filename,
+    required String contentType,
+    bool includeAuth = true,
+  }) async {
+    final uri = _uri(endpoint);
+    final req = http.MultipartRequest('POST', uri);
+    if (includeAuth && token != null) {
+      req.headers['Authorization'] = 'Bearer $token';
+    }
+    req.headers['Accept'] = 'application/json';
+    // Parse content type string into type/subtype parts for MultipartFile
+    final parts = contentType.split('/');
+    final mediaType = http.MediaType(
+      parts.isNotEmpty ? parts[0] : 'application',
+      parts.length > 1 ? parts[1] : 'octet-stream',
+    );
+    req.files.add(http.MultipartFile.fromBytes(
+      fieldName,
+      bytes,
+      filename: filename,
+      contentType: mediaType,
+    ));
+    final streamed = await req.send().timeout(_timeout);
+    final res = await http.Response.fromStream(streamed);
+    return _handleResponse(res);
+  }
+
+  /// Multipart POST with text [fields] and any number of [files].
+  /// Each file entry: (field name e.g. 'images[]', bytes, filename, mime).
+  static Future<dynamic> postMultipartFields(
+    String endpoint, {
+    Map<String, String> fields = const {},
+    List<MultipartUpload> files = const [],
+    bool includeAuth = true,
+  }) async {
+    final req = http.MultipartRequest('POST', _uri(endpoint));
+    if (includeAuth && token != null) {
+      req.headers['Authorization'] = 'Bearer $token';
+    }
+    req.headers['Accept'] = 'application/json';
+    req.fields.addAll(fields);
+    for (final f in files) {
+      final parts = f.contentType.split('/');
+      req.files.add(http.MultipartFile.fromBytes(
+        f.field,
+        f.bytes,
+        filename: f.filename,
+        contentType: http.MediaType(
+          parts.isNotEmpty ? parts[0] : 'application',
+          parts.length > 1 ? parts[1] : 'octet-stream',
+        ),
+      ));
+    }
+    final streamed = await req.send().timeout(_timeout);
+    final res = await http.Response.fromStream(streamed);
+    return _handleResponse(res);
+  }
+
   // ── Response handling ─────────────────────────────────────────────────────
 
   /// Decodes the response body as JSON and throws [ApiException] on non-2xx.
   static dynamic _handleResponse(http.Response res) {
+    // Debug-mode only: status, URL and a short body excerpt. Never headers
+    // (no Authorization/token is ever printed).
+    if (kDebugMode && res.statusCode >= 400) {
+      final body = res.body.length > 300 ? '${res.body.substring(0, 300)}…' : res.body;
+      debugPrint('[ApiService] ${res.statusCode} ${res.request?.method} ${res.request?.url} → $body');
+    }
     if (res.statusCode >= 200 && res.statusCode < 300) {
       if (res.body.isEmpty) return {};
       return jsonDecode(res.body);
@@ -184,6 +281,21 @@ class ApiService {
       body: res.body,
     );
   }
+}
+
+/// One file for [ApiService.postMultipartFields].
+class MultipartUpload {
+  const MultipartUpload({
+    required this.field,
+    required this.bytes,
+    required this.filename,
+    required this.contentType,
+  });
+
+  final String field;
+  final List<int> bytes;
+  final String filename;
+  final String contentType;
 }
 
 /// Thrown when the API returns a non-2xx status code.

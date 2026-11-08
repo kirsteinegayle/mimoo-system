@@ -18,6 +18,8 @@ class MimooPageRoute<T> extends PageRouteBuilder<T> {
           pageBuilder: (context, animation, secondaryAnimation) =>
               builder(context),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            // Reduce motion: no transition animation.
+            if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) return child;
             const begin = Offset(0.0, 0.04);
             const end = Offset.zero;
             final tween = Tween(begin: begin, end: end)
@@ -45,10 +47,17 @@ class StaggeredItem extends StatefulWidget {
     required this.index,
     required this.child,
     this.delayPerItem = 60,
+    this.id,
   });
   final int index;
   final Widget child;
   final int delayPerItem; // ms
+
+  /// When set, the entrance plays only ONCE per id for the app session
+  /// (grid cards recycled while scrolling don't re-animate).
+  final Object? id;
+
+  static final Set<Object> _played = <Object>{};
 
   @override
   State<StaggeredItem> createState() => _StaggeredItemState();
@@ -74,11 +83,24 @@ class _StaggeredItemState extends State<StaggeredItem>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
 
+    final id = widget.id;
+    if (id != null && StaggeredItem._played.contains(id)) {
+      _ctrl.value = 1; // already shown once
+      return;
+    }
+    if (id != null) StaggeredItem._played.add(id);
     // Stagger delay capped at 480ms so late items don't feel sluggish
     final delay = (widget.index * widget.delayPerItem).clamp(0, 480);
     Future.delayed(Duration(milliseconds: delay), () {
       if (mounted) _ctrl.forward();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reduce motion: show immediately.
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) _ctrl.value = 1;
   }
 
   @override
@@ -141,7 +163,9 @@ class _ScaleTapState extends State<ScaleTap>
   }
 
   void _onTap() {
-    _ctrl.forward().then((_) => _ctrl.reverse());
+    if (!(MediaQuery.maybeDisableAnimationsOf(context) ?? false)) {
+      _ctrl.forward().then((_) => _ctrl.reverse());
+    }
     widget.onTap?.call();
   }
 
@@ -206,10 +230,15 @@ class MimooNavBar extends StatelessWidget {
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(9999),
                       ),
-                      child: Icon(
-                        selected ? item.activeIcon : item.icon,
-                        size: 20,
-                        color: selected ? _kPrimary : const Color(0xFF8A84A3),
+                      child: Badge(
+                        isLabelVisible: item.badgeCount > 0,
+                        label: Text(item.badgeCount > 99 ? '99+' : '${item.badgeCount}'),
+                        backgroundColor: const Color(0xFFFF3B5C),
+                        child: Icon(
+                          selected ? item.activeIcon : item.icon,
+                          size: 20,
+                          color: selected ? _kPrimary : const Color(0xFF8A84A3),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -239,10 +268,14 @@ class MimooNavItem {
     required this.icon,
     required this.activeIcon,
     required this.label,
+    this.badgeCount = 0,
   });
   final IconData icon;
   final IconData activeIcon;
   final String label;
+
+  /// Count badge on the icon (hidden when 0).
+  final int badgeCount;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

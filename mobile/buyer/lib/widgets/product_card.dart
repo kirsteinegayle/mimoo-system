@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/product.dart';
 import '../state/cart_provider.dart';
+import '../state/wishlist_provider.dart';
 import '../state/auth_service.dart';
 import '../pages/home/product_detail_page.dart';
 import '../pages/auth/login_page.dart';
@@ -22,6 +23,7 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = CartProvider.of(context);
+    final wishlist = WishlistProvider.of(context);
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -70,14 +72,13 @@ class ProductCard extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (_) => LoginPage(
-                                onLoginSuccess: () =>
-                                    CartProvider.of(context).add(product),
+                                onLoginSuccess: () => wishlist.toggle(product),
                               ),
                             ),
                           );
                           return;
                         }
-                        CartProvider.of(context).add(product);
+                        wishlist.toggle(product);
                       },
                       child: Container(
                         width: 28,
@@ -87,11 +88,12 @@ class ProductCard extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          cart.contains(product)
+                          wishlist.contains(product)
                               ? Icons.favorite
                               : Icons.favorite_border,
                           size: 15,
-                          color: cart.contains(product) ? _kFlash : _kSubtext,
+                          color:
+                              wishlist.contains(product) ? _kFlash : _kSubtext,
                         ),
                       ),
                     ),
@@ -115,19 +117,21 @@ class ProductCard extends StatelessWidget {
                         color: _kText,
                         height: 1.3),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.star_rounded,
-                          size: 11, color: Colors.amber.shade500),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${product.rating}',
-                        style: GoogleFonts.plusJakartaSans(
-                            fontSize: 9, color: _kSubtext),
-                      ),
-                    ],
-                  ),
+                  if (product.reviewCount > 0) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.star_rounded,
+                            size: 11, color: Colors.amber.shade500),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${product.rating.toStringAsFixed(1)} (${product.reviewCount})',
+                          style: GoogleFonts.plusJakartaSans(
+                              fontSize: 9, color: _kSubtext),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

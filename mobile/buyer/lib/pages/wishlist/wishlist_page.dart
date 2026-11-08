@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/product.dart';
+import '../../models/wishlist_item.dart';
 import '../../state/wishlist_provider.dart';
 import '../../state/wishlist_state.dart';
 import '../../state/cart_provider.dart';
@@ -62,46 +63,92 @@ class _WishlistPageState extends State<WishlistPage> {
     });
   }
 
-  void _selectAll(List<Product> items) {
+  void _selectAll(List<WishlistItem> items) {
     setState(() {
       if (_selected.length == items.length) {
         _selected.clear();
       } else {
-        _selected.addAll(items.map((p) => p.id));
+        _selected.addAll(items.map((e) => e.productId));
       }
     });
   }
 
-  void _addSelectedToCart(WishlistState wishlist) {
+  void _addSelectedToCart(WishlistState wishlist) async {
     final cart = CartProvider.of(context);
+    final items = wishlist.serverItems;
     for (final id in _selected) {
-      final product = wishlist.items.firstWhere((p) => p.id == id);
-      cart.add(product);
+      final item = items.firstWhere((e) => e.productId == id);
+      // Create a minimal Product for cart.add()
+      final product = _itemToProduct(item);
+      await cart.add(product);
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${_selected.length} item${_selected.length == 1 ? '' : 's'} added to cart!',
-          style: _pjs(size: 13, color: Colors.white, weight: FontWeight.w600),
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${_selected.length} item${_selected.length == 1 ? '' : 's'} added to cart!',
+            style: _pjs(size: 13, color: Colors.white, weight: FontWeight.w600),
+          ),
+          backgroundColor: _kPrimary,
+          duration: const Duration(seconds: 2),
         ),
-        backgroundColor: _kPrimary,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      );
+    }
     setState(() {
       _selectMode = false;
       _selected.clear();
     });
   }
 
-  void _removeSelected(WishlistState wishlist) {
-    final toRemove =
-        wishlist.items.where((p) => _selected.contains(p.id)).toList();
-    wishlist.removeAll(toRemove);
+  void _removeSelected(WishlistState wishlist) async {
+    final items = wishlist.serverItems;
+    final toRemove = items
+        .where((e) => _selected.contains(e.productId))
+        .map((e) => _itemToProduct(e))
+        .toList();
+    for (final p in toRemove) {
+      await wishlist.remove(p);
+    }
     setState(() {
       _selectMode = false;
       _selected.clear();
     });
+  }
+
+  /// Convert a [WishlistItem] to a minimal [Product] for cart.add() and
+  /// ProductDetailPage navigation.
+  Product _itemToProduct(WishlistItem item) {
+    return Product(
+      id: item.productId,
+      name: item.productName,
+      price: item.effectivePrice,
+      salePrice: item.salePrice,
+      imageUrl: item.imageUrl ?? '',
+      category: '',
+      stock: item.stock,
+      stockStatus: item.stockStatus,
+      isInStock: item.isInStock,
+      isOnSale: item.isOnSale,
+    );
+  }
+
+  void _openProductDetail(WishlistItem item, WishlistState wishlist) {
+    // Navigate to detail page — fetch full product data on the detail page
+    // side or pass a minimal product. For now, pass a minimal product that
+    // the detail page can use; it will fetch full data if needed.
+    final product = _itemToProduct(item);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WishlistProvider(
+          wishlist: wishlist,
+          child: CartProvider(
+            cart: CartProvider.of(context),
+            child: ProductDetailPage(product: product),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -110,12 +157,53 @@ class _WishlistPageState extends State<WishlistPage> {
     return AnimatedBuilder(
       animation: wishlist,
       builder: (context, _) {
-        final items = wishlist.items;
+        // Show loading state on first load
+        if (wishlist.isLoggedIn &&
+            wishlist.loading &&
+            wishlist.serverItems.isEmpty) {
+          return Scaffold(
+            backgroundColor: _kSurface,
+            appBar: AppBar(
+              backgroundColor: _kCard,
+              elevation: 0,
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back, color: _kText),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text('My Wishlist',
+                  style: _pjs(size: 17, weight: FontWeight.w800)),
+            ),
+            body: const Center(
+                child: CircularProgressIndicator(color: _kPrimary)),
+          );
+        }
+
+        // Logged-out users use local items (legacy), logged-in use server
+        final items = wishlist.isLoggedIn
+            ? wishlist.serverItems
+            : wishlist.items
+                .map((p) => WishlistItem(
+                      productId: p.id,
+                      productName: p.name,
+                      imageUrl: p.imageUrl,
+                      price: p.price,
+                      salePrice: p.salePrice,
+                      effectivePrice: p.effectivePrice,
+                      isOnSale: p.isOnSale,
+                      stock: p.stock,
+                      stockStatus: p.stockStatus,
+                      isInStock: p.isInStock,
+                      isAvailable: true,
+                      addedAt: '',
+                    ))
+                .toList();
+
+        final isEmpty = items.isEmpty;
+
         return Scaffold(
           backgroundColor: _kSurface,
           appBar: _buildAppBar(items, wishlist),
-          body:
-              items.isEmpty ? _buildEmptyState() : _buildGrid(items, wishlist),
+          body: isEmpty ? _buildEmptyState() : _buildGrid(items, wishlist),
           bottomNavigationBar: _selectMode && items.isNotEmpty
               ? _buildSelectBar(items, wishlist)
               : null,
@@ -126,7 +214,7 @@ class _WishlistPageState extends State<WishlistPage> {
 
   // ── AppBar ─────────────────────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar(
-      List<Product> items, WishlistState wishlist) {
+      List<WishlistItem> items, WishlistState wishlist) {
     return AppBar(
       backgroundColor: _kCard,
       elevation: 0,
@@ -209,52 +297,48 @@ class _WishlistPageState extends State<WishlistPage> {
   }
 
   // ── Grid ───────────────────────────────────────────────────────────────────
-  Widget _buildGrid(List<Product> items, WishlistState wishlist) {
-    return GridView.builder(
-      padding: EdgeInsets.fromLTRB(12, 12, 12, _selectMode ? 100 : 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.60,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
+  Widget _buildGrid(List<WishlistItem> items, WishlistState wishlist) {
+    return RefreshIndicator(
+      color: _kPrimary,
+      onRefresh: () => wishlist.refresh(),
+      child: GridView.builder(
+        padding: EdgeInsets.fromLTRB(12, 12, 12, _selectMode ? 100 : 24),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.60,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+        ),
+        itemCount: items.length,
+        itemBuilder: (_, i) {
+          final item = items[i];
+          final isSelected = _selected.contains(item.productId);
+          return _WishlistCard(
+            item: item,
+            wishlist: wishlist,
+            selectMode: _selectMode,
+            isSelected: isSelected,
+            onTap: () {
+              if (_selectMode) {
+                _toggleSelect(item.productId);
+              } else {
+                _openProductDetail(item, wishlist);
+              }
+            },
+            onSelectToggle: () => _toggleSelect(item.productId),
+            onRemove: () {
+              final product = _itemToProduct(item);
+              wishlist.remove(product);
+            },
+            onAddToCart: () => _openVariantSheet(item),
+          );
+        },
       ),
-      itemCount: items.length,
-      itemBuilder: (_, i) {
-        final product = items[i];
-        final isSelected = _selected.contains(product.id);
-        return _WishlistCard(
-          product: product,
-          wishlist: wishlist,
-          selectMode: _selectMode,
-          isSelected: isSelected,
-          onTap: () {
-            if (_selectMode) {
-              _toggleSelect(product.id);
-            } else {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => WishlistProvider(
-                    wishlist: wishlist,
-                    child: CartProvider(
-                      cart: CartProvider.of(context),
-                      child: ProductDetailPage(product: product),
-                    ),
-                  ),
-                ),
-              );
-            }
-          },
-          onSelectToggle: () => _toggleSelect(product.id),
-          onRemove: () => wishlist.remove(product),
-          onAddToCart: () => _openVariantSheet(product),
-        );
-      },
     );
   }
 
   // ── Select bottom bar ──────────────────────────────────────────────────────
-  Widget _buildSelectBar(List<Product> items, WishlistState wishlist) {
+  Widget _buildSelectBar(List<WishlistItem> items, WishlistState wishlist) {
     final allSelected = _selected.length == items.length;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
@@ -368,15 +452,16 @@ class _WishlistPageState extends State<WishlistPage> {
   }
 
   // ── Open variant sheet ─────────────────────────────────────────────────────
-  void _openVariantSheet(Product product) {
+  void _openVariantSheet(WishlistItem item) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _WishlistVariantSheet(
-        product: product,
+        item: item,
         onConfirm: (qty) {
           final cart = CartProvider.of(context);
+          final product = _itemToProduct(item);
           for (int i = 0; i < qty; i++) {
             cart.add(product);
           }
@@ -398,7 +483,7 @@ class _WishlistPageState extends State<WishlistPage> {
 // ── Wishlist Card ─────────────────────────────────────────────────────────────
 class _WishlistCard extends StatelessWidget {
   const _WishlistCard({
-    required this.product,
+    required this.item,
     required this.wishlist,
     required this.selectMode,
     required this.isSelected,
@@ -408,7 +493,7 @@ class _WishlistCard extends StatelessWidget {
     required this.onAddToCart,
   });
 
-  final Product product;
+  final WishlistItem item;
   final WishlistState wishlist;
   final bool selectMode;
   final bool isSelected;
@@ -417,8 +502,8 @@ class _WishlistCard extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback onAddToCart;
 
-  // Mock: treat products with id divisible by 7 as out of stock for demo
-  bool get _outOfStock => product.id % 7 == 0;
+  bool get _outOfStock => !item.isInStock || item.stock <= 0;
+  bool get _unavailable => !item.isAvailable;
 
   @override
   Widget build(BuildContext context) {
@@ -453,9 +538,9 @@ class _WishlistCard extends StatelessWidget {
                       fit: StackFit.expand,
                       children: [
                         Image.network(
-                          product.imageUrl.isNotEmpty
-                              ? product.imageUrl
-                              : 'https://picsum.photos/seed/${product.id}/300/300',
+                          (item.imageUrl ?? '').isNotEmpty
+                              ? item.imageUrl!
+                              : '',
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
                             color: _kChip,
@@ -463,8 +548,8 @@ class _WishlistCard extends StatelessWidget {
                                 size: 36, color: _kSubtext),
                           ),
                         ),
-                        // Sold-out overlay
-                        if (_outOfStock)
+                        // Sold-out / unavailable overlay
+                        if (_outOfStock || _unavailable)
                           Container(
                             color: Colors.black.withValues(alpha: 0.50),
                             child: Center(
@@ -475,11 +560,13 @@ class _WishlistCard extends StatelessWidget {
                                   color: _kFlash,
                                   borderRadius: BorderRadius.circular(6),
                                 ),
-                                child: Text('SOLD OUT',
-                                    style: _pjs(
-                                        size: 11,
-                                        weight: FontWeight.w800,
-                                        color: Colors.white)),
+                                child: Text(
+                                  _unavailable ? 'UNAVAILABLE' : 'SOLD OUT',
+                                  style: _pjs(
+                                      size: 11,
+                                      weight: FontWeight.w800,
+                                      color: Colors.white),
+                                ),
                               ),
                             ),
                           ),
@@ -495,32 +582,40 @@ class _WishlistCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          product.name.isNotEmpty
-                              ? product.name
-                              : 'Product #${product.id}',
+                          item.productName.isNotEmpty
+                              ? item.productName
+                              : 'Product #${item.productId}',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: _pjs(
                               size: 12, weight: FontWeight.w600, height: 1.35),
                         ),
                         const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(Icons.star_rounded,
-                                size: 12, color: Colors.amber.shade500),
-                            const SizedBox(width: 2),
-                            Text(product.rating.toStringAsFixed(1),
-                                style: _pjs(
-                                    size: 11,
-                                    weight: FontWeight.w700,
-                                    color: _kSecondary)),
-                          ],
-                        ),
+                        // Stock status
+                        if (item.stockStatus.isNotEmpty)
+                          Text(
+                            item.stockStatus,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _pjs(
+                                size: 10,
+                                color: _outOfStock ? _kFlash : _kSubtext,
+                                weight: FontWeight.w500),
+                          ),
                         const Spacer(),
+                        // Price (show sale price strikethrough if on sale)
+                        if (item.isOnSale) ...[
+                          Text(
+                            '₱${item.price.toStringAsFixed(0)}',
+                            style: _pjs(
+                                size: 11,
+                                weight: FontWeight.w400,
+                                color: _kSubtext,
+                                decoration: TextDecoration.lineThrough),
+                          ),
+                        ],
                         Text(
-                          product.price > 0
-                              ? '₱${product.price.toStringAsFixed(0)}'
-                              : '₱849',
+                          '₱${item.effectivePrice.toStringAsFixed(0)}',
                           style: _pjs(
                               size: 16,
                               weight: FontWeight.w800,
@@ -532,10 +627,13 @@ class _WishlistCard extends StatelessWidget {
                           width: double.infinity,
                           height: 32,
                           child: ElevatedButton(
-                            onPressed: _outOfStock ? null : onAddToCart,
+                            onPressed: _outOfStock || _unavailable
+                                ? null
+                                : onAddToCart,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  _outOfStock ? _kBorder : _kPrimary,
+                              backgroundColor: _outOfStock || _unavailable
+                                  ? _kBorder
+                                  : _kPrimary,
                               foregroundColor: Colors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
@@ -543,12 +641,17 @@ class _WishlistCard extends StatelessWidget {
                               padding: EdgeInsets.zero,
                             ),
                             child: Text(
-                              _outOfStock ? 'Sold Out' : 'Add to Cart',
+                              _unavailable
+                                  ? 'Unavailable'
+                                  : _outOfStock
+                                      ? 'Sold Out'
+                                      : 'Add to Cart',
                               style: _pjs(
                                   size: 11,
                                   weight: FontWeight.w700,
-                                  color:
-                                      _outOfStock ? _kSubtext : Colors.white),
+                                  color: _outOfStock || _unavailable
+                                      ? _kSubtext
+                                      : Colors.white),
                             ),
                           ),
                         ),
@@ -625,10 +728,10 @@ class _WishlistCard extends StatelessWidget {
 // ── Variant Sheet (lightweight, for wishlist add-to-cart) ─────────────────────
 class _WishlistVariantSheet extends StatefulWidget {
   const _WishlistVariantSheet({
-    required this.product,
+    required this.item,
     required this.onConfirm,
   });
-  final Product product;
+  final WishlistItem item;
   final void Function(int qty) onConfirm;
 
   @override
@@ -636,12 +739,7 @@ class _WishlistVariantSheet extends StatefulWidget {
 }
 
 class _WishlistVariantSheetState extends State<_WishlistVariantSheet> {
-  String _color = 'Purple';
-  String _size = 'M';
   int _qty = 1;
-
-  static const _colors = ['Purple', 'Charcoal', 'Oat Cream'];
-  static const _sizes = ['S', 'M', 'L', 'XL'];
 
   @override
   Widget build(BuildContext context) {
@@ -673,20 +771,25 @@ class _WishlistVariantSheetState extends State<_WishlistVariantSheet> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
-                    widget.product.imageUrl.isNotEmpty
-                        ? widget.product.imageUrl
-                        : 'https://picsum.photos/seed/${widget.product.id}/80/80',
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      width: 60,
-                      height: 60,
-                      color: _kChip,
-                      child: Icon(Icons.image_outlined, color: _kSubtext),
-                    ),
-                  ),
+                  child: (widget.item.imageUrl ?? '').isNotEmpty
+                      ? Image.network(
+                          widget.item.imageUrl!,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 60,
+                            height: 60,
+                            color: _kChip,
+                            child: Icon(Icons.image_outlined, color: _kSubtext),
+                          ),
+                        )
+                      : Container(
+                          width: 60,
+                          height: 60,
+                          color: _kChip,
+                          child: Icon(Icons.image_outlined, color: _kSubtext),
+                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -694,18 +797,16 @@ class _WishlistVariantSheetState extends State<_WishlistVariantSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.product.name.isNotEmpty
-                            ? widget.product.name
-                            : 'Product #${widget.product.id}',
+                        widget.item.productName.isNotEmpty
+                            ? widget.item.productName
+                            : 'Product #${widget.item.productId}',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: _pjs(size: 13, weight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        widget.product.price > 0
-                            ? '₱${widget.product.price.toStringAsFixed(0)}'
-                            : '₱849',
+                        '₱${widget.item.effectivePrice.toStringAsFixed(0)}',
                         style: _pjs(
                             size: 15,
                             weight: FontWeight.w800,
@@ -727,83 +828,6 @@ class _WishlistVariantSheetState extends State<_WishlistVariantSheet> {
               ],
             ),
             const Divider(color: _kBorder, height: 24),
-            // Color
-            Row(
-              children: [
-                Text('Color', style: _pjs(size: 13, weight: FontWeight.w700)),
-                const Spacer(),
-                Text(_color,
-                    style: _pjs(
-                        size: 12, color: _kSecondary, weight: FontWeight.w600)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: _colors.map((c) {
-                final sel = _color == c;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _color = c),
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: sel ? _kChip : _kSurface,
-                        borderRadius: BorderRadius.circular(9999),
-                        border: Border.all(
-                          color: sel ? _kSecondary : _kBorder,
-                          width: sel ? 2 : 1,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(c,
-                          style: _pjs(
-                              size: 11,
-                              weight: FontWeight.w600,
-                              color: sel ? _kSecondary : _kText)),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 14),
-            // Size
-            Row(
-              children: [
-                Text('Size', style: _pjs(size: 13, weight: FontWeight.w700)),
-                const Spacer(),
-                Text(_size,
-                    style: _pjs(
-                        size: 12, color: _kSecondary, weight: FontWeight.w600)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: _sizes.map((s) {
-                final sel = _size == s;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _size = s),
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: sel ? _kPrimary : _kSurface,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: sel ? _kPrimary : _kBorder),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(s,
-                          style: _pjs(
-                              size: 13,
-                              weight: FontWeight.w700,
-                              color: sel ? Colors.white : _kText)),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 14),
             // Quantity
             Row(
               children: [
@@ -824,7 +848,10 @@ class _WishlistVariantSheetState extends State<_WishlistVariantSheet> {
                 _QtyBtn(
                   icon: Icons.add,
                   onTap: () {
-                    if (_qty < 5) setState(() => _qty++);
+                    // Cap at available stock
+                    final maxQty =
+                        widget.item.stock > 0 ? widget.item.stock : 1;
+                    if (_qty < maxQty) setState(() => _qty++);
                   },
                 ),
               ],

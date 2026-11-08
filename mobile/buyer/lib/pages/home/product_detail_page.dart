@@ -9,6 +9,9 @@ import '../cart/cart_page.dart';
 import '../checkout/checkout_page.dart';
 import '../auth/login_page.dart';
 import '../seller/seller_store_page.dart';
+import '../../widgets/product_reviews_section.dart';
+import '../../services/product_repository.dart';
+import '../chat/chat_screen.dart';
 import '../../utils/animations.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -60,18 +63,62 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   bool _specsExpanded = false;
 
+  /// Full product from GET /api/buyer/products/{id}. List rows lack
+  /// description, all images, variants and variant_options, so the page
+  /// always loads the detail and falls back to the list row meanwhile.
+  Product? _full;
+  Product get _product => _full ?? widget.product;
+
+  // Real seller of this product. Many entry points (wishlist, sample cards)
+  // build a Product without seller_id, so it is fetched from
+  // GET /api/buyer/products/{id} when missing.
+  int? _sellerId;
+  String? _sellerName;
+
+  Future<void> _loadFull() async {
+    try {
+      final p = await ProductRepository.instance.fetchProduct(widget.product.id);
+      if (!mounted) return;
+      setState(() {
+        _full = p;
+        _sellerId = p.sellerId;
+        _sellerName = p.sellerName;
+      });
+    } catch (_) {
+      // Unknown / sample / hidden product: keep the list data; the store
+      // link stays hidden when there is no real seller_id.
+    }
+  }
+
+  void _openStore() {
+    final id = _sellerId;
+    if (id == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SellerStorePage(
+          sellerId: '$id',
+          sellerName: _sellerName ?? '',
+        ),
+      ),
+    );
+  }
+
   // Use the product's real image URLs; fall back to a single placeholder
   // when no images are available so the carousel always has at least one item.
   List<String> get _imageUrls {
-    final imgs = widget.product.images;
+    final imgs = _product.images;
     if (imgs.isNotEmpty) return imgs;
-    if (widget.product.imageUrl.isNotEmpty) return [widget.product.imageUrl];
+    if (_product.imageUrl.isNotEmpty) return [_product.imageUrl];
     return [];
   }
 
   @override
   void initState() {
     super.initState();
+    _sellerId = _product.sellerId;
+    _sellerName = _product.sellerName;
+    _loadFull();
     // _timer intentionally not started: _buildFlashBanner is hidden until
     // a sale_end_date column is available. Keep the timer code for future use.
   }
@@ -111,7 +158,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _VariantSheet(
-        product: widget.product,
+        product: _product,
         buyNow: buyNow,
         onConfirm: (variantId, qty) => _onVariantConfirmed(
           variantId: variantId,
@@ -129,7 +176,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }) {
     final cart = CartProvider.of(context);
     // Single API call with the exact quantity chosen in the sheet
-    cart.add(widget.product, variantId: variantId, quantity: qty);
+    cart.add(_product, variantId: variantId, quantity: qty);
 
     if (buyNow) {
       Navigator.push(
@@ -180,8 +227,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             const Divider(color: _kBorder, height: 24),
             _buildSelectedVariantRow(),
             const Divider(color: _kBorder, height: 24),
-            _buildDeliverySection(),
-            const Divider(color: _kBorder, height: 24),
+            // Delivery estimate / trust badges hidden — hardcoded dates and
+            // promises, not on the web.
             _buildSellerSection(),
             const Divider(color: _kBorder, height: 24),
             _buildSpecs(),
@@ -292,14 +339,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             },
           ),
           // Top-left badges — only show sale badge when product is actually on sale
-          if (widget.product.isOnSale)
+          if (_product.isOnSale)
             Positioned(
               top: 12,
               left: 12,
               child: (() {
-                final pct = widget.product.salePrice != null
-                    ? (((widget.product.price - widget.product.salePrice!) /
-                                widget.product.price) *
+                final pct = _product.salePrice != null
+                    ? (((_product.price - _product.salePrice!) /
+                                _product.price) *
                             100)
                         .round()
                     : 0;
@@ -313,10 +360,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             child: Column(
               children: [
                 _CarouselBtn(
-                  icon: WishlistProvider.of(context).contains(widget.product)
+                  icon: WishlistProvider.of(context).contains(_product)
                       ? Icons.favorite
                       : Icons.favorite_border,
-                  color: WishlistProvider.of(context).contains(widget.product)
+                  color: WishlistProvider.of(context).contains(_product)
                       ? _kFlash
                       : _kText,
                   onTap: () {
@@ -326,13 +373,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         MaterialPageRoute(
                           builder: (_) => LoginPage(
                             onLoginSuccess: () => WishlistProvider.of(context)
-                                .toggle(widget.product),
+                                .toggle(_product),
                           ),
                         ),
                       );
                       return;
                     }
-                    WishlistProvider.of(context).toggle(widget.product);
+                    WishlistProvider.of(context).toggle(_product);
                   },
                 ),
                 const SizedBox(height: 6),
@@ -460,7 +507,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   // ── Price Section ──────────────────────────────────────────────────────────
   Widget _buildPriceSection() {
-    final p = widget.product;
+    final p = _product;
     final effectivePrice = p.effectivePrice;
     final hasDiscount = p.isOnSale && p.salePrice != null;
     final discountPct =
@@ -548,27 +595,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Badges row
-          Row(
-            children: [
-              _SmallBadge(
-                  label: 'MALL', icon: Icons.store_outlined, color: _kPrimary),
-              const SizedBox(width: 6),
-              _SmallBadge(
-                  label: 'verified Authentic',
-                  icon: Icons.verified_outlined,
-                  color: _kGreen),
-            ],
-          ),
-          const SizedBox(height: 8),
+          // "MALL" / "verified Authentic" badges hidden — not on the web,
+          // no backend data.
           // Product name + share
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Text(
-                  widget.product.name.isNotEmpty
-                      ? widget.product.name
+                  _product.name.isNotEmpty
+                      ? _product.name
                       : 'Product',
                   style: _pjs(size: 17, weight: FontWeight.w800, height: 1.35),
                 ),
@@ -597,17 +633,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
           const SizedBox(height: 10),
           // Ratings row — only shown when there are actual reviews
-          if (widget.product.reviewCount > 0) ...[
+          if (_product.reviewCount > 0) ...[
             Row(
               children: [
                 ...List.generate(
                     5,
-                    (i) => Icon(Icons.star_rounded,
-                        size: 14, color: Colors.amber.shade500)),
+                    (i) => Icon(
+                        i < _product.rating.round()
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
+                        size: 14,
+                        color: Colors.amber.shade500)),
                 const SizedBox(width: 4),
-                Text(widget.product.rating.toStringAsFixed(1),
+                Text(_product.rating.toStringAsFixed(1),
                     style: _pjs(size: 13, weight: FontWeight.w700)),
-                Text(' (${widget.product.reviewCount})',
+                Text(' (${_product.reviewCount})',
                     style: _pjs(size: 12, color: _kSubtext)),
                 const SizedBox(width: 10),
                 const Spacer(),
@@ -619,16 +659,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         MaterialPageRoute(
                           builder: (_) => LoginPage(
                             onLoginSuccess: () => WishlistProvider.of(context)
-                                .toggle(widget.product),
+                                .toggle(_product),
                           ),
                         ),
                       );
                       return;
                     }
-                    WishlistProvider.of(context).toggle(widget.product);
+                    WishlistProvider.of(context).toggle(_product);
                   },
                   child: Icon(
-                    WishlistProvider.of(context).contains(widget.product)
+                    WishlistProvider.of(context).contains(_product)
                         ? Icons.favorite
                         : Icons.favorite_border,
                     size: 16,
@@ -651,16 +691,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         MaterialPageRoute(
                           builder: (_) => LoginPage(
                             onLoginSuccess: () => WishlistProvider.of(context)
-                                .toggle(widget.product),
+                                .toggle(_product),
                           ),
                         ),
                       );
                       return;
                     }
-                    WishlistProvider.of(context).toggle(widget.product);
+                    WishlistProvider.of(context).toggle(_product);
                   },
                   child: Icon(
-                    WishlistProvider.of(context).contains(widget.product)
+                    WishlistProvider.of(context).contains(_product)
                         ? Icons.favorite
                         : Icons.favorite_border,
                     size: 16,
@@ -677,6 +717,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   // ── Selected Variant Row ───────────────────────────────────────────────────
   Widget _buildSelectedVariantRow() {
+    final opts = (_product.variantOptions ?? const [])
+        .whereType<Map>()
+        .map((o) => '${o['name'] ?? ''}')
+        .where((n) => n.isNotEmpty)
+        .join(', ');
+    if (!_product.hasVariants) return const SizedBox.shrink();
     return GestureDetector(
       onTap: () => _openVariantSheet(buyNow: false),
       child: Padding(
@@ -686,15 +732,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             Text('Select Variations',
                 style: _pjs(size: 13, weight: FontWeight.w700)),
             const SizedBox(width: 8),
-            Text('Color, Size', style: _pjs(size: 12, color: _kSubtext)),
+            Text(opts, style: _pjs(size: 12, color: _kSubtext)),
             const Spacer(),
-            GestureDetector(
-              onTap: () => _showFitGuide(),
-              child: Text('Size Guide',
-                  style: _pjs(
-                      size: 12, weight: FontWeight.w600, color: _kSecondary)),
-            ),
-            const SizedBox(width: 4),
+            // Size Guide hidden — hardcoded chart, not on the web.
             Icon(Icons.chevron_right, size: 16, color: _kSecondary),
           ],
         ),
@@ -702,6 +742,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
+  // ignore: unused_element
   void _showFitGuide() {
     showDialog(
       context: context,
@@ -710,6 +751,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   // ── Delivery Section ───────────────────────────────────────────────────────
+  // ignore: unused_element
   Widget _buildDeliverySection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -766,8 +808,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   color: _kChip,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child:
-                    Icon(Icons.storefront_outlined, color: _kPrimary, size: 22),
+                clipBehavior: Clip.antiAlias,
+                // Store photo (same as web), icon when none / fails to load
+                child: (_product.sellerPhotoUrl ?? '').isNotEmpty
+                    ? Image.network(_product.sellerPhotoUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(
+                            Icons.storefront_outlined,
+                            color: _kPrimary,
+                            size: 22))
+                    : Icon(Icons.storefront_outlined,
+                        color: _kPrimary, size: 22),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -776,28 +827,24 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   children: [
                     Row(
                       children: [
-                        Text('mimoo Official Apparel',
-                            style: _pjs(size: 13, weight: FontWeight.w800)),
-                        const SizedBox(width: 6),
-                        _SmallBadge(
-                            label: 'MALL', icon: Icons.store, color: _kPrimary),
+                        Flexible(
+                          child: Text(
+                              (_sellerName ?? '').isNotEmpty
+                                  ? _sellerName!
+                                  : 'Seller',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: _pjs(size: 13, weight: FontWeight.w800)),
+                        ),
                       ],
                     ),
-                    Text('Flagship Streetwear Partner',
-                        style: _pjs(size: 11, color: _kSubtext)),
                   ],
                 ),
               ),
+              // Hidden when the real seller_id is unknown.
+              if (_sellerId != null)
               OutlinedButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const SellerStorePage(
-                      sellerId: 'mimoo-official',
-                      sellerName: 'mimoo Official Apparel',
-                    ),
-                  ),
-                ),
+                onPressed: _openStore,
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: _kPrimary),
                   shape: RoundedRectangleBorder(
@@ -812,14 +859,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _SellerStat(value: '99%', label: 'Positive Rating'),
-              _SellerStat(value: '< 1hr', label: 'Chat Response'),
-              _SellerStat(value: '45.2k', label: 'Followers'),
-            ],
-          ),
+          // Seller stats (99% / < 1hr / 45.2k) hidden — fake numbers.
         ],
       ),
     );
@@ -827,28 +867,33 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   // ── Specs ──────────────────────────────────────────────────────────────────
   Widget _buildSpecs() {
-    final specs = [
-      ('SKU', 'MO-HD-420-PU'),
-      ('Material / Fabric', '100% French Terry Cotton'),
-      ('Fabric Weight', '420 GSM (Heavyweight)'),
-      ('Fit Profile', 'Dropped Shoulder Boxy'),
-      ('Treatment', 'Mineral Acid Washed'),
+    // Same information as the web product page: description, category,
+    // brand, SKU, weight and stock. Empty values are not shown.
+    final p = _product;
+    final specs = <(String, String)>[
+      if (p.category.isNotEmpty) ('Category', p.category),
+      if ((p.brand ?? '').isNotEmpty) ('Brand', p.brand!),
+      if ((p.sku ?? '').isNotEmpty) ('SKU', p.sku!),
+      if (p.weight != null) ('Weight', '${p.weight} kg'),
+      ('Stock', p.isInStock ? '${p.stock} available' : 'Out of stock'),
     ];
+    final desc = (p.description ?? '').trim();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Product Specifications',
+          Text('Product Details',
               style: _pjs(size: 15, weight: FontWeight.w800)),
           const SizedBox(height: 12),
           ...specs.map((s) => Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(
-                      width: 130,
+                      width: 110,
                       child:
                           Text(s.$1, style: _pjs(size: 12, color: _kSubtext)),
                     ),
@@ -859,69 +904,27 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   ],
                 ),
               )),
-          const SizedBox(height: 8),
-          Text(
-            'Crafted from custom-developed 420 GSM ultra-dense combed cotton, this hoodie delivers an authentic relaxed streetwear silhouette. Each garment undergoes a multi-stage mineral acid dye wash, yielding a one-of-a-kind vintage fade pattern.',
-            style: _pjs(size: 12, color: _kSubtext, height: 1.6),
-          ),
           const SizedBox(height: 10),
-          // Size chart
-          Text('Size & Measurement Guide (cm):',
-              style: _pjs(size: 12, weight: FontWeight.w700)),
+          Text('Description', style: _pjs(size: 14, weight: FontWeight.w800)),
           const SizedBox(height: 6),
-          ...[
-            'Small: Chest 120 · Length 69 · Sleeve 59',
-            'Medium: Chest 126 · Length 72 · Sleeve 61',
-            'Large: Chest 132 · Length 74 · Sleeve 63',
-            'X-Large: Chest 138 · Length 76 · Sleeve 64'
-          ].map((line) => Padding(
-                padding: const EdgeInsets.only(bottom: 3),
-                child: Row(
-                  children: [
-                    Text('• ',
-                        style: _pjs(
-                            size: 12,
-                            color: _kSecondary,
-                            weight: FontWeight.w700)),
-                    Expanded(
-                        child: Text(line,
-                            style: _pjs(size: 12, color: _kSubtext))),
-                  ],
-                ),
-              )),
-          const SizedBox(height: 10),
-          // Styling & Care expandable
-          GestureDetector(
-            onTap: () => setState(() => _specsExpanded = !_specsExpanded),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: _kBorder)),
-              ),
-              child: Row(
-                children: [
-                  Text('Care Instructions',
-                      style: _pjs(
-                          size: 13,
-                          weight: FontWeight.w700,
-                          color: _kSecondary)),
-                  const Spacer(),
-                  Icon(
-                    _specsExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: _kSecondary,
-                  ),
-                ],
-              ),
+          if (desc.isEmpty)
+            Text('No description provided.',
+                style: _pjs(size: 12, color: _kSubtext))
+          else ...[
+            Text(
+              desc,
+              maxLines: _specsExpanded ? null : 6,
+              overflow: _specsExpanded ? null : TextOverflow.fade,
+              style: _pjs(size: 12, color: _kText, height: 1.6),
             ),
-          ),
-          if (_specsExpanded)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                'Machine wash cold on gentle cycle inside-out. Do not bleach. Air dry in shade to maintain rich mineral gradient.',
-                style: _pjs(size: 12, color: _kSubtext, height: 1.55),
+            if (desc.length > 300)
+              TextButton(
+                onPressed: () =>
+                    setState(() => _specsExpanded = !_specsExpanded),
+                child: Text(_specsExpanded ? 'Show less' : 'Show more',
+                    style: _pjs(size: 12, color: _kSecondary)),
               ),
-            ),
+          ],
         ],
       ),
     );
@@ -929,112 +932,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   // ── Reviews ────────────────────────────────────────────────────────────────
   Widget _buildReviews() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('Customer Reviews',
-                  style: _pjs(size: 15, weight: FontWeight.w800)),
-              const Spacer(),
-              Row(
-                children: List.generate(
-                    5,
-                    (i) => Icon(Icons.star_rounded,
-                        size: 12, color: Colors.amber.shade500)),
-              ),
-              const SizedBox(width: 4),
-              Text('4.9 / 5',
-                  style: _pjs(
-                      size: 12, weight: FontWeight.w700, color: _kSecondary)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text('(438 verified ratings)',
-              style: _pjs(size: 11, color: _kSubtext)),
-          const SizedBox(height: 10),
-          // Filter chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                'All (438)',
-                'With Photos (142)',
-                '5 Stars (390)',
-                'Fit True (310)'
-              ]
-                  .map((t) => Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: t.startsWith('All') ? _kPrimary : _kChip,
-                          borderRadius: BorderRadius.circular(9999),
-                        ),
-                        child: Text(t,
-                            style: _pjs(
-                              size: 11,
-                              weight: FontWeight.w600,
-                              color: t.startsWith('All')
-                                  ? Colors.white
-                                  : _kSecondary,
-                            )),
-                      ))
-                  .toList(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _ReviewCard(
-            initials: 'AL',
-            name: 'Alyssa L.',
-            verified: true,
-            timeAgo: 'Yesterday',
-            variant: 'Size: M • Washed Purple',
-            review:
-                'The heavyweight 420 GSM cotton fleece feels super luxurious! Oversized fit falls exactly like high-end streetwear brands. Definitely worth the price! 🔥',
-            imageSeeds: const ['review1', 'review2'],
-          ),
-          const SizedBox(height: 10),
-          _ReviewCard(
-            initials: 'KD',
-            name: 'Kenneth D.',
-            verified: true,
-            timeAgo: '3 days ago',
-            variant: 'Size: L • Slate Charcoal',
-            review:
-                'Fast delivery by mimoo Express! High quality acid wash finish and warm inside lining. Ordered Thursday and received Saturday morning.',
-            imageSeeds: const [],
-          ),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Loading all 438 reviews...',
-                    style: _pjs(
-                        size: 13,
-                        color: Colors.white,
-                        weight: FontWeight.w600)),
-                backgroundColor: _kPrimary,
-                duration: const Duration(seconds: 2),
-              ),
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                border: Border.all(color: _kBorder),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text('See All 438 Reviews',
-                  style: _pjs(
-                      size: 13, weight: FontWeight.w700, color: _kSecondary)),
-            ),
-          ),
-        ],
-      ),
-    );
+    // Real reviews: average, count, breakdown and list from the API.
+    return ProductReviewsSection(productId: _product.id);
   }
 
   // ── Fixed Bottom Bar ───────────────────────────────────────────────────────
@@ -1060,17 +959,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             _BottomIcon(
               icon: Icons.chat_bubble_outline,
               label: 'Chat',
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Opening seller chat...',
-                      style: _pjs(
-                          size: 13,
-                          color: Colors.white,
-                          weight: FontWeight.w600)),
-                  backgroundColor: _kPrimary,
-                  duration: const Duration(seconds: 2),
-                ),
-              ),
+              // Opens (or reuses) the seller thread with this product's card.
+              onTap: () {
+                final sellerId = _sellerId;
+                if (sellerId == null) return;
+                openSellerChat(context,
+                    sellerId: sellerId, productId: _product.id);
+              },
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -1188,12 +1083,9 @@ class _VariantSheetState extends State<_VariantSheet> {
   /// Display image URL: variant image if available, else product main image.
   String? get _displayImageUrl {
     if (_hasVariants && _selectedVariantId != null) {
-      final hasImg = _selectedVariant?['image'] != null &&
-          (_selectedVariant!['image'] as String).isNotEmpty;
-      if (hasImg) {
-        // Use the variant-image endpoint (same base as product image endpoint)
-        return 'http://127.0.0.1:8000/api/buyer/products/${_p.id}/variant-image/$_selectedVariantId';
-      }
+      // API variants expose an absolute 'image_url' (variant-image endpoint).
+      final url = _selectedVariant?['image_url'];
+      if (url is String && url.isNotEmpty) return url;
     }
     return _p.imageUrl.isNotEmpty ? _p.imageUrl : null;
   }
@@ -1538,6 +1430,7 @@ class _Badge extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _SmallBadge extends StatelessWidget {
   const _SmallBadge(
       {required this.label, required this.icon, required this.color});
@@ -1678,6 +1571,7 @@ class _TrustBadge extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _SellerStat extends StatelessWidget {
   const _SellerStat({required this.value, required this.label});
   final String value, label;
@@ -1754,109 +1648,7 @@ class _BottomIcon extends StatelessWidget {
   }
 }
 
-class _ReviewCard extends StatelessWidget {
-  const _ReviewCard({
-    required this.initials,
-    required this.name,
-    required this.verified,
-    required this.timeAgo,
-    required this.variant,
-    required this.review,
-    required this.imageSeeds,
-  });
-  final String initials, name, timeAgo, variant, review;
-  final bool verified;
-  final List<String> imageSeeds;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _kCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _kBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: _kChip,
-                child: Text(initials,
-                    style: _pjs(
-                        size: 12, weight: FontWeight.w800, color: _kPrimary)),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(name,
-                            style: _pjs(size: 13, weight: FontWeight.w700)),
-                        if (verified) ...const [
-                          SizedBox(width: 4),
-                          Icon(Icons.verified, size: 12, color: _kGreen),
-                        ],
-                      ],
-                    ),
-                    Text(variant, style: _pjs(size: 10, color: _kSubtext)),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Row(
-                    children: List.generate(
-                        5,
-                        (i) => Icon(Icons.star_rounded,
-                            size: 12, color: Colors.amber.shade500)),
-                  ),
-                  Text(timeAgo, style: _pjs(size: 10, color: _kSubtext)),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(review, style: _pjs(size: 12, color: _kText, height: 1.5)),
-          if (imageSeeds.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: imageSeeds
-                  .map((s) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.network(
-                            'https://picsum.photos/seed/$s/80/80',
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              width: 56,
-                              height: 56,
-                              color: _kChip,
-                              child:
-                                  Icon(Icons.image_outlined, color: _kSubtext),
-                            ),
-                          ),
-                        ),
-                      ))
-                  .toList(),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ── Fit Guide Dialog ──────────────────────────────────────────────────────────
+// ignore: unused_element
 class _FitGuideDialog extends StatelessWidget {
   const _FitGuideDialog();
 

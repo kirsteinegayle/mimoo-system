@@ -13,15 +13,22 @@ class OrderRepository {
     required String shippingPhone,
     String? idempotencyKey,
     List<int>? cartItemIds,
+    String? voucherCode,
+    int? addressId,
   }) async {
     final body = <String, dynamic>{
       'payment_method': paymentMethod,
+      // With address_id the server snapshots name/address/phone from the
+      // saved address; shipping_* are still sent for legacy compatibility.
+      if (addressId != null) 'address_id': addressId,
       'shipping_name': shippingName,
       'shipping_address': shippingAddress,
       'shipping_phone': shippingPhone,
       if (idempotencyKey != null) 'idempotency_key': idempotencyKey,
       if (cartItemIds != null && cartItemIds.isNotEmpty)
         'cart_item_ids': cartItemIds,
+      if (voucherCode != null && voucherCode.isNotEmpty)
+        'voucher_code': voucherCode.trim().toUpperCase(),
     };
     final res = await ApiService.post('/buyer/checkout', body: body)
         as Map<String, dynamic>;
@@ -46,6 +53,12 @@ class OrderRepository {
     return Order.fromJson(res['data'] as Map<String, dynamic>);
   }
 
+  /// POST /api/buyer/orders/{id}/receive — shipped → completed.
+  /// 422 when the order isn't shipped or has an open return request.
+  Future<void> receiveOrder(int id) async {
+    await ApiService.post('/buyer/orders/$id/receive');
+  }
+
   Future<void> cancelOrder(int id, {String? reason}) async {
     await ApiService.post('/buyer/orders/$id/cancel', body: {
       if (reason != null && reason.isNotEmpty) 'reason': reason,
@@ -58,12 +71,14 @@ class CheckoutResult {
   final int orderId;
   final String orderNumber;
   final double total;
+  final double voucherDiscount;
 
   const CheckoutResult({
     required this.message,
     required this.orderId,
     required this.orderNumber,
     required this.total,
+    this.voucherDiscount = 0.0,
   });
 
   factory CheckoutResult.fromJson(Map<String, dynamic> j) => CheckoutResult(
@@ -71,6 +86,7 @@ class CheckoutResult {
         orderId: (j['order_id'] as num?)?.toInt() ?? 0,
         orderNumber: j['order_number'] as String? ?? '',
         total: (j['total'] as num?)?.toDouble() ?? 0.0,
+        voucherDiscount: (j['voucher_discount'] as num?)?.toDouble() ?? 0.0,
       );
 }
 

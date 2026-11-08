@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'auth/login_page.dart';
 import 'auth/register_page.dart';
 import '../models/product.dart';
+import '../../services/product_repository.dart';
 import 'home/product_detail_page.dart';
 import '../state/cart_provider.dart';
 import '../state/wishlist_provider.dart';
+import '../utils/animations.dart';
+import '../widgets/motion.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared color tokens (duplicated here so landing_page is self-contained)
@@ -23,7 +27,7 @@ class _C {
   static const onVariant = Color(0xFF4A454F);
   static const outline = Color(0xFF7B7580);
   static const outlineVariant = Color(0xFFCCC4D1);
-  static const star = Color(0xFF8455EF);
+  // star color removed — sample cards no longer show fake ratings.
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -90,38 +94,32 @@ class _Cat {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Static data
+// Hero banner slides — 3 real images from assets/images/
+// NOTE: banner_hero_1.png is 821.5 KB — larger than ideal but kept as-is
+// per task instructions (do not modify originals >300 KB).
 // ─────────────────────────────────────────────────────────────────────────────
-const _banners = [
-  _Banner(
-    tag: '✨ New Drop',
-    title: 'Seoul Spring',
-    subtitle: 'Fresh Urban Aesthetics\n& Linen Essentials.',
-    cta: 'Explore Now',
-    ctaIcon: Icons.bolt,
-    imageUrl: 'https://picsum.photos/seed/banner1/200/200',
-    gradient: [Color(0xFF34175B), Color(0xFF6B38D4)],
-  ),
-  _Banner(
-    tag: '🔥 Super Payday Sale',
-    title: 'Up to 70% Off',
-    subtitle: 'Shop from trusted local sellers,\nall in one place.',
-    cta: 'Claim Voucher',
-    ctaIcon: Icons.arrow_forward,
-    imageUrl: 'https://picsum.photos/seed/banner2/200/200',
-    gradient: [Color(0xFF1E0042), Color(0xFF34175B)],
-  ),
-  _Banner(
-    tag: '⚡ Flash Tech',
-    title: 'Up to 60% Off',
-    subtitle: 'Smart Home &\nNoise Cancelling Audio.',
-    cta: 'Shop Audio',
-    ctaIcon: Icons.headphones,
-    imageUrl: 'https://picsum.photos/seed/banner3/200/200',
-    gradient: [Color(0xFF570014), Color(0xFF34175B)],
-  ),
+const _heroSlides = <_HeroSlide>[
+  _HeroSlide(asset: 'assets/images/banner_hero_1.png'),
+  _HeroSlide(asset: 'assets/images/banner_hero_2.jpg'),
+  _HeroSlide(asset: 'assets/images/banner_hero_3.jpg'),
 ];
 
+class _HeroSlide {
+  const _HeroSlide({this.asset});
+  final String? asset;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Old fake banner data (hidden — kept for reference)
+// ─────────────────────────────────────────────────────────────────────────────
+// ignore: unused_element
+const _banners = [
+  // _Banner(tag: '✨ New Drop', ...picsum...),
+  // _Banner(tag: '🔥 Super Payday Sale', ...picsum...),
+  // _Banner(tag: '⚡ Flash Tech', ...picsum...),
+];
+
+// ignore: unused_element
 const _flashItems = [
   _Flash(
       name: 'ANC Wireless Headphones',
@@ -153,6 +151,7 @@ const _flashItems = [
       imageUrl: 'https://picsum.photos/seed/tote/300/300'),
 ];
 
+// ignore: unused_element
 const _recItems = [
   _Rec(
       name: 'Pulse Pro AMOLED Smartwatch with Heart Rate & GPS',
@@ -239,21 +238,52 @@ class LandingPage extends StatefulWidget {
 class _LandingPageState extends State<LandingPage> {
   final _searchCtrl = TextEditingController();
   late PageController _bannerPageCtrl;
+  // ignore: prefer_final_fields
   int _bannerIdx = 0;
   Timer? _bannerTimer;
+
+  // ── Recommended products from API ─────────────────────────────────────────
+  List<Product> _recommended = [];
+  bool _recLoading = true;
+  String? _recError;
 
   @override
   void initState() {
     super.initState();
     _bannerPageCtrl = PageController(viewportFraction: 1.0);
     _startAutoScroll();
+    _loadRecommended();
+  }
+
+  Future<void> _loadRecommended() async {
+    try {
+      final page = await ProductRepository.instance.fetchProducts(
+        page: 1,
+        perPage: 6,
+        sort: 'newest',
+      );
+      if (!mounted) return;
+      setState(() {
+        _recommended = page.products;
+        _recLoading = false;
+        _recError = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _recLoading = false;
+        _recError = 'Could not load products. Tap to retry.';
+      });
+    }
   }
 
   void _startAutoScroll() {
     _bannerTimer?.cancel();
-    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+    _bannerTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted || !_bannerPageCtrl.hasClients) return;
-      final next = (_bannerIdx + 1) % _banners.length;
+      final next = (_bannerIdx + 1) % _heroSlides.length;
+      // Update index immediately so dots reflect the new slide right away.
+      setState(() => _bannerIdx = next);
       _bannerPageCtrl.animateToPage(
         next,
         duration: const Duration(milliseconds: 500),
@@ -291,31 +321,16 @@ class _LandingPageState extends State<LandingPage> {
             // ── Guest Header (search + Log In + Sign Up) ──────────────────
             SliverToBoxAdapter(child: _buildGuestHeader()),
 
-            // ── Hero Banner (wide rectangular) ────────────────────────────
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 210,
-                child: PageView.builder(
-                  controller: _bannerPageCtrl,
-                  itemCount: _banners.length,
-                  onPageChanged: (i) => setState(() => _bannerIdx = i),
-                  itemBuilder: (_, i) => _BannerCard(
-                    banner: _banners[i],
-                    index: i,
-                    currentIndex: _bannerIdx,
-                    total: _banners.length,
-                  ),
-                ),
-              ),
-            ),
+            // ── Hero Banner (hidden — no CMS/banners table yet) ──────────
+            SliverToBoxAdapter(child: _buildBannerSection()),
 
             // ── Categories ────────────────────────────────────────────────
             SliverToBoxAdapter(child: _buildCategories()),
 
-            // ── Quick Chips ───────────────────────────────────────────────
+            // ── Quick Chips (hidden — fake tags) ─────────────────────────
             SliverToBoxAdapter(child: _buildQuickChips()),
 
-            // ── Flash Sale ────────────────────────────────────────────────
+            // ── Flash Sale (hidden — no sale_end_date, fake products) ─────
             SliverToBoxAdapter(child: _buildFlashSale()),
 
             // ── Recommended ───────────────────────────────────────────────
@@ -438,6 +453,70 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
+  // ── Hero Banner (pure images, 3 slides, mouse-draggable on Chrome) ──────────
+
+  Widget _buildBannerSection() {
+    return Column(
+      children: [
+        SizedBox(
+          height: 210,
+          // ScrollConfiguration: enable mouse drag on Flutter Web.
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(
+              dragDevices: {
+                PointerDeviceKind.touch,
+                PointerDeviceKind.mouse,
+              },
+            ),
+            child: PageView.builder(
+              controller: _bannerPageCtrl,
+              itemCount: _heroSlides.length,
+              physics: const BouncingScrollPhysics(),
+              onPageChanged: (i) => setState(() => _bannerIdx = i),
+              itemBuilder: (_, i) {
+                final slide = _heroSlides[i];
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.asset(
+                      slide.asset!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 210,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: _C.chip,
+                        height: 210,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Dot indicators
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_heroSlides.length, (i) {
+            final isActive = i == _bannerIdx;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: isActive ? 24 : 8,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isActive ? _C.primaryContainer : _C.outlineVariant,
+                borderRadius: BorderRadius.circular(9999),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
   // ── Categories ───────────────────────────────────────────────────────────────
 
   Widget _buildCategories() {
@@ -479,78 +558,16 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
-  // ── Quick Chips ──────────────────────────────────────────────────────────────
+  // ── Quick Chips (hidden — all 4 have fake tags) ──────────────────────────────
 
   Widget _buildQuickChips() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Row(
-        children: const [
-          _QuickChip(
-              icon: '⚡', label: 'Flash Sale', tag: 'HOT', tagColor: _C.flash),
-          SizedBox(width: 8),
-          _QuickChip(
-              icon: '✨', label: 'New In', tag: 'DAILY', tagColor: _C.secondary),
-          SizedBox(width: 8),
-          _QuickChip(
-              icon: '🎟️',
-              label: 'Vouchers',
-              tag: '-\$15 OFF',
-              tagColor: _C.secondaryBright),
-          SizedBox(width: 8),
-          _QuickChip(
-              icon: '🔥',
-              label: 'Top Picks',
-              tag: 'TREND',
-              tagColor: _C.secondary),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
-  // ── Flash Sale ───────────────────────────────────────────────────────────────
+  // ── Flash Sale (hidden — no sale_end_date, fake products) ──────────────────────
 
   Widget _buildFlashSale() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 16, 12, 4),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.bolt, color: _C.flash, size: 18),
-              const SizedBox(width: 4),
-              Text('Flash Sale',
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: _C.onSurface)),
-              const SizedBox(width: 8),
-              const _CountdownTimer(),
-              const Spacer(),
-              Text('See All',
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      color: _C.secondary,
-                      fontWeight: FontWeight.w600)),
-              const Icon(Icons.arrow_forward, size: 14, color: _C.secondary),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 220,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _flashItems.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (ctx, i) => _FlashCard(
-                product: _flashItems[i],
-                onAddToCart: () => _showAuthPrompt(ctx, 'add items to cart'),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   // ── Recommended Header ───────────────────────────────────────────────────────
@@ -582,9 +599,79 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
-  // ── Recommended Grid ─────────────────────────────────────────────────────────
+  // ── Recommended Grid (live from API) ────────────────────────────────────────
 
   Widget _buildRecommendedGrid() {
+    // Loading skeleton
+    if (_recLoading) {
+      return SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        sliver: SliverGrid(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.54,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (_, i) => Container(
+              decoration: BoxDecoration(
+                color: _C.chip,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            childCount: 4,
+          ),
+        ),
+      );
+    }
+
+    // Error state
+    if (_recError != null) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+          child: Column(
+            children: [
+              const Icon(Icons.wifi_off_outlined, size: 40, color: _C.outline),
+              const SizedBox(height: 10),
+              Text(_recError!,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13, color: _C.onVariant)),
+              const SizedBox(height: 12),
+              FilledButton.tonal(
+                onPressed: _loadRecommended,
+                child: Text('Retry',
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Empty state
+    if (_recommended.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+          child: Column(
+            children: [
+              const Icon(Icons.storefront_outlined,
+                  size: 40, color: _C.outline),
+              const SizedBox(height: 10),
+              Text('No products available yet.',
+                  style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13, color: _C.onVariant)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Product grid — real data from API
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       sliver: SliverGrid(
@@ -595,15 +682,25 @@ class _LandingPageState extends State<LandingPage> {
           mainAxisSpacing: 8,
         ),
         delegate: SliverChildBuilderDelegate(
-          (ctx, i) => _RecCard(
-            product: _recItems[i],
-            onAddToCart: () => _showAuthPrompt(ctx, 'add items to cart'),
-            onWishlist: () {
-              final wishlist = WishlistProvider.of(ctx);
-              wishlist.toggle(_recItems[i].asProduct);
-            },
-          ),
-          childCount: _recItems.length,
+          (ctx, i) {
+            final product = _recommended[i];
+            // Fade/slide in once per product + subtle press effect.
+            return StaggeredItem(
+              index: i,
+              id: 'landing-${product.id}',
+              child: PressScale(
+                child: _LandingProductCard(
+                  product: product,
+                  onAddToCart: () => _showAuthPrompt(ctx, 'add items to cart'),
+                  onWishlist: () {
+                    final wishlist = WishlistProvider.of(ctx);
+                    wishlist.toggle(product);
+                  },
+                ),
+              ),
+            );
+          },
+          childCount: _recommended.length,
         ),
       ),
     );
@@ -742,6 +839,7 @@ class _AuthPromptSheet extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Banner Card — wide rectangular, left text / right image
 // ─────────────────────────────────────────────────────────────────────────────
+// ignore: unused_element
 class _BannerCard extends StatelessWidget {
   const _BannerCard({
     required this.banner,
@@ -1059,6 +1157,7 @@ class _CatChip extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Quick Chip
 // ─────────────────────────────────────────────────────────────────────────────
+// ignore: unused_element
 class _QuickChip extends StatelessWidget {
   const _QuickChip({
     required this.icon,
@@ -1120,17 +1219,19 @@ class _CountdownTimer extends StatefulWidget {
 }
 
 class _CountdownTimerState extends State<_CountdownTimer> {
+  // ignore: prefer_final_fields
   int _secs = 2 * 3600 + 45 * 60 + 18;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && _secs > 0) {
-        setState(() => _secs--);
-      }
-    });
+    // Flash sale countdown disabled — no sale_end_date column in DB.
+    // _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+    //   if (mounted && _secs > 0) {
+    //     setState(() => _secs--);
+    //   }
+    // });
   }
 
   @override
@@ -1188,6 +1289,7 @@ class _TB extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Flash Card
 // ─────────────────────────────────────────────────────────────────────────────
+// ignore: unused_element
 class _FlashCard extends StatelessWidget {
   const _FlashCard({required this.product, required this.onAddToCart});
   final _Flash product;
@@ -1350,6 +1452,7 @@ class _FlashCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Recommended Card
 // ─────────────────────────────────────────────────────────────────────────────
+// ignore: unused_element
 class _RecCard extends StatelessWidget {
   const _RecCard({
     required this.product,
@@ -1370,8 +1473,6 @@ class _RecCard extends StatelessWidget {
       price: product.price,
       imageUrl: product.imageUrl,
       category: product.badge,
-      rating: product.rating,
-      reviewCount: 0,
     );
 
     return GestureDetector(
@@ -1474,16 +1575,7 @@ class _RecCard extends StatelessWidget {
                             color: _C.onSurface,
                             height: 1.3)),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded,
-                            size: 11, color: _C.star),
-                        const SizedBox(width: 2),
-                        Text('${product.rating} (${product.reviews})',
-                            style: GoogleFonts.plusJakartaSans(
-                                fontSize: 9, color: _C.onVariant)),
-                      ],
-                    ),
+                    // Rating hidden — sample card, no real reviews.
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1525,6 +1617,162 @@ class _RecCard extends StatelessWidget {
                             fontSize: 9,
                             fontWeight: FontWeight.w600,
                             color: _C.secondary)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Landing Product Card (real API data — no fake ratings/badges/shipping)
+// ─────────────────────────────────────────────────────────────────────────────
+class _LandingProductCard extends StatelessWidget {
+  const _LandingProductCard({
+    required this.product,
+    required this.onAddToCart,
+    required this.onWishlist,
+  });
+  final Product product;
+  final VoidCallback onAddToCart;
+  final VoidCallback onWishlist;
+
+  @override
+  Widget build(BuildContext context) {
+    final wishlist = WishlistProvider.of(context);
+    final wished = wishlist.contains(product);
+    final hasImage = product.imageUrl.isNotEmpty;
+
+    return GestureDetector(
+      onTap: () {
+        final cart = CartProvider.of(context);
+        final wl = WishlistProvider.of(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WishlistProvider(
+              wishlist: wl,
+              child: CartProvider(
+                cart: cart,
+                child: ProductDetailPage(product: product),
+              ),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: _C.card,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(
+                color: Color(0x0D34175B), blurRadius: 8, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image + wishlist heart
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(12)),
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: hasImage
+                        ? Image.network(
+                            product.imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Container(color: _C.chip),
+                          )
+                        : Container(
+                            color: _C.chip,
+                            child: const Icon(Icons.image_outlined,
+                                size: 36, color: _C.outline),
+                          ),
+                  ),
+                ),
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: GestureDetector(
+                    onTap: onWishlist,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                          wished ? Icons.favorite : Icons.favorite_border,
+                          size: 15,
+                          color: wished ? const Color(0xFFFF3B5C) : _C.outline),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            // Info
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _C.onSurface,
+                          height: 1.3),
+                    ),
+                    const SizedBox(height: 4),
+                    // Sale price strikethrough if on sale
+                    if (product.isOnSale) ...[
+                      Text(
+                        '₱${product.price.toStringAsFixed(0)}',
+                        style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10,
+                            color: _C.outline,
+                            decoration: TextDecoration.lineThrough),
+                      ),
+                    ],
+                    Text(
+                      '₱${product.effectivePrice.toStringAsFixed(0)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: _C.primaryContainer),
+                    ),
+                    const Spacer(),
+                    // Add to cart button
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: onAddToCart,
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: const BoxDecoration(
+                              color: _C.primaryContainer,
+                              shape: BoxShape.circle),
+                          child: const Icon(Icons.add,
+                              size: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

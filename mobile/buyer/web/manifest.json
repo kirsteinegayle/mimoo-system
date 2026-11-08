@@ -1,11 +1,11 @@
 {
-    "name": "Mobile Buyer",
-    "short_name": "Buyer",
+    "name": "Mimoo",
+    "short_name": "Mimoo",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#6C63FF",
-    "description": "A Flutter mobile ecommerce app.",
+    "background_color": "#181329",
+    "theme_color": "#34175B",
+    "description": "A Little Bit of Everything, Just a Moo Away",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -4,17 +4,19 @@ import 'login_page.dart';
 import 'verify_email_page.dart';
 import '../../services/api_service.dart';
 import '../../widgets/address_dropdown.dart';
+import '../../theme/mimoo_brand.dart';
+import '../../widgets/auth_layout.dart';
+import '../../widgets/motion.dart';
+import '../../utils/animations.dart';
 
-const _kPrimary = Color(0xFF4B2E8A);
-const _kPrimaryLight = Color(0xFFEDE8F8);
-const _kSurface = Color(0xFFF5F4FC);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kAccent = Color(0xFF6B38D4);
+const _kPrimary = MimooBrand.primary;
+const _kBorder = MimooBrand.border;
+const _kText = MimooBrand.text;
+const _kSubtext = MimooBrand.subtext;
 
 // ── Step labels ───────────────────────────────────────────────────────────────
-const _steps = ['Details', 'Address', 'Verification', 'Security'];
+// Sections of the form (one per step; each validates before moving on).
+const _steps = ['Personal info', 'Address', 'Contact', 'Password'];
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -26,6 +28,8 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   int _step = 0;
   bool _loading = false;
+  String? _error; // inline error (validation / API)
+  int _shake = 0; // bumped on every error → shake animation
 
   // Step 1 — Personal info
   final _detailsKey = GlobalKey<FormState>();
@@ -112,29 +116,28 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_step == 2) key = _verifyKey;
     if (_step == 3) key = _securityKey;
 
-    if (key != null && !(key.currentState?.validate() ?? false)) return;
+    if (key != null && !(key.currentState?.validate() ?? false)) {
+      setState(() => _shake++);
+      return;
+    }
 
     // Extra validation for step 1 birthday
+    setState(() => _error = null);
     if (_step == 0 && _birthday == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your birthday')),
-      );
+      setState(() {
+        _shake++;
+        _error = 'Please select your birthday.';
+      });
       return;
     }
 
     // Extra validation for step 2: address dropdowns are not inside a Form
     if (_step == 1) {
       if (_region.isEmpty || _municipalityCity.isEmpty || _barangay.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Please complete all address fields (region, city, barangay).',
-              style: GoogleFonts.plusJakartaSans(color: Colors.white),
-            ),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        setState(() {
+          _shake++;
+          _error = 'Please complete all address fields (region, city, barangay).';
+        });
         return;
       }
     }
@@ -146,8 +149,23 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  void _back() {
+    if (_step > 0) {
+      setState(() {
+        _step--;
+        _error = null;
+      });
+    } else if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+  }
+
   Future<void> _submit() async {
-    setState(() => _loading = true);
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     // Build street_address: "<house>, <street>" when both filled; otherwise
     // whichever is non-empty, matching the web's single street_address field.
@@ -196,7 +214,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       // Navigate to OTP verification screen
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => VerifyEmailPage(email: email)),
+        MimooPageRoute(builder: (_) => VerifyEmailPage(email: email)),
         (route) => false,
       );
     } on ApiException catch (e) {
@@ -209,24 +227,16 @@ class _RegisterPageState extends State<RegisterPage> {
             .join('\n');
         displayMsg = fieldLines;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(displayMsg,
-              style: GoogleFonts.plusJakartaSans(color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 6),
-        ),
-      );
-    } catch (_) {
+      setState(() {
+        _shake++;
+        _error = displayMsg;
+      });
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Network error. Please try again.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      setState(() {
+        _shake++;
+        _error = ApiService.friendlyError(e);
+      });
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -234,110 +244,74 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _kSurface,
-      body: Stack(
-        children: [
-          // ── Purple blob ───────────────────────────────────────────────
-          Positioned(
-            top: -30,
-            right: -50,
-            child: Container(
-              width: 220,
-              height: 240,
-              decoration: const BoxDecoration(
-                color: _kPrimaryLight,
-                shape: BoxShape.circle,
+    final last = _step == _steps.length - 1;
+    return MimooAuthLayout(
+      compactHeader: true,
+      onBack: (_step > 0 || Navigator.of(context).canPop()) ? _back : null,
+      // Sticky primary action
+      bottomBar: SafeArea(
+        top: false,
+        child: Container(
+          color: MimooBrand.surface,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+          // heightFactor: 1 — a plain Center here expands to the full
+          // Scaffold height and hides the whole form (the "missing page" bug).
+          child: Align(
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 448),
+              child: MimooPrimaryButton(
+                label: last ? 'Create account' : 'Next',
+                loading: _loading,
+                onPressed: _next,
               ),
             ),
           ),
-
-          SafeArea(
-            child: Column(
-              children: [
-                // ── Step indicator ──────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                  child: _StepIndicator(currentStep: _step, steps: _steps),
-                ),
-
-                // ── Step content ────────────────────────────────────────
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-                    child: _buildStep(),
-                  ),
-                ),
-
-                // ── Bottom: Next button + already have account ──────────
-                Container(
-                  color: _kSurface,
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: FilledButton(
-                          onPressed: _loading ? null : _next,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: _kPrimary,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: _loading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Colors.white),
-                                )
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      _step < 3 ? 'Next' : 'Submit',
-                                      style: GoogleFonts.plusJakartaSans(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white),
-                                    ),
-                                    if (_step < 3) ...[
-                                      const SizedBox(width: 4),
-                                      const Icon(Icons.chevron_right,
-                                          color: Colors.white, size: 18),
-                                    ],
-                                  ],
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Already have an account? ',
-                              style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 13, color: _kSubtext)),
-                          GestureDetector(
-                            onTap: () => Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const LoginPage()),
-                            ),
-                            child: Text('Log In',
-                                style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: _kAccent)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ),
-              ],
+        ),
+      ),
+      card: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Create your account',
+              style: mimooText(size: 22, weight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text('Step ${_step + 1} of ${_steps.length} · ${_steps[_step]}',
+              style: mimooText(size: 12.5, color: MimooBrand.subtext)),
+          const SizedBox(height: 14),
+          _StepIndicator(currentStep: _step, steps: _steps),
+          const SizedBox(height: 20),
+          // Each section fades/slides in; shakes on validation/API error.
+          ShakeOnChange(
+            trigger: _shake,
+            // Keyed by step: each section fades/slides in fresh. (No
+            // AnimatedSwitcher — old+new steps would briefly coexist and
+            // duplicate the per-step Form GlobalKeys on a quick Back.)
+            child: KeyedSubtree(
+              key: ValueKey('reg-step-$_step'),
+              child: StaggeredItem(index: 0, child: _buildStep()),
             ),
+          ),
+          AnimatedReveal(
+            child: _error == null
+                ? null
+                : MimooInlineError(_error!, key: ValueKey(_error)),
+          ),
+        ],
+      ),
+      below: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text('Already have an account? ',
+              style: mimooText(size: 13, color: MimooBrand.subtext)),
+          GestureDetector(
+            onTap: () => Navigator.pushReplacement(
+              context,
+              MimooPageRoute(builder: (_) => const LoginPage()),
+            ),
+            child: Text('Sign in',
+                style: mimooText(
+                    size: 13, weight: FontWeight.w800, color: MimooBrand.primary)),
           ),
         ],
       ),
@@ -369,9 +343,9 @@ class _RegisterPageState extends State<RegisterPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Personal Information',
+          Text('Personal info',
               style: GoogleFonts.plusJakartaSans(
-                  fontSize: 26,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: _kText,
                   height: 1.2)),
@@ -379,7 +353,7 @@ class _RegisterPageState extends State<RegisterPage> {
           Text('Please enter your basic profile information',
               style:
                   GoogleFonts.plusJakartaSans(fontSize: 13, color: _kSubtext)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Last name
           _MimooField(
@@ -528,12 +502,12 @@ class _RegisterPageState extends State<RegisterPage> {
         children: [
           Text('Address',
               style: GoogleFonts.plusJakartaSans(
-                  fontSize: 26, fontWeight: FontWeight.w800, color: _kText)),
+                  fontSize: 17, fontWeight: FontWeight.w800, color: _kText)),
           const SizedBox(height: 4),
           Text('Enter your delivery address',
               style:
                   GoogleFonts.plusJakartaSans(fontSize: 13, color: _kSubtext)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           // PSGC-backed address selector.
           // The callback uses named params; _region maps to `region` (not
           // province — the old widget misnamed it).
@@ -580,14 +554,14 @@ class _RegisterPageState extends State<RegisterPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Verification',
+          Text('Contact',
               style: GoogleFonts.plusJakartaSans(
-                  fontSize: 26, fontWeight: FontWeight.w800, color: _kText)),
+                  fontSize: 17, fontWeight: FontWeight.w800, color: _kText)),
           const SizedBox(height: 4),
           Text('Contact info & identity document',
               style:
                   GoogleFonts.plusJakartaSans(fontSize: 13, color: _kSubtext)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _MimooField(
             controller: _emailCtrl,
             label: 'EMAIL',
@@ -671,14 +645,14 @@ class _RegisterPageState extends State<RegisterPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Security',
+          Text('Password',
               style: GoogleFonts.plusJakartaSans(
-                  fontSize: 26, fontWeight: FontWeight.w800, color: _kText)),
+                  fontSize: 17, fontWeight: FontWeight.w800, color: _kText)),
           const SizedBox(height: 4),
           Text('Create a strong password for your account',
               style:
                   GoogleFonts.plusJakartaSans(fontSize: 13, color: _kSubtext)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _MimooField(
             controller: _passCtrl,
             label: 'PASSWORD',
@@ -793,7 +767,7 @@ class _FieldBox extends StatelessWidget {
   const _FieldBox({
     required this.label,
     required this.child,
-    this.bgColor = Colors.white,
+    this.bgColor = MimooBrand.inputFill,
   });
   final String label;
   final Widget child;
@@ -805,7 +779,7 @@ class _FieldBox extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: _kBorder),
       ),
       child: Column(
@@ -852,7 +826,8 @@ class _MimooField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    // Soft accent glow while focused (same as Login).
+    return FocusGlow(child: TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
@@ -862,41 +837,8 @@ class _MimooField extends StatelessWidget {
       maxLength: maxLength,
       style: GoogleFonts.plusJakartaSans(
           fontSize: 14, color: _kText, fontWeight: FontWeight.w500),
-      decoration: InputDecoration(
-        labelText: label,
-        counterText: '',
-        labelStyle: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: _kSubtext,
-            letterSpacing: 0.5),
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _kBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _kPrimary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.red),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.red, width: 1.5),
-        ),
-        disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _kBorder),
-        ),
-      ),
-    );
+      // Same input style as the Login page.
+      decoration: mimooInputDecoration(label: label, suffix: suffixIcon),
+    ));
   }
 }

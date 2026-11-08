@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'state/auth_service.dart';
 import 'state/cart_provider.dart';
 import 'state/wishlist_provider.dart';
+import 'state/notification_state.dart';
 import 'pages/splash_screen.dart';
 import 'pages/home/shop_page.dart';
 import 'pages/cart/cart_page.dart';
@@ -15,15 +18,25 @@ import 'utils/animations.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Wire CartState to AuthService BEFORE restoreSession so the cart is
-  // loaded whenever a token is found in secure storage.
-  AuthService.instance.onLoginCallback = CartProvider.defaultCart.onLogin;
-  AuthService.instance.onLogoutCallback = CartProvider.defaultCart.onLogout;
+  // Wire CartState + WishlistState to AuthService BEFORE restoreSession
+  // so the cart and wishlist are loaded whenever a token is found in
+  // secure storage.
+  AuthService.instance.onLoginCallback = () async {
+    await CartProvider.defaultCart.onLogin();
+    await WishlistProvider.defaultWishlist.onLogin();
+    // In-app notifications: poll unread count every 30 s while open.
+    NotificationState.instance.start();
+    // Pick up profile edits made on the website (users.name).
+    unawaited(AuthService.instance.refreshProfile());
+  };
+  AuthService.instance.onLogoutCallback = () {
+    CartProvider.defaultCart.onLogout();
+    WishlistProvider.defaultWishlist.onLogout();
+    NotificationState.instance.stop();
+  };
 
-  // Restore any persisted Sanctum token from secure storage so the user
-  // stays logged in across app restarts, until logout or token expiry.
-  await AuthService.instance.restoreSession();
-
+  // The persisted Sanctum session is restored by SplashScreen (first
+  // screen) while its animation plays, then it routes to Home or Login.
   runApp(const EcommerceApp());
 }
 
@@ -37,7 +50,7 @@ class EcommerceApp extends StatelessWidget {
       child: CartProvider(
         cart: CartProvider.defaultCart,
         child: MaterialApp(
-          title: 'mimoo',
+          title: 'Mimoo',
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             colorScheme: const ColorScheme(
@@ -87,24 +100,53 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    // Show cart server errors in a snackbar from the root scaffold
+    // Show cart + wishlist server errors in a snackbar from the root scaffold
+    WidgetsBinding.instance.addObserver(this);
     CartProvider.defaultCart.addListener(_onCartChanged);
+    WishlistProvider.defaultWishlist.addListener(_onWishlistChanged);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     CartProvider.defaultCart.removeListener(_onCartChanged);
+    WishlistProvider.defaultWishlist.removeListener(_onWishlistChanged);
     super.dispose();
+  }
+
+  /// On resume, re-sync data the website may have changed meanwhile
+  /// (profile name, server-side cart). Silent on failure.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && AuthService.instance.isLoggedIn) {
+      unawaited(AuthService.instance.refreshProfile());
+      unawaited(CartProvider.defaultCart.refresh());
+    }
   }
 
   void _onCartChanged() {
     final error = CartProvider.defaultCart.consumeError();
+    if (error != null && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(error),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+        ));
+      });
+    }
+  }
+
+  void _onWishlistChanged() {
+    final error = WishlistProvider.defaultWishlist.consumeError();
     if (error != null && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -171,6 +213,8 @@ class _HomePageState extends State<HomePage> {
               icon: Icons.shopping_bag_outlined,
               activeIcon: Icons.shopping_bag,
               label: 'Cart',
+              // Same count as the web navbar cart badge
+              badgeCount: cart.lineCount,
             ),
             MimooNavItem(
               icon: Icons.chat_bubble_outline,

@@ -1,10 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../account/address_book_page.dart';
 import '../orders/orders_page.dart';
+import '../../models/buyer_address.dart';
+import '../../services/address_repository.dart';
+import '../voucher/voucher_wallet_page.dart';
+import '../../models/voucher.dart';
 import '../../state/auth_service.dart';
 import '../../state/cart_provider.dart';
 import '../../services/order_repository.dart';
+import '../../services/voucher_repository.dart';
 import '../../services/api_service.dart';
 
 const _kPrimary = Color(0xFF34175B);
@@ -46,6 +52,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _noteCtrl = TextEditingController();
   bool _placing = false;
 
+  // ── Voucher state ─────────────────────────────────────────────────────────
+  VoucherModel? _selectedVoucher;
+  final _voucherCodeCtrl = TextEditingController();
+  bool _applyingVoucher = false;
+  double _voucherDiscount = 0.0;
+  String? _voucherStatus; // 'applied' | error msg | null
+
   // Shipping fields — pre-filled from buyer profile, editable
   late final TextEditingController _nameCtrl;
   late final TextEditingController _addressCtrl;
@@ -64,16 +77,103 @@ class _CheckoutPageState extends State<CheckoutPage> {
     // Unique key for this checkout attempt — reused on retry, new on fresh open
     _idempotencyKey =
         '${auth.buyerId ?? '0'}-${DateTime.now().millisecondsSinceEpoch}';
+    _loadDefaultAddress();
+  }
+
+  // ── Address book ──────────────────────────────────────────────────────────
+  BuyerAddress? _selectedAddress;
+
+  void _applyAddress(BuyerAddress a) {
+    setState(() {
+      _selectedAddress = a;
+      _nameCtrl.text = a.recipientName;
+      _phoneCtrl.text = a.phone;
+      _addressCtrl.text = a.fullAddress;
+    });
+  }
+
+  Future<void> _loadDefaultAddress() async {
+    try {
+      final list = await AddressRepository.instance.fetchAll();
+      if (!mounted || list.isEmpty) return;
+      _applyAddress(list.firstWhere((a) => a.isDefault, orElse: () => list.first));
+    } catch (_) {
+      // Keep the profile-based prefill if the address book can't be loaded.
+    }
+  }
+
+  Future<void> _pickAddress() async {
+    final picked = await Navigator.push<BuyerAddress>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddressBookPage(
+            selectMode: true, selectedId: _selectedAddress?.id),
+      ),
+    );
+    if (picked != null && mounted) _applyAddress(picked);
+  }
+
+  /// Manual edits detach the order from the saved address (legacy mode).
+  void _onShippingEdited(String _) {
+    if (_selectedAddress != null) setState(() => _selectedAddress = null);
   }
 
   @override
   void dispose() {
     _noteCtrl.dispose();
+    _voucherCodeCtrl.dispose();
     _nameCtrl.dispose();
     _addressCtrl.dispose();
     _phoneCtrl.dispose();
     super.dispose();
   }
+
+  // ── Apply voucher ─────────────────────────────────────────────────────────
+  Future<void> _applyVoucher(String code) async {
+    if (code.isEmpty) return;
+    setState(() {
+      _applyingVoucher = true;
+      _voucherStatus = null;
+    });
+    try {
+      final preview = await VoucherRepository.instance.preview(
+        voucherCode: code,
+        cartItemIds: _selectedCartItemIds,
+      );
+      if (!mounted) return;
+      setState(() {
+        _voucherDiscount = preview.voucherDiscount;
+        _voucherStatus = preview.voucherStatus;
+        _applyingVoucher = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _voucherDiscount = 0;
+        _voucherStatus = e.message;
+        _applyingVoucher = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _voucherDiscount = 0;
+        _voucherStatus = 'Network error.';
+        _applyingVoucher = false;
+      });
+    }
+  }
+
+  void _removeVoucher() {
+    setState(() {
+      _selectedVoucher = null;
+      _voucherCodeCtrl.clear();
+      _voucherDiscount = 0;
+      _voucherStatus = null;
+    });
+  }
+
+  String get _activeVoucherCode =>
+      _selectedVoucher?.code ?? _voucherCodeCtrl.text.trim().toUpperCase();
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -84,6 +184,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final cart = CartProvider.defaultCart;
     return cart.dbItems.fold(0.0, (s, i) => s + i.lineTotal);
   }
+
+  double get _finalTotal =>
+      (_merchandiseTotal - _voucherDiscount).clamp(0.0, double.infinity);
 
   List<int> get _selectedCartItemIds {
     // Use all valid items in the cart
@@ -96,6 +199,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
   // ── Place order ──────────────────────────────────────────────────────────
 
   Future<void> _placeOrder() async {
+    // Double-submit guard (the button is also disabled while placing; the
+    // server dedupes retries via the per-page idempotency key).
+    if (_placing) return;
     // GCash guard — server also rejects it, but we catch it early
     if (_selectedPayment == 0) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -134,6 +240,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
         shippingPhone: phone,
         idempotencyKey: _idempotencyKey,
         cartItemIds: _selectedCartItemIds,
+        voucherCode: _activeVoucherCode.isNotEmpty ? _activeVoucherCode : null,
+        addressId: _selectedAddress?.id,
       );
 
       if (!mounted) return;
@@ -210,13 +318,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 6),
       ));
-    } catch (_) {
+    } catch (e) {
+      // Network / timeout: the request may or may not have reached the
+      // server. Retrying is safe — the same idempotency key returns the
+      // existing order instead of creating a second one.
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Network error. Please try again.',
+        content: Text(
+            '${ApiService.friendlyError(e)} Tapping Place Order again is safe — it will not create a duplicate order.',
             style: _pjs(size: 13, color: Colors.white)),
         backgroundColor: Colors.red.shade700,
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+            label: 'Try again', textColor: Colors.white, onPressed: _placeOrder),
       ));
     } finally {
       if (mounted) setState(() => _placing = false);
@@ -248,10 +363,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
           const SizedBox(height: 10),
           _buildPackageOverview(),
           const SizedBox(height: 10),
-          // ── Shipping method (hidden — no shipping fee stored) ────────────
-          // _buildShippingMethod(),
-          // const SizedBox(height: 10),
           _buildPaymentMethod(),
+          const SizedBox(height: 10),
+          _buildVoucherSection(),
           const SizedBox(height: 10),
           _buildOrderNotes(),
           const SizedBox(height: 10),
@@ -305,15 +419,33 @@ class _CheckoutPageState extends State<CheckoutPage> {
               const SizedBox(width: 10),
               Text('Delivery Address',
                   style: _pjs(size: 14, weight: FontWeight.w700)),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _placing ? null : _pickAddress,
+                icon: const Icon(Icons.swap_horiz, size: 16),
+                label: Text(_selectedAddress == null ? 'Choose' : 'Change',
+                    style: _pjs(size: 12, weight: FontWeight.w600,
+                        color: _kSecondary)),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-          _buildTextField(_nameCtrl, 'Full Name'),
+          if (_selectedAddress != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                'Saved address: ${_selectedAddress!.label}'
+                '${_selectedAddress!.isDefault ? ' (Default)' : ''}',
+                style: _pjs(size: 11, color: _kSubtext),
+              ),
+            ),
+          const SizedBox(height: 8),
+          _buildTextField(_nameCtrl, 'Full Name', onChanged: _onShippingEdited),
           const SizedBox(height: 8),
           _buildTextField(_phoneCtrl, 'Phone Number',
-              keyboardType: TextInputType.phone),
+              keyboardType: TextInputType.phone, onChanged: _onShippingEdited),
           const SizedBox(height: 8),
-          _buildTextField(_addressCtrl, 'Full Address', maxLines: 3),
+          _buildTextField(_addressCtrl, 'Full Address',
+              maxLines: 3, onChanged: _onShippingEdited),
         ],
       ),
     );
@@ -324,9 +456,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
     String label, {
     TextInputType? keyboardType,
     int maxLines = 1,
+    ValueChanged<String>? onChanged,
   }) {
     return TextField(
       controller: ctrl,
+      onChanged: onChanged,
       keyboardType: keyboardType,
       maxLines: maxLines,
       style: _pjs(size: 13),
@@ -486,6 +620,129 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
+  // ── Voucher Section ──────────────────────────────────────────────────────────
+
+  Widget _buildVoucherSection() {
+    final hasApplied = _voucherStatus == 'applied';
+    final hasError = _voucherStatus != null && _voucherStatus != 'applied';
+
+    return _SCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.local_offer_outlined, size: 18, color: _kSecondary),
+            const SizedBox(width: 6),
+            Text('Voucher / Promo Code',
+                style: _pjs(size: 15, weight: FontWeight.w800)),
+            const Spacer(),
+            TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const VoucherWalletPage()),
+              ).then((_) {
+                // If user picked a voucher from wallet, refresh
+              }),
+              style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+              child: Text('Browse Vouchers',
+                  style: _pjs(
+                      size: 12, weight: FontWeight.w600, color: _kSecondary)),
+            ),
+          ]),
+          const SizedBox(height: 10),
+          // Applied state
+          if (hasApplied) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FBF4),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: _kGreen),
+              ),
+              child: Row(children: [
+                Icon(Icons.check_circle, size: 18, color: _kGreen),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text('Voucher applied: $_activeVoucherCode',
+                          style: _pjs(
+                              size: 13,
+                              weight: FontWeight.w700,
+                              color: _kGreen)),
+                      Text('Discount: -₱${_voucherDiscount.toStringAsFixed(2)}',
+                          style: _pjs(size: 11, color: _kGreen)),
+                    ])),
+                GestureDetector(
+                  onTap: _removeVoucher,
+                  child: Icon(Icons.close, size: 18, color: _kSubtext),
+                ),
+              ]),
+            ),
+          ] else ...[
+            Row(children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _voucherCodeCtrl,
+                  textCapitalization: TextCapitalization.characters,
+                  style: _pjs(size: 13),
+                  onFieldSubmitted: (v) => _applyVoucher(v),
+                  decoration: InputDecoration(
+                    hintText: 'Enter code (e.g. MIMOO2026)',
+                    hintStyle: _pjs(size: 12, color: _kSubtext),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: _kBorder)),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: _kBorder)),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: _kSecondary)),
+                    isDense: true,
+                    errorText: hasError ? _voucherStatus : null,
+                    errorStyle: _pjs(size: 11, color: _kFlash),
+                    errorMaxLines: 2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _applyingVoucher
+                    ? null
+                    : () => _applyVoucher(_voucherCodeCtrl.text.trim()),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: _kPrimary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12)),
+                child: _applyingVoucher
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : Text('Apply',
+                        style: _pjs(
+                            size: 13,
+                            weight: FontWeight.w700,
+                            color: Colors.white)),
+              ),
+            ]),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildOrderNotes() {
     return _SCard(
       child: Column(
@@ -520,7 +777,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Widget _buildPaymentSummary() {
-    final total = _merchandiseTotal;
+    final merch = _merchandiseTotal;
+    final discount = _voucherDiscount;
+    final total = _finalTotal;
     return _SCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,13 +787,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
           Text('Payment Summary',
               style: _pjs(size: 15, weight: FontWeight.w800)),
           const SizedBox(height: 12),
-          _SRow('Merchandise Subtotal', '₱${total.toStringAsFixed(2)}'),
-          // ── Hidden until shipping/voucher columns exist ────────────────
-          // const SizedBox(height: 6),
-          // _SRow('Shipping Subtotal', '₱80'),
-          // Row(children: [Text('Shipping Discount'...), Text('-₱80')]),
-          // Row(children: [Text('Mimoo Welcome Voucher'), Text('-₱150')]),
-          // ────────────────────────────────────────────────────────────────
+          _SRow('Merchandise Subtotal', '₱${merch.toStringAsFixed(2)}'),
+          if (discount > 0) ...[
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(children: [
+                  Icon(Icons.local_offer_outlined, size: 13, color: _kGreen),
+                  const SizedBox(width: 4),
+                  Text('Voucher Discount',
+                      style: _pjs(
+                          size: 13, weight: FontWeight.w500, color: _kGreen)),
+                ]),
+                Text('-₱${discount.toStringAsFixed(2)}',
+                    style: _pjs(
+                        size: 13, weight: FontWeight.w600, color: _kGreen)),
+              ],
+            ),
+          ],
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
             child: Divider(color: _kBorder),
@@ -549,8 +820,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       _pjs(size: 20, weight: FontWeight.w800, color: _kFlash)),
             ],
           ),
-          // VAT line hidden (not stored) — const SizedBox(height: 4),
-          // Text('VAT inclusive', ...),
         ],
       ),
     );
@@ -572,7 +841,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Widget _buildBottomBar() {
-    final total = _merchandiseTotal;
+    final total = _finalTotal;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
       decoration: const BoxDecoration(

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../state/auth_service.dart';
+import '../../state/notification_state.dart';
+import '../orders/api_order_detail_page.dart';
+import '../orders/return_request_pages.dart';
+
 // ── Color tokens ──────────────────────────────────────────────────────────────
 const _kPrimary = Color(0xFF34175B);
 const _kSecondary = Color(0xFF6B38D4);
@@ -9,7 +14,6 @@ const _kGreen = Color(0xFF1DB966);
 const _kSurface = Color(0xFFF5F4FC);
 const _kCard = Color(0xFFFFFFFF);
 const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
 const _kText = Color(0xFF1A1035);
 const _kSubtext = Color(0xFF8A84A3);
 
@@ -22,106 +26,8 @@ TextStyle _pjs({
     GoogleFonts.plusJakartaSans(
         fontSize: size, fontWeight: weight, color: color, height: height);
 
-// ── Notification types ────────────────────────────────────────────────────────
-enum _NType { order, promo, account, delivery, system }
-
-class _NotifItem {
-  const _NotifItem({
-    required this.id,
-    required this.type,
-    required this.title,
-    required this.body,
-    required this.time,
-    this.isRead = false,
-  });
-  final String id;
-  final _NType type;
-  final String title;
-  final String body;
-  final String time;
-  final bool isRead;
-
-  _NotifItem copyWith({bool? isRead}) => _NotifItem(
-        id: id,
-        type: type,
-        title: title,
-        body: body,
-        time: time,
-        isRead: isRead ?? this.isRead,
-      );
-}
-
-// ── Sample data ────────────────────────────────────────────────────────────────
-final _sampleNotifs = <_NotifItem>[
-  _NotifItem(
-    id: 'n1',
-    type: _NType.delivery,
-    title: 'Your order is out for delivery!',
-    body: 'Rider Mark V. is on the way. Order #MM-89241029 will arrive today.',
-    time: '2 min ago',
-    isRead: false,
-  ),
-  _NotifItem(
-    id: 'n2',
-    type: _NType.order,
-    title: 'Order confirmed',
-    body: 'mimoo Acid-Wash Hoodie × 1 has been confirmed by the seller.',
-    time: '1h ago',
-    isRead: false,
-  ),
-  _NotifItem(
-    id: 'n3',
-    type: _NType.promo,
-    title: '⚡ Flash Sale starts in 30 minutes!',
-    body:
-        'Up to 70% off on selected items. Add to cart now before stocks run out.',
-    time: '2h ago',
-    isRead: false,
-  ),
-  _NotifItem(
-    id: 'n4',
-    type: _NType.order,
-    title: 'Seller is preparing your order',
-    body: 'StyleTrend Boutique has started packing your Lilac Knit Cardigan.',
-    time: '3h ago',
-    isRead: true,
-  ),
-  _NotifItem(
-    id: 'n5',
-    type: _NType.promo,
-    title: 'You have a ₱150 voucher waiting!',
-    body: 'Your Welcome Voucher expires in 2 days. Use it before it\'s gone.',
-    time: 'Yesterday',
-    isRead: true,
-  ),
-  _NotifItem(
-    id: 'n6',
-    type: _NType.account,
-    title: 'Email verified successfully',
-    body: 'Your mimoo account is now fully active. Start shopping!',
-    time: 'Yesterday',
-    isRead: true,
-  ),
-  _NotifItem(
-    id: 'n7',
-    type: _NType.order,
-    title: 'Rate your purchase',
-    body: 'How was your mimoo Retro Runner Sneakers? Share your experience.',
-    time: '2 days ago',
-    isRead: true,
-  ),
-  _NotifItem(
-    id: 'n8',
-    type: _NType.system,
-    title: 'App updated to v2.4',
-    body:
-        'Improved search, faster checkout, and new chat features. Tap to see what\'s new.',
-    time: '3 days ago',
-    isRead: true,
-  ),
-];
-
-// ── Page ───────────────────────────────────────────────────────────────────────
+/// Real in-app notifications (GET /api/buyer/notifications).
+/// Unread items are bold; tapping marks read and opens the order / return.
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
 
@@ -130,256 +36,263 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  late final List<_NotifItem> _notifs;
-  String _filter = 'All';
-  final _filters = ['All', 'Orders', 'Promos', 'Account'];
+  final _state = NotificationState.instance;
+  final List<BuyerNotificationItem> _items = [];
+  bool _loading = true;
+  bool _loadingMore = false;
+  bool _hasMore = false;
+  int _page = 1;
+  String? _error;
+  int _lastUnread = -1;
 
   @override
   void initState() {
     super.initState();
-    _notifs = List.of(_sampleNotifs);
+    _load();
+    // When the 30 s poll sees a different unread count, refresh the list.
+    _state.addListener(_onStateChanged);
   }
 
-  int get _unreadCount => _notifs.where((n) => !n.isRead).length;
-
-  List<_NotifItem> get _filtered {
-    if (_filter == 'Orders') {
-      return _notifs
-          .where((n) => n.type == _NType.order || n.type == _NType.delivery)
-          .toList();
-    }
-    if (_filter == 'Promos') {
-      return _notifs.where((n) => n.type == _NType.promo).toList();
-    }
-    if (_filter == 'Account') {
-      return _notifs
-          .where((n) => n.type == _NType.account || n.type == _NType.system)
-          .toList();
-    }
-    return _notifs;
+  @override
+  void dispose() {
+    _state.removeListener(_onStateChanged);
+    super.dispose();
   }
 
-  void _markAllRead() => setState(() {
-        for (var i = 0; i < _notifs.length; i++) {
-          _notifs[i] = _notifs[i].copyWith(isRead: true);
+  void _onStateChanged() {
+    final n = _state.unreadCount;
+    if (_lastUnread != -1 && n > _lastUnread && !_loading) _load(silent: true);
+    _lastUnread = n;
+  }
+
+  Future<void> _load({bool silent = false}) async {
+    if (!AuthService.instance.isLoggedIn) {
+      setState(() {
+        _loading = false;
+        _error = 'Log in to see your notifications.';
+      });
+      return;
+    }
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
+    final page = await _state.refresh(page: 1);
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _lastUnread = _state.unreadCount;
+      if (page == null) {
+        if (!silent) _error = 'Could not load notifications.';
+      } else {
+        _error = null;
+        _items
+          ..clear()
+          ..addAll(page.items);
+        _hasMore = page.hasMore;
+        _page = 1;
+      }
+    });
+  }
+
+  Future<void> _loadMore() async {
+    setState(() => _loadingMore = true);
+    final page = await _state.refresh(page: _page + 1);
+    if (!mounted) return;
+    setState(() {
+      _loadingMore = false;
+      if (page != null) {
+        _items.addAll(page.items);
+        _hasMore = page.hasMore;
+        _page += 1;
+      }
+    });
+  }
+
+  Future<void> _open(int index) async {
+    final n = _items[index];
+    if (!n.isRead) {
+      setState(() => _items[index] = n.copyRead());
+      try {
+        await _state.markRead(n.id);
+      } catch (_) {/* badge resyncs on next poll */}
+    }
+    if (!mounted) return;
+    if (n.returnId != null) {
+      await Navigator.push(context,
+          MaterialPageRoute(builder: (_) => ReturnStatusPage(returnId: n.returnId!)));
+    } else if (n.orderId != null) {
+      await Navigator.push(context,
+          MaterialPageRoute(builder: (_) => ApiOrderDetailPage(orderId: n.orderId!)));
+    }
+  }
+
+  Future<void> _markAll() async {
+    try {
+      await _state.markAllRead();
+      if (!mounted) return;
+      setState(() {
+        for (var i = 0; i < _items.length; i++) {
+          _items[i] = _items[i].copyRead();
         }
       });
-
-  void _markRead(String id) {
-    final idx = _notifs.indexWhere((n) => n.id == id);
-    if (idx != -1 && !_notifs[idx].isRead) {
-      setState(() => _notifs[idx] = _notifs[idx].copyWith(isRead: true));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Could not mark all as read. Please try again.'),
+        behavior: SnackBarBehavior.floating,
+      ));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasUnread = _items.any((n) => !n.isRead);
     return Scaffold(
       backgroundColor: _kSurface,
-      appBar: _buildAppBar(),
-      body: Column(
-        children: [
-          _buildFilterRow(),
-          Expanded(
-            child: _filtered.isEmpty
-                ? _buildEmpty()
-                : ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _filtered.length,
-                    separatorBuilder: (_, __) => const Divider(
-                        height: 1, color: _kBorder, indent: 72, endIndent: 16),
-                    itemBuilder: (_, i) => _NotifTile(
-                      item: _filtered[i],
-                      onTap: () => _markRead(_filtered[i].id),
-                    ),
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: _kPrimary,
-      elevation: 0,
-      iconTheme: const IconThemeData(color: Colors.white),
-      title: Text('Notifications',
-          style: _pjs(size: 17, weight: FontWeight.w800, color: Colors.white)),
-      actions: [
-        if (_unreadCount > 0)
-          TextButton(
-            onPressed: _markAllRead,
-            child: Text('Mark all read',
-                style: _pjs(
-                    size: 13,
-                    weight: FontWeight.w600,
-                    color: Colors.white.withValues(alpha: 0.85))),
-          ),
-        const SizedBox(width: 4),
-      ],
-    );
-  }
-
-  Widget _buildFilterRow() {
-    return Container(
-      color: _kCard,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      child: Row(
-        children: _filters.map((f) {
-          final sel = _filter == f;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () => setState(() => _filter = f),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                decoration: BoxDecoration(
-                  color: sel ? _kPrimary : _kSurface,
-                  borderRadius: BorderRadius.circular(9999),
-                ),
-                child: Text(f,
-                    style: _pjs(
-                        size: 13,
-                        weight: FontWeight.w600,
-                        color: sel ? Colors.white : _kText)),
-              ),
+      appBar: AppBar(
+        backgroundColor: _kCard,
+        foregroundColor: _kPrimary,
+        elevation: 0.5,
+        title: Text('Notifications',
+            style: _pjs(size: 17, weight: FontWeight.w800, color: _kPrimary)),
+        actions: [
+          if (hasUnread)
+            TextButton(
+              onPressed: _markAll,
+              child: Text('Mark all as read',
+                  style: _pjs(size: 12, weight: FontWeight.w700, color: _kSecondary)),
             ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.notifications_none_outlined, size: 64, color: _kBorder),
-          const SizedBox(height: 12),
-          Text('No notifications',
-              style: _pjs(size: 16, weight: FontWeight.w700, color: _kSubtext)),
-          const SizedBox(height: 6),
-          Text('You\'re all caught up!',
-              style: _pjs(size: 13, color: _kSubtext)),
         ],
       ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(_error!, style: _pjs(color: _kSubtext)),
+                    const SizedBox(height: 8),
+                    if (AuthService.instance.isLoggedIn)
+                      OutlinedButton(onPressed: _load, child: const Text('Retry')),
+                  ]),
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: _items.isEmpty
+                      ? ListView(children: [
+                          const SizedBox(height: 120),
+                          const Icon(Icons.notifications_none_outlined,
+                              size: 56, color: _kSubtext),
+                          const SizedBox(height: 12),
+                          Center(
+                              child: Text('No notifications yet.',
+                                  style: _pjs(color: _kSubtext))),
+                        ])
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: _items.length + (_hasMore ? 1 : 0),
+                          itemBuilder: (_, i) {
+                            if (i == _items.length) {
+                              return Center(
+                                child: TextButton(
+                                  onPressed: _loadingMore ? null : _loadMore,
+                                  child: Text(_loadingMore ? 'Loading…' : 'Load more'),
+                                ),
+                              );
+                            }
+                            return _NotifTile(item: _items[i], onTap: () => _open(i));
+                          },
+                        ),
+                ),
     );
   }
 }
 
-// ── Notification Tile ─────────────────────────────────────────────────────────
 class _NotifTile extends StatelessWidget {
   const _NotifTile({required this.item, required this.onTap});
-  final _NotifItem item;
+  final BuyerNotificationItem item;
   final VoidCallback onTap;
 
-  IconData get _icon {
-    switch (item.type) {
-      case _NType.order:
-        return Icons.shopping_bag_outlined;
-      case _NType.delivery:
-        return Icons.delivery_dining_outlined;
-      case _NType.promo:
-        return Icons.local_offer_outlined;
-      case _NType.account:
-        return Icons.person_outline;
-      case _NType.system:
-        return Icons.info_outline;
+  (IconData, Color) get _look {
+    final status = item.data['status'] as String? ?? '';
+    if (item.type == 'return_status') return (Icons.assignment_return_outlined, _kSecondary);
+    switch (status) {
+      case 'shipped':
+        return (Icons.local_shipping_outlined, _kSecondary);
+      case 'completed':
+        return (Icons.check_circle_outline, _kGreen);
+      case 'cancelled':
+        return (Icons.cancel_outlined, _kFlash);
+      case 'packed':
+        return (Icons.inventory_2_outlined, _kPrimary);
+      default:
+        return (Icons.receipt_long_outlined, _kPrimary);
     }
   }
 
-  Color get _iconBg {
-    switch (item.type) {
-      case _NType.order:
-        return _kChip;
-      case _NType.delivery:
-        return const Color(0xFFE8F8EF);
-      case _NType.promo:
-        return const Color(0xFFFFF0F3);
-      case _NType.account:
-        return _kChip;
-      case _NType.system:
-        return const Color(0xFFF0F4FF);
-    }
-  }
-
-  Color get _iconColor {
-    switch (item.type) {
-      case _NType.order:
-        return _kSecondary;
-      case _NType.delivery:
-        return _kGreen;
-      case _NType.promo:
-        return _kFlash;
-      case _NType.account:
-        return _kPrimary;
-      case _NType.system:
-        return _kSecondary;
-    }
+  String _ago(DateTime? t) {
+    if (t == null) return '';
+    final d = DateTime.now().difference(t.toLocal());
+    if (d.inMinutes < 1) return 'Just now';
+    if (d.inHours < 1) return '${d.inMinutes}m ago';
+    if (d.inDays < 1) return '${d.inHours}h ago';
+    if (d.inDays < 7) return '${d.inDays}d ago';
+    final l = t.toLocal();
+    return '${l.year}-${l.month.toString().padLeft(2, '0')}-${l.day.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final (icon, color) = _look;
+    final unread = !item.isRead;
+    return InkWell(
       onTap: onTap,
       child: Container(
-        color: item.isRead ? _kCard : _kChip.withValues(alpha: 0.4),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        color: unread ? _kChip.withValues(alpha: 0.55) : _kCard,
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        margin: const EdgeInsets.only(bottom: 1),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon badge
             Container(
-              width: 44,
-              height: 44,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
-                color: _iconBg,
+                color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(_icon, size: 20, color: _iconColor),
+              child: Icon(icon, size: 19, color: color),
             ),
             const SizedBox(width: 12),
-            // Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(item.title,
-                            style: _pjs(
-                                size: 13,
-                                weight: item.isRead
-                                    ? FontWeight.w500
-                                    : FontWeight.w700)),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(item.time, style: _pjs(size: 10, color: _kSubtext)),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
+                  Text(item.title,
+                      style: _pjs(
+                          size: 13,
+                          weight: unread ? FontWeight.w800 : FontWeight.w500)),
+                  const SizedBox(height: 2),
                   Text(item.body,
-                      style: _pjs(size: 12, color: _kSubtext, height: 1.4),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
+                      style: _pjs(
+                          size: 12,
+                          color: unread ? _kText : _kSubtext,
+                          weight: unread ? FontWeight.w600 : FontWeight.w400,
+                          height: 1.4)),
+                  const SizedBox(height: 4),
+                  Text(_ago(item.createdAt), style: _pjs(size: 10, color: _kSubtext)),
                 ],
               ),
             ),
-            // Unread dot
-            if (!item.isRead) ...[
-              const SizedBox(width: 8),
+            if (unread)
               Container(
+                margin: const EdgeInsets.only(top: 6, left: 6),
                 width: 8,
                 height: 8,
-                margin: const EdgeInsets.only(top: 4),
-                decoration: const BoxDecoration(
-                    color: _kSecondary, shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: _kFlash, shape: BoxShape.circle),
               ),
-            ],
           ],
         ),
       ),

@@ -14,6 +14,7 @@ const _kChip = Color(0xFFEFE9FD);
 const _kBorder = Color(0xFFDDD8F0);
 const _kText = Color(0xFF1A1035);
 const _kSubtext = Color(0xFF8A84A3);
+// ignore: unused_element
 const _kOrange = Color(0xFFFF6B00);
 
 TextStyle _pjs({
@@ -43,19 +44,21 @@ class FlashDealsScreen extends StatefulWidget {
 }
 
 class _FlashDealsScreenState extends State<FlashDealsScreen> {
+  // ignore: prefer_final_fields
   int _saleSeconds = 1 * 3600 + 26 * 60 + 45;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_saleSeconds > 0) {
-        setState(() => _saleSeconds--);
-      } else {
-        _timer?.cancel();
-      }
-    });
+    // Flash sale countdown disabled — no sale_end_date column in DB.
+    // _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+    //   if (_saleSeconds > 0) {
+    //     setState(() => _saleSeconds--);
+    //   } else {
+    //     _timer?.cancel();
+    //   }
+    // });
   }
 
   @override
@@ -96,24 +99,24 @@ class _FlashDealsScreenState extends State<FlashDealsScreen> {
       ),
       body: Column(
         children: [
-          // Countdown header
-          Container(
-            color: _kPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                const Icon(Icons.flash_on, color: _kFlash, size: 20),
-                const SizedBox(width: 8),
-                Text('FLASH SALE ENDS IN',
-                    style: _pjs(
-                        size: 12,
-                        weight: FontWeight.w800,
-                        color: Colors.white)),
-                const Spacer(),
-                _buildCountdown(),
-              ],
-            ),
-          ),
+          // Countdown header hidden — no sale_end_date column in DB.
+          // Container(
+          //   color: _kPrimary,
+          //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          //   child: Row(
+          //     children: [
+          //       const Icon(Icons.flash_on, color: _kFlash, size: 20),
+          //       const SizedBox(width: 8),
+          //       Text('FLASH SALE ENDS IN',
+          //           style: _pjs(
+          //               size: 12,
+          //               weight: FontWeight.w800,
+          //               color: Colors.white)),
+          //       const Spacer(),
+          //       _buildCountdown(),
+          //     ],
+          //   ),
+          // ),
           // Store badge row
           Container(
             color: _kCard,
@@ -192,6 +195,7 @@ class _FlashDealsScreenState extends State<FlashDealsScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildCountdown() {
     final parts = _countdown.split(':');
     if (parts.length != 3) return const SizedBox.shrink();
@@ -258,23 +262,24 @@ class _FlashDealCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _kOrange,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text('3 DAYS',
-                        style: _pjs(
-                            size: 8,
-                            weight: FontWeight.w800,
-                            color: Colors.white)),
-                  ),
-                ),
+                // "3 DAYS" badge hidden — no sale end date in DB.
+                // Positioned(
+                //   top: 8,
+                //   left: 8,
+                //   child: Container(
+                //     padding:
+                //         const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                //     decoration: BoxDecoration(
+                //       color: _kOrange,
+                //       borderRadius: BorderRadius.circular(4),
+                //     ),
+                //     child: Text('3 DAYS',
+                //         style: _pjs(
+                //             size: 8,
+                //             weight: FontWeight.w800,
+                //             color: Colors.white)),
+                //   ),
+                // ),
                 Positioned(
                   bottom: 8,
                   left: 8,
@@ -324,11 +329,8 @@ class _FlashDealCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.star_rounded,
-                            size: 12, color: Colors.amber.shade500),
-                        Text(' ${product.rating}',
-                            style: _pjs(size: 12, weight: FontWeight.w600)),
-                        Text('  •  ${product.sold}',
+                        // Rating hidden — StoreProduct has no real review data.
+                        Text(product.sold,
                             style: _pjs(size: 11, color: _kSubtext)),
                       ],
                     ),
@@ -353,33 +355,35 @@ class _FlashDealCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    // Progress bar
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: 0.75,
-                        backgroundColor: _kBorder,
-                        valueColor: const AlwaysStoppedAnimation(_kFlash),
-                        minHeight: 5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
+                    // Progress bar hidden — no claimed/sold data in DB.
+                    // ClipRRect(
+                    //   borderRadius: BorderRadius.circular(3),
+                    //   child: LinearProgressIndicator(
+                    //     value: 0.75,
+                    //     backgroundColor: _kBorder,
+                    //     valueColor: const AlwaysStoppedAnimation(_kFlash),
+                    //     minHeight: 5,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: _kFlash.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          child: Text('SELLING FAST',
-                              style: _pjs(
-                                  size: 8,
-                                  weight: FontWeight.w800,
-                                  color: _kFlash)),
-                        ),
+                        // "SELLING FAST" label hidden — no sold rate data in DB.
+                        // Container(
+                        //   padding: const EdgeInsets.symmetric(
+                        //       horizontal: 5, vertical: 1),
+                        //   decoration: BoxDecoration(
+                        //     color: _kFlash.withValues(alpha: 0.1),
+                        //     borderRadius: BorderRadius.circular(3),
+                        //   ),
+                        //   child: Text('SELLING FAST',
+                        //       style: _pjs(
+                        //           size: 8,
+                        //           weight: FontWeight.w800,
+                        //           color: _kFlash)),
+                        // ),
+                        const Spacer(),
                         GestureDetector(
                           onTap: () => Navigator.push(
                             context,

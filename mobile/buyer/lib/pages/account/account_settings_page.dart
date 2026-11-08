@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../state/auth_service.dart';
 import '../../models/buyer_profile.dart';
 import '../../services/profile_repository.dart';
@@ -49,12 +50,12 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   bool _loadingProfile = true;
   String? _profileError;
   bool _saving = false;
+  bool _photoUploading = false;
 
   // ── Editable controllers (pre-filled from profile) ────────────────────────
   late final TextEditingController _firstNameCtrl;
   late final TextEditingController _lastNameCtrl;
   late final TextEditingController _miCtrl;
-  late final TextEditingController _phoneCtrl;
   late final TextEditingController _streetCtrl;
 
   // Address dropdown selections
@@ -70,7 +71,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     _firstNameCtrl = TextEditingController();
     _lastNameCtrl = TextEditingController();
     _miCtrl = TextEditingController();
-    _phoneCtrl = TextEditingController();
     _streetCtrl = TextEditingController();
     _loadProfile();
   }
@@ -80,7 +80,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
     _miCtrl.dispose();
-    _phoneCtrl.dispose();
     _streetCtrl.dispose();
     super.dispose();
   }
@@ -97,7 +96,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       _firstNameCtrl.text = p.firstName;
       _lastNameCtrl.text = p.lastName;
       _miCtrl.text = p.middleInitial ?? '';
-      _phoneCtrl.text = p.contactNumber ?? '';
       _streetCtrl.text = p.streetAddress ?? '';
       _region = p.region ?? '';
       _province = p.province;
@@ -111,11 +109,11 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         _loadingProfile = false;
         _profileError = e.message;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _loadingProfile = false;
-        _profileError = 'Could not load profile.';
+        _profileError = ApiService.friendlyError(e);
       });
     }
   }
@@ -129,7 +127,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         'last_name': _lastNameCtrl.text.trim(),
         if (_miCtrl.text.trim().isNotEmpty)
           'middle_initial': _miCtrl.text.trim(),
-        'contact_number': _phoneCtrl.text.trim(),
+        // contact_number excluded — use Change Phone flow
         'street_address': _streetCtrl.text.trim(),
         if (_region.isNotEmpty) 'region': _region,
         if (_province != null) 'province': _province,
@@ -142,7 +140,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       if (!mounted) return;
       _profile = updated;
 
-      // Refresh AuthService so checkout pre-fill is updated
       await AuthService.instance.persistLogin(
         token: ApiService.token ?? '',
         buyerName: updated.fullName,
@@ -299,34 +296,49 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   // ── Profile ─────────────────────────────────────────────────────────────────
   Widget _buildProfileSection() {
     final p = _profile;
+    final photoUrl = p?.profilePhotoUrl;
     return SettingsSectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Photo (unchanged visual)
+          // Photo — tappable, shows real photo when uploaded
           Center(
-            child: Stack(
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundColor: _kChip,
-                  child: Icon(Icons.person, size: 46, color: _kPrimary),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                        color: _kSecondary,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5)),
-                    child: const Icon(Icons.camera_alt,
-                        size: 13, color: Colors.white),
+            child: GestureDetector(
+              onTap: _photoUploading ? null : _pickAndUploadPhoto,
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: _kChip,
+                    backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                        ? NetworkImage(photoUrl)
+                        : null,
+                    child: (photoUrl == null || photoUrl.isEmpty)
+                        ? Icon(Icons.person, size: 46, color: _kPrimary)
+                        : null,
                   ),
-                ),
-              ],
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: _photoUploading ? _kSubtext : _kSecondary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      child: _photoUploading
+                          ? const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.camera_alt,
+                              size: 13, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -339,21 +351,124 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           // M.I.
           _buildTextField(_miCtrl, 'MIDDLE INITIAL', maxLength: 1),
           const Divider(color: _kBorder, height: 16),
-          // Email — read only
-          _ProfileRow(
-            label: 'EMAIL ADDRESS',
-            value: p?.email ?? '',
-            badge: 'Verified',
-            badgeColor: _kGreen,
-            sub: 'Email cannot be changed here',
+          // Email — tap to change
+          GestureDetector(
+            onTap: () => _pushChangeEmail(context),
+            child: _ProfileRow(
+              label: 'EMAIL ADDRESS',
+              value: p?.email ?? '',
+              badge: 'Verified',
+              badgeColor: _kGreen,
+              actionLabel: 'Change',
+              onAction: () => _pushChangeEmail(context),
+              sub: 'Tap to change email',
+            ),
           ),
           const Divider(color: _kBorder, height: 16),
-          // Mobile
-          _buildTextField(_phoneCtrl, 'MOBILE NUMBER',
-              hint: '09XXXXXXXXX', keyboardType: TextInputType.phone),
+          // Phone — read-only, tap to change
+          GestureDetector(
+            onTap: () => _pushChangePhone(context),
+            child: _ProfileRow(
+              label: 'MOBILE NUMBER',
+              value: p?.contactNumber ?? 'Not set',
+              actionLabel: 'Change',
+              onAction: () => _pushChangePhone(context),
+              sub: 'Tap to change phone number',
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    final picker = ImagePicker();
+    final XFile? xfile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+    if (xfile == null) return; // user cancelled
+    if (!mounted) return;
+
+    setState(() => _photoUploading = true);
+    try {
+      final bytes = await xfile.readAsBytes();
+      final filename = xfile.name.isNotEmpty ? xfile.name : 'photo.jpg';
+      // Detect mime from extension (image_picker already validated it)
+      final mime =
+          filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+
+      final photoUrl = await ProfileRepository.instance.uploadProfilePhoto(
+        bytes: bytes,
+        filename: filename,
+        mimeType: mime,
+      );
+
+      if (!mounted) return;
+      // Update local profile
+      if (_profile != null) {
+        setState(() {
+          _profile = BuyerProfile.fromJson({
+            ..._profile!.toUpdateJson(),
+            'id': _profile!.id,
+            'first_name': _profile!.firstName,
+            'last_name': _profile!.lastName,
+            'email': _profile!.email,
+            'contact_number': _profile!.contactNumber,
+            'profile_photo_url': photoUrl,
+          });
+        });
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Profile photo updated!',
+            style:
+                _pjs(size: 13, color: Colors.white, weight: FontWeight.w600)),
+        backgroundColor: _kGreen,
+        duration: const Duration(seconds: 2),
+      ));
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.message, style: _pjs(size: 13, color: Colors.white)),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+      ));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not upload photo. Please try again.',
+            style: _pjs(size: 13, color: Colors.white)),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+      ));
+    } finally {
+      if (mounted) setState(() => _photoUploading = false);
+    }
+  }
+
+  void _pushChangeEmail(BuildContext ctx) {
+    Navigator.push(
+        ctx,
+        MaterialPageRoute(
+            builder: (_) => _ChangeEmailPage(
+                  onChanged: (newEmail) {
+                    // Update cached email in AuthService
+                    AuthService.instance.updateEmail(newEmail);
+                    // Refresh profile
+                    _loadProfile();
+                  },
+                )));
+  }
+
+  void _pushChangePhone(BuildContext ctx) {
+    Navigator.push(
+        ctx,
+        MaterialPageRoute(
+            builder: (_) => _ChangePhonePage(
+                  onChanged: (_) => _loadProfile(),
+                )));
   }
 
   Widget _buildTextField(TextEditingController ctrl, String label,
@@ -462,8 +577,22 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           _SecurityRow(
             icon: Icons.lock_reset_outlined,
             title: 'Change Password',
-            sub: 'Last updated 3 months ago',
+            sub: 'Update your account password',
             onTap: () => _pushPasswordChange(context),
+          ),
+          const Divider(color: _kBorder, height: 12),
+          _SecurityRow(
+            icon: Icons.email_outlined,
+            title: 'Change Email',
+            sub: _profile?.email ?? 'Update your login email',
+            onTap: () => _pushChangeEmail(context),
+          ),
+          const Divider(color: _kBorder, height: 12),
+          _SecurityRow(
+            icon: Icons.phone_outlined,
+            title: 'Change Phone',
+            sub: _profile?.contactNumber ?? 'Update your mobile number',
+            onTap: () => _pushChangePhone(context),
           ),
           const Divider(color: _kBorder, height: 12),
           _SecurityRow(
@@ -1140,101 +1269,144 @@ class _EditFieldPageState extends State<_EditFieldPage> {
 // ── Change Password Page ──────────────────────────────────────────────────────
 class _ChangePasswordPage extends StatefulWidget {
   const _ChangePasswordPage();
-
   @override
   State<_ChangePasswordPage> createState() => _ChangePasswordPageState();
 }
 
 class _ChangePasswordPageState extends State<_ChangePasswordPage> {
-  bool _obscure1 = true, _obscure2 = true, _obscure3 = true;
-  final _formKey = GlobalKey<FormState>();
+  final _currentCtrl = TextEditingController();
+  final _newCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+  bool _o1 = true, _o2 = true, _o3 = true;
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _currentCtrl.dispose();
+    _newCtrl.dispose();
+    _confirmCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_loading) return;
+    if (_currentCtrl.text.isEmpty ||
+        _newCtrl.text.isEmpty ||
+        _confirmCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Please fill in all fields.',
+              style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating));
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await ProfileRepository.instance.changePassword(
+        currentPassword: _currentCtrl.text,
+        newPassword: _newCtrl.text,
+        newPasswordConfirmation: _confirmCtrl.text,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Password updated!',
+              style:
+                  _pjs(size: 13, color: Colors.white, weight: FontWeight.w600)),
+          backgroundColor: const Color(0xFF1DB966)));
+      Navigator.pop(context);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      final msg = e.errors != null && e.errors!.isNotEmpty
+          ? e.errors!.entries.map((en) => en.value.first).join('\n')
+          : e.message;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(msg, style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Network error. Please try again.',
+              style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _kSurface,
       appBar: AppBar(
-        backgroundColor: _kCard,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: _kText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('Change Password',
-            style: _pjs(size: 17, weight: FontWeight.w800)),
-      ),
+          backgroundColor: _kCard,
+          elevation: 0,
+          leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: _kText),
+              onPressed: () => Navigator.pop(context)),
+          title: Text('Change Password',
+              style: _pjs(size: 17, weight: FontWeight.w800))),
       body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              _PasswordField(
+          padding: const EdgeInsets.all(20),
+          child: Column(children: [
+            _PasswordField(
                 label: 'Current Password',
-                obscure: _obscure1,
-                onToggle: () => setState(() => _obscure1 = !_obscure1),
-              ),
-              const SizedBox(height: 14),
-              _PasswordField(
+                ctrl: _currentCtrl,
+                obscure: _o1,
+                onToggle: () => setState(() => _o1 = !_o1)),
+            const SizedBox(height: 14),
+            _PasswordField(
                 label: 'New Password',
-                obscure: _obscure2,
-                onToggle: () => setState(() => _obscure2 = !_obscure2),
-              ),
-              const SizedBox(height: 14),
-              _PasswordField(
+                ctrl: _newCtrl,
+                obscure: _o2,
+                onToggle: () => setState(() => _o2 = !_o2)),
+            const SizedBox(height: 14),
+            _PasswordField(
                 label: 'Confirm New Password',
-                obscure: _obscure3,
-                onToggle: () => setState(() => _obscure3 = !_obscure3),
-              ),
-              const SizedBox(height: 28),
-              ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Password updated!',
-                          style: _pjs(
-                              size: 13,
-                              color: Colors.white,
-                              weight: FontWeight.w600)),
-                      backgroundColor: _kPrimary,
-                    ),
-                  );
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
+                ctrl: _confirmCtrl,
+                obscure: _o3,
+                onToggle: () => setState(() => _o3 = !_o3)),
+            const SizedBox(height: 28),
+            ElevatedButton(
+              onPressed: _loading ? null : _submit,
+              style: ElevatedButton.styleFrom(
                   backgroundColor: _kPrimary,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
-                  minimumSize: const Size(double.infinity, 52),
-                ),
-                child: Text('Update Password',
-                    style: _pjs(
-                        size: 15,
-                        weight: FontWeight.w700,
-                        color: Colors.white)),
-              ),
-            ],
-          ),
-        ),
-      ),
+                  minimumSize: const Size(double.infinity, 52)),
+              child: _loading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : Text('Update Password',
+                      style: _pjs(
+                          size: 15,
+                          weight: FontWeight.w700,
+                          color: Colors.white)),
+            ),
+          ])),
     );
   }
 }
 
 class _PasswordField extends StatelessWidget {
-  const _PasswordField({
-    required this.label,
-    required this.obscure,
-    required this.onToggle,
-  });
+  const _PasswordField(
+      {required this.label,
+      required this.ctrl,
+      required this.obscure,
+      required this.onToggle});
   final String label;
+  final TextEditingController ctrl;
   final bool obscure;
   final VoidCallback onToggle;
-
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      controller: ctrl,
       obscureText: obscure,
       style: _pjs(size: 14),
       decoration: InputDecoration(
@@ -1246,21 +1418,427 @@ class _PasswordField extends StatelessWidget {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         suffixIcon: IconButton(
-          icon: Icon(
-            obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-            size: 18,
-            color: _kSubtext,
-          ),
-          onPressed: onToggle,
-        ),
+            icon: Icon(
+                obscure
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                size: 18,
+                color: _kSubtext),
+            onPressed: onToggle),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _kBorder),
-        ),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: _kBorder)),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _kPrimary, width: 1.5),
-        ),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: _kPrimary, width: 1.5)),
+      ),
+    );
+  }
+}
+
+// ── Change Email Page (2-step) ────────────────────────────────────────────────
+class _ChangeEmailPage extends StatefulWidget {
+  const _ChangeEmailPage({required this.onChanged});
+  final void Function(String newEmail) onChanged;
+  @override
+  State<_ChangeEmailPage> createState() => _ChangeEmailPageState();
+}
+
+class _ChangeEmailPageState extends State<_ChangeEmailPage> {
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _codeCtrl = TextEditingController();
+  bool _step2 = false; // false = step 1 (email+pass), true = step 2 (OTP)
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    _codeCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _requestOtp() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    try {
+      await ProfileRepository.instance.requestEmailChange(
+          newEmail: _emailCtrl.text.trim(), password: _passCtrl.text);
+      if (!mounted) return;
+      setState(() {
+        _step2 = true;
+        _loading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Verification code sent to your new email.',
+              style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: _kPrimary));
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      final msg = e.errors != null && e.errors!.isNotEmpty
+          ? e.errors!.entries.map((en) => en.value.first).join('\n')
+          : e.message;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(msg, style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Network error.',
+              style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  Future<void> _verifyOtp() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    try {
+      final newEmail = await ProfileRepository.instance
+          .verifyEmailChange(code: _codeCtrl.text.trim());
+      if (!mounted) return;
+      widget.onChanged(newEmail);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Email updated successfully!',
+              style:
+                  _pjs(size: 13, color: Colors.white, weight: FontWeight.w600)),
+          backgroundColor: const Color(0xFF1DB966)));
+      Navigator.pop(context);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      final msg = e.errors != null && e.errors!.isNotEmpty
+          ? e.errors!.entries.map((en) => en.value.first).join('\n')
+          : e.message;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(msg, style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Network error.',
+              style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kSurface,
+      appBar: AppBar(
+          backgroundColor: _kCard,
+          elevation: 0,
+          leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: _kText),
+              onPressed: () => Navigator.pop(context)),
+          title: Text(_step2 ? 'Verify New Email' : 'Change Email',
+              style: _pjs(size: 17, weight: FontWeight.w800))),
+      body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: _step2 ? _buildStep2() : _buildStep1()),
+    );
+  }
+
+  Widget _buildStep1() =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(
+            'Enter your new email address and current password to receive a verification code.',
+            style: _pjs(size: 13, color: _kSubtext, height: 1.5)),
+        const SizedBox(height: 20),
+        _OtpTextField(
+            ctrl: _emailCtrl,
+            label: 'New Email Address',
+            keyboardType: TextInputType.emailAddress),
+        const SizedBox(height: 14),
+        _OtpTextField(
+            ctrl: _passCtrl, label: 'Current Password', obscure: true),
+        const SizedBox(height: 28),
+        ElevatedButton(
+            onPressed: _loading ? null : _requestOtp,
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _kPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                minimumSize: const Size(double.infinity, 52)),
+            child: _loading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : Text('Send Verification Code',
+                    style: _pjs(
+                        size: 15,
+                        weight: FontWeight.w700,
+                        color: Colors.white))),
+      ]);
+
+  Widget _buildStep2() =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Enter the 6-digit code sent to ${_emailCtrl.text}.',
+            style: _pjs(size: 13, color: _kSubtext, height: 1.5)),
+        const SizedBox(height: 20),
+        _OtpTextField(
+            ctrl: _codeCtrl,
+            label: '6-Digit Code',
+            keyboardType: TextInputType.number),
+        const SizedBox(height: 28),
+        ElevatedButton(
+            onPressed: _loading ? null : _verifyOtp,
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _kPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                minimumSize: const Size(double.infinity, 52)),
+            child: _loading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : Text('Verify & Update Email',
+                    style: _pjs(
+                        size: 15,
+                        weight: FontWeight.w700,
+                        color: Colors.white))),
+        const SizedBox(height: 12),
+        Center(
+            child: TextButton(
+                onPressed:
+                    _loading ? null : () => setState(() => _step2 = false),
+                child: Text('Back / Change email',
+                    style: _pjs(size: 13, color: _kSubtext)))),
+      ]);
+}
+
+// ── Change Phone Page (2-step) ────────────────────────────────────────────────
+class _ChangePhonePage extends StatefulWidget {
+  const _ChangePhonePage({required this.onChanged});
+  final void Function(String newPhone) onChanged;
+  @override
+  State<_ChangePhonePage> createState() => _ChangePhonePageState();
+}
+
+class _ChangePhonePageState extends State<_ChangePhonePage> {
+  final _phoneCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _codeCtrl = TextEditingController();
+  bool _step2 = false;
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _phoneCtrl.dispose();
+    _passCtrl.dispose();
+    _codeCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _requestOtp() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    try {
+      await ProfileRepository.instance.requestPhoneChange(
+          newPhone: _phoneCtrl.text.trim(), password: _passCtrl.text);
+      if (!mounted) return;
+      setState(() {
+        _step2 = true;
+        _loading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Verification code sent to your email.',
+              style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: _kPrimary));
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      final msg = e.errors != null && e.errors!.isNotEmpty
+          ? e.errors!.entries.map((en) => en.value.first).join('\n')
+          : e.message;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(msg, style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Network error.',
+              style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  Future<void> _verifyOtp() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    try {
+      final newPhone = await ProfileRepository.instance
+          .verifyPhoneChange(code: _codeCtrl.text.trim());
+      if (!mounted) return;
+      widget.onChanged(newPhone);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Phone number updated!',
+              style:
+                  _pjs(size: 13, color: Colors.white, weight: FontWeight.w600)),
+          backgroundColor: const Color(0xFF1DB966)));
+      Navigator.pop(context);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      final msg = e.errors != null && e.errors!.isNotEmpty
+          ? e.errors!.entries.map((en) => en.value.first).join('\n')
+          : e.message;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(msg, style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Network error.',
+              style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kSurface,
+      appBar: AppBar(
+          backgroundColor: _kCard,
+          elevation: 0,
+          leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: _kText),
+              onPressed: () => Navigator.pop(context)),
+          title: Text(_step2 ? 'Verify Phone Change' : 'Change Phone',
+              style: _pjs(size: 17, weight: FontWeight.w800))),
+      body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: _step2 ? _buildStep2() : _buildStep1()),
+    );
+  }
+
+  Widget _buildStep1() =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(
+            'Enter your new phone number and current password. A verification code will be sent to your email.',
+            style: _pjs(size: 13, color: _kSubtext, height: 1.5)),
+        const SizedBox(height: 20),
+        _OtpTextField(
+            ctrl: _phoneCtrl,
+            label: 'New Mobile Number (09XXXXXXXXX)',
+            keyboardType: TextInputType.phone),
+        const SizedBox(height: 14),
+        _OtpTextField(
+            ctrl: _passCtrl, label: 'Current Password', obscure: true),
+        const SizedBox(height: 28),
+        ElevatedButton(
+            onPressed: _loading ? null : _requestOtp,
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _kPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                minimumSize: const Size(double.infinity, 52)),
+            child: _loading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : Text('Send Verification Code',
+                    style: _pjs(
+                        size: 15,
+                        weight: FontWeight.w700,
+                        color: Colors.white))),
+      ]);
+
+  Widget _buildStep2() =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Enter the 6-digit code sent to your registered email.',
+            style: _pjs(size: 13, color: _kSubtext, height: 1.5)),
+        const SizedBox(height: 20),
+        _OtpTextField(
+            ctrl: _codeCtrl,
+            label: '6-Digit Code',
+            keyboardType: TextInputType.number),
+        const SizedBox(height: 28),
+        ElevatedButton(
+            onPressed: _loading ? null : _verifyOtp,
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _kPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                minimumSize: const Size(double.infinity, 52)),
+            child: _loading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : Text('Verify & Update Phone',
+                    style: _pjs(
+                        size: 15,
+                        weight: FontWeight.w700,
+                        color: Colors.white))),
+        const SizedBox(height: 12),
+        Center(
+            child: TextButton(
+                onPressed:
+                    _loading ? null : () => setState(() => _step2 = false),
+                child: Text('Back', style: _pjs(size: 13, color: _kSubtext)))),
+      ]);
+}
+
+// ── Shared text field for OTP pages ──────────────────────────────────────────
+class _OtpTextField extends StatelessWidget {
+  const _OtpTextField(
+      {required this.ctrl,
+      required this.label,
+      this.keyboardType,
+      this.obscure = false});
+  final TextEditingController ctrl;
+  final String label;
+  final TextInputType? keyboardType;
+  final bool obscure;
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      obscureText: obscure,
+      style: _pjs(size: 14),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: _pjs(size: 11, weight: FontWeight.w700, color: _kSubtext),
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        filled: true,
+        fillColor: _kCard,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: _kBorder)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: _kPrimary, width: 1.5)),
       ),
     );
   }

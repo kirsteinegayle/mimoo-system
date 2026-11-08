@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'register_page.dart';
+import 'forgot_password_page.dart';
 import '../../main.dart';
 import '../../state/auth_service.dart';
 import '../../services/api_service.dart';
-
-// ── Design tokens ─────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF4B2E8A);
-const _kPrimaryLight = Color(0xFFEDE8F8);
-const _kSurface = Color(0xFFF5F4FC);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kAccent = Color(0xFF6B38D4);
+import '../../theme/mimoo_brand.dart';
+import '../../widgets/auth_layout.dart';
+import '../../widgets/motion.dart';
+import '../../utils/animations.dart';
 
 class LoginPage extends StatefulWidget {
   /// Optional callback to execute after successful login.
@@ -31,6 +27,11 @@ class _LoginPageState extends State<LoginPage> {
   final _passCtrl = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
+  String? _error;
+  int _shake = 0; // bumped on every error → shake animation
+
+  // "Remember me" is intentionally not shown: the session token is always
+  // persisted in secure storage until logout, so the checkbox would do nothing.
 
   @override
   void dispose() {
@@ -40,31 +41,16 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
-
-    // ── Mock login — set to false once the Laravel backend is live.
-    const useMockLogin = false; // flip to false to use the real API
-    // ignore: dead_code
-
-    if (useMockLogin) {
-      await Future.delayed(const Duration(milliseconds: 600));
-      if (!mounted) return;
-      setState(() => _loading = false);
-      AuthService.instance.login();
-      if (widget.onLoginSuccess != null) {
-        Navigator.of(context).pop();
-        widget.onLoginSuccess!();
-      } else {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomePage()),
-          (route) => false,
-        );
-      }
+    if (_loading) return;
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _shake++);
       return;
     }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
-    // ── Real API login (used when useMockLogin = false) ────────────────────
     try {
       final res = await ApiService.post(
         '/buyer/login',
@@ -104,34 +90,18 @@ class _LoginPageState extends State<LoginPage> {
       }
     } on ApiException catch (e) {
       if (!mounted) return;
-      final msg = e.statusCode == 403
+      setState(() => _shake++);
+      setState(() => _error = e.statusCode == 403
           ? 'Please verify your email before logging in.'
-          : e.message;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg,
-              style: GoogleFonts.plusJakartaSans(color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+          : e.statusCode == 401 || e.statusCode == 422
+              ? e.message
+              : ApiService.friendlyError(e));
     } catch (e) {
       if (!mounted) return;
-      final msg = e.toString().contains('SocketException') ||
-              e.toString().contains('Connection refused') ||
-              e.toString().contains('TimeoutException') ||
-              e.toString().contains('HandshakeException')
-          ? 'Cannot reach the server. Make sure the Laravel backend is running.'
-          : 'Network error: $e';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg,
-              style: GoogleFonts.plusJakartaSans(color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 8),
-        ),
-      );
+      setState(() {
+        _shake++;
+        _error = ApiService.friendlyError(e);
+      });
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -139,350 +109,142 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _kSurface,
-      body: Stack(
-        children: [
-          // ── Purple blob top-right ─────────────────────────────────────
-          Positioned(
-            top: -40,
-            right: -60,
-            child: Container(
-              width: 260,
-              height: 280,
-              decoration: const BoxDecoration(
-                color: _kPrimaryLight,
-                shape: BoxShape.circle,
+    return MimooAuthLayout(
+      onBack: Navigator.of(context).canPop()
+          ? () => Navigator.of(context).pop()
+          : null,
+      card: ShakeOnChange(
+        trigger: _shake,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              StaggeredItem(
+                index: 0,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Welcome back',
+                          style: mimooText(size: 24, weight: FontWeight.w800)),
+                      const SizedBox(height: 4),
+                      Text(
+                          'Sign in to continue shopping on ${MimooBrand.name}.',
+                          style:
+                              mimooText(size: 13, color: MimooBrand.subtext)),
+                    ]),
               ),
-            ),
-          ),
-          Positioned(
-            top: 60,
-            right: -20,
-            child: Container(
-              width: 180,
-              height: 200,
-              decoration: BoxDecoration(
-                color: _kPrimaryLight.withValues(alpha: 0.6),
-                shape: BoxShape.circle,
+              const SizedBox(height: 22),
+              StaggeredItem(
+                index: 1,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const MimooFieldLabel('Email address'),
+                      FocusGlow(
+                          child: TextFormField(
+                        controller: _emailCtrl,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.email],
+                        style: mimooText(size: 14, weight: FontWeight.w500),
+                        decoration: mimooInputDecoration(
+                            hint: 'name@email.com', icon: Icons.mail_outline),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Email is required';
+                          }
+                          if (!v.contains('@')) return 'Enter a valid email';
+                          return null;
+                        },
+                      )),
+                    ]),
               ),
-            ),
-          ),
-
-          // ── Main content ──────────────────────────────────────────────
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 48),
-
-                  // App icon
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: _kPrimary,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Icon(
-                      Icons.sentiment_satisfied_alt_rounded,
-                      color: Colors.white,
-                      size: 34,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Brand name
-                  Text(
-                    'mimoo',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: _kPrimary,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Title
-                  Text(
-                    'Log In',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: _kText,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Welcome back, please enter your details.',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      color: _kSubtext,
-                    ),
-                  ),
-                  const SizedBox(height: 36),
-
-                  // ── Form ─────────────────────────────────────────────
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        // Email field
-                        _MimooField(
-                          controller: _emailCtrl,
-                          label: 'Email',
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          suffixIcon: _emailCtrl.text.isNotEmpty
-                              ? const Icon(Icons.check,
-                                  color: _kAccent, size: 18)
-                              : null,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'Email is required';
-                            }
-                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v)) {
-                              return 'Enter a valid email';
-                            }
-                            return null;
-                          },
-                          onChanged: (_) => setState(() {}),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Password field
-                        _MimooField(
-                          controller: _passCtrl,
-                          label: 'Password',
-                          obscureText: _obscure,
-                          textInputAction: TextInputAction.done,
-                          onFieldSubmitted: (_) => _login(),
-                          suffixIcon: IconButton(
+              const SizedBox(height: 14),
+              StaggeredItem(
+                index: 2,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const MimooFieldLabel('Password'),
+                      FocusGlow(
+                          child: TextFormField(
+                        controller: _passCtrl,
+                        obscureText: _obscure,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.password],
+                        onFieldSubmitted: (_) => _login(),
+                        style: mimooText(size: 14, weight: FontWeight.w500),
+                        decoration: mimooInputDecoration(
+                          hint: 'Your password',
+                          icon: Icons.lock_outline,
+                          suffix: IconButton(
+                            tooltip:
+                                _obscure ? 'Show password' : 'Hide password',
                             icon: Icon(
                               _obscure
-                                  ? Icons.crop_square_rounded
+                                  ? Icons.visibility_outlined
                                   : Icons.visibility_off_outlined,
-                              color: _kSubtext,
-                              size: 18,
+                              color: MimooBrand.subtext,
+                              size: 19,
                             ),
                             onPressed: () =>
                                 setState(() => _obscure = !_obscure),
                           ),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) {
-                              return 'Password is required';
-                            }
-                            return null;
-                          },
                         ),
-                        const SizedBox(height: 28),
-
-                        // Log In button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: FilledButton(
-                            onPressed: _loading ? null : _login,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: _kPrimary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: _loading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2, color: Colors.white),
-                                  )
-                                : Text(
-                                    'Log In',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Continue with Google
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: OutlinedButton(
-                            onPressed: () {},
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: _kBorder),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              backgroundColor: Colors.white,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // Google G logo using text
-                                Text(
-                                  'G',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF4285F4),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  'Continue with Google',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: _kText,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Sign up link
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account? ",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          color: _kSubtext,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const RegisterPage()),
-                        ),
-                        child: Text(
-                          'Create Account',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: _kAccent,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Forgot password
-                  GestureDetector(
-                    onTap: () {},
-                    child: Text(
-                      'Forgot Password?',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13,
-                        color: _kSubtext,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? 'Password is required'
+                            : null,
+                      )),
+                    ]),
               ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MimooPageRoute(builder: (_) => const ForgotPasswordPage()),
+                  ),
+                  child: Text('Forgot password?',
+                      style: mimooText(
+                          size: 13,
+                          weight: FontWeight.w700,
+                          color: MimooBrand.accent)),
+                ),
+              ),
+              AnimatedReveal(
+                child: _error == null
+                    ? null
+                    : MimooInlineError(_error!, key: ValueKey(_error)),
+              ),
+              const SizedBox(height: 14),
+              StaggeredItem(
+                index: 3,
+                child: MimooPrimaryButton(
+                    label: 'Sign in', loading: _loading, onPressed: _login),
+              ),
+            ],
+          ),
+        ),
+      ),
+      below: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text('New to ${MimooBrand.name}? ',
+              style: mimooText(size: 13, color: MimooBrand.subtext)),
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MimooPageRoute(builder: (_) => const RegisterPage()),
             ),
+            child: Text('Create an account',
+                style: mimooText(
+                    size: 13,
+                    weight: FontWeight.w800,
+                    color: MimooBrand.primary)),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Reusable field ────────────────────────────────────────────────────────────
-
-class _MimooField extends StatelessWidget {
-  const _MimooField({
-    required this.controller,
-    required this.label,
-    this.keyboardType,
-    this.textInputAction,
-    this.obscureText = false,
-    this.suffixIcon,
-    this.validator,
-    this.onChanged,
-    this.onFieldSubmitted,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
-  final bool obscureText;
-  final Widget? suffixIcon;
-  final String? Function(String?)? validator;
-  final void Function(String)? onChanged;
-  final void Function(String)? onFieldSubmitted;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      obscureText: obscureText,
-      validator: validator,
-      onChanged: onChanged,
-      onFieldSubmitted: onFieldSubmitted,
-      readOnly: false,
-      enabled: true,
-      style: GoogleFonts.plusJakartaSans(
-        fontSize: 14,
-        color: _kText,
-        fontWeight: FontWeight.w500,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.plusJakartaSans(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: _kSubtext,
-          letterSpacing: 0.5,
-        ),
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _kBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _kPrimary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.red),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.red, width: 1.5),
-        ),
-        disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _kBorder),
-        ),
       ),
     );
   }

@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/api_service.dart';
+import '../../widgets/auth_layout.dart';
+import '../../widgets/motion.dart';
+import '../../utils/animations.dart';
 import 'login_page.dart';
 
 // ── Design tokens (identical to login_page.dart) ──────────────────────────────
 const _kPrimary = Color(0xFF4B2E8A);
-const _kPrimaryLight = Color(0xFFEDE8F8);
 const _kSurface = Color(0xFFF5F4FC);
 const _kBorder = Color(0xFFDDD8F0);
 const _kText = Color(0xFF1A1035);
@@ -97,9 +99,12 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         includeAuth: false,
       );
       if (!mounted) return;
+      // Animated success check, then go to Login (same flow as before).
+      await showSuccessCheck(context, 'Email verified!');
+      if (!mounted) return;
       // Navigate to LoginPage with a success snackbar
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
+        MimooPageRoute(builder: (_) => const LoginPage()),
         (route) => false,
       );
       // Show snackbar after navigation settles
@@ -223,62 +228,18 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       backgroundColor: _kSurface,
       body: Stack(
         children: [
-          // ── Purple blobs ──────────────────────────────────────────────
-          Positioned(
-            top: -40,
-            right: -60,
-            child: Container(
-              width: 260,
-              height: 280,
-              decoration: const BoxDecoration(
-                color: _kPrimaryLight,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Positioned(
-            top: 60,
-            right: -20,
-            child: Container(
-              width: 180,
-              height: 200,
-              decoration: BoxDecoration(
-                color: _kPrimaryLight.withValues(alpha: 0.6),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-
-          // ── Content ───────────────────────────────────────────────────
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 48),
-
-                  // Icon
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: _kPrimary,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Icon(Icons.mark_email_read_outlined,
-                        color: Colors.white, size: 32),
-                  ),
                   const SizedBox(height: 12),
 
-                  Text(
-                    'mimoo',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: _kPrimary,
-                      letterSpacing: -0.5,
-                    ),
+                  // Brand header (same as Login / Register)
+                  const ClipRRect(
+                    borderRadius: BorderRadius.all(Radius.circular(24)),
+                    child: MimooAuthHeader(compact: true, bottomPadding: 16),
                   ),
                   const SizedBox(height: 20),
 
