@@ -16,6 +16,11 @@ use App\Http\Controllers\Api\BuyerVoucherController;
 use App\Http\Controllers\Api\BuyerWishlistController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\CourierAuthController;
+use App\Http\Controllers\Api\CourierDashboardController;
+use App\Http\Controllers\Api\CourierShipmentController;
+use App\Http\Controllers\Api\CourierPickupController;
+use App\Http\Controllers\Api\CourierScanController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1,login');
@@ -130,4 +135,40 @@ Route::prefix('buyer')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me',      [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+});
+
+// ── Courier App (/api/courier-app/*) ─────────────────────────────────────────
+// Prefix is courier-app/* (NOT courier/*) to avoid collisions with the
+// existing session-auth routes in routes/web.php (/api/courier/shipments etc.)
+
+Route::prefix('courier-app')->group(function () {
+    // Public auth
+    Route::post('/login',  [CourierAuthController::class, 'login'])->middleware('throttle:10,1,courier-login');
+
+    // Authenticated routes — Sanctum token + role=courier enforced via courier.role middleware
+    Route::middleware(['auth:sanctum', 'courier.role'])->group(function () {
+        Route::post('/logout', [CourierAuthController::class, 'logout']);
+        Route::get('/me',      [CourierAuthController::class, 'me']);
+
+        // Dashboard
+        Route::get('/dashboard', [CourierDashboardController::class, 'index']);
+
+        // Incoming shipments
+        Route::get('/shipments',              [CourierShipmentController::class, 'index']);
+        Route::get('/shipments/{id}',         [CourierShipmentController::class, 'show'])->whereNumber('id');
+        Route::post('/shipments/{id}/accept', [CourierShipmentController::class, 'accept'])->middleware('throttle:30,1,courier-shipment-accept')->whereNumber('id');
+        Route::post('/shipments/{id}/reject', [CourierShipmentController::class, 'reject'])->middleware('throttle:30,1,courier-shipment-reject')->whereNumber('id');
+
+        // Pickup management
+        Route::get('/pickups',                          [CourierPickupController::class, 'index']);
+        Route::post('/pickups/{id}/schedule',           [CourierPickupController::class, 'schedule'])->middleware('throttle:30,1,courier-pickup-schedule')->whereNumber('id');
+        Route::post('/pickups/{id}/assign-personnel',   [CourierPickupController::class, 'assignPersonnel'])->middleware('throttle:30,1,courier-pickup-assign')->whereNumber('id');
+        Route::post('/pickups/{id}/confirm',            [CourierPickupController::class, 'confirm'])->middleware('throttle:30,1,courier-pickup-confirm')->whereNumber('id');
+        Route::post('/pickups/{id}/record-failed',      [CourierPickupController::class, 'recordFailed'])->middleware('throttle:30,1,courier-pickup-failed')->whereNumber('id');
+
+        // Parcel scanning
+        Route::get('/facilities',              [CourierScanController::class, 'facilities']);
+        Route::get('/parcel/{waybill}',        [CourierScanController::class, 'show']);
+        Route::post('/scan-parcel',            [CourierScanController::class, 'scan'])->middleware('throttle:60,1,courier-scan');
+    });
 });

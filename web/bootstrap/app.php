@@ -32,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.verified' => EnsureAdminSession::class,
             'approved' => \App\Http\Middleware\EnsureAccountApproved::class,
             'role' => \App\Http\Middleware\EnsureRole::class,
+            'courier.role' => \App\Http\Middleware\EnsureCourierRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

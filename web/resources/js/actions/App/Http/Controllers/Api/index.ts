@@ -14,6 +14,11 @@ import BuyerVoucherController from './BuyerVoucherController'
 import BuyerAddressController from './BuyerAddressController'
 import BuyerFollowController from './BuyerFollowController'
 import BuyerNotificationController from './BuyerNotificationController'
+import CourierAuthController from './CourierAuthController'
+import CourierDashboardController from './CourierDashboardController'
+import CourierShipmentController from './CourierShipmentController'
+import CourierPickupController from './CourierPickupController'
+import CourierScanController from './CourierScanController'
 import SellerStorePhotoController from './SellerStorePhotoController'
 const Api = {
     AuthController: Object.assign(AuthController, AuthController),
@@ -32,6 +37,11 @@ BuyerVoucherController: Object.assign(BuyerVoucherController, BuyerVoucherContro
 BuyerAddressController: Object.assign(BuyerAddressController, BuyerAddressController),
 BuyerFollowController: Object.assign(BuyerFollowController, BuyerFollowController),
 BuyerNotificationController: Object.assign(BuyerNotificationController, BuyerNotificationController),
+CourierAuthController: Object.assign(CourierAuthController, CourierAuthController),
+CourierDashboardController: Object.assign(CourierDashboardController, CourierDashboardController),
+CourierShipmentController: Object.assign(CourierShipmentController, CourierShipmentController),
+CourierPickupController: Object.assign(CourierPickupController, CourierPickupController),
+CourierScanController: Object.assign(CourierScanController, CourierScanController),
 SellerStorePhotoController: Object.assign(SellerStorePhotoController, SellerStorePhotoController),
 }
 
