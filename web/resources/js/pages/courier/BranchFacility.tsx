@@ -403,7 +403,6 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
     const navItems = [
         { id: 'dashboard', label: 'Dashboard', icon: 'grid', href: '/courier/dashboard' },
         { id: 'incoming-shipments', label: 'Incoming Shipments', icon: 'inbox', href: '/courier/incoming-shipments' },
-        { id: 'pickup-management', label: 'Pickup Management', icon: 'calendar', href: '/courier/pickup-management' },
         { id: 'parcel-scanning', label: 'Parcel Scanning', icon: 'scan', href: '/courier/parcel-scanning' },
         { id: 'sorting-transfers', label: 'Sorting & Transfers', icon: 'sort', href: '/courier/sorting-transfers' },
         { id: 'branch-facility', label: 'Branch & Facility', icon: 'building', href: '/courier/branch-facility' },

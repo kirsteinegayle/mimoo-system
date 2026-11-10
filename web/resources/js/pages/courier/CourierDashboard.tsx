@@ -37,7 +37,6 @@ export default function CourierDashboard({ auth, company, stats }: Props) {
     const navItems = [
         { id: 'dashboard', label: 'Dashboard', icon: 'grid', href: '/courier/dashboard' },
         { id: 'incoming-shipments', label: 'Incoming Shipments', icon: 'inbox', href: '/courier/incoming-shipments' },
-        { id: 'pickup-management', label: 'Pickup Management', icon: 'calendar', href: '/courier/pickup-management' },
         { id: 'parcel-scanning', label: 'Parcel Scanning', icon: 'scan', href: '/courier/parcel-scanning' },
         { id: 'sorting-transfers', label: 'Sorting & Transfers', icon: 'sort', href: '/courier/sorting-transfers' },
         { id: 'branch-facility', label: 'Branch & Facility', icon: 'building', href: '/courier/branch-facility' },
@@ -297,7 +296,7 @@ export default function CourierDashboard({ auth, company, stats }: Props) {
                             {/* Quick Actions */}
                             <div className="bg-white rounded-xl border border-gray-200 p-6">
                                 <h3 className="text-lg font-bold text-gray-900 mb-4" style={fontSyncopate}>Quick Actions</h3>
-                                <div className="grid grid-cols-4 gap-4">
+                                <div className="grid grid-cols-3 gap-4">
                                     <Link href="/courier/parcel-scanning" className="flex flex-col items-center gap-3 p-6 bg-gray-50 hover:bg-gray-100 rounded-lg transition group">
                                         <div className="w-12 h-12 bg-[#E8E3F0] group-hover:bg-[#D4CEE0] rounded-lg flex items-center justify-center transition">
                                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#5B4B6E]">
@@ -305,15 +304,6 @@ export default function CourierDashboard({ auth, company, stats }: Props) {
                                             </svg>
                                         </div>
                                         <span className="text-sm font-semibold text-gray-900">Scan Parcel</span>
-                                    </Link>
-
-                                    <Link href="/courier/pickup-management" className="flex flex-col items-center gap-3 p-6 bg-gray-50 hover:bg-gray-100 rounded-lg transition group">
-                                        <div className="w-12 h-12 bg-[#E8E3F0] group-hover:bg-[#D4CEE0] rounded-lg flex items-center justify-center transition">
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#5B4B6E]">
-                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                                            </svg>
-                                        </div>
-                                        <span className="text-sm font-semibold text-gray-900">Schedule Pickup</span>
                                     </Link>
 
                                     <Link href="/courier/delivery-management" className="flex flex-col items-center gap-3 p-6 bg-gray-50 hover:bg-gray-100 rounded-lg transition group">
