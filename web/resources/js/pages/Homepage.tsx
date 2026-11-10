@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { SignupModal } from "@/components/signup-modal";
 import { NotificationBell } from "@/components/notification-bell";
+import { Footer } from "@/components/footer";
 import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
@@ -99,25 +100,25 @@ const CATEGORIES: Category[] = [
   {
     id: "c9",
     label: "Books and Media",
-    icon: null,
+    icon: "/images/booksMedia.jpg",
     subcategories: ["Fiction", "Non-Fiction", "Self-Help", "Children's Books", "Textbooks", "Comics & Manga", "Magazines", "Religious Books", "Cookbooks", "Vinyl & CDs", "Musical Instruments", "Movies & DVDs", "Video Games", "Board Games", "Puzzles", "Art & Craft Supplies"],
   },
   {
     id: "c10",
     label: "Food and Gourmet",
-    icon: null,
+    icon: "/images/foodGourmet.jpg",
     subcategories: ["Chips & Crackers", "Biscuits & Cookies", "Chocolates", "Candies", "Coffee", "Tea", "Juices & Soft Drinks", "Rice & Grains", "Canned Goods", "Noodles & Pasta", "Condiments & Sauces", "Cooking Oil & Spices", "Local Delicacies", "Dried Fish & Seafood", "Baking Supplies", "Gift Baskets"],
   },
   {
     id: "c11",
     label: "Furniture and Office Equipment",
-    icon: null,
+    icon: "/images/furniture.jpg",
     subcategories: ["Sofas", "Dining Sets", "Beds & Mattresses", "Wardrobes & Cabinets", "Shelves & Bookcases", "TV Stands", "Coffee Tables", "Office Desks", "Office Chairs", "Filing Cabinets", "Printers & Ink", "Paper & Notebooks", "Pens & Markers", "Desk Lamps", "Whiteboards", "Outdoor Furniture"],
   },
   {
     id: "c12",
     label: "Jewelry and Watches",
-    icon: null,
+    icon: "/images/jewelry.jpg",
     subcategories: ["Necklaces", "Pendants", "Rings", "Wedding Bands", "Earrings", "Bracelets", "Anklets", "Brooches", "Gold Jewelry", "Silver Jewelry", "Pearls & Gemstones", "Men's Watches", "Women's Watches", "Smart & Digital Watches", "Watch Straps", "Jewelry Boxes"],
   },
 ];
@@ -397,102 +398,103 @@ function CategoryTile({ category }: { category: Category }) {
   return (
     <Link
       href={`/category/${encodeURIComponent(category.label)}`}
-      className="flex shrink-0 snap-start flex-col items-center gap-1.5 rounded-lg p-1 text-center transition-colors hover:bg-violet-50 sm:gap-2"
-      style={{ width: "calc((100% - 40px) / 5)" }}
+      className="group flex shrink-0 snap-start flex-col items-center gap-2 rounded-2xl bg-white p-6 text-center shadow-sm transition-all duration-200 hover:shadow-md"
+      style={{ minWidth: "160px", maxWidth: "180px" }}
     >
-      <div className="aspect-square w-full rounded-full bg-neutral-200 overflow-hidden">
+      <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl bg-gray-50">
         {category.icon ? (
           <img 
             src={category.icon} 
             alt={category.label}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-contain p-2 transition-transform duration-200 group-hover:scale-110"
           />
         ) : (
-          <div className="w-full h-full" />
+          <div className="flex h-full w-full items-center justify-center">
+            <svg 
+              className="h-12 w-12 text-gray-300" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </div>
         )}
       </div>
-      <span className="text-[10px] font-medium text-neutral-700 line-clamp-1 sm:text-xs">
-        {category.label}
-      </span>
+      <div className="flex flex-col gap-1">
+        <span className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
+          {category.label}
+        </span>
+        <span className="text-xs text-gray-500">
+          3 items
+        </span>
+      </div>
     </Link>
   );
 }
 
 function CategoryCarousel({ categories }: { categories: Category[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState({ ratio: 0.5, position: 0 });
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const updateProgress = () => {
+  const updateScrollButtons = () => {
     const el = scrollRef.current;
     if (!el) return;
     const { scrollLeft, scrollWidth, clientWidth } = el;
     const maxScroll = scrollWidth - clientWidth;
-    const ratio = clientWidth / scrollWidth;
-    const position = maxScroll > 0 ? scrollLeft / maxScroll : 0;
-    setProgress({ ratio, position });
-    setCanScrollLeft(scrollLeft > 4);
-    setCanScrollRight(scrollLeft < maxScroll - 4);
+    setCanScrollLeft(scrollLeft > 10);
+    setCanScrollRight(scrollLeft < maxScroll - 10);
   };
 
   useEffect(() => {
-    updateProgress();
-    window.addEventListener("resize", updateProgress);
-    return () => window.removeEventListener("resize", updateProgress);
+    updateScrollButtons();
+    window.addEventListener("resize", updateScrollButtons);
+    return () => window.removeEventListener("resize", updateScrollButtons);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const scrollByPage = (direction: 1 | -1) => {
+  const scrollByAmount = (direction: 1 | -1) => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollBy({ left: direction * el.clientWidth, behavior: "smooth" });
+    el.scrollBy({ left: direction * 400, behavior: "smooth" });
   };
 
   return (
-    <div>
-      <div className="relative">
-        <div
-          ref={scrollRef}
-          onScroll={updateProgress}
-          className="category-scroll flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          <style>{`.category-scroll::-webkit-scrollbar { display: none; }`}</style>
-          {categories.map((c) => (
-            <CategoryTile key={c.id} category={c} />
-          ))}
-        </div>
+    <div className="relative -mx-2">
+      <div
+        ref={scrollRef}
+        onScroll={updateScrollButtons}
+        className="category-scroll flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-2 pb-1"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        <style>{`.category-scroll::-webkit-scrollbar { display: none; }`}</style>
+        {categories.map((c) => (
+          <CategoryTile key={c.id} category={c} />
+        ))}
+      </div>
 
-        {/* Prev / next controls, centered on the image row */}
+      {/* Left arrow */}
+      {canScrollLeft && (
         <button
           aria-label="Previous categories"
-          onClick={() => scrollByPage(-1)}
-          disabled={!canScrollLeft}
-          className="absolute left-0 top-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-neutral-200 bg-white p-1.5 shadow-sm transition-opacity disabled:pointer-events-none disabled:opacity-0"
+          onClick={() => scrollByAmount(-1)}
+          className="absolute -left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:scale-105 hover:shadow-xl"
         >
-          <ChevronLeft className="h-4 w-4 text-neutral-600" />
+          <ChevronLeft className="h-6 w-6 text-gray-700" />
         </button>
+      )}
+      
+      {/* Right arrow */}
+      {canScrollRight && (
         <button
           aria-label="Next categories"
-          onClick={() => scrollByPage(1)}
-          disabled={!canScrollRight}
-          className="absolute right-0 top-10 -translate-y-1/2 translate-x-1/2 rounded-full border border-neutral-200 bg-white p-1.5 shadow-sm transition-opacity disabled:pointer-events-none disabled:opacity-0"
+          onClick={() => scrollByAmount(1)}
+          className="absolute -right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:scale-105 hover:shadow-xl"
         >
-          <ChevronRight className="h-4 w-4 text-neutral-600" />
+          <ChevronRight className="h-6 w-6 text-gray-700" />
         </button>
-      </div>
-
-      {/* Scroll progress indicator */}
-      <div className="relative mx-auto mt-3 h-1.5 w-20 rounded-full bg-neutral-200">
-        <div
-          className="absolute top-0 h-1.5 rounded-full bg-neutral-400 transition-all duration-150"
-          style={{
-            width: `${Math.max(progress.ratio * 100, 15)}%`,
-            left: `${progress.position * (100 - Math.max(progress.ratio * 100, 15))}%`,
-          }}
-        />
-      </div>
+      )}
     </div>
   );
 }
@@ -1442,6 +1444,9 @@ export default function Homepage({ auth, initialProducts = [], filters = {}, vou
           ))}
         </section>
       </main>
+
+      {/* Footer */}
+      <Footer />
 
       {/* Signup Modal */}
       <SignupModal open={showSignupModal} onClose={() => setShowSignupModal(false)} />

@@ -44,22 +44,33 @@ class LoginResponse implements LoginResponseContract
             'user_id' => $user->id,
             'user_email' => $user->email,
             'account_type' => $user->account_type,
+            'role' => $user->role,
             'status' => $user->status,
             'company_name' => $user->company_name ?? null,
         ]);
 
         // Redirect based on role and status
-        $home = match ($user->role ?? $user->account_type) {
-            'seller' => '/seller/dashboard',
-            'logistics_staff' => '/logistics/dashboard',
-            'courier' => match ($user->status) {
+        // IMPORTANT: Check account_type FIRST before role for logistics companies
+        $home = match (true) {
+            // Logistics companies (registered via logistics registration form)
+            $user->account_type === 'logistics' => match ($user->status) {
+                'approved' => '/logistics',
+                'pending' => redirect()->route('register.pending'),
+                'rejected' => redirect()->route('login')->withErrors(['email' => 'Your logistics application was rejected.']),
+                default => '/login',
+            },
+            // Courier branch staff (actual courier personnel)
+            $user->role === 'courier' => match ($user->status) {
                 'approved' => '/courier/dashboard',
                 'pending' => redirect()->route('register.pending'),
                 'rejected' => redirect()->route('login')->withErrors(['email' => 'Your courier application was rejected.']),
                 default => '/login',
             },
-            'admin' => '/admin/dashboard',
-            'buyer' => '/homepage',
+            // Other roles
+            $user->role === 'seller' || $user->account_type === 'seller' => '/seller/dashboard',
+            $user->role === 'logistics_staff' => '/logistics/dashboard',
+            $user->role === 'admin' => '/admin/dashboard',
+            $user->role === 'buyer' || $user->account_type === 'buyer' => '/homepage',
             default => '/homepage',
         };
 

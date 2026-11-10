@@ -24,10 +24,10 @@ const categories = [
     { name: 'Home and Garden', count: '3 items', icon: '/images/home and garden.jpg' },
     { name: 'Sports and Outdoors', count: '3 items', icon: '/images/sports.jpg' },
     { name: 'Health and Beauty', count: '3 items', icon: '/images/health and beauty.jpg' },
-    { name: 'Books and Media', count: '3 items', icon: null },
-    { name: 'Food and Gourmet', count: '3 items', icon: null },
-    { name: 'Furniture and Office Equipment', count: '3 items', icon: null },
-    { name: 'Jewelry and Watches', count: '3 items', icon: null },
+    { name: 'Books and Media', count: '3 items', icon: '/images/booksMedia.jpg' },
+    { name: 'Food and Gourmet', count: '3 items', icon: '/images/foodGourmet.jpg' },
+    { name: 'Furniture and Office Equipment', count: '3 items', icon: '/images/furniture.jpg' },
+    { name: 'Jewelry and Watches', count: '3 items', icon: '/images/jewelry.jpg' },
 ];
 
 function CategoryIcon() {

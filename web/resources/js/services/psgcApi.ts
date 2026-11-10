@@ -259,6 +259,54 @@ export async function fetchCitiesByProvince(provinceCodes: string[]): Promise<{ 
 }
 
 /**
+ * Fetch barangays for given city/municipality codes
+ */
+export async function fetchBarangays(cityCodes: string[]): Promise<{ data: { name: string; code: string }[]; error?: string }> {
+    if (cityCodes.length === 0) {
+        return { data: [] };
+    }
+    
+    const allBarangays: { name: string; code: string }[] = [];
+    const errors: string[] = [];
+    
+    for (const cityCode of cityCodes) {
+        const cacheKey = getCacheKey(`barangays-${cityCode}`);
+        const cached = cache.get(cacheKey);
+        
+        if (isCacheValid(cached)) {
+            allBarangays.push(...cached.data);
+            continue;
+        }
+        
+        try {
+            const response = await fetchWithTimeout(`${BASE_URL}/cities-municipalities/${cityCode}/barangays`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data: { name: string; code: string }[] = await response.json();
+            
+            if (!Array.isArray(data)) {
+                throw new Error('Invalid data format');
+            }
+            
+            cache.set(cacheKey, { data, timestamp: Date.now() });
+            allBarangays.push(...data);
+            
+        } catch (error) {
+            console.warn(`[PSGC] Failed to fetch barangays for city ${cityCode}:`, error);
+            errors.push(cityCode);
+        }
+    }
+    
+    return { 
+        data: allBarangays,
+        error: errors.length > 0 ? `Failed to load barangays for ${errors.length} city(ies)` : undefined
+    };
+}
+
+/**
  * Clear the cache (useful for testing or manual refresh)
  */
 export function clearCache(): void {

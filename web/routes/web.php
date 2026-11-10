@@ -107,23 +107,23 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             ],
             'stats' => $stats,
         ]);
-    })->name('courier.dashboard')->middleware('role:courier');
+    })->name('courier.dashboard')->middleware('role:courier,logistics_staff');
     
     // Courier - Incoming Shipments (with full functionality)
-    Route::get('/courier/incoming-shipments', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'index'])->name('courier.incoming-shipments')->middleware('role:courier');
-    Route::get('/api/courier/shipments/{id}', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'show'])->middleware('role:courier');
-    Route::post('/api/courier/shipments/{id}/accept', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'accept'])->middleware('role:courier');
-    Route::post('/api/courier/shipments/{id}/reject', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'reject'])->middleware('role:courier');
+    Route::get('/courier/incoming-shipments', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'index'])->name('courier.incoming-shipments')->middleware('role:courier,logistics_staff');
+    Route::get('/api/courier/shipments/{id}', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'show'])->middleware('role:courier,logistics_staff');
+    Route::post('/api/courier/shipments/{id}/accept', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'accept'])->middleware('role:courier,logistics_staff');
+    Route::post('/api/courier/shipments/{id}/reject', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'reject'])->middleware('role:courier,logistics_staff');
     
     // Courier - Pickup Management (with full functionality)
-    Route::get('/courier/pickup-management', [\App\Http\Controllers\Courier\PickupManagementController::class, 'index'])->name('courier.pickup-management')->middleware('role:courier');
-    Route::get('/api/courier/pickups/{id}', [\App\Http\Controllers\Courier\PickupManagementController::class, 'show'])->middleware('role:courier');
-    Route::post('/api/courier/pickups/{id}/schedule', [\App\Http\Controllers\Courier\PickupManagementController::class, 'schedule'])->middleware('role:courier');
-    Route::post('/api/courier/pickups/{id}/assign-personnel', [\App\Http\Controllers\Courier\PickupManagementController::class, 'assignPersonnel'])->middleware('role:courier');
-    Route::post('/api/courier/pickups/{id}/reschedule', [\App\Http\Controllers\Courier\PickupManagementController::class, 'reschedule'])->middleware('role:courier');
-    Route::post('/api/courier/pickups/{id}/cancel', [\App\Http\Controllers\Courier\PickupManagementController::class, 'cancel'])->middleware('role:courier');
-    Route::post('/api/courier/pickups/{id}/record-failed', [\App\Http\Controllers\Courier\PickupManagementController::class, 'recordFailed'])->middleware('role:courier');
-    Route::post('/api/courier/pickups/{id}/confirm', [\App\Http\Controllers\Courier\PickupManagementController::class, 'confirmPickup'])->middleware('role:courier');
+    Route::get('/courier/pickup-management', [\App\Http\Controllers\Courier\PickupManagementController::class, 'index'])->name('courier.pickup-management')->middleware('role:courier,logistics_staff');
+    Route::get('/api/courier/pickups/{id}', [\App\Http\Controllers\Courier\PickupManagementController::class, 'show'])->middleware('role:courier,logistics_staff');
+    Route::post('/api/courier/pickups/{id}/schedule', [\App\Http\Controllers\Courier\PickupManagementController::class, 'schedule'])->middleware('role:courier,logistics_staff');
+    Route::post('/api/courier/pickups/{id}/assign-personnel', [\App\Http\Controllers\Courier\PickupManagementController::class, 'assignPersonnel'])->middleware('role:courier,logistics_staff');
+    Route::post('/api/courier/pickups/{id}/reschedule', [\App\Http\Controllers\Courier\PickupManagementController::class, 'reschedule'])->middleware('role:courier,logistics_staff');
+    Route::post('/api/courier/pickups/{id}/cancel', [\App\Http\Controllers\Courier\PickupManagementController::class, 'cancel'])->middleware('role:courier,logistics_staff');
+    Route::post('/api/courier/pickups/{id}/record-failed', [\App\Http\Controllers\Courier\PickupManagementController::class, 'recordFailed'])->middleware('role:courier,logistics_staff');
+    Route::post('/api/courier/pickups/{id}/confirm', [\App\Http\Controllers\Courier\PickupManagementController::class, 'confirmPickup'])->middleware('role:courier,logistics_staff');
     
     // Courier - Parcel Scanning
     Route::get('/courier/parcel-scanning', function () {
@@ -132,7 +132,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
             'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
         ]);
-    })->name('courier.parcel-scanning')->middleware('role:courier');
+    })->name('courier.parcel-scanning')->middleware('role:courier,logistics_staff');
     
     // Courier - Sorting & Transfers
     Route::get('/courier/sorting-transfers', function () {
@@ -141,14 +141,14 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
             'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
         ]);
-    })->name('courier.sorting-transfers')->middleware('role:courier');
+    })->name('courier.sorting-transfers')->middleware('role:courier,logistics_staff');
     
     // Courier - Branch & Facility
-    Route::get('/courier/branch-facility', [\App\Http\Controllers\Courier\FacilityController::class, 'index'])->name('courier.branch-facility')->middleware('role:courier');
-    Route::post('/courier/branch-facility', [\App\Http\Controllers\Courier\FacilityController::class, 'store'])->name('courier.facility.store')->middleware('role:courier');
-    Route::post('/courier/branch-facility/generate', [\App\Http\Controllers\Courier\FacilityController::class, 'generateFromServiceAreas'])->name('courier.facility.generate')->middleware('role:courier');
-    Route::put('/courier/branch-facility/{facility}', [\App\Http\Controllers\Courier\FacilityController::class, 'update'])->name('courier.facility.update')->middleware('role:courier');
-    Route::delete('/courier/branch-facility/{facility}', [\App\Http\Controllers\Courier\FacilityController::class, 'destroy'])->name('courier.facility.destroy')->middleware('role:courier');
+    Route::get('/courier/branch-facility', [\App\Http\Controllers\Courier\FacilityController::class, 'index'])->name('courier.branch-facility')->middleware('role:courier,logistics_staff');
+    Route::post('/courier/branch-facility', [\App\Http\Controllers\Courier\FacilityController::class, 'store'])->name('courier.facility.store')->middleware('role:courier,logistics_staff');
+    Route::post('/courier/branch-facility/generate', [\App\Http\Controllers\Courier\FacilityController::class, 'generateFromServiceAreas'])->name('courier.facility.generate')->middleware('role:courier,logistics_staff');
+    Route::put('/courier/branch-facility/{facility}', [\App\Http\Controllers\Courier\FacilityController::class, 'update'])->name('courier.facility.update')->middleware('role:courier,logistics_staff');
+    Route::delete('/courier/branch-facility/{facility}', [\App\Http\Controllers\Courier\FacilityController::class, 'destroy'])->name('courier.facility.destroy')->middleware('role:courier,logistics_staff');
     
     // Courier - Parcel Scanning
     Route::get('/courier/parcel-scanning', function () {
@@ -185,7 +185,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             ],
             'facilities' => $facilities,
         ]);
-    })->name('courier.parcel-scanning')->middleware('role:courier');
+    })->name('courier.parcel-scanning')->middleware('role:courier,logistics_staff');
     
     // API: Get parcel details by waybill number (for courier scanner)
     Route::get('/api/courier/parcel/{waybillNumber}', function ($waybillNumber) {
@@ -223,7 +223,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'destination' => $order->shipping_municipality_city . ', ' . $order->shipping_province,
             'status' => $order->status,
         ]);
-    })->middleware('role:courier');
+    })->middleware('role:courier,logistics_staff');
     
     // API: Scan and receive parcel at facility
     Route::post('/api/courier/scan-parcel', function (Illuminate\Http\Request $request) {
@@ -303,7 +303,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'order_id' => $order->id,
             'waybill_number' => $order->waybill_number,
         ]);
-    })->middleware('role:courier');
+    })->middleware('role:courier,logistics_staff');
     
     // API: Get received parcels for a facility
     Route::get('/api/courier/facility/{facilityId}/received-parcels', function ($facilityId) {
@@ -359,7 +359,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             ->values();
         
         return response()->json($receivedScans);
-    })->middleware('role:courier');
+    })->middleware('role:courier,logistics_staff');
     
     // API: Get archived parcels for a facility
     Route::get('/api/courier/facility/{facilityId}/archived-parcels', function ($facilityId) {
@@ -415,16 +415,12 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             ->values();
         
         return response()->json($archivedScans);
-    })->middleware('role:courier');
+    })->middleware('role:courier,logistics_staff');
     
     // Courier - Rider Management
-    Route::get('/courier/rider-management', function () {
-        $user = auth()->user();
-        return Inertia::render('courier/RiderManagement', [
-            'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
-            'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
-        ]);
-    })->name('courier.rider-management')->middleware('role:courier');
+    Route::get('/courier/rider-management', [\App\Http\Controllers\Courier\RiderManagementController::class, 'index'])->name('courier.rider-management')->middleware('role:courier,logistics_staff');
+    Route::post('/api/courier/riders/{id}/approve', [\App\Http\Controllers\Courier\RiderManagementController::class, 'approve'])->middleware('role:courier,logistics_staff');
+    Route::post('/api/courier/riders/{id}/reject', [\App\Http\Controllers\Courier\RiderManagementController::class, 'reject'])->middleware('role:courier,logistics_staff');
     
     // Courier - Delivery Management
     Route::get('/courier/delivery-management', function () {
@@ -433,7 +429,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
             'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
         ]);
-    })->name('courier.delivery-management')->middleware('role:courier');
+    })->name('courier.delivery-management')->middleware('role:courier,logistics_staff');
     
     // Courier - COD & Remittance
     Route::get('/courier/cod-remittance', function () {
@@ -442,7 +438,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
             'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
         ]);
-    })->name('courier.cod-remittance')->middleware('role:courier');
+    })->name('courier.cod-remittance')->middleware('role:courier,logistics_staff');
     
     // Courier - Reports
     Route::get('/courier/reports', function () {
@@ -451,7 +447,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
             'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
         ]);
-    })->name('courier.reports')->middleware('role:courier');
+    })->name('courier.reports')->middleware('role:courier,logistics_staff');
     
     // Courier - Support
     Route::get('/courier/support', function () {
@@ -460,7 +456,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
             'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
         ]);
-    })->name('courier.support')->middleware('role:courier');
+    })->name('courier.support')->middleware('role:courier,logistics_staff');
     
     // Courier - Messages
     Route::get('/courier/messages', function () {
@@ -469,7 +465,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
             'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
         ]);
-    })->name('courier.messages')->middleware('role:courier');
+    })->name('courier.messages')->middleware('role:courier,logistics_staff');
     
     // Courier - Company Settings
     Route::get('/courier/settings', function () {
@@ -478,7 +474,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
             'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
         ]);
-    })->name('courier.settings')->middleware('role:courier');
+    })->name('courier.settings')->middleware('role:courier,logistics_staff');
     
     // Logistics Incoming Parcels
     Route::get('/logistics/incoming-parcels', function () {
@@ -1555,9 +1551,13 @@ Route::get('/register/courier', function () {
     return Inertia::render('logistics/CourierRegistration');
 })->name('register.courier');
 
-Route::get('/register/rider', function () {
-    return Inertia::render('logistics/RiderRegistration');
-})->name('register.rider');
+// Rider Registration Routes
+Route::get('/register/rider', [App\Http\Controllers\RiderRegistrationController::class, 'create'])->name('register.rider');
+Route::post('/register/rider', [App\Http\Controllers\RiderRegistrationController::class, 'store'])->name('register.rider.store');
+Route::get('/register/rider/pending', [App\Http\Controllers\RiderRegistrationController::class, 'pending'])->name('register.rider.pending');
+
+// Rider Registration Routes (branch assignment removed - handled by courier during approval)
+// No API routes needed for frontend registration
 
 Route::get('/register/pending', function () {
     return Inertia::render('register-pending');

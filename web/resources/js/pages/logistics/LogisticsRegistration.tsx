@@ -485,32 +485,126 @@ export default function LogisticsRegistration() {
         else {
             const email = data.email.trim();
             
-            // Manually update the form data before submitting
-            setData((prev) => ({
-                ...prev,
-                first_name: prev.contact_first_name,
-                last_name: prev.contact_last_name,
-                business_name: prev.company_name,
-                id_document: prev.valid_id, // Map valid_id to id_document
-            }));
+            // Build rep_full_name from contact person names
+            const repFullName = `${data.contact_first_name.trim()} ${data.contact_last_name.trim()}`.trim();
             
-            // Small delay to ensure state is updated before posting
-            setTimeout(() => {
-                post('/register', {
-                    forceFormData: true,
-                    onSuccess: () => {
-                        window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
-                    },
-                    onError: (errors) => {
-                        console.error('Registration failed:', errors);
-                        console.log('Full error object:', JSON.stringify(errors, null, 2));
-                        // Show errors on the form
-                        if (errors && typeof errors === 'object') {
-                            alert('Registration failed. Check console for details.\n\nErrors: ' + Object.keys(errors).map(k => `${k}: ${errors[k]}`).join('\n'));
-                        }
-                    },
-                });
-            }, 100);
+            // Build full address for business_address field
+            const addressParts = [
+                data.street_address,
+                data.barangay,
+                data.municipality_city,
+                data.region === NCR_NAME ? data.district : data.province,
+                data.region,
+                data.postal_code ? `Postal Code: ${data.postal_code}` : '',
+            ].filter(Boolean);
+            const businessAddress = addressParts.join(', ');
+            
+            // Build the regions_served array from service_areas
+            const regionsServed = data.service_areas.length > 0 ? data.service_areas : [];
+            
+            // Create FormData with all the mapped fields
+            const formData = new FormData();
+            
+            // Personal/Account fields (mapped from contact person)
+            formData.append('first_name', data.contact_first_name.trim());
+            formData.append('last_name', data.contact_last_name.trim());
+            formData.append('middle_initial', data.middle_initial || '');
+            formData.append('sex', data.sex);
+            formData.append('email', data.email.trim());
+            formData.append('contact_number', data.contact_number.trim());
+            formData.append('birthday', data.birthday);
+            formData.append('account_type', 'logistics');
+            
+            // Company fields
+            formData.append('company_name', data.company_name.trim());
+            formData.append('trade_name', data.company_name.trim()); // Backend requires this
+            formData.append('business_email', data.email.trim());
+            formData.append('business_address', businessAddress);
+            formData.append('company_contact_number', data.contact_number.trim());
+            formData.append('rep_contact_number', data.contact_number.trim());
+            formData.append('company_website', '');
+            formData.append('sec_registration_no', data.sec_registration_no.trim());
+            formData.append('tin', data.tin.trim());
+            
+            // Contact person details
+            formData.append('rep_full_name', repFullName);
+            formData.append('contact_first_name', data.contact_first_name.trim());
+            formData.append('contact_last_name', data.contact_last_name.trim());
+            formData.append('contact_position', data.contact_position.trim());
+            
+            // Address fields
+            formData.append('region', data.region);
+            formData.append('province', data.province || 'N/A');
+            formData.append('district', data.district || '');
+            formData.append('municipality_city', data.municipality_city);
+            formData.append('barangay', data.barangay);
+            formData.append('street_address', data.street_address.trim());
+            formData.append('postal_code', data.postal_code.trim());
+            
+            // Service coverage - arrays (must append as individual items, not JSON)
+            regionsServed.forEach((region, index) => {
+                formData.append(`regions_served[${index}]`, region);
+            });
+            // DON'T send empty arrays - backend will treat missing as empty array
+            // provinces_served is optional (nullable in validation)
+            // cities_served is REQUIRED but form doesn't collect it - send default
+            formData.append('cities_served[0]', 'Metro Manila'); // Default city since form doesn't collect this
+            // delivery_services is required
+            formData.append('delivery_services[0]', 'standard');
+            formData.append('pickup_available', 'no');
+            formData.append('estimated_delivery_time', '3-5 business days');
+            
+            // Documents - files
+            if (data.sec_certificate) formData.append('sec_certificate', data.sec_certificate);
+            if (data.bir_form_2303) formData.append('bir_2303', data.bir_form_2303);
+            if (data.business_permit) formData.append('business_permit', data.business_permit);
+            if (data.valid_id) {
+                formData.append('valid_id', data.valid_id);
+                formData.append('proof_of_address', data.valid_id); // Same file
+            }
+            
+            // Security
+            formData.append('password', data.password);
+            formData.append('password_confirmation', data.password_confirmation);
+            formData.append('privacy_policy_accepted', data.privacy_policy_accepted ? '1' : '0');
+            
+            // Debug log
+            console.log('=== SUBMITTING FORM ===');
+            for (let pair of formData.entries()) {
+                if (pair[1] instanceof File) {
+                    console.log(pair[0], ':', pair[1].name);
+                } else {
+                    console.log(pair[0], ':', pair[1]);
+                }
+            }
+            
+            // Submit using fetch API directly since we need full control over FormData
+            fetch('/register', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+                } else {
+                    return response.json().then(data => {
+                        console.error('Validation errors:', data.errors);
+                        const errorMessages = Object.keys(data.errors || {})
+                            .map(k => `• ${k}: ${data.errors[k]}`)
+                            .join('\n');
+                        alert(`Registration failed:\n\n${errorMessages}`);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Network error:', error);
+                alert('Network error occurred. Please try again.');
+            });
         }
     };
 
