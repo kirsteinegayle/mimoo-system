@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'return_refund_models.dart';
 import 'return_refund_success_page.dart';
+import '../../theme/app_theme.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kFlash = Color(0xFFFF3B5C);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kFlash = AppColors.flash;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
 
 TextStyle _pjs({
   double size = 14,
@@ -441,7 +442,10 @@ class _RequestReturnRefundPageState extends State<RequestReturnRefundPage> {
             onTap: () {},
             child: Row(
               children: [
-                Text(widget.summary.contactEmail,
+                Text(
+                    widget.summary.contactEmail.isEmpty
+                        ? 'Not set'
+                        : widget.summary.contactEmail,
                     style: _pjs(size: 12, color: _kSubtext)),
                 const Icon(Icons.chevron_right, size: 16, color: _kSubtext),
               ],
@@ -516,7 +520,7 @@ class _MediaBox extends StatelessWidget {
             color: const Color(0xFFF8F7FC),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-                color: const Color(0xFFCCC4D1),
+                color: AppColors.outlineVariant,
                 width: 1,
                 style: BorderStyle.solid),
           ),
@@ -529,17 +533,17 @@ class _MediaBox extends StatelessWidget {
                   style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF8A84A3))),
+                      color: AppColors.textMuted)),
               Text('$count/$max',
                   style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11, color: const Color(0xFF8A84A3))),
+                      fontSize: 11, color: AppColors.textMuted)),
             ],
           ),
         ),
         const SizedBox(height: 4),
         Text('Max: $maxMb',
             style: GoogleFonts.plusJakartaSans(
-                fontSize: 10, color: const Color(0xFF8A84A3))),
+                fontSize: 10, color: AppColors.textMuted)),
       ],
     );
   }
@@ -554,9 +558,9 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFDDD8F0)),
+        border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.all(14),
       child: child,
@@ -583,19 +587,19 @@ class _PriceWidget extends StatelessWidget {
             style: GoogleFonts.plusJakartaSans(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1A1035))),
+                color: AppColors.text)),
         Text(whole,
             style: GoogleFonts.plusJakartaSans(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF1A1035))),
+                color: AppColors.text)),
         Padding(
           padding: const EdgeInsets.only(bottom: 3),
           child: Text(cents,
               style: GoogleFonts.plusJakartaSans(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1A1035))),
+                  color: AppColors.text)),
         ),
       ],
     );

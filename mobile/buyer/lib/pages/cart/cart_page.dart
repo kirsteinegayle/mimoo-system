@@ -3,18 +3,20 @@ import 'package:google_fonts/google_fonts.dart';
 import '../checkout/checkout_page.dart';
 import '../../state/cart_provider.dart';
 import '../../state/cart_state.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/state_views.dart';
 
 // ── Color tokens ────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kFlash = Color(0xFFFF3B5C);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kGreen = Color(0xFF1DB966);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kFlash = AppColors.flash;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
+const _kGreen = AppColors.success;
 
 TextStyle _pjs({
   double size = 14,
@@ -158,31 +160,16 @@ class _CartPageState extends State<CartPage> {
                   _buildSectionHeader(),
                   const SizedBox(height: 8),
                   if (items.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 48),
-                      child: Column(
-                        children: [
-                          const Icon(Icons.shopping_cart_outlined,
-                              size: 56, color: Color(0xFFCCC4D1)),
-                          const SizedBox(height: 12),
-                          Text('Your cart is empty',
-                              style: _pjs(
-                                  size: 15,
-                                  weight: FontWeight.w700,
-                                  color: _kSubtext)),
-                          const SizedBox(height: 6),
-                          Text('Add products from the Home or Categories tab.',
-                              style: _pjs(size: 13, color: _kSubtext),
-                              textAlign: TextAlign.center),
-                        ],
-                      ),
+                    const EmptyStateView(
+                      icon: Icons.shopping_cart_outlined,
+                      title: 'Your cart is empty',
+                      message: 'Add products from the Home or Categories tab.',
                     )
                   else
                     _buildStoreGroup(),
                   const SizedBox(height: 8),
                   _buildTrustBadges(),
-                  const SizedBox(height: 8),
-                  _buildYouMayAlsoLike(),
+                  // "You may also like" hidden: it only had sample products.
                   const SizedBox(height: 16),
                 ],
               ),
@@ -195,10 +182,14 @@ class _CartPageState extends State<CartPage> {
     return AppBar(
       backgroundColor: _kCard,
       elevation: 0,
-      leading: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Icon(Icons.shopping_cart_outlined, color: _kPrimary, size: 22),
-      ),
+      // Opened from the header cart icon → show Back.
+      leading: Navigator.of(context).canPop()
+          ? const BackButton(color: _kPrimary)
+          : const Padding(
+              padding: EdgeInsets.all(12),
+              child: Icon(Icons.shopping_cart_outlined,
+                  color: _kPrimary, size: 22),
+            ),
       title: Text('Shopping Cart',
           style: _pjs(size: 17, weight: FontWeight.w800, color: _kText)),
       actions: [
@@ -238,7 +229,7 @@ class _CartPageState extends State<CartPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0D34175B), blurRadius: 8, offset: Offset(0, 2)),
+              color: AppColors.primaryA05, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -302,7 +293,7 @@ class _CartPageState extends State<CartPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0D34175B), blurRadius: 8, offset: Offset(0, 2)),
+              color: AppColors.primaryA05, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -376,6 +367,9 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
+  // Hidden for now (sample products only); kept for when real
+  // recommendations exist.
+  // ignore: unused_element
   Widget _buildYouMayAlsoLike() {
     // Re-use the same sample products used elsewhere in the app
     const seeds = [
@@ -418,7 +412,7 @@ class _CartPageState extends State<CartPage> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: const [
                     BoxShadow(
-                        color: Color(0x0D34175B),
+                        color: AppColors.primaryA05,
                         blurRadius: 6,
                         offset: Offset(0, 2)),
                   ],
@@ -475,9 +469,9 @@ class _CartPageState extends State<CartPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: const [
-          _TrustBadge(icon: Icons.verified_outlined, label: '100% Authentic'),
-          _TrustBadge(icon: Icons.replay_outlined, label: '15-Day Free Return'),
-          _TrustBadge(icon: Icons.shield_outlined, label: 'Buyer Protection'),
+          Expanded(child: _TrustBadge(icon: Icons.verified_outlined, label: '100% Authentic')),
+          Expanded(child: _TrustBadge(icon: Icons.replay_outlined, label: '15-Day Free Return')),
+          Expanded(child: _TrustBadge(icon: Icons.shield_outlined, label: 'Buyer Protection')),
         ],
       ),
     );
@@ -491,7 +485,7 @@ class _CartPageState extends State<CartPage> {
           color: _kCard,
           boxShadow: [
             BoxShadow(
-                color: Color(0x1A34175B),
+                color: AppColors.primaryA10,
                 blurRadius: 12,
                 offset: Offset(0, -4)),
           ],
@@ -596,7 +590,7 @@ class _CartPageState extends State<CartPage> {
         color: _kCard,
         boxShadow: [
           BoxShadow(
-              color: Color(0x1A34175B), blurRadius: 12, offset: Offset(0, -4)),
+              color: AppColors.primaryA10, blurRadius: 12, offset: Offset(0, -4)),
         ],
       ),
       child: SafeArea(
@@ -659,9 +653,12 @@ class _CartPageState extends State<CartPage> {
                 minimumSize: const Size(0, 48),
                 padding: const EdgeInsets.symmetric(horizontal: 18),
               ),
-              child: Text('Place Order ($_checkedCount)',
-                  style: _pjs(
-                      size: 14, weight: FontWeight.w700, color: Colors.white)),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('Place Order ($_checkedCount)',
+                    style: _pjs(
+                        size: 14, weight: FontWeight.w700, color: Colors.white)),
+              ),
             ),
           ],
         ),
@@ -866,7 +863,7 @@ class _CartItemTile extends StatelessWidget {
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, true),
                       child: const Text('Remove',
-                          style: TextStyle(color: Colors.red)),
+                          style: TextStyle(color: AppColors.error)),
                     ),
                   ],
                 ),
@@ -939,7 +936,7 @@ class _ShippingBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4A1C8A), Color(0xFF6B38D4)],
+          colors: [AppColors.primaryMid, AppColors.accent],
         ),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -950,9 +947,12 @@ class _ShippingBanner extends StatelessWidget {
             children: [
               const Text('🚚', style: TextStyle(fontSize: 14)),
               const SizedBox(width: 6),
-              Text('Free Express Shipping Unlocked! Tier 1 Hit',
-                  style: _pjs(
-                      size: 13, weight: FontWeight.w700, color: Colors.white)),
+              Expanded(
+                child: Text('Free Express Shipping Unlocked! Tier 1 Hit',
+                    maxLines: 2,
+                    style: _pjs(
+                        size: 13, weight: FontWeight.w700, color: Colors.white)),
+              ),
             ],
           ),
           const SizedBox(height: 6),

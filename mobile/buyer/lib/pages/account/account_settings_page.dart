@@ -7,20 +7,22 @@ import '../../services/profile_repository.dart';
 import '../../services/api_service.dart';
 import '../../widgets/address_dropdown.dart';
 import '../landing_page.dart';
+import '../../theme/app_theme.dart';
+import '../../utils/animations.dart';
 
 // Hidden widgets (_ProfileRow, _AddressCard) are kept for future use.
 // ignore_for_file: unused_element_parameter
 
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kFlash = Color(0xFFFF3B5C);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kGreen = Color(0xFF1DB966);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kFlash = AppColors.flash;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
+const _kGreen = AppColors.success;
 
 TextStyle _pjs({
   double size = 14,
@@ -167,7 +169,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           : e.message;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(msg, style: _pjs(size: 13, color: Colors.white)),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 5),
       ));
@@ -176,7 +178,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Network error. Please try again.',
             style: _pjs(size: 13, color: Colors.white)),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ));
     } finally {
@@ -206,7 +208,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.wifi_off_outlined,
-                          size: 48, color: Color(0xFFCCC4D1)),
+                          size: 48, color: AppColors.outlineVariant),
                       const SizedBox(height: 12),
                       Text(_profileError!,
                           textAlign: TextAlign.center,
@@ -223,73 +225,30 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               : ListView(
                   padding: const EdgeInsets.only(bottom: 32),
                   children: [
-                    _buildAccountShield(),
-                    const SizedBox(height: 12),
-                    _buildProfileSection(),
-                    const SizedBox(height: 12),
-                    _buildDeliveryAddresses(),
-                    const SizedBox(height: 12),
-                    _buildAccountSecurity(),
-                    const SizedBox(height: 12),
-                    _buildNotifications(),
-                    const SizedBox(height: 12),
-                    _buildHelpSupport(),
-                    const SizedBox(height: 20),
-                    _buildSaveButton(),
-                    const SizedBox(height: 20),
-                    _buildAccountActions(),
+                    for (final (i, w) in [
+                      _buildProfileSection(),
+                      _buildDeliveryAddresses(),
+                      _buildAccountSecurity(),
+                      _buildNotifications(),
+                      _buildHelpSupport(),
+                      _buildAccountActions(),
+                    ].indexed) ...[
+                      if (i > 0) SizedBox(height: i == 5 ? 24 : 12),
+                      StaggeredItem(index: i, child: w),
+                    ],
                   ],
                 ),
-    );
-  }
-
-  // ── Account Shield ──────────────────────────────────────────────────────────
-  Widget _buildAccountShield() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: _kChip,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _kBorder),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-                color: _kSecondary.withValues(alpha: 0.12),
-                shape: BoxShape.circle),
-            child: Icon(Icons.shield_outlined, size: 20, color: _kSecondary),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text('Account Shield: High',
-                        style: _pjs(
-                            size: 13, weight: FontWeight.w700, color: _kGreen)),
-                    const SizedBox(width: 4),
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                          color: _kGreen, shape: BoxShape.circle),
-                    ),
-                  ],
-                ),
-                Text('3FA active & verified contact channels',
-                    style: _pjs(size: 11, color: _kSubtext)),
-              ],
+      // Sticky "Save Changes" bar (only once the profile has loaded).
+      bottomNavigationBar: (_loadingProfile || _profileError != null)
+          ? null
+          : Container(
+              decoration: const BoxDecoration(
+                color: AppColors.card,
+                boxShadow: AppShadows.nav,
+              ),
+              padding: const EdgeInsets.only(top: 10, bottom: 10),
+              child: SafeArea(top: false, child: _buildSaveButton()),
             ),
-          ),
-          Icon(Icons.check_circle, color: _kGreen, size: 20),
-        ],
-      ),
     );
   }
 
@@ -432,7 +391,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(e.message, style: _pjs(size: 13, color: Colors.white)),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ));
     } catch (_) {
@@ -440,7 +399,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Could not upload photo. Please try again.',
             style: _pjs(size: 13, color: Colors.white)),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ));
     } finally {
@@ -702,8 +661,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           backgroundColor: _kPrimary,
           disabledBackgroundColor: _kPrimary.withValues(alpha: 0.5),
           elevation: 0,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.pill)),
           minimumSize: const Size(double.infinity, 52),
         ),
       ),
@@ -718,7 +677,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('ACCOUNT MAINTENANCE',
-              style: _pjs(size: 10, weight: FontWeight.w700, color: _kSubtext)),
+              style: _pjs(size: 11.5, weight: FontWeight.w800, color: _kSubtext)),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -751,32 +710,12 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                 // Delete
                 ListTile(
                   leading: Icon(Icons.delete_outline, color: _kFlash, size: 20),
-                  title: Row(
-                    children: [
-                      Text('Delete Account',
-                          style: _pjs(
-                              size: 14,
-                              weight: FontWeight.w600,
-                              color: _kFlash)),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _kFlash.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text('Pinned',
-                            style: _pjs(
-                                size: 9,
-                                weight: FontWeight.w700,
-                                color: _kFlash)),
-                      ),
-                    ],
-                  ),
+                  title: Text('Delete Account',
+                      style: _pjs(
+                          size: 14, weight: FontWeight.w600, color: _kFlash)),
                   subtitle: Text(
                     'Permanently erases orders, mimoo coins balance, chats, and review history. This action cannot be undone.',
-                    style: _pjs(size: 10, color: _kSubtext, height: 1.4),
+                    style: _pjs(size: 11.5, color: _kSubtext, height: 1.4),
                   ),
                   trailing: Icon(Icons.chevron_right, color: _kSubtext),
                   onTap: () => _confirmDelete(context),
@@ -921,10 +860,10 @@ class SettingsSectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: _kCard,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.card,
         border: Border.all(color: _kBorder),
       ),
       child: child,
@@ -1296,7 +1235,7 @@ class _ChangePasswordPageState extends State<_ChangePasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Please fill in all fields.',
               style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
       return;
     }
@@ -1312,7 +1251,7 @@ class _ChangePasswordPageState extends State<_ChangePasswordPage> {
           content: Text('Password updated!',
               style:
                   _pjs(size: 13, color: Colors.white, weight: FontWeight.w600)),
-          backgroundColor: const Color(0xFF1DB966)));
+          backgroundColor: AppColors.success));
       Navigator.pop(context);
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -1321,14 +1260,14 @@ class _ChangePasswordPageState extends State<_ChangePasswordPage> {
           : e.message;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(msg, style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Network error. Please try again.',
               style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -1482,7 +1421,7 @@ class _ChangeEmailPageState extends State<_ChangeEmailPage> {
           : e.message;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(msg, style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     } catch (_) {
       if (!mounted) return;
@@ -1490,7 +1429,7 @@ class _ChangeEmailPageState extends State<_ChangeEmailPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Network error.',
               style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     }
   }
@@ -1507,7 +1446,7 @@ class _ChangeEmailPageState extends State<_ChangeEmailPage> {
           content: Text('Email updated successfully!',
               style:
                   _pjs(size: 13, color: Colors.white, weight: FontWeight.w600)),
-          backgroundColor: const Color(0xFF1DB966)));
+          backgroundColor: AppColors.success));
       Navigator.pop(context);
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -1517,7 +1456,7 @@ class _ChangeEmailPageState extends State<_ChangeEmailPage> {
           : e.message;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(msg, style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     } catch (_) {
       if (!mounted) return;
@@ -1525,7 +1464,7 @@ class _ChangeEmailPageState extends State<_ChangeEmailPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Network error.',
               style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     }
   }
@@ -1668,7 +1607,7 @@ class _ChangePhonePageState extends State<_ChangePhonePage> {
           : e.message;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(msg, style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     } catch (_) {
       if (!mounted) return;
@@ -1676,7 +1615,7 @@ class _ChangePhonePageState extends State<_ChangePhonePage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Network error.',
               style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     }
   }
@@ -1693,7 +1632,7 @@ class _ChangePhonePageState extends State<_ChangePhonePage> {
           content: Text('Phone number updated!',
               style:
                   _pjs(size: 13, color: Colors.white, weight: FontWeight.w600)),
-          backgroundColor: const Color(0xFF1DB966)));
+          backgroundColor: AppColors.success));
       Navigator.pop(context);
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -1703,7 +1642,7 @@ class _ChangePhonePageState extends State<_ChangePhonePage> {
           : e.message;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(msg, style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     } catch (_) {
       if (!mounted) return;
@@ -1711,7 +1650,7 @@ class _ChangePhonePageState extends State<_ChangePhonePage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Network error.',
               style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     }
   }

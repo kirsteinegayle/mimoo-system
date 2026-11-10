@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../state/notification_state.dart';
+import '../theme/app_theme.dart';
 
 /// Unread-count badge for the notification bell. Must be placed directly
 /// inside a [Stack] (it builds a [Positioned]). Hidden when there are no
@@ -22,7 +23,7 @@ class NotificationBadge extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
             padding: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF3B5C),
+              color: AppColors.flash,
               borderRadius: BorderRadius.circular(9999),
               border: Border.all(color: Colors.white, width: 1.2),
             ),

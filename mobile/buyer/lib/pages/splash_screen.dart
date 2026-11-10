@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../state/auth_service.dart';
+import '../theme/app_theme.dart';
 import '../theme/mimoo_brand.dart';
 import '../widgets/auth_layout.dart';
 import '../widgets/mimoo_logo.dart';
@@ -15,7 +16,7 @@ import 'auth/login_page.dart';
 ///  1. Logo fades in + scales up (≈700 ms), then the tagline fades in (≈500 ms).
 ///  2. Meanwhile the saved session is restored from secure storage and the
 ///     logo is precached.
-///  3. After ≈2.2 s: session → Home; no session → Login with a 600 ms
+///  3. After ≈2 s (a subtle progress bar shows meanwhile): session → Home; no session → Login with a 600 ms
 ///     easeOutCubic transition (logo Hero-flies into the Login header and
 ///     the white card slides up). pushReplacement, so Back never returns here.
 class SplashScreen extends StatefulWidget {
@@ -27,7 +28,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  static const _total = Duration(milliseconds: 2200);
+  static const _total = Duration(milliseconds: 2000);
 
   late final AnimationController _ctrl =
       AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
@@ -151,6 +152,22 @@ class _SplashScreenState extends State<SplashScreen>
                         weight: FontWeight.w500,
                         color: MimooBrand.accentSoft,
                         style: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                // Subtle loading indicator while the session is restored.
+                FadeTransition(
+                  opacity: _taglineFade,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    child: SizedBox(
+                      width: 96,
+                      height: 3,
+                      child: LinearProgressIndicator(
+                        color: MimooBrand.accentSoft,
+                        backgroundColor: Colors.white.withValues(alpha: 0.10),
                       ),
                     ),
                   ),

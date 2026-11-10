@@ -10,6 +10,8 @@ import BuyerProfileController from './BuyerProfileController'
 import BuyerWishlistController from './BuyerWishlistController'
 import CartController from './CartController'
 import BuyerOrderController from './BuyerOrderController'
+import BuyerDeliveryCodeController from './BuyerDeliveryCodeController'
+import DeliveryPodPhotoController from './DeliveryPodPhotoController'
 import BuyerVoucherController from './BuyerVoucherController'
 import BuyerAddressController from './BuyerAddressController'
 import BuyerFollowController from './BuyerFollowController'
@@ -19,6 +21,12 @@ import CourierDashboardController from './CourierDashboardController'
 import CourierShipmentController from './CourierShipmentController'
 import CourierPickupController from './CourierPickupController'
 import CourierScanController from './CourierScanController'
+import CourierFacilityApiController from './CourierFacilityApiController'
+import CourierDeliveryController from './CourierDeliveryController'
+import RiderAuthController from './RiderAuthController'
+import RiderPickupController from './RiderPickupController'
+import RiderDeliveryController from './RiderDeliveryController'
+import RiderWalletController from './RiderWalletController'
 import SellerStorePhotoController from './SellerStorePhotoController'
 const Api = {
     AuthController: Object.assign(AuthController, AuthController),
@@ -33,6 +41,8 @@ BuyerProfileController: Object.assign(BuyerProfileController, BuyerProfileContro
 BuyerWishlistController: Object.assign(BuyerWishlistController, BuyerWishlistController),
 CartController: Object.assign(CartController, CartController),
 BuyerOrderController: Object.assign(BuyerOrderController, BuyerOrderController),
+BuyerDeliveryCodeController: Object.assign(BuyerDeliveryCodeController, BuyerDeliveryCodeController),
+DeliveryPodPhotoController: Object.assign(DeliveryPodPhotoController, DeliveryPodPhotoController),
 BuyerVoucherController: Object.assign(BuyerVoucherController, BuyerVoucherController),
 BuyerAddressController: Object.assign(BuyerAddressController, BuyerAddressController),
 BuyerFollowController: Object.assign(BuyerFollowController, BuyerFollowController),
@@ -42,6 +52,12 @@ CourierDashboardController: Object.assign(CourierDashboardController, CourierDas
 CourierShipmentController: Object.assign(CourierShipmentController, CourierShipmentController),
 CourierPickupController: Object.assign(CourierPickupController, CourierPickupController),
 CourierScanController: Object.assign(CourierScanController, CourierScanController),
+CourierFacilityApiController: Object.assign(CourierFacilityApiController, CourierFacilityApiController),
+CourierDeliveryController: Object.assign(CourierDeliveryController, CourierDeliveryController),
+RiderAuthController: Object.assign(RiderAuthController, RiderAuthController),
+RiderPickupController: Object.assign(RiderPickupController, RiderPickupController),
+RiderDeliveryController: Object.assign(RiderDeliveryController, RiderDeliveryController),
+RiderWalletController: Object.assign(RiderWalletController, RiderWalletController),
 SellerStorePhotoController: Object.assign(SellerStorePhotoController, SellerStorePhotoController),
 }
 

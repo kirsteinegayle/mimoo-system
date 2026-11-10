@@ -13,18 +13,19 @@ import '../../widgets/product_reviews_section.dart';
 import '../../services/product_repository.dart';
 import '../chat/chat_screen.dart';
 import '../../utils/animations.dart';
+import '../../theme/app_theme.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kFlash = Color(0xFFFF3B5C);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kGreen = Color(0xFF1DB966);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kFlash = AppColors.flash;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
+const _kGreen = AppColors.success;
 
 TextStyle _pjs({
   double size = 14,
@@ -643,7 +644,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             ? Icons.star_rounded
                             : Icons.star_outline_rounded,
                         size: 14,
-                        color: Colors.amber.shade500)),
+                        color: AppColors.star)),
                 const SizedBox(width: 4),
                 Text(_product.rating.toStringAsFixed(1),
                     style: _pjs(size: 13, weight: FontWeight.w700)),
@@ -944,7 +945,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         color: _kCard,
         boxShadow: [
           BoxShadow(
-              color: Color(0x1A34175B), blurRadius: 14, offset: Offset(0, -4))
+              color: AppColors.primaryA10, blurRadius: 14, offset: Offset(0, -4))
         ],
       ),
       child: SafeArea(
@@ -1479,7 +1480,7 @@ class _CarouselBtn extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: const [
             BoxShadow(
-                color: Color(0x1A000000), blurRadius: 6, offset: Offset(0, 2))
+                color: AppColors.shadowSoft, blurRadius: 6, offset: Offset(0, 2))
           ],
         ),
         child: Icon(icon, size: 17, color: color),
@@ -1704,7 +1705,7 @@ class _FitGuideDialog extends StatelessWidget {
   TableRow _tableRow(List<String> cells, {bool isHeader = false}) {
     return TableRow(
       decoration:
-          isHeader ? const BoxDecoration(color: Color(0xFFEFE9FD)) : null,
+          isHeader ? const BoxDecoration(color: AppColors.chip) : null,
       children: cells
           .map((cell) => Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),

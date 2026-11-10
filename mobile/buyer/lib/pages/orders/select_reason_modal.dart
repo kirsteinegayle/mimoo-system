@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'return_refund_models.dart';
 import 'request_return_refund_page.dart';
+import '../../theme/app_theme.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
 
 TextStyle _pjs({
   double size = 14,

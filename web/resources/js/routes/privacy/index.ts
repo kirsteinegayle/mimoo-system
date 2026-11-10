@@ -1,6 +1,6 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
- * @see routes/web.php:1577
+ * @see routes/web.php:1585
  * @route '/privacy-policy'
  */
 export const policy = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -14,7 +14,7 @@ policy.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1577
+ * @see routes/web.php:1585
  * @route '/privacy-policy'
  */
 policy.url = (options?: RouteQueryOptions) => {
@@ -22,7 +22,7 @@ policy.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1577
+ * @see routes/web.php:1585
  * @route '/privacy-policy'
  */
 policy.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -30,7 +30,7 @@ policy.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1577
+ * @see routes/web.php:1585
  * @route '/privacy-policy'
  */
 policy.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -39,7 +39,7 @@ policy.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1577
+ * @see routes/web.php:1585
  * @route '/privacy-policy'
  */
     const policyForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -48,7 +48,7 @@ policy.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1577
+ * @see routes/web.php:1585
  * @route '/privacy-policy'
  */
         policyForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -56,7 +56,7 @@ policy.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1577
+ * @see routes/web.php:1585
  * @route '/privacy-policy'
  */
         policyForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

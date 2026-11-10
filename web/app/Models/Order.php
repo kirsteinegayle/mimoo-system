@@ -184,11 +184,33 @@ class Order extends Model
      */
     public function updateTracking(string $status, string $message): void
     {
-        $this->update([
+        $this->fill([
             'tracking_status' => $status,
             'tracking_message' => $message,
             'tracking_updated_at' => now(),
         ]);
+
+        // A tracking-only write must NOT move orders.updated_at: the 7-day
+        // auto-complete / return windows and the review window count from it.
+        // If the caller left other attributes dirty (e.g. status), save normally
+        // so that real change still bumps updated_at. Model events still fire.
+        $trackingOnly = array_diff(
+            array_keys($this->getDirty()),
+            ['tracking_status', 'tracking_message', 'tracking_updated_at']
+        ) === [];
+
+        if (! $trackingOnly) {
+            $this->save();
+            return;
+        }
+
+        $timestamps = $this->timestamps;
+        $this->timestamps = false;
+        try {
+            $this->save();
+        } finally {
+            $this->timestamps = $timestamps;
+        }
     }
 
     /**

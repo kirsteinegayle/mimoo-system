@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\SellerOrderController::recent
- * @see app/Http/Controllers/SellerOrderController.php:71
+ * @see app/Http/Controllers/SellerOrderController.php:75
  * @route '/api/seller/orders/recent'
  */
 export const recent = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ recent.definition = {
 
 /**
 * @see \App\Http\Controllers\SellerOrderController::recent
- * @see app/Http/Controllers/SellerOrderController.php:71
+ * @see app/Http/Controllers/SellerOrderController.php:75
  * @route '/api/seller/orders/recent'
  */
 recent.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ recent.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\SellerOrderController::recent
- * @see app/Http/Controllers/SellerOrderController.php:71
+ * @see app/Http/Controllers/SellerOrderController.php:75
  * @route '/api/seller/orders/recent'
  */
 recent.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ recent.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\SellerOrderController::recent
- * @see app/Http/Controllers/SellerOrderController.php:71
+ * @see app/Http/Controllers/SellerOrderController.php:75
  * @route '/api/seller/orders/recent'
  */
 recent.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ recent.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\SellerOrderController::recent
- * @see app/Http/Controllers/SellerOrderController.php:71
+ * @see app/Http/Controllers/SellerOrderController.php:75
  * @route '/api/seller/orders/recent'
  */
     const recentForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ recent.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\SellerOrderController::recent
- * @see app/Http/Controllers/SellerOrderController.php:71
+ * @see app/Http/Controllers/SellerOrderController.php:75
  * @route '/api/seller/orders/recent'
  */
         recentForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ recent.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\SellerOrderController::recent
- * @see app/Http/Controllers/SellerOrderController.php:71
+ * @see app/Http/Controllers/SellerOrderController.php:75
  * @route '/api/seller/orders/recent'
  */
         recentForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ recent.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     recent.form = recentForm
 /**
 * @see \App\Http\Controllers\SellerOrderController::updateStatus
- * @see app/Http/Controllers/SellerOrderController.php:109
+ * @see app/Http/Controllers/SellerOrderController.php:113
  * @route '/api/seller/orders/{id}/status'
  */
 export const updateStatus = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -172,7 +172,7 @@ updateStatus.definition = {
 
 /**
 * @see \App\Http\Controllers\SellerOrderController::updateStatus
- * @see app/Http/Controllers/SellerOrderController.php:109
+ * @see app/Http/Controllers/SellerOrderController.php:113
  * @route '/api/seller/orders/{id}/status'
  */
 updateStatus.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -200,7 +200,7 @@ updateStatus.url = (args: { id: string | number } | [id: string | number ] | str
 
 /**
 * @see \App\Http\Controllers\SellerOrderController::updateStatus
- * @see app/Http/Controllers/SellerOrderController.php:109
+ * @see app/Http/Controllers/SellerOrderController.php:113
  * @route '/api/seller/orders/{id}/status'
  */
 updateStatus.patch = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -210,7 +210,7 @@ updateStatus.patch = (args: { id: string | number } | [id: string | number ] | s
 
     /**
 * @see \App\Http\Controllers\SellerOrderController::updateStatus
- * @see app/Http/Controllers/SellerOrderController.php:109
+ * @see app/Http/Controllers/SellerOrderController.php:113
  * @route '/api/seller/orders/{id}/status'
  */
     const updateStatusForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -225,7 +225,7 @@ updateStatus.patch = (args: { id: string | number } | [id: string | number ] | s
 
             /**
 * @see \App\Http\Controllers\SellerOrderController::updateStatus
- * @see app/Http/Controllers/SellerOrderController.php:109
+ * @see app/Http/Controllers/SellerOrderController.php:113
  * @route '/api/seller/orders/{id}/status'
  */
         updateStatusForm.patch = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

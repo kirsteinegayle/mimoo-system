@@ -7,13 +7,14 @@ import '../state/auth_service.dart';
 import '../pages/home/product_detail_page.dart';
 import '../pages/auth/login_page.dart';
 import '../utils/animations.dart';
+import '../theme/app_theme.dart';
 
-const _kPrimary = Color(0xFF34175B);
-const _kFlash = Color(0xFFFF3B5C);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kFlash = AppColors.flash;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
 
 class ProductCard extends StatelessWidget {
   const ProductCard({super.key, required this.product});
@@ -41,7 +42,7 @@ class ProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x0D34175B), blurRadius: 8, offset: Offset(0, 2)),
+                color: AppColors.primaryA05, blurRadius: 8, offset: Offset(0, 2)),
           ],
         ),
         child: Column(
@@ -122,7 +123,7 @@ class ProductCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(Icons.star_rounded,
-                            size: 11, color: Colors.amber.shade500),
+                            size: 11, color: AppColors.star),
                         const SizedBox(width: 2),
                         Text(
                           '${product.rating.toStringAsFixed(1)} (${product.reviewCount})',

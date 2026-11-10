@@ -7,14 +7,15 @@ import '../../widgets/auth_layout.dart';
 import '../../widgets/motion.dart';
 import '../../utils/animations.dart';
 import 'login_page.dart';
+import '../../theme/app_theme.dart';
 
 // ── Design tokens (identical to login_page.dart) ──────────────────────────────
-const _kPrimary = Color(0xFF4B2E8A);
-const _kSurface = Color(0xFFF5F4FC);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kAccent = Color(0xFF6B38D4);
+const _kPrimary = AppColors.primaryMid;
+const _kSurface = AppColors.surface;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
+const _kAccent = AppColors.accent;
 
 class VerifyEmailPage extends StatefulWidget {
   const VerifyEmailPage({super.key, required this.email});
@@ -78,7 +79,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       SnackBar(
         content:
             Text(msg, style: GoogleFonts.plusJakartaSans(color: Colors.white)),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -115,7 +116,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
               'Email verified! You can now log in.',
               style: GoogleFonts.plusJakartaSans(color: Colors.white),
             ),
-            backgroundColor: const Color(0xFF1DB966),
+            backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 4),
           ),
@@ -193,7 +194,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.red),
+            borderSide: const BorderSide(color: AppColors.error),
           ),
         ),
         onChanged: (value) {

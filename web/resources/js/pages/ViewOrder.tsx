@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
-import { Bell, Search, ShoppingCart, LogOut } from "lucide-react";
+import { Search, ShoppingCart, LogOut } from "lucide-react";
+import { NotificationBell } from "@/components/notification-bell";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -160,13 +161,13 @@ function CountBadge({ count }: { count: number }) {
 function Header({
   username = "username",
   avatarUrl = null,
-  notificationCount = 5,
   cartCount = 100,
   onSearch,
   onLogout,
 }: {
   username?: string;
   avatarUrl?: string | null;
+  /** @deprecated Ignored: the bell now loads the real unread count. */
   notificationCount?: number;
   cartCount?: number;
   onSearch?: (query: string) => void;
@@ -275,10 +276,7 @@ function Header({
           </form>
 
           <div className="flex shrink-0 items-center gap-4 sm:gap-5">
-            <button aria-label="Notifications" className="relative flex items-center text-white transition-colors hover:text-white/80">
-              <Bell className="h-5 w-5" />
-              <CountBadge count={notificationCount} />
-            </button>
+            <NotificationBell isLoggedIn={isLoggedIn} />
             <Link href="/cart" aria-label="Cart" className="relative flex items-center text-white transition-colors hover:text-white/80">
               <ShoppingCart className="h-5 w-5" />
               <CountBadge count={cartCount} />

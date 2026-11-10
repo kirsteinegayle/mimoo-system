@@ -6,9 +6,10 @@ import '../../services/order_repository.dart';
 import 'api_order_detail_page.dart';
 import 'return_request_pages.dart';
 import 'write_review_page.dart';
+import '../../theme/app_theme.dart';
 
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
 
 /// Action buttons for REAL (API) orders beyond cancel:
 ///   - Rate (completed orders with an item that can still be reviewed / edited)
@@ -56,7 +57,7 @@ class RealOrderActions extends StatelessWidget {
         content: Text(e is ApiException
             ? e.message
             : 'Could not confirm receipt. Please try again.'),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ));
     }
@@ -74,7 +75,10 @@ class RealOrderActions extends StatelessWidget {
     final hasOpenReturn = const ['pending', 'approved', 'escalated']
         .contains(order.returnStatus);
 
-    final trackable = showTrack && (isShipped || isCompleted);
+    // in_transit: Track Order opens Order details (delivery code card).
+    // "Order Received" stays shipped-only (server rejects receive otherwise).
+    final isInTransit = order.status == api_order.OrderStatus.inTransit;
+    final trackable = showTrack && (isShipped || isCompleted || isInTransit);
 
     final buttons = <Widget>[
       // Order tracker (timeline + delivery map) — opened on demand so the

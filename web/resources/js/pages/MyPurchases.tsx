@@ -103,6 +103,9 @@ const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
   cancelled: { text: "Cancelled", cls: "bg-red-50 text-red-700 border-red-200" },
 };
 
+/** in_transit card label — matches the buyer app ("In Transit"). */
+const IN_TRANSIT_LABEL = { text: "In Transit", cls: "bg-purple-50 text-purple-800 border-purple-200" };
+
 const peso = (n: number) =>
   "₱" + n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -320,7 +323,13 @@ export default function MyPurchases() {
             visible.map((order) => {
               const key = tabOf(order);
               // Use packed status label if order is packed, otherwise use tab label
-              const label = order.status === "packed" ? STATUS_LABEL["packed"] : STATUS_LABEL[key];
+              // in_transit + shipped: both "In Transit" (same as the buyer app), tab stays To Receive
+              const label =
+                order.status === "packed"
+                  ? STATUS_LABEL["packed"]
+                  : order.status === "in_transit" || order.status === "shipped"
+                    ? IN_TRANSIT_LABEL
+                    : STATUS_LABEL[key];
               const Icon = TABS.find((t) => t.key === key)!.icon;
               return (
                 <article

@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../services/follow_repository.dart';
 import '../seller/seller_store_page.dart';
+import '../../theme/app_theme.dart';
 
-const _kPrimary = Color(0xFF34175B);
-const _kBorder = Color(0xFFDDD8F0);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kBorder = AppColors.border;
+const _kSubtext = AppColors.textMuted;
 
 /// Stores the buyer follows (GET /api/buyer/following).
 class FollowingPage extends StatefulWidget {
@@ -112,7 +113,7 @@ class _FollowingPageState extends State<FollowingPage> {
                               ),
                               child: ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: const Color(0xFFEFE9FD),
+                                  backgroundColor: AppColors.chip,
                                   backgroundImage: s.profilePhotoUrl != null
                                       ? NetworkImage(s.profilePhotoUrl!)
                                       : null,

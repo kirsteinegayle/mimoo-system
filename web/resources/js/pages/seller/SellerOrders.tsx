@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import SellerShell from "@/layouts/seller/seller-shell";
+import TrackingLine from "@/components/tracking-line";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -55,6 +56,10 @@ interface SellerOrder {
   delivered_on?: string | null;
   is_new?: boolean;
   total?: number; // Total from backend (includes items + shipping)
+  // Delivery tracking from orders.tracking_* (display only)
+  tracking_status?: string | null;
+  tracking_message?: string | null;
+  tracking_updated_at?: string | null;
 }
 
 interface PageProps {
@@ -256,6 +261,9 @@ function OrderModal({
           <div className="stage-note bad"><svg {...S}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" /><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg><span>This order was cancelled and will not be processed.</span></div>
         )}
 
+        {/* Delivery tracking (renders nothing when the order has no tracking yet) */}
+        <TrackingLine tracking={order} className="mb-3" />
+
         <div className="detail-section">
           <h4>Order items</h4>
           {order.items.map((it, i) => (
@@ -434,6 +442,9 @@ export default function SellerOrders({ orders: initial }: PageProps) {
         delivered_on: null,
         is_new: false,
         total: order.total, // Add total from backend
+        tracking_status: order.tracking_status ?? null,
+        tracking_message: order.tracking_message ?? null,
+        tracking_updated_at: order.tracking_updated_at ?? null,
       }));
       
       setOrders(mappedOrders);

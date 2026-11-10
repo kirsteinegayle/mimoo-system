@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../home/product_detail_page.dart';
 import 'seller_store_page.dart';
+import '../../theme/app_theme.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const _kSecondary = Color(0xFF6B38D4);
-const _kFlash = Color(0xFFFF3B5C);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
+const _kSecondary = AppColors.accent;
+const _kFlash = AppColors.flash;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
 
 TextStyle _pjs({
   double size = 14,
@@ -217,7 +218,7 @@ class _CategoryProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x0D34175B), blurRadius: 6, offset: Offset(0, 2)),
+                color: AppColors.primaryA05, blurRadius: 6, offset: Offset(0, 2)),
           ],
         ),
         child: Column(

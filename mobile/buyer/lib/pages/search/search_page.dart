@@ -8,16 +8,17 @@ import '../../state/cart_provider.dart';
 import '../../state/wishlist_provider.dart';
 import '../home/product_detail_page.dart';
 import '../../utils/animations.dart';
+import '../../theme/app_theme.dart';
 
 // ── Color tokens ──────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
 
 TextStyle _pjs({
   double size = 14,
@@ -422,7 +423,7 @@ class _SearchProductCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(Icons.star_rounded,
-                            size: 12, color: const Color(0xFF8455EF)),
+                            size: 12, color: AppColors.accentLight),
                         const SizedBox(width: 2),
                         Text(product.rating.toStringAsFixed(1),
                             style: _pjs(size: 10, color: _kSubtext)),

@@ -4,6 +4,7 @@ import 'login_page.dart';
 import 'verify_email_page.dart';
 import '../../services/api_service.dart';
 import '../../widgets/address_dropdown.dart';
+import '../../theme/app_theme.dart';
 import '../../theme/mimoo_brand.dart';
 import '../../widgets/auth_layout.dart';
 import '../../widgets/motion.dart';
@@ -63,6 +64,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _confirmPassCtrl = TextEditingController();
   bool _obscurePass = true;
   bool _obscureConfirm = true;
+  bool _agreedToTerms = false;
 
   @override
   void dispose() {
@@ -142,6 +144,14 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     }
 
+    if (_step == 3 && !_agreedToTerms) {
+      setState(() {
+        _shake++;
+        _error = 'Please agree to the Terms of Service and Privacy Policy.';
+      });
+      return;
+    }
+
     if (_step < 3) {
       setState(() => _step++);
     } else {
@@ -212,7 +222,9 @@ class _RegisterPageState extends State<RegisterPage> {
       final email = (res['data']?['email'] as String?) ??
           _emailCtrl.text.trim().toLowerCase();
 
-      // Navigate to OTP verification screen
+      // Success feedback, then the existing navigation to OTP verification.
+      await showSuccessCheck(context, 'Account created!');
+      if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MimooPageRoute(builder: (_) => VerifyEmailPage(email: email)),
         (route) => false,
@@ -340,6 +352,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildDetails() {
     return Form(
       key: _detailsKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -497,6 +510,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildAddress() {
     return Form(
       key: _addressKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -551,6 +565,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildVerification() {
     return Form(
       key: _verifyKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -642,6 +657,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildSecurity() {
     return Form(
       key: _securityKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -678,6 +694,7 @@ class _RegisterPageState extends State<RegisterPage> {
               return null;
             },
           ),
+          _PasswordStrength(controller: _passCtrl),
           const SizedBox(height: 12),
           _MimooField(
             controller: _confirmPassCtrl,
@@ -705,11 +722,126 @@ class _RegisterPageState extends State<RegisterPage> {
               return null;
             },
           ),
+          const SizedBox(height: 16),
+          _TermsCheckbox(
+            value: _agreedToTerms,
+            onChanged: (v) => setState(() {
+              _agreedToTerms = v;
+              if (v) _error = null;
+            }),
+          ),
         ],
       ),
     );
   }
 }
+
+// ── Password strength ─────────────────────────────────────────────────────────
+
+/// 0–4 score from length and character variety (UI hint only; the server
+/// rule is unchanged: minimum 8 characters).
+int _passwordScore(String p) {
+  if (p.isEmpty) return 0;
+  var score = 0;
+  if (p.length >= 8) score++;
+  if (p.length >= 12) score++;
+  if (RegExp(r'[A-Z]').hasMatch(p) && RegExp(r'[a-z]').hasMatch(p)) score++;
+  if (RegExp(r'\d').hasMatch(p)) score++;
+  if (RegExp(r'[^A-Za-z0-9]').hasMatch(p)) score++;
+  if (p.length < 8) score = score.clamp(0, 1);
+  return score.clamp(0, 4);
+}
+
+class _PasswordStrength extends StatelessWidget {
+  const _PasswordStrength({required this.controller});
+  final TextEditingController controller;
+
+  static const _labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
+  static const _colors = [
+    AppColors.error,
+    AppColors.flash,
+    AppColors.warning,
+    AppColors.accent,
+    AppColors.success,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (_, v, __) {
+        if (v.text.isEmpty) return const SizedBox(height: 4);
+        final score = _passwordScore(v.text);
+        final color = _colors[score];
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(children: [
+            Expanded(
+              child: Row(
+                children: List.generate(4, (i) {
+                  return Expanded(
+                    child: AnimatedContainer(
+                      duration: AppDurations.fast,
+                      height: 4,
+                      margin: EdgeInsets.only(right: i < 3 ? 4 : 0),
+                      decoration: BoxDecoration(
+                        color: i < score ? color : AppColors.border,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text('Strength: ${_labels[score]}',
+                style: AppText.style(
+                    size: 11.5, weight: FontWeight.w700, color: color)),
+          ]),
+        );
+      },
+    );
+  }
+}
+
+class _TermsCheckbox extends StatelessWidget {
+  const _TermsCheckbox({required this.value, required this.onChanged});
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final link = AppText.style(
+        size: 12.5, weight: FontWeight.w700, color: AppColors.accent);
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      onTap: () => onChanged(!value),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: AppSpacing.tap),
+        child: Row(
+          children: [
+            Checkbox(value: value, onChanged: (v) => onChanged(v ?? false)),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  style: AppText.style(size: 12.5, color: AppColors.textMuted),
+                  children: [
+                    const TextSpan(text: 'I agree to the '),
+                    TextSpan(text: 'Terms of Service', style: link),
+                    const TextSpan(text: ' and '),
+                    TextSpan(text: 'Privacy Policy', style: link),
+                    const TextSpan(text: '.'),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 
 // ── Step Indicator ────────────────────────────────────────────────────────────
 

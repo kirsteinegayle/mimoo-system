@@ -4,14 +4,15 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/api_service.dart';
 import '../../widgets/auth_layout.dart';
+import '../../theme/app_theme.dart';
 
 // ── Design tokens (identical to login_page.dart / verify_email_page.dart) ─────
-const _kPrimary = Color(0xFF4B2E8A);
-const _kSurface = Color(0xFFF5F4FC);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kAccent = Color(0xFF6B38D4);
+const _kPrimary = AppColors.primaryMid;
+const _kSurface = AppColors.surface;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
+const _kAccent = AppColors.accent;
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -67,7 +68,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content:
           Text(msg, style: GoogleFonts.plusJakartaSans(color: Colors.white)),
-      backgroundColor: Colors.red.shade700,
+      backgroundColor: AppColors.error,
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 5),
     ));
@@ -195,7 +196,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             'Password reset! Please log in with your new password.',
             style: GoogleFonts.plusJakartaSans(color: Colors.white),
           ),
-          backgroundColor: const Color(0xFF1DB966),
+          backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 5),
         ));
@@ -543,10 +544,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             borderSide: const BorderSide(color: _kPrimary, width: 1.5)),
         errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.red)),
+            borderSide: const BorderSide(color: AppColors.error)),
         focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.red, width: 1.5)),
+            borderSide: const BorderSide(color: AppColors.error, width: 1.5)),
       ),
     );
   }

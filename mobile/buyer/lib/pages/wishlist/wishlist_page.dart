@@ -6,18 +6,19 @@ import '../../state/wishlist_provider.dart';
 import '../../state/wishlist_state.dart';
 import '../../state/cart_provider.dart';
 import '../home/product_detail_page.dart';
+import '../../theme/app_theme.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kAccent = Color(0xFF8B5CF6);
-const _kFlash = Color(0xFFFF3B5C);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kAccent = AppColors.violet;
+const _kFlash = AppColors.flash;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
 
 TextStyle _pjs({
   double size = 14,
@@ -346,7 +347,7 @@ class _WishlistPageState extends State<WishlistPage> {
         color: _kCard,
         boxShadow: [
           BoxShadow(
-              color: Color(0x1A34175B), blurRadius: 12, offset: Offset(0, -4)),
+              color: AppColors.primaryA10, blurRadius: 12, offset: Offset(0, -4)),
         ],
       ),
       child: SafeArea(
@@ -677,7 +678,7 @@ class _WishlistCard extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: const [
                         BoxShadow(
-                            color: Color(0x1A000000),
+                            color: AppColors.shadowSoft,
                             blurRadius: 4,
                             offset: Offset(0, 1)),
                       ],
@@ -707,7 +708,7 @@ class _WishlistCard extends StatelessWidget {
                       ),
                       boxShadow: const [
                         BoxShadow(
-                            color: Color(0x1A000000),
+                            color: AppColors.shadowSoft,
                             blurRadius: 4,
                             offset: Offset(0, 1)),
                       ],

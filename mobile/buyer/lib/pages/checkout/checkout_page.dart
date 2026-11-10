@@ -12,17 +12,18 @@ import '../../state/cart_provider.dart';
 import '../../services/order_repository.dart';
 import '../../services/voucher_repository.dart';
 import '../../services/api_service.dart';
+import '../../theme/app_theme.dart';
 
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kFlash = Color(0xFFFF3B5C);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kGreen = Color(0xFF1DB966);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kFlash = AppColors.flash;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
+const _kGreen = AppColors.success;
 
 TextStyle _pjs({
   double size = 14,
@@ -209,7 +210,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           'GCash is not available yet. Please choose Cash on Delivery.',
           style: _pjs(size: 13, color: Colors.white),
         ),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
       ));
@@ -224,7 +225,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Please fill in all shipping details.',
             style: _pjs(size: 13, color: Colors.white)),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ));
       return;
@@ -259,7 +260,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           icon: const Icon(Icons.check_circle_outline,
-              color: Color(0xFF1DB966), size: 52),
+              color: AppColors.success, size: 52),
           title: Text('Order Placed! 🎉',
               style: _pjs(size: 18, weight: FontWeight.w800),
               textAlign: TextAlign.center),
@@ -314,7 +315,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(e.message, style: _pjs(size: 13, color: Colors.white)),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 6),
       ));
@@ -327,7 +328,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         content: Text(
             '${ApiService.friendlyError(e)} Tapping Place Order again is safe — it will not create a duplicate order.',
             style: _pjs(size: 13, color: Colors.white)),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 8),
         action: SnackBarAction(
@@ -547,7 +548,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final methods = [
       (
         Icons.account_balance_wallet_outlined,
-        const Color(0xFF0066CC),
+        AppColors.info,
         'GCash',
         'Placeholder — not available yet',
         null
@@ -848,7 +849,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         color: _kCard,
         boxShadow: [
           BoxShadow(
-              color: Color(0x1A34175B), blurRadius: 12, offset: Offset(0, -4))
+              color: AppColors.primaryA10, blurRadius: 12, offset: Offset(0, -4))
         ],
       ),
       child: SafeArea(
@@ -912,7 +913,7 @@ class _SCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0D34175B), blurRadius: 8, offset: Offset(0, 2))
+              color: AppColors.primaryA05, blurRadius: 8, offset: Offset(0, 2))
         ],
       ),
       child: child,

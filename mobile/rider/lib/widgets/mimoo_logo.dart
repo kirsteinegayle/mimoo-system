@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_info.dart';
 import '../core/theme.dart';
+
+/// Label shown under the logo. Blank it to hide the qualifier.
+const String kRiderLabel = 'RIDER';
 
 /// Shared Mimoo wordmark used by the login and splash screens.
 ///
@@ -24,9 +26,6 @@ class MimooLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Use the auth palette so the sphere colour stays consistent on the
-    // always-light login/splash screens.
-    final auth = MimooAuthColors.of(context);
 
     final content = Column(
       mainAxisSize: MainAxisSize.min,
@@ -47,7 +46,7 @@ class MimooLogo extends StatelessWidget {
                 height: size,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: auth.primary, // deep violet — #4B2E8A
+                  color: MC.violet,
                 ),
               ),
               // Logo clipped to a circle, slightly smaller so the violet
@@ -60,6 +59,16 @@ class MimooLogo extends StatelessWidget {
                     'assets/images/logo.png',
                     fit: BoxFit.cover,
                     semanticLabel: 'Mimoo',
+                    // Fallback brand mark if the asset is not bundled
+                    // (pubspec.yaml currently declares no assets).
+                    errorBuilder: (context, _, __) => ColoredBox(
+                      color: MC.violetDark,
+                      child: Center(
+                        child: Text('m',
+                            style: ts(size * 0.5,
+                                w: FontWeight.w800, c: Colors.white, h: 1)),
+                      ),
+                    ),
                   ),
                 ),
               ),

@@ -5,10 +5,13 @@ import '../../services/api_service.dart';
 import '../../services/order_repository.dart';
 import 'real_order_actions.dart';
 import '../../widgets/order_tracking_section.dart';
+import '../../widgets/delivery_code_card.dart';
+import '../../widgets/proof_of_delivery_card.dart';
+import '../../theme/app_theme.dart';
 
-const _kPrimary = Color(0xFF34175B);
-const _kBorder = Color(0xFFDDD8F0);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kBorder = AppColors.border;
+const _kSubtext = AppColors.textMuted;
 
 /// Real order detail loaded by id (used when opening an order from a
 /// notification). Shows status, items, shipping snapshot and actions.
@@ -59,7 +62,8 @@ class _ApiOrderDetailPageState extends State<ApiOrderDetailPage> {
       case api_order.OrderStatus.packed:
         return 'Packed — ready to ship';
       case api_order.OrderStatus.shipped:
-        return 'Out for delivery';
+      case api_order.OrderStatus.inTransit:
+        return 'In Transit';
       case api_order.OrderStatus.completed:
         return 'Completed';
       case api_order.OrderStatus.cancelled:
@@ -109,7 +113,14 @@ class _ApiOrderDetailPageState extends State<ApiOrderDetailPage> {
                       )),
                       // Status timeline + delivery-address map (map only
                       // for shipped / completed; text fallback otherwise).
+                      // Rider OTP — only visible while an active code exists.
+                      DeliveryCodeCard(orderId: o.id),
                       OrderTrackingSection(order: o),
+                      // Proof of delivery — only once delivered; hides itself
+                      // when the server has no photo (404).
+                      if (o.trackingStatus == 'delivered' ||
+                          o.status == api_order.OrderStatus.completed)
+                        ProofOfDeliveryCard(orderId: o.id),
                       _card(Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -176,6 +187,6 @@ class _ApiOrderDetailPageState extends State<ApiOrderDetailPage> {
       );
 
   Widget _ph() => Container(
-      width: 48, height: 48, color: const Color(0xFFEFE9FD),
+      width: 48, height: 48, color: AppColors.chip,
       child: const Icon(Icons.image_outlined, color: _kSubtext, size: 18));
 }

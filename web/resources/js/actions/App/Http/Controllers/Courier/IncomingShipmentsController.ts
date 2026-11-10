@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::show
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:206
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:210
  * @route '/api/courier/shipments/{id}'
  */
 export const show = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::show
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:206
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:210
  * @route '/api/courier/shipments/{id}'
  */
 show.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -122,7 +122,7 @@ show.url = (args: { id: string | number } | [id: string | number ] | string | nu
 
 /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::show
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:206
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:210
  * @route '/api/courier/shipments/{id}'
  */
 show.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -131,7 +131,7 @@ show.get = (args: { id: string | number } | [id: string | number ] | string | nu
 })
 /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::show
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:206
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:210
  * @route '/api/courier/shipments/{id}'
  */
 show.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -141,7 +141,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
 
     /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::show
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:206
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:210
  * @route '/api/courier/shipments/{id}'
  */
     const showForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -151,7 +151,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
 
             /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::show
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:206
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:210
  * @route '/api/courier/shipments/{id}'
  */
         showForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -160,7 +160,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
         })
             /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::show
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:206
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:210
  * @route '/api/courier/shipments/{id}'
  */
         showForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -176,7 +176,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
     show.form = showForm
 /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::accept
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:330
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:338
  * @route '/api/courier/shipments/{id}/accept'
  */
 export const accept = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ accept.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::accept
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:330
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:338
  * @route '/api/courier/shipments/{id}/accept'
  */
 accept.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -219,7 +219,7 @@ accept.url = (args: { id: string | number } | [id: string | number ] | string | 
 
 /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::accept
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:330
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:338
  * @route '/api/courier/shipments/{id}/accept'
  */
 accept.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -229,7 +229,7 @@ accept.post = (args: { id: string | number } | [id: string | number ] | string |
 
     /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::accept
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:330
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:338
  * @route '/api/courier/shipments/{id}/accept'
  */
     const acceptForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -239,7 +239,7 @@ accept.post = (args: { id: string | number } | [id: string | number ] | string |
 
             /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::accept
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:330
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:338
  * @route '/api/courier/shipments/{id}/accept'
  */
         acceptForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -250,7 +250,7 @@ accept.post = (args: { id: string | number } | [id: string | number ] | string |
     accept.form = acceptForm
 /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::reject
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:373
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:381
  * @route '/api/courier/shipments/{id}/reject'
  */
 export const reject = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -265,7 +265,7 @@ reject.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::reject
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:373
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:381
  * @route '/api/courier/shipments/{id}/reject'
  */
 reject.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -293,7 +293,7 @@ reject.url = (args: { id: string | number } | [id: string | number ] | string | 
 
 /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::reject
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:373
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:381
  * @route '/api/courier/shipments/{id}/reject'
  */
 reject.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -303,7 +303,7 @@ reject.post = (args: { id: string | number } | [id: string | number ] | string |
 
     /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::reject
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:373
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:381
  * @route '/api/courier/shipments/{id}/reject'
  */
     const rejectForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -313,7 +313,7 @@ reject.post = (args: { id: string | number } | [id: string | number ] | string |
 
             /**
 * @see \App\Http\Controllers\Courier\IncomingShipmentsController::reject
- * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:373
+ * @see app/Http/Controllers/Courier/IncomingShipmentsController.php:381
  * @route '/api/courier/shipments/{id}/reject'
  */
         rejectForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

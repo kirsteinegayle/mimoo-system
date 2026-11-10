@@ -2,12 +2,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import '../theme/app_theme.dart';
 
 // ── Design tokens (match register_page.dart) ─────────────────────────────────
-const _kPrimary = Color(0xFF4B2E8A);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primaryMid;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
 
 // ── PSGC base URL ─────────────────────────────────────────────────────────────
 const _psgcBase = 'https://psgc.gitlab.io/api';
@@ -376,18 +377,18 @@ class _AddressDropdownState extends State<AddressDropdown> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.red.shade50,
+              color: AppColors.errorSoft,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.red.shade200),
+              border: Border.all(color: AppColors.errorSoft),
             ),
             child: Row(
               children: [
-                Icon(Icons.error_outline, color: Colors.red.shade600, size: 16),
+                Icon(Icons.error_outline, color: AppColors.error, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(error,
                       style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12, color: Colors.red.shade700)),
+                          fontSize: 12, color: AppColors.error)),
                 ),
                 if (onRetry != null)
                   TextButton(
@@ -428,7 +429,7 @@ class _AddressDropdownState extends State<AddressDropdown> {
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.red),
+                borderSide: const BorderSide(color: AppColors.error),
               ),
             ),
             hint: loading

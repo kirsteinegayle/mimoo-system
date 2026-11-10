@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../theme/app_theme.dart';
 
 // ── Brand colors (duplicated here to avoid cross-import issues) ───────────────
-const _kPrimary = Color(0xFF34175B);
+const _kPrimary = AppColors.primary;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. PAGE TRANSITION
@@ -194,69 +195,111 @@ class MimooNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final d = reduce ? Duration.zero : AppDurations.medium;
+    final n = items.length;
     return Container(
-      height: 64,
       decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 12,
-            offset: Offset(0, -2),
-          ),
-        ],
+        color: AppColors.card,
+        boxShadow: AppShadows.nav,
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: List.generate(items.length, (i) {
-            final item = items[i];
-            final selected = i == currentIndex;
-            return Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => onTap(i),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeOutCubic,
-                      height: 32,
-                      width: selected ? 56 : 32,
+        child: SizedBox(
+          height: 64,
+          child: Stack(
+            children: [
+              // Sliding top indicator under the active tab.
+              AnimatedAlign(
+                duration: d,
+                curve: Curves.easeOutCubic,
+                alignment: Alignment(
+                    n <= 1 ? 0 : -1 + 2 * currentIndex / (n - 1), -1),
+                child: FractionallySizedBox(
+                  widthFactor: 1 / n,
+                  child: Center(
+                    child: Container(
+                      width: 28,
+                      height: 3,
                       decoration: BoxDecoration(
-                        color: selected
-                            ? const Color(0xFFEFE9FD)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(9999),
+                        color: AppColors.accent,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
                       ),
-                      child: Badge(
-                        isLabelVisible: item.badgeCount > 0,
-                        label: Text(item.badgeCount > 99 ? '99+' : '${item.badgeCount}'),
-                        backgroundColor: const Color(0xFFFF3B5C),
-                        child: Icon(
-                          selected ? item.activeIcon : item.icon,
-                          size: 20,
-                          color: selected ? _kPrimary : const Color(0xFF8A84A3),
+                    ),
+                  ),
+                ),
+              ),
+              Row(
+                children: List.generate(n, (i) {
+                  final item = items[i];
+                  final selected = i == currentIndex;
+                  return Expanded(
+                    child: Semantics(
+                      selected: selected,
+                      button: true,
+                      label: item.label,
+                      child: InkResponse(
+                        onTap: () => onTap(i),
+                        radius: 36,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AnimatedContainer(
+                              duration: d,
+                              curve: Curves.easeOutCubic,
+                              height: 30,
+                              width: selected ? 56 : 36,
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? AppColors.chip
+                                    : Colors.transparent,
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.pill),
+                              ),
+                              child: Badge(
+                                isLabelVisible: item.badgeCount > 0,
+                                label: Text(item.badgeCount > 99
+                                    ? '99+'
+                                    : '${item.badgeCount}'),
+                                backgroundColor: AppColors.flash,
+                                child: AnimatedScale(
+                                  duration: d,
+                                  scale: selected ? 1.08 : 1,
+                                  child: Icon(
+                                    selected ? item.activeIcon : item.icon,
+                                    size: 22,
+                                    color: selected
+                                        ? _kPrimary
+                                        : AppColors.textMuted,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            AnimatedDefaultTextStyle(
+                              duration: reduce
+                                  ? Duration.zero
+                                  : AppDurations.fast,
+                              style: AppText.style(
+                                size: 11,
+                                weight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: selected
+                                    ? _kPrimary
+                                    : AppColors.textMuted,
+                              ),
+                              child: Text(item.label),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 200),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight:
-                            selected ? FontWeight.w700 : FontWeight.w400,
-                        color: selected ? _kPrimary : const Color(0xFF8A84A3),
-                      ),
-                      child: Text(item.label),
-                    ),
-                  ],
-                ),
+                  );
+                }),
               ),
-            );
-          }),
+            ],
+          ),
         ),
       ),
     );
@@ -337,8 +380,8 @@ class ShimmerBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: const Color(0xFFE8E4F0),
-      highlightColor: const Color(0xFFF5F3FC),
+      baseColor: AppColors.skeletonBase,
+      highlightColor: AppColors.skeletonHighlight,
       child: Container(
         width: width,
         height: height,
@@ -362,12 +405,12 @@ class ShimmerProductCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0D34175B), blurRadius: 8, offset: Offset(0, 2)),
+              color: AppColors.primaryA05, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Shimmer.fromColors(
-        baseColor: const Color(0xFFE8E4F0),
-        highlightColor: const Color(0xFFF5F3FC),
+        baseColor: AppColors.skeletonBase,
+        highlightColor: AppColors.skeletonHighlight,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

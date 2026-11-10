@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/mimoo_brand.dart';
+import '../theme/app_theme.dart';
 
 /// Shared, lightweight animations (built-in Flutter only).
 /// Every widget here respects MediaQuery.disableAnimations (reduce motion):
@@ -221,7 +222,7 @@ class _SuccessCheckDialogState extends State<_SuccessCheckDialog>
               child: Container(
                 width: 72,
                 height: 72,
-                decoration: const BoxDecoration(color: Color(0xFF1DB966), shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
                 child: AnimatedBuilder(
                   animation: tick,
                   builder: (_, __) => CustomPaint(painter: _TickPainter(tick.value)),

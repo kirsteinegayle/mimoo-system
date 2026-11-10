@@ -25,6 +25,8 @@ OrderStatus orderStatusFromString(String s) {
       return OrderStatus.packed;
     case 'shipped':
       return OrderStatus.shipped;
+    case 'in_transit': // courier / rider leg (delivery code may be shown)
+      return OrderStatus.inTransit;
     case 'completed':
       return OrderStatus.completed;
     case 'cancelled':
@@ -51,6 +53,7 @@ OrderTab orderTabFromStatus(OrderStatus s) {
     case OrderStatus.packed:
       return OrderTab.toShip;
     case OrderStatus.shipped:
+    case OrderStatus.inTransit:
       return OrderTab.toReceive;
     case OrderStatus.completed:
       return OrderTab.completed;
@@ -152,6 +155,9 @@ class Order {
     this.returnStatus,
     this.returnId,
     this.canReturn = false,
+    this.trackingStatus,
+    this.trackingMessage,
+    this.trackingUpdatedAt,
     // Legacy
     this.totalAmount = 0.0,
     this.placedAt,
@@ -179,6 +185,46 @@ class Order {
   final String? returnStatus;
   final int? returnId;
   final bool canReturn;
+
+  // Delivery tracking (orders.tracking_*), display only. Null until the
+  // parcel reaches logistics.
+  final String? trackingStatus;
+  final String? trackingMessage;
+  final String? trackingUpdatedAt;
+
+  /// Friendly label for [trackingStatus] (same labels as the web).
+  String? get trackingLabel {
+    final s = trackingStatus;
+    if (s == null || s.isEmpty) return null;
+    const labels = {
+      'received_logistics': 'Received by logistics',
+      'assigned_courier': 'Assigned to courier',
+      'accepted_courier': 'Accepted by courier',
+      'scanned_at_facility': 'At sorting facility',
+      'out_for_delivery': 'Out for delivery',
+      'delivered': 'Delivered',
+      'delivery_failed': 'Delivery attempt failed',
+      'returning_to_sender': 'Returning to sender',
+    };
+    final raw = s.replaceAll('_', ' ');
+    return labels[s] ?? '${raw[0].toUpperCase()}${raw.substring(1)}';
+  }
+
+  bool get hasTracking =>
+      (trackingLabel != null) || (trackingMessage?.isNotEmpty ?? false);
+
+  /// One-line summary for the orders list; null when there is no tracking.
+  String? get trackingSummary {
+    if (!hasTracking) return null;
+    final parts = <String>[
+      if (trackingLabel != null) trackingLabel!,
+      if (trackingMessage?.isNotEmpty ?? false) trackingMessage!,
+    ];
+    final updated = (trackingUpdatedAt?.isNotEmpty ?? false)
+        ? ' (updated $trackingUpdatedAt)'
+        : '';
+    return '${parts.join(' · ')}$updated';
+  }
 
   // Legacy fields kept for OrderState compatibility
   final double totalAmount;
@@ -209,5 +255,8 @@ class Order {
         returnStatus: j['return_status'] as String?,
         returnId: (j['return_id'] as num?)?.toInt(),
         canReturn: j['can_return'] == true,
+        trackingStatus: j['tracking_status'] as String?,
+        trackingMessage: j['tracking_message'] as String?,
+        trackingUpdatedAt: j['tracking_updated_at'] as String?,
       );
 }

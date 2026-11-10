@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, debugPrint;
 import 'package:http/http.dart' as http;
 
@@ -25,20 +26,30 @@ class ApiService {
   ///   Android emulator     : 'http://10.0.2.2:8000/api'
   ///     → 10.0.2.2 is the emulator's alias for the host machine's localhost.
   ///
-  ///   Physical device      : replace 10.0.2.2 with your PC's LAN IP,
-  ///     e.g. 'http://192.168.x.x:8000/api'
+  ///   Physical device      : pass your PC's LAN IP via --dart-define, e.g.
+  ///     --dart-define=API_BASE_URL=http://192.168.x.x:8000/api
   ///
-  /// ── Production ───────────────────────────────────────────────────────────
-  ///   static const String baseUrl = 'https://mimoo.bond/api';
+  /// ── Production / real device ─────────────────────────────────────────────
+  /// Pass the API root (including /api, no trailing slash) at build time:
+  ///   flutter build apk --release --dart-define=API_BASE_URL=https://<domain>/api
+  /// Same --dart-define as the rider and courier apps. When it is not given,
+  /// the dev defaults above are used.
   ///
   /// Start the Laravel dev server with:
   ///   php artisan serve --host=0.0.0.0 --port=8000
-  static const String baseUrl =
-      kIsWeb ? 'http://127.0.0.1:8000/api' : 'http://10.0.2.2:8000/api';
+  static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+  static const String baseUrl = _envBaseUrl != ''
+      ? _envBaseUrl
+      : (kIsWeb ? 'http://127.0.0.1:8000/api' : 'http://10.0.2.2:8000/api');
 
   /// Bearer token for authenticated requests.
   /// Set this after login, clear on logout.
   static String? token;
+
+  /// Called once when an authenticated request (Bearer token sent) gets 401.
+  /// main.dart wires this to: clear the saved token, go to the login screen.
+  static void Function()? onUnauthorized;
 
   /// Request timeout.
   /// 45 s in debug (first request to `php artisan serve` can take ~30 s);
@@ -105,6 +116,19 @@ class ApiService {
         .get(uri, headers: _headers(includeAuth: includeAuth))
         .timeout(_timeout);
     return _handleResponse(res);
+  }
+
+  /// GET raw bytes (e.g. an authenticated image). Returns null on 404.
+  /// Any other non-2xx goes through the normal error handling (ApiException,
+  /// 401 → onUnauthorized).
+  static Future<Uint8List?> getBytes(String endpoint) async {
+    final headers = _headers()..['Accept'] = 'image/*, application/json';
+    final res =
+        await http.get(_uri(endpoint), headers: headers).timeout(_timeout);
+    if (res.statusCode == 404) return null;
+    if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
+    _handleResponse(res); // throws ApiException
+    return null;
   }
 
   /// POST request. [body] is encoded as JSON. Returns decoded JSON.
@@ -242,6 +266,11 @@ class ApiService {
     if (kDebugMode && res.statusCode >= 400) {
       final body = res.body.length > 300 ? '${res.body.substring(0, 300)}…' : res.body;
       debugPrint('[ApiService] ${res.statusCode} ${res.request?.method} ${res.request?.url} → $body');
+    }
+    if (res.statusCode == 401 &&
+        res.request?.headers['Authorization'] != null &&
+        token != null) {
+      onUnauthorized?.call();
     }
     if (res.statusCode >= 200 && res.statusCode < 300) {
       if (res.body.isEmpty) return {};

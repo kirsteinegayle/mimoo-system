@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/mimoo_brand.dart';
 import 'mimoo_logo.dart';
 import 'motion.dart';
+import '../theme/app_theme.dart';
 
 /// Hero tag shared by the splash logo and the auth header logo.
 const kMimooLogoHeroTag = 'mimoo-logo';
@@ -160,7 +161,7 @@ class _MimooAuthLayoutState extends State<MimooAuthLayout>
                                 borderRadius: BorderRadius.circular(24),
                                 boxShadow: const [
                                   BoxShadow(
-                                      color: Color(0x1F34175B),
+                                      color: AppColors.shadowBrand,
                                       blurRadius: 24,
                                       offset: Offset(0, 8)),
                                 ],
@@ -240,7 +241,7 @@ class MimooInlineError extends StatelessWidget {
         margin: const EdgeInsets.only(top: 12),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFDAD6),
+          color: AppColors.errorContainer,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [

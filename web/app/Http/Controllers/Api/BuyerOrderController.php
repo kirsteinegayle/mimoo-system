@@ -120,6 +120,10 @@ class BuyerOrderController extends Controller
             'return_status'    => $latestReturn?->status,
             'return_id'        => $latestReturn?->id,
             'can_return'       => $canReturn,
+            // Delivery tracking (display only; same values as buyer web).
+            'tracking_status'     => $order->tracking_status,
+            'tracking_message'    => $order->tracking_message,
+            'tracking_updated_at' => $order->tracking_updated_at?->format('M d, Y h:i A'),
             'items'            => $items->values(),
         ];
     }

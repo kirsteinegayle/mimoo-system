@@ -3,12 +3,13 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../models/order.dart' as api_order;
 import '../services/maps/maps_service.dart';
+import '../theme/app_theme.dart';
 
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kBorder = Color(0xFFDDD8F0);
-const _kSubtext = Color(0xFF8A84A3);
-const _kGreen = Color(0xFF1DB966);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kBorder = AppColors.border;
+const _kSubtext = AppColors.textMuted;
+const _kGreen = AppColors.success;
 
 /// Live rider position is NOT available (no deliveries table / rider
 /// location endpoint). When the rider side exists, render its marker in
@@ -22,10 +23,14 @@ class OrderTrackingSection extends StatelessWidget {
   const OrderTrackingSection({super.key, required this.order});
   final api_order.Order order;
 
-  static const _steps = [
+  // shipped and in_transit share the "In Transit" step, so the timeline never
+  // moves backwards when the rider goes out for delivery (in_transit -> shipped).
+  // Flow: packed -> in_transit -> shipped -> completed.
+  static const _inTransitIndex = 2;
+  static const _activeSteps = [
     ('Order placed', Icons.receipt_long_outlined),
     ('Packed', Icons.inventory_2_outlined),
-    ('Shipped', Icons.local_shipping_outlined),
+    ('In Transit', Icons.local_shipping_outlined),
     ('Completed', Icons.check_circle_outline),
   ];
 
@@ -34,12 +39,24 @@ class OrderTrackingSection extends StatelessWidget {
       case api_order.OrderStatus.packed:
         return 1;
       case api_order.OrderStatus.shipped:
-        return 2;
+      case api_order.OrderStatus.inTransit:
+        return _inTransitIndex;
       case api_order.OrderStatus.completed:
         return 3;
       default:
         return 0; // pending / paid
     }
+  }
+
+  /// Step label; the current "In Transit" step shows the rider detail from
+  /// tracking_status when there is one (e.g. "In Transit · Out for delivery").
+  String _stepLabel(int i, String base) {
+    if (i != _inTransitIndex || _reached != _inTransitIndex) return base;
+    const detail = {'out_for_delivery', 'delivered', 'delivery_failed', 'returning_to_sender'};
+    final label = order.trackingLabel;
+    return detail.contains(order.trackingStatus) && label != null
+        ? '$base · $label'
+        : base;
   }
 
   bool get _showMap =>
@@ -50,6 +67,7 @@ class OrderTrackingSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final cancelled = order.status == api_order.OrderStatus.cancelled ||
         order.status == api_order.OrderStatus.failed;
+    const steps = _activeSteps;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
@@ -65,23 +83,28 @@ class OrderTrackingSection extends StatelessWidget {
           const Text('Order status',
               style: TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
+          // Delivery tracking (orders.tracking_*); hidden when null.
+          if (order.hasTracking) ...[
+            _TrackingLine(order: order),
+            const SizedBox(height: 12),
+          ],
           if (cancelled)
             Row(children: [
-              Icon(Icons.cancel_outlined, color: Colors.red.shade600, size: 20),
+              Icon(Icons.cancel_outlined, color: AppColors.error, size: 20),
               const SizedBox(width: 8),
               Text(order.status == api_order.OrderStatus.failed ? 'Failed' : 'Cancelled',
                   style: TextStyle(
-                      color: Colors.red.shade600, fontWeight: FontWeight.w700)),
+                      color: AppColors.error, fontWeight: FontWeight.w700)),
             ])
           else
-            ...List.generate(_steps.length, (i) {
+            ...List.generate(steps.length, (i) {
               final done = i <= _reached;
-              final last = i == _steps.length - 1;
+              final last = i == steps.length - 1;
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Column(children: [
-                    Icon(done ? Icons.check_circle : _steps[i].$2,
+                    Icon(done ? Icons.check_circle : steps[i].$2,
                         size: 20, color: done ? _kGreen : _kSubtext),
                     if (!last)
                       Container(
@@ -92,7 +115,7 @@ class OrderTrackingSection extends StatelessWidget {
                   const SizedBox(width: 10),
                   Padding(
                     padding: const EdgeInsets.only(top: 1),
-                    child: Text(_steps[i].$1,
+                    child: Text(_stepLabel(i, steps[i].$1),
                         style: TextStyle(
                             fontWeight: i == _reached ? FontWeight.w800 : FontWeight.w500,
                             color: done ? _kPrimary : _kSubtext)),
@@ -106,6 +129,49 @@ class OrderTrackingSection extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// "Tracking" line: friendly label + message + updated time (same content as
+/// the web). Only rendered when [api_order.Order.hasTracking] is true.
+class _TrackingLine extends StatelessWidget {
+  const _TrackingLine({required this.order});
+  final api_order.Order order;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = order.trackingLabel;
+    final message = order.trackingMessage;
+    final updated = order.trackingUpdatedAt;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _kBorder),
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Icon(Icons.local_shipping_outlined, size: 18, color: _kSecondary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label != null ? 'Tracking · $label' : 'Tracking',
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w800, color: _kPrimary)),
+            if (message != null && message.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(message, style: const TextStyle(fontSize: 13, color: _kPrimary)),
+            ],
+            if (updated != null && updated.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text('Updated $updated',
+                  style: const TextStyle(fontSize: 11, color: _kSubtext)),
+            ],
+          ]),
+        ),
+      ]),
     );
   }
 }
@@ -134,7 +200,7 @@ class _DeliveryMapState extends State<_DeliveryMap> {
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F4FC),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -167,7 +233,7 @@ class _DeliveryMapState extends State<_DeliveryMap> {
             height: 180,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F4FC),
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(10),
             ),
             child: const CircularProgressIndicator(strokeWidth: 2),

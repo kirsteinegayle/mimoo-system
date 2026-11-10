@@ -4,6 +4,7 @@ import '../../core/settings_controller.dart';
 import '../../core/theme.dart';
 import '../../data/repositories/app_repositories_scope.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../mock/rider_mock.dart' show RiderMock;
 import '../../widgets/common.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -335,7 +336,9 @@ class SettingsScreen extends StatelessWidget {
     );
     if (confirmed == true && context.mounted) {
       try {
-        await AppRepositoriesScope.of(context).signOut();
+        final repositories = AppRepositoriesScope.of(context);
+        await RiderMock.instance.signOut(); // API mode: revoke token + clear data
+        await repositories.signOut();
       } catch (error) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

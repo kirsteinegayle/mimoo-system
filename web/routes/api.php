@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BuyerAccountController;
 use App\Http\Controllers\Api\BuyerAddressController;
 use App\Http\Controllers\Api\BuyerChatController;
+use App\Http\Controllers\Api\BuyerDeliveryCodeController;
 use App\Http\Controllers\Api\BuyerFollowController;
 use App\Http\Controllers\Api\BuyerNotificationController;
 use App\Http\Controllers\Api\BuyerReturnController;
@@ -22,6 +23,12 @@ use App\Http\Controllers\Api\CourierFacilityApiController;
 use App\Http\Controllers\Api\CourierShipmentController;
 use App\Http\Controllers\Api\CourierPickupController;
 use App\Http\Controllers\Api\CourierScanController;
+use App\Http\Controllers\Api\CourierDeliveryController;
+use App\Http\Controllers\Api\DeliveryPodPhotoController;
+use App\Http\Controllers\Api\RiderAuthController;
+use App\Http\Controllers\Api\RiderPickupController;
+use App\Http\Controllers\Api\RiderDeliveryController;
+use App\Http\Controllers\Api\RiderWalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1,login');
@@ -90,6 +97,8 @@ Route::prefix('buyer')->group(function () {
         Route::get('/orders/{id}',         [BuyerOrderController::class, 'show']);
         Route::post('/orders/{id}/cancel', [BuyerOrderController::class, 'cancel']);
         Route::post('/orders/{id}/receive', [BuyerOrderController::class, 'receive'])->middleware('throttle:10,1,buyer-order-receive')->whereNumber('id');
+        Route::get('/orders/{id}/delivery-code', [BuyerDeliveryCodeController::class, 'show'])->middleware('throttle:30,1,buyer-delivery-code')->whereNumber('id');
+        Route::get('/orders/{id}/pod-photo',     [DeliveryPodPhotoController::class, 'buyerOrderPhoto'])->middleware('throttle:60,1,buyer-pod-photo')->whereNumber('id');
 
         // Vouchers
         Route::get('/vouchers',            [BuyerVoucherController::class, 'index']);
@@ -179,5 +188,55 @@ Route::prefix('courier-app')->group(function () {
         Route::post('/facilities',             [CourierFacilityApiController::class, 'store'])->middleware('throttle:20,1,courier-facility-store');
         Route::put('/facilities/{id}',         [CourierFacilityApiController::class, 'update'])->middleware('throttle:20,1,courier-facility-update')->whereNumber('id');
         Route::delete('/facilities/{id}',      [CourierFacilityApiController::class, 'destroy'])->middleware('throttle:20,1,courier-facility-delete')->whereNumber('id');
+        // Delivery rider assignment (creates delivery_jobs for the rider app)
+        Route::get('/delivery-riders',         [CourierDeliveryController::class, 'riders'])->middleware('throttle:60,1,courier-delivery-riders');
+        Route::post('/delivery-jobs',          [CourierDeliveryController::class, 'assign'])->middleware('throttle:30,1,courier-delivery-assign');
     });
+});
+
+// ── Rider App (/api/rider-app/*) ──────────────────────────────────────────────
+// Separate prefix from /api/courier-app/* and /api/courier/* — no collisions.
+
+Route::prefix('rider-app')->group(function () {
+    // Public auth
+    Route::post('/login', [RiderAuthController::class, 'login'])
+        ->middleware('throttle:10,1,rider-login');
+
+    // Authenticated routes — Sanctum + role=rider enforced
+    Route::middleware(['auth:sanctum', 'rider.role'])->group(function () {
+        Route::post('/logout', [RiderAuthController::class, 'logout']);
+        Route::get('/me',     [RiderAuthController::class, 'me']);
+
+        // Pickup jobs assigned to this rider
+        Route::get('/pickups',              [RiderPickupController::class, 'index']);
+        Route::get('/pickups/{id}',         [RiderPickupController::class, 'show'])->whereNumber('id');
+        Route::post('/pickups/{id}/scan',   [RiderPickupController::class, 'scan'])->middleware('throttle:30,1,rider-scan')->whereNumber('id');
+
+        // History
+        Route::get('/history', [RiderPickupController::class, 'history']);
+
+        // Delivery jobs (hub -> buyer). Buyer/seller/address read via the order.
+        Route::get('/deliveries',                        [RiderDeliveryController::class, 'index']);
+        Route::get('/deliveries/{id}',                   [RiderDeliveryController::class, 'show'])->whereNumber('id');
+        Route::post('/deliveries/{id}/out-for-delivery', [RiderDeliveryController::class, 'outForDelivery'])->middleware('throttle:30,1,rider-delivery')->whereNumber('id');
+        Route::post('/deliveries/{id}/otp',              [RiderDeliveryController::class, 'requestOtp'])->middleware('throttle:6,1,rider-otp')->whereNumber('id');
+        Route::post('/deliveries/{id}/pod',              [RiderDeliveryController::class, 'uploadPod'])->middleware('throttle:20,1,rider-pod')->whereNumber('id');
+        Route::post('/deliveries/{id}/deliver',          [RiderDeliveryController::class, 'deliver'])->middleware('throttle:20,1,rider-deliver')->whereNumber('id');
+        Route::post('/deliveries/{id}/fail',             [RiderDeliveryController::class, 'fail'])->middleware('throttle:30,1,rider-delivery')->whereNumber('id');
+        Route::post('/deliveries/{id}/return',           [RiderDeliveryController::class, 'returnToSender'])->middleware('throttle:30,1,rider-delivery')->whereNumber('id');
+
+        // Wallet: COD held / remit, earnings, notifications
+        Route::get('/cod',                       [RiderWalletController::class, 'cod']);
+        Route::post('/cod/remit',                [RiderWalletController::class, 'remit'])->middleware('throttle:10,1,rider-remit');
+        Route::get('/earnings',                  [RiderWalletController::class, 'earnings']);
+        Route::get('/notifications',             [RiderWalletController::class, 'notifications']);
+        Route::post('/notifications/{id}/read',  [RiderWalletController::class, 'markRead'])->where('id', '[0-9]+|all');
+    });
+});
+
+// ── Proof-of-delivery photo (/api/delivery-jobs/{id}/pod-photo) ──────────────
+// Shared by buyer / rider / courier / logistics_staff tokens. Access rules live
+// in DeliveryPodPhotoController (403 for others, 404 if no job or no photo).
+Route::middleware(['auth:sanctum', 'throttle:60,1,pod-photo'])->group(function () {
+    Route::get('/delivery-jobs/{id}/pod-photo', [DeliveryPodPhotoController::class, 'show'])->whereNumber('id');
 });

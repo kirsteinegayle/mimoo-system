@@ -11,22 +11,23 @@ import '../state/cart_provider.dart';
 import '../state/wishlist_provider.dart';
 import '../utils/animations.dart';
 import '../widgets/motion.dart';
+import '../theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared color tokens (duplicated here so landing_page is self-contained)
 // ─────────────────────────────────────────────────────────────────────────────
 class _C {
-  static const primaryContainer = Color(0xFF34175B);
-  static const secondary = Color(0xFF6B38D4);
-  static const secondaryBright = Color(0xFF8455EF);
-  static const flash = Color(0xFFFF3B5C);
-  static const surface = Color(0xFFFAF8FE);
-  static const card = Color(0xFFFFFFFF);
-  static const chip = Color(0xFFEFE9FD);
-  static const onSurface = Color(0xFF1B1B20);
-  static const onVariant = Color(0xFF4A454F);
-  static const outline = Color(0xFF7B7580);
-  static const outlineVariant = Color(0xFFCCC4D1);
+  static const primaryContainer = AppColors.primary;
+  static const secondary = AppColors.accent;
+  static const secondaryBright = AppColors.accentLight;
+  static const flash = AppColors.flash;
+  static const surface = AppColors.background;
+  static const card = AppColors.card;
+  static const chip = AppColors.chip;
+  static const onSurface = AppColors.onSurface;
+  static const onVariant = AppColors.onSurfaceVariant;
+  static const outline = AppColors.outline;
+  static const outlineVariant = AppColors.outlineVariant;
   // star color removed — sample cards no longer show fake ratings.
 }
 
@@ -723,7 +724,7 @@ class _AuthPromptSheet extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x2034175B), blurRadius: 24, offset: Offset(0, -4)),
+              color: AppColors.primaryA12, blurRadius: 24, offset: Offset(0, -4)),
         ],
       ),
       child: Padding(
@@ -869,7 +870,7 @@ class _BannerCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x2034175B), blurRadius: 16, offset: Offset(0, 6)),
+              color: AppColors.primaryA12, blurRadius: 16, offset: Offset(0, 6)),
         ],
       ),
       child: Stack(
@@ -1331,7 +1332,7 @@ class _FlashCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x0D34175B), blurRadius: 8, offset: Offset(0, 2)),
+                color: AppColors.primaryA05, blurRadius: 8, offset: Offset(0, 2)),
           ],
         ),
         child: Column(
@@ -1498,7 +1499,7 @@ class _RecCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x0D34175B), blurRadius: 8, offset: Offset(0, 2)),
+                color: AppColors.primaryA05, blurRadius: 8, offset: Offset(0, 2)),
           ],
         ),
         child: Column(
@@ -1533,7 +1534,7 @@ class _RecCard extends StatelessWidget {
                       child: Icon(
                           wished ? Icons.favorite : Icons.favorite_border,
                           size: 15,
-                          color: wished ? const Color(0xFFFF3B5C) : _C.outline),
+                          color: wished ? AppColors.flash : _C.outline),
                     ),
                   ),
                 ),
@@ -1670,7 +1671,7 @@ class _LandingProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x0D34175B), blurRadius: 8, offset: Offset(0, 2)),
+                color: AppColors.primaryA05, blurRadius: 8, offset: Offset(0, 2)),
           ],
         ),
         child: Column(
@@ -1713,7 +1714,7 @@ class _LandingProductCard extends StatelessWidget {
                       child: Icon(
                           wished ? Icons.favorite : Icons.favorite_border,
                           size: 15,
-                          color: wished ? const Color(0xFFFF3B5C) : _C.outline),
+                          color: wished ? AppColors.flash : _C.outline),
                     ),
                   ),
                 ),

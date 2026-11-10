@@ -6,11 +6,12 @@ import '../../models/order.dart' as api_order;
 import '../../services/api_service.dart';
 import '../../services/review_repository.dart';
 import '../../utils/image_pick.dart';
+import '../../theme/app_theme.dart';
 
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kBorder = Color(0xFFDDD8F0);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kBorder = AppColors.border;
+const _kSubtext = AppColors.textMuted;
 
 /// Lists the items of a completed order with Rate / Edit buttons.
 class ReviewItemsPage extends StatelessWidget {
@@ -68,7 +69,7 @@ class ReviewItemsPage extends StatelessWidget {
                                     ? Icons.star_rounded
                                     : Icons.star_outline_rounded,
                                 size: 14,
-                                color: Colors.amber.shade600)),
+                                color: AppColors.starDeep)),
                         const SizedBox(width: 4),
                         const Text('Reviewed',
                             style: TextStyle(fontSize: 11, color: _kSubtext)),
@@ -116,7 +117,7 @@ class ReviewItemsPage extends StatelessWidget {
   Widget _ph() => Container(
       width: 56,
       height: 56,
-      color: const Color(0xFFEFE9FD),
+      color: AppColors.chip,
       child: const Icon(Icons.image_outlined, color: _kSubtext));
 }
 
@@ -236,7 +237,7 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                 onPressed: () => setState(() => _rating = i + 1),
                 icon: Icon(
                     i < _rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                    color: Colors.amber.shade600),
+                    color: AppColors.starDeep),
               );
             }),
           ),
@@ -301,7 +302,7 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(top: 12),
-              child: Text(_error!, style: const TextStyle(color: Colors.red)),
+              child: Text(_error!, style: const TextStyle(color: AppColors.error)),
             ),
           const SizedBox(height: 20),
           FilledButton(

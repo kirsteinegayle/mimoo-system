@@ -3,19 +3,20 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/voucher.dart';
 import '../../services/voucher_repository.dart';
 import '../../services/api_service.dart';
+import '../../theme/app_theme.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kFlash = Color(0xFFFF3B5C);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kFlash = AppColors.flash;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
 // ignore: unused_element
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kGreen = Color(0xFF1DB966);
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
+const _kGreen = AppColors.success;
 
 TextStyle _pjs(
         {double size = 14,
@@ -120,14 +121,14 @@ class _VoucherWalletPageState extends State<VoucherWalletPage>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.message, style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Network error. Please try again.',
               style: _pjs(size: 13, color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     } finally {
       if (mounted) setState(() => _claiming = false);
@@ -339,7 +340,7 @@ class _VoucherCard extends StatelessWidget {
                   : _kBorder),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x0D34175B), blurRadius: 6, offset: Offset(0, 2))
+                color: AppColors.primaryA05, blurRadius: 6, offset: Offset(0, 2))
           ],
         ),
         child: Row(children: [

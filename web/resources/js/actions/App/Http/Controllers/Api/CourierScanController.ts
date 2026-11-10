@@ -79,7 +79,7 @@ facilities.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     facilities.form = facilitiesForm
 /**
 * @see \App\Http\Controllers\Api\CourierScanController::show
- * @see app/Http/Controllers/Api/CourierScanController.php:33
+ * @see app/Http/Controllers/Api/CourierScanController.php:71
  * @route '/api/courier-app/parcel/{waybill}'
  */
 export const show = (args: { waybill: string | number } | [waybill: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CourierScanController::show
- * @see app/Http/Controllers/Api/CourierScanController.php:33
+ * @see app/Http/Controllers/Api/CourierScanController.php:71
  * @route '/api/courier-app/parcel/{waybill}'
  */
 show.url = (args: { waybill: string | number } | [waybill: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -122,7 +122,7 @@ show.url = (args: { waybill: string | number } | [waybill: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\Api\CourierScanController::show
- * @see app/Http/Controllers/Api/CourierScanController.php:33
+ * @see app/Http/Controllers/Api/CourierScanController.php:71
  * @route '/api/courier-app/parcel/{waybill}'
  */
 show.get = (args: { waybill: string | number } | [waybill: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -131,7 +131,7 @@ show.get = (args: { waybill: string | number } | [waybill: string | number ] | s
 })
 /**
 * @see \App\Http\Controllers\Api\CourierScanController::show
- * @see app/Http/Controllers/Api/CourierScanController.php:33
+ * @see app/Http/Controllers/Api/CourierScanController.php:71
  * @route '/api/courier-app/parcel/{waybill}'
  */
 show.head = (args: { waybill: string | number } | [waybill: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -141,7 +141,7 @@ show.head = (args: { waybill: string | number } | [waybill: string | number ] | 
 
     /**
 * @see \App\Http\Controllers\Api\CourierScanController::show
- * @see app/Http/Controllers/Api/CourierScanController.php:33
+ * @see app/Http/Controllers/Api/CourierScanController.php:71
  * @route '/api/courier-app/parcel/{waybill}'
  */
     const showForm = (args: { waybill: string | number } | [waybill: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -151,7 +151,7 @@ show.head = (args: { waybill: string | number } | [waybill: string | number ] | 
 
             /**
 * @see \App\Http\Controllers\Api\CourierScanController::show
- * @see app/Http/Controllers/Api/CourierScanController.php:33
+ * @see app/Http/Controllers/Api/CourierScanController.php:71
  * @route '/api/courier-app/parcel/{waybill}'
  */
         showForm.get = (args: { waybill: string | number } | [waybill: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -160,7 +160,7 @@ show.head = (args: { waybill: string | number } | [waybill: string | number ] | 
         })
             /**
 * @see \App\Http\Controllers\Api\CourierScanController::show
- * @see app/Http/Controllers/Api/CourierScanController.php:33
+ * @see app/Http/Controllers/Api/CourierScanController.php:71
  * @route '/api/courier-app/parcel/{waybill}'
  */
         showForm.head = (args: { waybill: string | number } | [waybill: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -176,7 +176,7 @@ show.head = (args: { waybill: string | number } | [waybill: string | number ] | 
     show.form = showForm
 /**
 * @see \App\Http\Controllers\Api\CourierScanController::scan
- * @see app/Http/Controllers/Api/CourierScanController.php:68
+ * @see app/Http/Controllers/Api/CourierScanController.php:136
  * @route '/api/courier-app/scan-parcel'
  */
 export const scan = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ scan.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CourierScanController::scan
- * @see app/Http/Controllers/Api/CourierScanController.php:68
+ * @see app/Http/Controllers/Api/CourierScanController.php:136
  * @route '/api/courier-app/scan-parcel'
  */
 scan.url = (options?: RouteQueryOptions) => {
@@ -200,7 +200,7 @@ scan.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\CourierScanController::scan
- * @see app/Http/Controllers/Api/CourierScanController.php:68
+ * @see app/Http/Controllers/Api/CourierScanController.php:136
  * @route '/api/courier-app/scan-parcel'
  */
 scan.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -210,7 +210,7 @@ scan.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\CourierScanController::scan
- * @see app/Http/Controllers/Api/CourierScanController.php:68
+ * @see app/Http/Controllers/Api/CourierScanController.php:136
  * @route '/api/courier-app/scan-parcel'
  */
     const scanForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -220,7 +220,7 @@ scan.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\CourierScanController::scan
- * @see app/Http/Controllers/Api/CourierScanController.php:68
+ * @see app/Http/Controllers/Api/CourierScanController.php:136
  * @route '/api/courier-app/scan-parcel'
  */
         scanForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

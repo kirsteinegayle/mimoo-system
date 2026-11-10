@@ -4,11 +4,12 @@ import '../../models/buyer_address.dart';
 import '../../services/address_repository.dart';
 import '../../services/api_service.dart';
 import '../../widgets/address_dropdown.dart';
+import '../../theme/app_theme.dart';
 
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kBorder = Color(0xFFDDD8F0);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kBorder = AppColors.border;
+const _kSubtext = AppColors.textMuted;
 
 /// Address book: list, add, edit, delete, set default.
 ///
@@ -66,7 +67,7 @@ class _AddressBookPageState extends State<AddressBookPage> {
   void _snack(String msg, {bool error = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: error ? Colors.red.shade700 : _kPrimary,
+      backgroundColor: error ? AppColors.error : _kPrimary,
       behavior: SnackBarBehavior.floating,
     ));
   }
@@ -107,7 +108,7 @@ class _AddressBookPageState extends State<AddressBookPage> {
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Delete', style: TextStyle(color: Colors.red))),
+              child: const Text('Delete', style: TextStyle(color: AppColors.error))),
         ],
       ),
     );
@@ -212,7 +213,7 @@ class _AddressBookPageState extends State<AddressBookPage> {
                 if (a.isDefault) ...[
                   const SizedBox(width: 6),
                   _chip('Default', const Color(0xFFFFE8EC),
-                      const Color(0xFFFF3B5C)),
+                      AppColors.flash),
                 ],
                 const Spacer(),
                 if (selected)
@@ -223,7 +224,7 @@ class _AddressBookPageState extends State<AddressBookPage> {
                   style: const TextStyle(fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
               Text(a.fullAddress,
-                  style: const TextStyle(color: Color(0xFF4A454F), fontSize: 13)),
+                  style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13)),
               const Divider(height: 20),
               Row(
                 children: [
@@ -245,7 +246,7 @@ class _AddressBookPageState extends State<AddressBookPage> {
                     onPressed: _busy ? null : () => _delete(a),
                     icon: Icon(Icons.delete_outline,
                         size: 20,
-                        color: a.isDefault ? _kSubtext : Colors.red.shade400),
+                        color: a.isDefault ? _kSubtext : AppColors.errorLight),
                   ),
                 ],
               ),
@@ -361,14 +362,14 @@ class _AddressFormPageState extends State<AddressFormPage> {
       _formKey.currentState!.validate();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(e.message),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: const Text('Could not save. Check your connection.'),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ));
     } finally {

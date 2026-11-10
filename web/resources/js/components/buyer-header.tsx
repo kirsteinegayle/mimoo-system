@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { Link, router } from "@inertiajs/react";
-import { Bell, Search, ShoppingCart, LogOut, Package, Heart } from "lucide-react";
+import { Search, ShoppingCart, LogOut, Package, Heart } from "lucide-react";
+import { NotificationBell } from "@/components/notification-bell";
 
 interface BuyerHeaderProps {
   user?: any;
   cartCount?: number;
   wishlistCount?: number;
+  /** @deprecated Ignored: the bell now loads the real unread count. */
   notificationCount?: number;
   onSearch?: (query: string) => void;
   onLogout?: () => void;
@@ -41,7 +43,6 @@ export function BuyerHeader({
   user,
   cartCount = 0,
   wishlistCount = 0,
-  notificationCount = 5,
   onSearch,
   onLogout,
   onGuestAction,
@@ -177,14 +178,7 @@ export function BuyerHeader({
 
           <div className="flex shrink-0 items-center gap-4 sm:gap-5">
             {/* Bell */}
-            <button
-              aria-label="Notifications"
-              onClick={!isLoggedIn ? onGuestAction : undefined}
-              className="relative flex items-center text-white transition-colors hover:text-white/80"
-            >
-              <Bell className="h-5 w-5" />
-              <CountBadge count={notificationCount} />
-            </button>
+            <NotificationBell isLoggedIn={isLoggedIn} onGuestClick={onGuestAction} />
 
             {/* Wishlist — Link for logged-in, button for guests */}
             {isLoggedIn ? (

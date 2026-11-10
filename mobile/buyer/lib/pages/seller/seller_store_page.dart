@@ -8,20 +8,21 @@ import '../../services/follow_repository.dart';
 import '../chat/chat_screen.dart';
 import 'flash_deals_screen.dart';
 import 'category_product_list_screen.dart';
+import '../../theme/app_theme.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kFlash = Color(0xFFFF3B5C);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kFlash = AppColors.flash;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
 // ignore: unused_element
-const _kOrange = Color(0xFFFF6B00);
-const _kGreen = Color(0xFF1DB966);
+const _kOrange = AppColors.orange;
+const _kGreen = AppColors.success;
 
 TextStyle _pjs({
   double size = 14,
@@ -109,7 +110,7 @@ class StoreProduct {
     required this.discount,
     this.isFulfilled = false,
     this.badge = '',
-    this.imageUrl = '', // real image URL from API (replaces picsum)
+    this.imageUrl = '', // real image URL from API
   });
   final String id;
   final String name;
@@ -121,7 +122,7 @@ class StoreProduct {
   final int discount;
   final bool isFulfilled;
   final String badge;
-  final String imageUrl; // empty = use picsum fallback (for old fake data)
+  final String imageUrl; // empty = neutral placeholder icon
 }
 
 class StoreReview {
@@ -500,9 +501,7 @@ Product storeProductToProduct(StoreProduct p) => Product(
       name: p.name,
       price: p.price,
       salePrice: p.originalPrice > p.price ? p.price : null,
-      imageUrl: p.imageUrl.isNotEmpty
-          ? p.imageUrl
-          : 'https://picsum.photos/seed/${p.imageSeed}/300/300',
+      imageUrl: p.imageUrl, // empty → callers show their placeholder
       category: 'Store',
       rating: p.rating,
       reviewCount: 0,
@@ -1046,7 +1045,7 @@ class _SellerStorePageState extends State<SellerStorePage>
         content: Text(e is ApiException
             ? e.message
             : 'Could not update follow. Please try again.'),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ));
     } finally {
@@ -1397,16 +1396,7 @@ class _FlashProductRow extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    product.imageUrl.isNotEmpty
-                        ? product.imageUrl
-                        : 'https://picsum.photos/seed/${product.imageSeed}/200/200',
-                    width: 90,
-                    height: 90,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        Container(width: 90, height: 90, color: _kChip),
-                  ),
+                  child: _storeImage(product.imageUrl, width: 90, height: 90, iconSize: 36),
                 ),
                 // "3 DAYS" badge hidden — no sale end date in DB.
                 // Positioned(
@@ -1817,7 +1807,7 @@ class _EnhancedProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x0D34175B), blurRadius: 6, offset: Offset(0, 2)),
+                color: AppColors.primaryA05, blurRadius: 6, offset: Offset(0, 2)),
           ],
         ),
         child: Column(
@@ -1831,17 +1821,7 @@ class _EnhancedProductCard extends StatelessWidget {
                       const BorderRadius.vertical(top: Radius.circular(12)),
                   child: AspectRatio(
                     aspectRatio: 1,
-                    child: Image.network(
-                      product.imageUrl.isNotEmpty
-                          ? product.imageUrl
-                          : 'https://picsum.photos/seed/${product.imageSeed}/300/300',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: _kChip,
-                        child: const Icon(Icons.image_outlined,
-                            size: 36, color: _kSubtext),
-                      ),
-                    ),
+                    child: _storeImage(product.imageUrl, iconSize: 36),
                   ),
                 ),
                 // Store badge top-left
@@ -1999,7 +1979,7 @@ class _EnhancedProductCard extends StatelessWidget {
                   // Rating + sold hidden — no reviews/sold table in DB yet.
                   // Row(
                   //   children: [
-                  //     Icon(Icons.star_rounded, size: 11, color: Colors.amber.shade500),
+                  //     Icon(Icons.star_rounded, size: 11, color: AppColors.star),
                   //     Text(' ${product.rating}', style: _pjs(size: 11, weight: FontWeight.w600)),
                   //     Text('  ${product.sold}', style: _pjs(size: 10, color: _kSubtext)),
                   //   ],
@@ -2250,12 +2230,7 @@ class _ReviewCard extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(0)),
-                        child: Image.network(
-                          'https://picsum.photos/seed/${review.imageSeed}/200/200',
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              Container(color: _kChip),
-                        ),
+                        child: _storeImage('', iconSize: 36),
                       ),
                     ),
                     if (review.hasVideo)
@@ -2285,7 +2260,7 @@ class _ReviewCard extends StatelessWidget {
                             ? Icons.star_rounded
                             : Icons.star_outline_rounded,
                         size: 12,
-                        color: Colors.amber.shade500,
+                        color: AppColors.star,
                       ),
                     ),
                   ),
@@ -2574,19 +2549,7 @@ class _CategoryRow extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                'https://picsum.photos/seed/${category.imageSeed}/80/80',
-                width: 40,
-                height: 40,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 40,
-                  height: 40,
-                  color: _kChip,
-                  child: const Icon(Icons.category_outlined,
-                      size: 20, color: _kSecondary),
-                ),
-              ),
+              child: _storeImage('', width: 40, height: 40, iconSize: 16),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -2625,7 +2588,7 @@ class _StoreProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x0D34175B), blurRadius: 6, offset: Offset(0, 2)),
+                color: AppColors.primaryA05, blurRadius: 6, offset: Offset(0, 2)),
           ],
         ),
         child: Column(
@@ -2638,17 +2601,7 @@ class _StoreProductCard extends StatelessWidget {
                       const BorderRadius.vertical(top: Radius.circular(12)),
                   child: AspectRatio(
                     aspectRatio: 1,
-                    child: Image.network(
-                      product.imageUrl.isNotEmpty
-                          ? product.imageUrl
-                          : 'https://picsum.photos/seed/${product.imageSeed}/300/300',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: _kChip,
-                        child: const Icon(Icons.image_outlined,
-                            size: 36, color: _kSubtext),
-                      ),
-                    ),
+                    child: _storeImage(product.imageUrl, iconSize: 36),
                   ),
                 ),
                 if (product.discount > 0)
@@ -2713,7 +2666,7 @@ class _StoreProductCard extends StatelessWidget {
                   // Rating + sold hidden — no reviews/sold table in DB yet.
                   // Row(
                   //   children: [
-                  //     Icon(Icons.star_rounded, size: 11, color: Colors.amber.shade500),
+                  //     Icon(Icons.star_rounded, size: 11, color: AppColors.star),
                   //     Text(' ${product.rating}', style: _pjs(size: 11, weight: FontWeight.w600)),
                   //   ],
                   // ),
@@ -2902,14 +2855,7 @@ class _AddOnDealModal extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        'https://picsum.photos/seed/${p.imageSeed}/80/80',
-                        width: 52,
-                        height: 52,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            Container(width: 52, height: 52, color: _kChip),
-                      ),
+                      child: _storeImage(p.imageUrl, width: 52, height: 52, iconSize: 20),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -3012,14 +2958,7 @@ class _AddToCartModalState extends State<_AddToCartModal> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  'https://picsum.photos/seed/${widget.product.imageSeed}/160/160',
-                  width: 72,
-                  height: 72,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      Container(width: 72, height: 72, color: _kChip),
-                ),
+                child: _storeImage(widget.product.imageUrl, width: 72, height: 72, iconSize: 28),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -3170,4 +3109,23 @@ class _AddToCartModalState extends State<_AddToCartModal> {
       ),
     );
   }
+}
+
+/// Network image, or a neutral placeholder icon when [url] is empty or fails
+/// (no picsum fallback).
+Widget _storeImage(String url,
+    {double? width, double? height, double iconSize = 24}) {
+  Widget placeholder() => Container(
+        width: width,
+        height: height,
+        color: _kChip,
+        alignment: Alignment.center,
+        child: Icon(Icons.image_outlined, size: iconSize, color: _kSubtext),
+      );
+  if (url.isEmpty) return placeholder();
+  return Image.network(url,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => placeholder());
 }

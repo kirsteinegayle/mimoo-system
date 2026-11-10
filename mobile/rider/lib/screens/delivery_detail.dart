@@ -160,10 +160,7 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
     final canPod = status == ParcelStatus.outForDelivery;
     final (pillBg, pillFg) = switch (status) {
       ParcelStatus.failedDelivery => (c.coral, c.lowest),
-      ParcelStatus.delivered || ParcelStatus.returned => (
-          c.greenSoft,
-          c.green
-        ),
+      ParcelStatus.delivered || ParcelStatus.returned => (c.greenSoft, c.green),
       ParcelStatus.outForDelivery => (c.primary, c.lowest),
       _ => (c.container, c.primary),
     };
@@ -213,13 +210,10 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
         const SizedBox(height: 12),
         CustodyTimeline(events: p.custody),
         const SizedBox(height: 16),
-        PillButton.secondary('Navigate (Google Maps / Waze)',
+        PillButton.secondary('Navigate (Google Maps)',
             leading: Icons.near_me,
             onPressed: () => showNavigationPicker(context,
-                address: p.address,
-                etaMins: 12,
-                km: 4.2,
-                title: 'Navigate to Customer')),
+                address: p.address, title: 'Navigate to Customer')),
         if (atHub) ...[
           const SizedBox(height: 8),
           PillButton('Mark Out for Delivery',
@@ -228,9 +222,7 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
               onPressed: _busy ? null : _markOut),
           const SizedBox(height: 8),
           const PillButton('Proof of Delivery',
-              icon: Icons.lock,
-              style: BtnStyle.tonal,
-              onPressed: null),
+              icon: Icons.lock, style: BtnStyle.tonal, onPressed: null),
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
@@ -258,8 +250,7 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
           const SizedBox(height: 8),
           PillButton.secondary('View COD Balance',
               leading: Icons.account_balance,
-              onPressed: () =>
-                  Navigator.pushNamed(context, '/cod-remittance')),
+              onPressed: () => Navigator.pushNamed(context, '/cod-remittance')),
         ],
       ])),
     );

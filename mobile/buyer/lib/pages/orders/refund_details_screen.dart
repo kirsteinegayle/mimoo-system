@@ -4,18 +4,19 @@ import 'package:google_fonts/google_fonts.dart';
 import '../home/product_detail_page.dart';
 import '../seller/seller_store_page.dart';
 import '../../models/product.dart';
+import '../../theme/app_theme.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kGreen = Color(0xFF1DB966);
-const _kRed = Color(0xFFFF3B5C);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
+const _kGreen = AppColors.success;
+const _kRed = AppColors.flash;
 
 TextStyle _pjs({
   double size = 14,
@@ -1203,19 +1204,19 @@ class _SupportChatPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4FC),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1035)),
+          icon: const Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('Customer Service',
             style: GoogleFonts.plusJakartaSans(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF1A1035))),
+                color: AppColors.text)),
       ),
       body: Center(
         child: Padding(
@@ -1224,7 +1225,7 @@ class _SupportChatPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.headset_mic_outlined,
-                  size: 56, color: Color(0xFF6B38D4)),
+                  size: 56, color: AppColors.accent),
               const SizedBox(height: 16),
               Text('Customer Service',
                   style: GoogleFonts.plusJakartaSans(
@@ -1234,14 +1235,14 @@ class _SupportChatPage extends StatelessWidget {
                 'Reference: $refundRequestId\nOrder: $orderId',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13, color: const Color(0xFF8A84A3), height: 1.5),
+                    fontSize: 13, color: AppColors.textMuted, height: 1.5),
               ),
               const SizedBox(height: 24),
               Text('Connect to live support to resolve your refund query.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
-                      color: const Color(0xFF8A84A3),
+                      color: AppColors.textMuted,
                       height: 1.5)),
             ],
           ),
@@ -1264,34 +1265,34 @@ class _HelpCenterPage extends StatelessWidget {
       'What if my refund amount is incorrect?',
     ];
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4FC),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1035)),
+          icon: const Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('Help Center — Refunds',
             style: GoogleFonts.plusJakartaSans(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF1A1035))),
+                color: AppColors.text)),
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: faqs.length,
         separatorBuilder: (_, __) =>
-            const Divider(height: 1, color: Color(0xFFDDD8F0)),
+            const Divider(height: 1, color: AppColors.border),
         itemBuilder: (_, i) => ListTile(
           contentPadding: const EdgeInsets.symmetric(vertical: 4),
           leading: const Icon(Icons.help_outline,
-              color: Color(0xFF6B38D4), size: 20),
+              color: AppColors.accent, size: 20),
           title: Text(faqs[i],
               style: GoogleFonts.plusJakartaSans(
                   fontSize: 13, fontWeight: FontWeight.w600)),
           trailing: const Icon(Icons.chevron_right,
-              size: 18, color: Color(0xFF8A84A3)),
+              size: 18, color: AppColors.textMuted),
           onTap: () {},
         ),
       ),

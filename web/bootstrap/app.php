@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'approved' => \App\Http\Middleware\EnsureAccountApproved::class,
             'role' => \App\Http\Middleware\EnsureRole::class,
             'courier.role' => \App\Http\Middleware\EnsureCourierRole::class,
+            'rider.role'   => \App\Http\Middleware\EnsureRiderRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

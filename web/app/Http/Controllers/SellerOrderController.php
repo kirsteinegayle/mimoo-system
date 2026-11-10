@@ -49,6 +49,10 @@ class SellerOrderController extends Controller
                     'waybill_number' => $order->waybill_number,
                     'waybill_generated_at' => $order->waybill_generated_at?->format('M d, Y h:i A'),
                     'waybill_printed_at' => $order->waybill_printed_at?->format('M d, Y h:i A'),
+                    // Delivery tracking (display only)
+                    'tracking_status' => $order->tracking_status,
+                    'tracking_message' => $order->tracking_message,
+                    'tracking_updated_at' => $order->tracking_updated_at?->format('M d, Y h:i A'),
                     'items' => $order->items->map(function ($item) {
                         return [
                             'name' => $item->product_name,

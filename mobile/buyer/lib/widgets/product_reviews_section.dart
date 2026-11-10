@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../services/review_repository.dart';
+import '../theme/app_theme.dart';
 
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kBorder = Color(0xFFDDD8F0);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kBorder = AppColors.border;
+const _kSubtext = AppColors.textMuted;
 
 /// Real product reviews (GET /api/buyer/products/{id}/reviews):
 /// average, count, star breakdown, review list with photos and "load more".
@@ -78,7 +79,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
               : value > i
                   ? Icons.star_half_rounded
                   : Icons.star_outline_rounded;
-          return Icon(icon, size: size, color: Colors.amber.shade600);
+          return Icon(icon, size: size, color: AppColors.starDeep);
         }),
       );
 
@@ -157,14 +158,14 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
                   SizedBox(
                       width: 12,
                       child: Text('$s', style: const TextStyle(fontSize: 11))),
-                  const Icon(Icons.star_rounded, size: 11, color: Colors.amber),
+                  const Icon(Icons.star_rounded, size: 11, color: AppColors.star),
                   const SizedBox(width: 4),
                   Expanded(
                     child: LinearProgressIndicator(
                       value: _count == 0 ? 0 : n / _count,
                       minHeight: 6,
-                      backgroundColor: const Color(0xFFEFE9FD),
-                      color: Colors.amber.shade600,
+                      backgroundColor: AppColors.chip,
+                      color: AppColors.starDeep,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -199,7 +200,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
           Row(children: [
             CircleAvatar(
               radius: 14,
-              backgroundColor: const Color(0xFFEFE9FD),
+              backgroundColor: AppColors.chip,
               child: Text(r.buyerName.isNotEmpty ? r.buyerName[0] : '?',
                   style: const TextStyle(
                       fontSize: 12,
@@ -266,7 +267,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
                           errorBuilder: (_, __, ___) => Container(
                               width: 64,
                               height: 64,
-                              color: const Color(0xFFEFE9FD),
+                              color: AppColors.chip,
                               child: const Icon(Icons.broken_image_outlined))),
                     ),
                   ),
@@ -279,7 +280,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
               padding: const EdgeInsets.all(8),
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F4FC),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text("Seller's reply: ${r.sellerReply}",

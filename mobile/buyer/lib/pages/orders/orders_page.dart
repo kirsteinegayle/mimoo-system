@@ -18,20 +18,21 @@ import '../home/product_detail_page.dart';
 import '../../state/cart_provider.dart';
 import '../seller/seller_store_page.dart';
 import '../chat/chat_page.dart';
+import '../../theme/app_theme.dart';
 
 // ── Tokens ────────────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kFlash = Color(0xFFFF3B5C);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kGreen = Color(0xFF1DB966);
-const _kOrange = Color(0xFFFF6B00);
-const _kRed = Color(0xFFFF3B5C);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kFlash = AppColors.flash;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
+const _kGreen = AppColors.success;
+const _kOrange = AppColors.orange;
+const _kRed = AppColors.flash;
 
 TextStyle _pjs({
   double size = 14,
@@ -334,7 +335,11 @@ String _todayLabel() {
 // MY PURCHASES PAGE
 // ═════════════════════════════════════════════════════════════════════════════
 class OrdersPage extends StatefulWidget {
-  const OrdersPage({super.key});
+  const OrdersPage({super.key, this.initialTab = 0});
+
+  /// Tab to open on (0 All, 1 To Ship, 2 To Receive, 3 Completed,
+  /// 4 Cancelled). UI only; data loading is unchanged.
+  final int initialTab;
 
   @override
   State<OrdersPage> createState() => _OrdersPageState();
@@ -361,7 +366,10 @@ class _OrdersPageState extends State<OrdersPage>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: _tabs.length, vsync: this);
+    _tabCtrl = TabController(
+        length: _tabs.length,
+        vsync: this,
+        initialIndex: widget.initialTab.clamp(0, _tabs.length - 1));
     _load();
   }
 
@@ -417,6 +425,8 @@ class _OrdersPageState extends State<OrdersPage>
         statusLabel: label,
         statusColor: color,
         paymentInfo: o.paymentMethod.toUpperCase(),
+        // Delivery tracking line (null when no tracking yet).
+        deliveryInfo: o.trackingSummary,
         dbId: o.id,
         canCancel: o.canCancel,
         apiOrder: o,
@@ -433,7 +443,8 @@ class _OrdersPageState extends State<OrdersPage>
       case api_order.OrderStatus.packed:
         return 'Packed — ready to ship';
       case api_order.OrderStatus.shipped:
-        return 'Out for delivery';
+      case api_order.OrderStatus.inTransit:
+        return 'In Transit';
       case api_order.OrderStatus.completed:
         return 'Completed';
       case api_order.OrderStatus.cancelled:
@@ -617,7 +628,7 @@ class _OrderList extends StatelessWidget {
             ),
           ),
         ),
-        SliverToBoxAdapter(child: _YouMayAlsoLike()),
+        // "You may also like" hidden: it only had sample products.
         const SliverToBoxAdapter(child: SizedBox(height: 24)),
       ],
     );
@@ -625,6 +636,9 @@ class _OrderList extends StatelessWidget {
 }
 
 // ── You May Also Like section ─────────────────────────────────────────────────
+// Hidden for now (sample products only); kept for when real
+// recommendations exist.
+// ignore: unused_element
 class _YouMayAlsoLike extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -671,7 +685,7 @@ class _YouMayAlsoLike extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: const [
                       BoxShadow(
-                          color: Color(0x0D34175B),
+                          color: AppColors.primaryA05,
                           blurRadius: 8,
                           offset: Offset(0, 2)),
                     ],
@@ -779,7 +793,7 @@ class _YouMayAlsoLike extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Icon(Icons.star_rounded,
-                                    size: 11, color: Colors.amber.shade500),
+                                    size: 11, color: AppColors.star),
                                 Text(' ${p.rating}',
                                     style: _pjs(
                                         size: 10, weight: FontWeight.w600)),
@@ -831,7 +845,7 @@ class _OrderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0D34175B), blurRadius: 8, offset: Offset(0, 2))
+              color: AppColors.primaryA05, blurRadius: 8, offset: Offset(0, 2))
         ],
       ),
       child: Column(
@@ -1073,9 +1087,9 @@ class _OrderCard extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF8E7),
+        color: AppColors.warningBg,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFFFE0A0)),
+        border: Border.all(color: AppColors.warningBorder),
       ),
       child: Row(
         children: [
@@ -1086,9 +1100,9 @@ class _OrderCard extends StatelessWidget {
                 style: _pjs(
                     size: 11,
                     weight: FontWeight.w600,
-                    color: const Color(0xFF7A4F00))),
+                    color: AppColors.warningText)),
           ),
-          const Icon(Icons.chevron_right, size: 16, color: Color(0xFF7A4F00)),
+          const Icon(Icons.chevron_right, size: 16, color: AppColors.warningText),
         ],
       ),
     );
@@ -2582,7 +2596,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: const [
                   BoxShadow(
-                      color: Color(0x0D34175B),
+                      color: AppColors.primaryA05,
                       blurRadius: 6,
                       offset: Offset(0, 2)),
                 ],
@@ -2639,7 +2653,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                         Row(
                           children: [
                             Icon(Icons.star_rounded,
-                                size: 11, color: Colors.amber.shade500),
+                                size: 11, color: AppColors.star),
                             const SizedBox(width: 2),
                             Text(
                                 '${s.$5} (${s.$6 >= 1000 ? '${(s.$6 / 1000).toStringAsFixed(1)}k' : s.$6})',

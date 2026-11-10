@@ -56,7 +56,7 @@ login.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     login.form = loginForm
 /**
 * @see \App\Http\Controllers\Api\CourierAuthController::logout
- * @see app/Http/Controllers/Api/CourierAuthController.php:71
+ * @see app/Http/Controllers/Api/CourierAuthController.php:72
  * @route '/api/courier-app/logout'
  */
 export const logout = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -71,7 +71,7 @@ logout.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CourierAuthController::logout
- * @see app/Http/Controllers/Api/CourierAuthController.php:71
+ * @see app/Http/Controllers/Api/CourierAuthController.php:72
  * @route '/api/courier-app/logout'
  */
 logout.url = (options?: RouteQueryOptions) => {
@@ -80,7 +80,7 @@ logout.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\CourierAuthController::logout
- * @see app/Http/Controllers/Api/CourierAuthController.php:71
+ * @see app/Http/Controllers/Api/CourierAuthController.php:72
  * @route '/api/courier-app/logout'
  */
 logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -90,7 +90,7 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\CourierAuthController::logout
- * @see app/Http/Controllers/Api/CourierAuthController.php:71
+ * @see app/Http/Controllers/Api/CourierAuthController.php:72
  * @route '/api/courier-app/logout'
  */
     const logoutForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -100,7 +100,7 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\CourierAuthController::logout
- * @see app/Http/Controllers/Api/CourierAuthController.php:71
+ * @see app/Http/Controllers/Api/CourierAuthController.php:72
  * @route '/api/courier-app/logout'
  */
         logoutForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -111,7 +111,7 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     logout.form = logoutForm
 /**
 * @see \App\Http\Controllers\Api\CourierAuthController::me
- * @see app/Http/Controllers/Api/CourierAuthController.php:81
+ * @see app/Http/Controllers/Api/CourierAuthController.php:82
  * @route '/api/courier-app/me'
  */
 export const me = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -126,7 +126,7 @@ me.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CourierAuthController::me
- * @see app/Http/Controllers/Api/CourierAuthController.php:81
+ * @see app/Http/Controllers/Api/CourierAuthController.php:82
  * @route '/api/courier-app/me'
  */
 me.url = (options?: RouteQueryOptions) => {
@@ -135,7 +135,7 @@ me.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\CourierAuthController::me
- * @see app/Http/Controllers/Api/CourierAuthController.php:81
+ * @see app/Http/Controllers/Api/CourierAuthController.php:82
  * @route '/api/courier-app/me'
  */
 me.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -144,7 +144,7 @@ me.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\CourierAuthController::me
- * @see app/Http/Controllers/Api/CourierAuthController.php:81
+ * @see app/Http/Controllers/Api/CourierAuthController.php:82
  * @route '/api/courier-app/me'
  */
 me.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -154,7 +154,7 @@ me.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\CourierAuthController::me
- * @see app/Http/Controllers/Api/CourierAuthController.php:81
+ * @see app/Http/Controllers/Api/CourierAuthController.php:82
  * @route '/api/courier-app/me'
  */
     const meForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -164,7 +164,7 @@ me.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\CourierAuthController::me
- * @see app/Http/Controllers/Api/CourierAuthController.php:81
+ * @see app/Http/Controllers/Api/CourierAuthController.php:82
  * @route '/api/courier-app/me'
  */
         meForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -173,7 +173,7 @@ me.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Api\CourierAuthController::me
- * @see app/Http/Controllers/Api/CourierAuthController.php:81
+ * @see app/Http/Controllers/Api/CourierAuthController.php:82
  * @route '/api/courier-app/me'
  */
         meForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/order.dart';
+import '../theme/app_theme.dart';
 
 class OrderStatusBadge extends StatelessWidget {
   const OrderStatusBadge({super.key, required this.status});
@@ -8,18 +9,19 @@ class OrderStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
-      OrderStatus.pending => ('Pending', Colors.grey),
+      OrderStatus.pending => ('Pending', AppColors.textMuted),
       OrderStatus.paid => ('Paid', Colors.blue),
       OrderStatus.packed => ('Packed', Colors.indigo),
-      OrderStatus.shipped => ('Out for Delivery', Colors.purple),
-      OrderStatus.completed => ('Completed', Colors.green),
-      OrderStatus.cancelled => ('Cancelled', Colors.red),
-      OrderStatus.failed => ('Failed', Colors.red),
+      // shipped and in_transit both read "In Transit" (no backwards step).
+      OrderStatus.shipped => ('In Transit', AppColors.orange),
+      OrderStatus.completed => ('Completed', AppColors.success),
+      OrderStatus.cancelled => ('Cancelled', AppColors.error),
+      OrderStatus.failed => ('Failed', AppColors.error),
       // Legacy values — kept for compat, not returned by server
       OrderStatus.toShip => ('To Ship', Colors.blue),
-      OrderStatus.inTransit => ('In Transit', Colors.orange),
-      OrderStatus.outForDelivery => ('Out for Delivery', Colors.purple),
-      OrderStatus.delivered => ('Delivered', Colors.green),
+      OrderStatus.inTransit => ('In Transit', AppColors.orange),
+      OrderStatus.outForDelivery => ('Out for Delivery', AppColors.accent),
+      OrderStatus.delivered => ('Delivered', AppColors.success),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

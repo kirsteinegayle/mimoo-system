@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../models/order.dart';
 import 'api_service.dart';
 
@@ -53,6 +55,19 @@ class OrderRepository {
     return Order.fromJson(res['data'] as Map<String, dynamic>);
   }
 
+  /// GET /api/buyer/orders/{id}/delivery-code — read-only. Returns null
+  /// unless the rider is out for delivery and an active code exists.
+  Future<DeliveryCode?> fetchDeliveryCode(int id) async {
+    final res = await ApiService.get('/buyer/orders/$id/delivery-code')
+        as Map<String, dynamic>;
+    return DeliveryCode.tryParse(res['data']);
+  }
+
+  /// GET /api/buyer/orders/{id}/pod-photo — proof-of-delivery photo bytes.
+  /// null when there is none (404: no delivery job / no photo).
+  Future<Uint8List?> fetchPodPhoto(int id) =>
+      ApiService.getBytes('/buyer/orders/$id/pod-photo');
+
   /// POST /api/buyer/orders/{id}/receive — shipped → completed.
   /// 422 when the order isn't shipped or has an open return request.
   Future<void> receiveOrder(int id) async {
@@ -63,6 +78,27 @@ class OrderRepository {
     await ApiService.post('/buyer/orders/$id/cancel', body: {
       if (reason != null && reason.isNotEmpty) 'reason': reason,
     });
+  }
+}
+
+/// Active delivery code for the buyer to give the rider (memory only).
+class DeliveryCode {
+  const DeliveryCode({required this.code, required this.expiresAt, this.riderFirstName});
+
+  final String code;
+  final DateTime expiresAt;
+  final String? riderFirstName;
+
+  static DeliveryCode? tryParse(dynamic data) {
+    if (data is! Map<String, dynamic>) return null;
+    final code = data['code'];
+    final exp = DateTime.tryParse(data['expires_at']?.toString() ?? '');
+    if (code is! String || code.isEmpty || exp == null) return null;
+    return DeliveryCode(
+      code: code,
+      expiresAt: exp,
+      riderFirstName: data['rider_first_name'] as String?,
+    );
   }
 }
 

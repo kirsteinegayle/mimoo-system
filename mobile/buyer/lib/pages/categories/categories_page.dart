@@ -4,27 +4,25 @@ import '../../models/product.dart';
 import '../../services/product_repository.dart';
 import '../../services/api_service.dart';
 import '../../services/category_repository.dart';
-import '../../widgets/mimoo_logo.dart';
 import '../../state/auth_service.dart';
 import '../../state/wishlist_provider.dart';
 import '../auth/login_page.dart';
 import '../home/product_detail_page.dart';
 import '../../state/cart_provider.dart';
 import '../../utils/animations.dart';
-import '../notifications/notifications_page.dart';
-import '../../widgets/notification_badge.dart';
-import '../account/account_settings_page.dart';
 import '../search/search_page.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/header_actions.dart';
 
 // ── Color tokens ──────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kFlash = Color(0xFFFF3B5C);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kFlash = AppColors.flash;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
 
 TextStyle _pjs({
   double size = 14,
@@ -42,8 +40,14 @@ TextStyle _pjs({
 
 // ── Category tile colours (cycled) ───────────────────────────────────────────
 const _catColors = [
-  Color(0xFF6B38D4), Color(0xFF34175B), Color(0xFF0066CC), Color(0xFFFF3B5C),
-  Color(0xFFE91E8C), Color(0xFF1DB966), Color(0xFF8B5CF6), Color(0xFFFF6B00),
+  AppColors.accent,
+  AppColors.primary,
+  AppColors.info,
+  AppColors.flash,
+  Color(0xFFE91E8C),
+  AppColors.success,
+  AppColors.violet,
+  AppColors.orange,
 ];
 
 // ── Categories Page ───────────────────────────────────────────────────────────
@@ -130,16 +134,16 @@ class _CategoriesPageState extends State<CategoriesPage> {
             await Future.wait([_load(), _loadCategories()]);
           },
           child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(child: _buildHeader()),
-            SliverToBoxAdapter(child: _buildSortRow()),
-            SliverToBoxAdapter(child: _buildExploreCats()),
-            SliverToBoxAdapter(child: _buildTrendingHeader()),
-            _buildProductGrid(),
-            // Voucher banner hidden — fake "₱150 OFF" offer, no backend.
-            // SliverToBoxAdapter(child: _buildVoucherBanner()),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          ],
+            slivers: [
+              SliverToBoxAdapter(child: _buildHeader()),
+              SliverToBoxAdapter(child: _buildSortRow()),
+              SliverToBoxAdapter(child: _buildExploreCats()),
+              SliverToBoxAdapter(child: _buildTrendingHeader()),
+              _buildProductGrid(),
+              // Voucher banner hidden — fake "₱150 OFF" offer, no backend.
+              // SliverToBoxAdapter(child: _buildVoucherBanner()),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            ],
           ),
         ),
       ),
@@ -147,94 +151,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      color: const Color(0xFF34175B),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // Brand logo (framed tile — logo has an opaque background)
-              const MimooLogo(size: 58, framed: true),
-              const Spacer(),
-              Text('Categories',
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white70)),
-              const Spacer(),
-              // Notification bell
-              GestureDetector(
-                onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const NotificationsPage())),
-                child: Stack(
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(Icons.notifications_none_outlined,
-                          color: Colors.white, size: 22),
-                    ),
-                    // Real unread count (hidden when 0)
-                    const NotificationBadge(),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Avatar → Account Settings
-              GestureDetector(
-                onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const AccountSettingsPage())),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child:
-                      const Icon(Icons.person, color: Colors.white, size: 18),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Search bar — matches homepage style
-          GestureDetector(
-            onTap: () => Navigator.push(
-                context, MaterialPageRoute(builder: (_) => const SearchPage())),
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(9999),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 12),
-                  const Icon(Icons.search, size: 16, color: Colors.white70),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Search in All Categories, items, or brands...',
-                      style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13, color: Colors.white70),
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.only(right: 12),
-                    child: Icon(Icons.mic_outlined,
-                        size: 16, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+    return MimooTabHeader(
+      title: 'Categories',
+      bottom: HeaderSearchBar(
+        hint: 'Search in All Categories, items, or brands...',
+        onTap: () => Navigator.push(
+            context, MaterialPageRoute(builder: (_) => const SearchPage())),
       ),
     );
   }
@@ -294,18 +216,24 @@ class _CategoriesPageState extends State<CategoriesPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Text('Explore Categories',
-                      style: _pjs(size: 15, weight: FontWeight.w800)),
-                  const SizedBox(width: 6),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                        color: _kSecondary, shape: BoxShape.circle),
-                  ),
-                ],
+              Flexible(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text('Explore Categories',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: _pjs(size: 15, weight: FontWeight.w800)),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                          color: _kSecondary, shape: BoxShape.circle),
+                    ),
+                  ],
+                ),
               ),
               GestureDetector(
                 // "View All" clears the category filter
@@ -407,7 +335,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     flex: 5,
                     child: Container(
                       decoration: const BoxDecoration(
-                        color: Color(0xFFEFE9FD),
+                        color: AppColors.chip,
                         borderRadius:
                             BorderRadius.vertical(top: Radius.circular(12)),
                       ),
@@ -422,12 +350,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
                           Container(
                               height: 10,
                               width: double.infinity,
-                              color: const Color(0xFFEFE9FD)),
+                              color: AppColors.chip),
                           const SizedBox(height: 6),
                           Container(
-                              height: 10,
-                              width: 80,
-                              color: const Color(0xFFEFE9FD)),
+                              height: 10, width: 80, color: AppColors.chip),
                         ],
                       ),
                     )),
@@ -445,7 +371,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
           padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
           child: Column(children: [
             const Icon(Icons.wifi_off_outlined,
-                size: 40, color: Color(0xFF7B7580)),
+                size: 40, color: AppColors.outline),
             const SizedBox(height: 10),
             Text(_error!,
                 textAlign: TextAlign.center,
@@ -467,7 +393,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
           padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
           child: Column(children: [
             const Icon(Icons.storefront_outlined,
-                size: 40, color: Color(0xFF7B7580)),
+                size: 40, color: AppColors.outline),
             const SizedBox(height: 10),
             Text('No products available yet.',
                 style: _pjs(size: 13, color: _kSubtext)),
@@ -544,7 +470,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4A1C8A), Color(0xFF6B38D4)],
+          colors: [AppColors.primaryMid, AppColors.accent],
         ),
         borderRadius: BorderRadius.circular(14),
       ),
@@ -665,7 +591,9 @@ class _CatProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x0D34175B), blurRadius: 8, offset: Offset(0, 2)),
+                color: AppColors.primaryA05,
+                blurRadius: 8,
+                offset: Offset(0, 2)),
           ],
         ),
         child: Column(

@@ -5,13 +5,13 @@ import { Head, Link, router, usePage } from "@inertiajs/react";
 import {
   ChevronRight,
   ChevronLeft,
-  Bell,
   Search,
   ShoppingCart,
   LogOut,
   Heart,
 } from "lucide-react";
 import { SignupModal } from "@/components/signup-modal";
+import { NotificationBell } from "@/components/notification-bell";
 import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
@@ -694,7 +694,6 @@ function CountBadge({ count }: { count: number }) {
 function Header({
   username = "username",
   avatarUrl = null,
-  notificationCount = 5,
   cartCount = 0,
   wishlistCount = 0,
   categories = [],
@@ -705,6 +704,7 @@ function Header({
 }: {
   username?: string;
   avatarUrl?: string | null;
+  /** @deprecated Ignored: the bell now loads the real unread count. */
   notificationCount?: number;
   cartCount?: number;
   wishlistCount?: number;
@@ -968,13 +968,7 @@ function Header({
 
           {/* Bell + Wishlist + Cart, side by side on the same row as the search bar */}
           <div className="flex shrink-0 items-center gap-4 sm:gap-5">
-            <button
-              aria-label="Notifications"
-              className="relative flex items-center text-white transition-colors hover:text-white/80"
-            >
-              <Bell className="h-5 w-5" />
-              <CountBadge count={notificationCount} />
-            </button>
+            <NotificationBell isLoggedIn={isLoggedIn} />
 
             <Link
               href="/wishlist"

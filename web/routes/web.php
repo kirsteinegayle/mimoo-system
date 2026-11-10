@@ -532,6 +532,10 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     'weight' => round($estimatedWeight, 1),
                     'shipped_at' => $order->updated_at->format('M d, Y H:i'),
                     'status' => 'shipped',
+                    // Delivery tracking (display only)
+                    'tracking_status' => $order->tracking_status,
+                    'tracking_message' => $order->tracking_message,
+                    'tracking_updated_at' => $order->tracking_updated_at?->format('M d, Y h:i A'),
                 ];
             });
         
@@ -617,6 +621,10 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                 'weight' => round($estimatedWeight, 1),
                 'shipped_at' => $order->updated_at->toISOString(),
                 'status' => $order->status,
+                // Delivery tracking (display only)
+                'tracking_status' => $order->tracking_status,
+                'tracking_message' => $order->tracking_message,
+                'tracking_updated_at' => $order->tracking_updated_at?->format('M d, Y h:i A'),
             ],
         ]);
     });
@@ -1835,6 +1843,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Orders
     Route::post('/api/orders', [\App\Http\Controllers\OrderController::class, 'store']);
     Route::post('/api/orders/{id}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel']);
+    // Buyer delivery code (read-only; same controller as GET /api/buyer/orders/{id}/delivery-code)
+    Route::get('/api/orders/{id}/delivery-code', [\App\Http\Controllers\Api\BuyerDeliveryCodeController::class, 'show'])->middleware('throttle:30,1')->whereNumber('id');
     
     // Voucher validation
     Route::post('/api/vouchers/validate', [\App\Http\Controllers\Admin\VoucherController::class, 'validate']);
@@ -1844,6 +1854,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Orders data refresh endpoint
     Route::get('/orders/data', [\App\Http\Controllers\OrderController::class, 'getData']);
+
+    // Buyer in-app notifications for the web bell (session auth). Same
+    // controller, queries and JSON shape as /api/buyer/notifications; buyer
+    // accounts only (403 otherwise), each buyer sees only their own rows.
+    Route::get('/buyer/notifications/feed', [\App\Http\Controllers\Api\BuyerNotificationController::class, 'index']);
+    Route::post('/buyer/notifications/read-all', [\App\Http\Controllers\Api\BuyerNotificationController::class, 'markAllRead'])->middleware('throttle:30,1,web-notification-markallread');
+    Route::post('/buyer/notifications/{id}/read', [\App\Http\Controllers\Api\BuyerNotificationController::class, 'markRead'])->middleware('throttle:60,1,web-notification-markread')->whereNumber('id');
     
     // Product Reports
     Route::post('/api/products/{id}/report', [ProductController::class, 'reportProduct']);

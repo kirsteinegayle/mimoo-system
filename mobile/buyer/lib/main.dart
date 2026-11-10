@@ -1,19 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'state/auth_service.dart';
 import 'state/cart_provider.dart';
 import 'state/wishlist_provider.dart';
 import 'state/notification_state.dart';
 import 'pages/splash_screen.dart';
+import 'pages/auth/login_page.dart';
+import 'services/api_service.dart';
 import 'pages/home/shop_page.dart';
-import 'pages/cart/cart_page.dart';
 import 'pages/categories/categories_page.dart';
 import 'pages/chat/chat_page.dart';
 import 'pages/account/account_page.dart';
 import 'pages/wishlist/wishlist_page.dart';
 import 'utils/animations.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,9 +36,42 @@ void main() async {
     NotificationState.instance.stop();
   };
 
+  // Any 401 on an authenticated request: clear the saved token and go to the
+  // login screen (instead of leaving an "Unauthenticated." error on screen).
+  ApiService.onUnauthorized = _handleUnauthorized;
+
   // The persisted Sanctum session is restored by SplashScreen (first
   // screen) while its animation plays, then it routes to Home or Login.
   runApp(const EcommerceApp());
+}
+
+/// Root navigator, used to leave any screen when the session expires.
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
+bool _handlingUnauthorized = false;
+
+Future<void> _handleUnauthorized() async {
+  if (_handlingUnauthorized) return;
+  _handlingUnauthorized = true;
+  try {
+    await AuthService.instance.clearLocalSession();
+    final nav = rootNavigatorKey.currentState;
+    if (nav != null) {
+      nav.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
+      );
+      final ctx = rootNavigatorKey.currentContext;
+      if (ctx != null && ctx.mounted) {
+        ScaffoldMessenger.maybeOf(ctx)?.showSnackBar(const SnackBar(
+          content: Text('Your session has expired. Please log in again.'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
+  } finally {
+    _handlingUnauthorized = false;
+  }
 }
 
 class EcommerceApp extends StatelessWidget {
@@ -50,42 +84,10 @@ class EcommerceApp extends StatelessWidget {
       child: CartProvider(
         cart: CartProvider.defaultCart,
         child: MaterialApp(
+          navigatorKey: rootNavigatorKey,
           title: 'Mimoo',
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            colorScheme: const ColorScheme(
-              brightness: Brightness.light,
-              primary: Color(0xFF34175B),
-              onPrimary: Colors.white,
-              primaryContainer: Color(0xFF34175B),
-              onPrimaryContainer: Color(0xFF9F81CB),
-              secondary: Color(0xFF6B38D4),
-              onSecondary: Colors.white,
-              secondaryContainer: Color(0xFF8455EF),
-              onSecondaryContainer: Colors.white,
-              tertiary: Color(0xFFFF3B5C),
-              onTertiary: Colors.white,
-              tertiaryContainer: Color(0xFF570014),
-              onTertiaryContainer: Color(0xFFFF4B65),
-              error: Color(0xFFBA1A1A),
-              onError: Colors.white,
-              errorContainer: Color(0xFFFFDAD6),
-              onErrorContainer: Color(0xFF93000A),
-              surface: Color(0xFFFAF8FE),
-              onSurface: Color(0xFF1B1B20),
-              onSurfaceVariant: Color(0xFF4A454F),
-              outline: Color(0xFF7B7580),
-              outlineVariant: Color(0xFFCCC4D1),
-              shadow: Colors.black,
-              scrim: Colors.black,
-              inverseSurface: Color(0xFF303035),
-              onInverseSurface: Color(0xFFF2F0F6),
-              inversePrimary: Color(0xFFD7BAFF),
-            ),
-            textTheme: GoogleFonts.plusJakartaSansTextTheme(),
-            useMaterial3: true,
-            scaffoldBackgroundColor: const Color(0xFFFAF8FE),
-          ),
+          theme: buildAppTheme(),
           home: const SplashScreen(),
         ),
       ),
@@ -137,7 +139,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(error),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 4),
         ));
@@ -152,7 +154,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(error),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 4),
         ));
@@ -190,31 +192,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           children: const [
             ShopPage(), // 0 — Home
             CategoriesPage(), // 1 — Categories
-            CartPage(), // 2 — Cart
-            ChatPage(), // 3 — Messages
-            AccountPage(), // 4 — Account
+            ChatPage(), // 2 — Messages
+            AccountPage(), // 3 — Account
+            // Cart moved to the top header (CartIconButton) on every main tab.
           ],
         ),
         bottomNavigationBar: MimooNavBar(
           currentIndex: _currentIndex,
           onTap: (i) => setState(() => _currentIndex = i),
-          items: [
+          items: const [
             MimooNavItem(
               icon: Icons.home_outlined,
-              activeIcon: Icons.home,
+              activeIcon: Icons.home_rounded,
               label: 'Home',
             ),
             MimooNavItem(
               icon: Icons.grid_view_outlined,
-              activeIcon: Icons.grid_view,
+              activeIcon: Icons.grid_view_rounded,
               label: 'Categories',
-            ),
-            MimooNavItem(
-              icon: Icons.shopping_bag_outlined,
-              activeIcon: Icons.shopping_bag,
-              label: 'Cart',
-              // Same count as the web navbar cart badge
-              badgeCount: cart.lineCount,
             ),
             MimooNavItem(
               icon: Icons.chat_bubble_outline,
@@ -222,8 +217,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               label: 'Messages',
             ),
             MimooNavItem(
-              icon: Icons.account_circle_outlined,
-              activeIcon: Icons.account_circle,
+              icon: Icons.person_outline,
+              activeIcon: Icons.person,
               label: 'Account',
             ),
           ],
@@ -232,12 +227,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         floatingActionButton: (_currentIndex == 0 || _currentIndex == 1)
             ? FloatingActionButton.small(
                 onPressed: _openWishlist,
-                backgroundColor: const Color(0xFF34175B),
+                backgroundColor: AppColors.primary,
+                tooltip: 'Wishlist',
                 elevation: 3,
                 child: Badge(
                   isLabelVisible: wishlist.count > 0,
                   label: Text('${wishlist.count}'),
-                  backgroundColor: const Color(0xFFFF3B5C),
+                  backgroundColor: AppColors.flash,
                   child: const Icon(Icons.favorite_border,
                       color: Colors.white, size: 18),
                 ),

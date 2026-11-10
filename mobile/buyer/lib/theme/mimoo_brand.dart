@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Mimoo brand constants shared by the splash, auth pages and logo widget.
-/// Purples follow the existing app theme (main.dart ColorScheme / shop
-/// MimooColors); the logo* colours are sampled from the edges of
-/// assets/images/logo.png so the (non-transparent) logo blends in.
+import 'app_theme.dart';
+
+/// Mimoo brand constants used by the splash, auth pages and logo widget.
+/// All colours forward to [AppColors] (lib/theme/app_theme.dart), which is
+/// the single source of truth.
 class MimooBrand {
   MimooBrand._();
 
@@ -12,27 +13,22 @@ class MimooBrand {
   static const logoAsset = 'assets/images/logo.png';
 
   // ── Logo background (sampled from logo.png edges) ────────────────────────
-  static const logoEdgeLeft = Color(0xFF181329);
-  static const logoEdgeRight = Color(0xFF2B2340);
-  static const logoBg = Color(0xFF1F1931); // centre-edge average
+  static const logoEdgeLeft = AppColors.logoInkLeft;
+  static const logoEdgeRight = AppColors.logoInkRight;
+  static const logoBg = AppColors.logoInk;
 
-  /// Header / splash background — same family as the logo so it doesn't
-  /// look like a box.
-  static const headerGradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [logoEdgeLeft, logoBg, logoEdgeRight],
-  );
+  /// Header / splash background — same family as the logo.
+  static const headerGradient = AppColors.headerGradient;
 
-  // ── App theme colours (existing) ──────────────────────────────────────────
-  static const primary = Color(0xFF34175B);
-  static const accent = Color(0xFF6B38D4);
-  static const accentSoft = Color(0xFFD7BAFF); // inversePrimary in main.dart
-  static const surface = Color(0xFFF5F4FC);
-  static const card = Colors.white;
-  static const inputFill = Color(0xFFF5F3FA);
-  static const border = Color(0xFFDDD8F0);
-  static const text = Color(0xFF1A1035);
-  static const subtext = Color(0xFF8A84A3);
-  static const error = Color(0xFFBA1A1A);
+  // ── App theme colours ─────────────────────────────────────────────────────
+  static const primary = AppColors.primary;
+  static const accent = AppColors.accent;
+  static const accentSoft = AppColors.accentSoft;
+  static const surface = AppColors.surface;
+  static const Color card = AppColors.card;
+  static const inputFill = AppColors.inputFill;
+  static const border = AppColors.border;
+  static const text = AppColors.text;
+  static const subtext = AppColors.textMuted;
+  static const error = AppColors.error;
 }

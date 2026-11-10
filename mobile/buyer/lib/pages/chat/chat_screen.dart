@@ -8,11 +8,12 @@ import '../../services/chat_repository.dart';
 import '../../services/review_repository.dart' show PickedImage;
 import '../../state/auth_service.dart';
 import '../../utils/image_pick.dart';
+import '../../theme/app_theme.dart';
 
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kBorder = Color(0xFFDDD8F0);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kBorder = AppColors.border;
+const _kSubtext = AppColors.textMuted;
 
 /// Starts (or reuses) the thread with [sellerId] and opens the chat screen.
 /// When [productId] is given, that product is shown as the thread's product card.
@@ -35,7 +36,7 @@ Future<void> openSellerChat(BuildContext context,
   } catch (e) {
     messenger.showSnackBar(SnackBar(
       content: Text(e is ApiException ? e.message : 'Could not open chat. Check your connection.'),
-      backgroundColor: Colors.red.shade700,
+      backgroundColor: AppColors.error,
       behavior: SnackBarBehavior.floating,
     ));
   }
@@ -250,7 +251,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4FC),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: Text(_title),
         backgroundColor: Colors.white,
@@ -319,7 +320,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       );
 
   Widget _ph(double s) => Container(
-      width: s, height: s, color: const Color(0xFFEFE9FD),
+      width: s, height: s, color: AppColors.chip,
       child: const Icon(Icons.image_outlined, size: 18, color: _kSubtext));
 
   Widget _bubble(_UiMsg m) {
@@ -360,7 +361,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             constraints: const BoxConstraints(maxWidth: 280),
             decoration: BoxDecoration(
               color: mine
-                  ? (failed ? Colors.red.shade300 : _kSecondary)
+                  ? (failed ? AppColors.errorLight : _kSecondary)
                   : Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: mine ? null : Border.all(color: _kBorder),
@@ -371,10 +372,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             GestureDetector(
               onTap: () => _deliver(m),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.error_outline, size: 13, color: Colors.red.shade600),
+                Icon(Icons.error_outline, size: 13, color: AppColors.error),
                 const SizedBox(width: 3),
                 Text('Not sent. Tap to retry',
-                    style: TextStyle(fontSize: 11, color: Colors.red.shade600)),
+                    style: TextStyle(fontSize: 11, color: AppColors.error)),
                 const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () => setState(() => _msgs.remove(m)),

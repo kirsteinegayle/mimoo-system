@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
 import '../theme/mimoo_brand.dart';
 
 /// Reusable Mimoo logo (assets/images/logo.png, 310×240).
@@ -64,17 +65,20 @@ class MimooLogo extends StatelessWidget {
     );
 
     if (framed) {
+      // Tile in the logo's own ink colour, radius 12, hairline light border
+      // and a soft brand shadow: reads as an intentional badge on light
+      // surfaces and blends with the dark headers.
       img = Container(
         width: size,
         height: h,
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 3)),
-          ],
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          boxShadow: AppShadows.soft,
         ),
-        child: ClipRRect(borderRadius: BorderRadius.circular(12), child: img),
+        clipBehavior: Clip.antiAlias,
+        child: img,
       );
     } else if (feather) {
       // Soft elliptical fade of the logo's own dark background, so it melts

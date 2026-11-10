@@ -425,8 +425,52 @@ ThemeData mimooTheme({Brightness brightness = Brightness.light}) {
         shape: MRadii.stadium,
       ),
     ),
+    // One consistent page transition everywhere (fade + slight rise).
+    pageTransitionsTheme: const PageTransitionsTheme(builders: {
+      TargetPlatform.android: MimooPageTransitionsBuilder(),
+      TargetPlatform.iOS: MimooPageTransitionsBuilder(),
+      TargetPlatform.windows: MimooPageTransitionsBuilder(),
+      TargetPlatform.macOS: MimooPageTransitionsBuilder(),
+      TargetPlatform.linux: MimooPageTransitionsBuilder(),
+      TargetPlatform.fuchsia: MimooPageTransitionsBuilder(),
+    }),
     extensions: [palette],
   );
+}
+
+/// Fade-through page transition: incoming page fades in and rises slightly,
+/// outgoing page fades a little. Skipped when reduced motion is on.
+class MimooPageTransitionsBuilder extends PageTransitionsBuilder {
+  const MimooPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) return child;
+    final enter = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic);
+    final exit = CurvedAnimation(
+        parent: secondaryAnimation, curve: Curves.easeOutCubic);
+    return FadeTransition(
+      opacity: Tween<double>(begin: 1, end: 0.85).animate(exit),
+      child: FadeTransition(
+        opacity: enter,
+        child: SlideTransition(
+          position: Tween<Offset>(
+                  begin: const Offset(0, 0.04), end: Offset.zero)
+              .animate(enter),
+          child: child,
+        ),
+      ),
+    );
+  }
 }
 
 TextStyle ts(double size,

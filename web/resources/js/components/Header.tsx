@@ -3,16 +3,15 @@ import {
   ShoppingCart,
   User,
   X,
-  Bell,
 } from "lucide-react";
 import { Link } from "@inertiajs/react";
 import { useState } from "react";
+import { NotificationBell } from "@/components/notification-bell";
 
 export default function Header() {
   const [showSignInModal, setShowSignInModal] = useState(false);
   const isAuthenticated = false; // TODO: Replace with actual auth check
   const cartCount = 32; // TODO: Replace with actual cart count
-  const notificationCount = 5; // TODO: Replace with actual notification count
 
   const handleCartClick = () => {
     if (!isAuthenticated) {
@@ -49,17 +48,10 @@ export default function Header() {
 
           <nav className="flex shrink-0 flex-col items-end gap-0.5">
             <div className="flex items-center gap-2">
-              <button
-                aria-label="Notifications"
-                className="relative text-white hover:opacity-80"
-              >
-                <Bell className="h-5 w-5" />
-                {notificationCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white">
-                    {notificationCount}
-                  </span>
-                )}
-              </button>
+              <NotificationBell
+                isLoggedIn={isAuthenticated}
+                buttonClassName="relative text-white hover:opacity-80"
+              />
               <button
                 aria-label="Account"
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition"

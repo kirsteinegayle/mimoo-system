@@ -14,7 +14,7 @@ class ReturnOrderSummary {
     required this.price,
     required this.qty,
     required this.paymentMethod,
-    this.contactEmail = 'mumimumiee@gmail.com',
+    this.contactEmail = '',
     this.onSubmitted,
   });
 

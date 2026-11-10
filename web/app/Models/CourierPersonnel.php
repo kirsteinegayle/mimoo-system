@@ -14,11 +14,20 @@ class CourierPersonnel extends Model
 
     protected $fillable = [
         'courier_id',
+        'user_id',
         'name',
         'contact_number',
         'role',
         'status',
     ];
+
+    /**
+     * Get the users account linked to this personnel (riders only).
+     */
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'user_id');
+    }
 
     /**
      * Get the courier company.

@@ -126,6 +126,10 @@ class IncomingShipmentsController extends Controller
                 'assignment_status' => $assignment->assignment_status,
                 'is_overdue' => $assignment->isOverdue(),
                 'is_expiring_soon' => $assignment->isExpiringSoon(),
+                // Delivery tracking (display only)
+                'tracking_status' => $order->tracking_status,
+                'tracking_message' => $order->tracking_message,
+                'tracking_updated_at' => $order->tracking_updated_at?->format('M d, Y h:i A'),
             ];
         });
 
@@ -319,6 +323,10 @@ class IncomingShipmentsController extends Controller
                 'payment_method' => $order->payment_method,
                 'items_count' => $order->items->count(),
                 'assigned_by' => $assignment->assigner->name ?? 'System',
+                // Delivery tracking (display only)
+                'tracking_status' => $order->tracking_status,
+                'tracking_message' => $order->tracking_message,
+                'tracking_updated_at' => $order->tracking_updated_at?->format('M d, Y h:i A'),
             ],
             'history' => $history,
         ]);

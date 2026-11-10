@@ -5,17 +5,18 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'driver_chat_page.dart';
+import '../../theme/app_theme.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kSurface = Color(0xFFF5F4FC);
-const _kCard = Color(0xFFFFFFFF);
-const _kChip = Color(0xFFEFE9FD);
-const _kBorder = Color(0xFFDDD8F0);
-const _kText = Color(0xFF1A1035);
-const _kSubtext = Color(0xFF8A84A3);
-const _kGreen = Color(0xFF1DB966);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kSurface = AppColors.surface;
+const _kCard = AppColors.card;
+const _kChip = AppColors.chip;
+const _kBorder = AppColors.border;
+const _kText = AppColors.text;
+const _kSubtext = AppColors.textMuted;
+const _kGreen = AppColors.success;
 
 // Route line colour — orange-red as seen in the screenshot
 const _kRoute = Color(0xFFE84B1A);
@@ -35,9 +36,12 @@ TextStyle _pjs({
       decoration: decoration,
     );
 
-// ── Replace with your actual Maps API key ─────────────────────────────────────
-// This is the same key you put in AndroidManifest.xml / Info.plist.
-const _kMapsApiKey = 'YOUR_GOOGLE_MAPS_API_KEY';
+// ── Maps API key ──────────────────────────────────────────────────────────────
+// Passed at build time only (never hardcoded), same define as MapsService:
+//   --dart-define=GOOGLE_MAPS_API_KEY=<key>
+// Without a key the map area shows a "Map unavailable" state.
+const _kMapsApiKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY');
+const _kHasMapsKey = _kMapsApiKey != '';
 
 // ── Data models ───────────────────────────────────────────────────────────────
 enum TrackStage { shipped, outForDelivery, delivered }
@@ -277,6 +281,7 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
 
   // ── Fetch route via flutter_polyline_points ───────────────────────────────────
   Future<Set<Polyline>> _fetchRoute(LatLng origin, LatLng dest) async {
+    if (!_kHasMapsKey) return _fallbackPolyline(origin, dest);
     try {
       final pp = PolylinePoints();
       final result = await pp.getRouteBetweenCoordinates(
@@ -425,33 +430,54 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
       height: 280,
       child: Stack(
         children: [
-          // Google Map
-          GoogleMap(
-            initialCameraPosition: _initialCamera,
-            onMapCreated: (ctrl) {
-              _mapCtrl = ctrl;
-              // Fit bounds to show full route
-              if (_riderLatLng != null) {
-                ctrl.animateCamera(
-                  CameraUpdate.newLatLngBounds(
-                    _boundsFromLatLngs([
-                      _riderLatLng!,
-                      _info.destinationLatLng,
-                      ..._info.landmarks.map((l) => l.position),
-                    ]),
-                    56,
-                  ),
-                );
-              }
-            },
-            markers: _markers,
-            polylines: _polylines,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            mapToolbarEnabled: false,
-            compassEnabled: false,
-            liteModeEnabled: false,
-          ),
+          // Google Map (or a placeholder when no API key was provided)
+          if (!_kHasMapsKey)
+            Positioned.fill(
+              child: Container(
+                color: _kChip,
+                alignment: Alignment.center,
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.map_outlined,
+                        size: 36, color: _kSubtext),
+                    SizedBox(height: 8),
+                    Text('Map unavailable',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _kSubtext)),
+                  ],
+                ),
+              ),
+            )
+          else
+            GoogleMap(
+              initialCameraPosition: _initialCamera,
+              onMapCreated: (ctrl) {
+                _mapCtrl = ctrl;
+                // Fit bounds to show full route
+                if (_riderLatLng != null) {
+                  ctrl.animateCamera(
+                    CameraUpdate.newLatLngBounds(
+                      _boundsFromLatLngs([
+                        _riderLatLng!,
+                        _info.destinationLatLng,
+                        ..._info.landmarks.map((l) => l.position),
+                      ]),
+                      56,
+                    ),
+                  );
+                }
+              },
+              markers: _markers,
+              polylines: _polylines,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              mapToolbarEnabled: false,
+              compassEnabled: false,
+              liteModeEnabled: false,
+            ),
 
           // ── "On the way to destination" status banner ──────────────────────
           Positioned(
@@ -844,8 +870,7 @@ class _DriverCard extends StatelessWidget {
                   children: [
                     Text('${info.courierName} Elite Courier  •  ',
                         style: _pjs(size: 11, color: _kSubtext)),
-                    Icon(Icons.star_rounded,
-                        size: 12, color: Colors.amber.shade500),
+                    Icon(Icons.star_rounded, size: 12, color: AppColors.star),
                     Text(' ${info.driverRating}★',
                         style: _pjs(
                             size: 11,

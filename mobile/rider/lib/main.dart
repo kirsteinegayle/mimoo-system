@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/api_config.dart';
 import 'core/auth_controller.dart';
 import 'core/connectivity.dart';
 import 'core/rider_status_controller.dart';
 import 'core/settings_controller.dart';
 import 'core/theme.dart';
+import 'data/api/rider_api.dart';
 import 'data/db/web_database.dart';
 import 'data/repositories/app_repositories_scope.dart';
 import 'data/repositories/local_repositories.dart';
@@ -18,6 +20,7 @@ import 'data/parcel_flow.dart';
 import 'data/models/entities.dart' as db;
 import 'l10n/generated/app_localizations.dart';
 import 'mimoo_screens.dart';
+import 'mock/rider_mock.dart' show RiderMock;
 import 'screens/chat.dart';
 import 'screens/delivered.dart';
 import 'screens/delivery_detail.dart';
@@ -27,7 +30,6 @@ import 'screens/login.dart';
 import 'screens/main_shell.dart';
 import 'screens/pod_flow.dart';
 import 'screens/profile_screen.dart';
-import 'screens/registration.dart';
 import 'screens/settings/about_screen.dart';
 import 'screens/settings/change_password_screen.dart';
 import 'screens/settings/emergency_contacts_screen.dart';
@@ -35,20 +37,15 @@ import 'screens/settings/legal_screen.dart';
 import 'screens/settings/passkey_screen.dart';
 import 'screens/settings/permissions_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'screens/splash_screen.dart';
 import 'screens/vehicle_documents_screen.dart';
 import 'widgets/biometric_gate.dart';
 
 final GlobalKey<NavigatorState> mimooNavigatorKey = GlobalKey<NavigatorState>();
 
 abstract final class MimooRoutes {
-  static const activationSetPassword = '/activation/set-password';
-  static const activationLinkExpired = '/activation/link-expired';
-  static const activationSuccess = '/activation/success';
-  static const registrationApproved = '/registration/approved';
-  static const registrationRejected = '/registration/rejected';
   static const suspended = '/suspended';
   static const home = '/home';
-  static const jobOffer = '/job-offer';
   static const pickupDetail = '/pickup-detail';
   static const scanWaybill = '/scan-waybill';
   static const outForDelivery = '/out-for-delivery';
@@ -91,6 +88,20 @@ Future<void> main() async {
   configureWebDatabaseFactory();
   final repositories = await AppRepositories.open();
   final auth = AuthController();
+  if (!useMock) {
+    // Real backend: reuse a saved Sanctum token so the rider stays logged in.
+    await RiderApi.instance.restore();
+    if (RiderApi.instance.hasToken) auth.signIn();
+    // Any 401 (expired / revoked token) sends the rider back to login once.
+    RiderApi.instance.onUnauthorized = () {
+      if (!auth.isSignedIn) return;
+      RiderMock.instance.clearSession();
+      auth.signOut();
+      auth.setStartupError('Your session has ended. Please log in again.');
+      mimooNavigatorKey.currentState
+          ?.pushNamedAndRemoveUntil('/login', (_) => false);
+    };
+  }
   DispatchStore.install(repositories.parcels);
   ConnectivityMonitor.start();
   final preferences = await SharedPreferences.getInstance();
@@ -101,22 +112,12 @@ Future<void> main() async {
     suspended: repositories.riderProfile.profile?.kycStatus == 'suspended',
     online: repositories.riderProfile.profile?.checkedInAt != null,
   );
-  await JobOfferNotifications.init(_onNotificationAction);
   runApp(MimooRiderApp(
     settings: settings,
     auth: auth,
     riderStatus: riderStatus,
     repositories: repositories,
   ));
-}
-
-/// Lockscreen notification action handler. Accept/open opens the offer details
-/// (accepting there leads into the pickup flow). Decline simply dismisses.
-void _onNotificationAction(String offerId, String action) {
-  if (action == 'decline') return;
-  final navigator = mimooNavigatorKey.currentState;
-  if (navigator == null) return;
-  navigator.pushNamed(MimooRoutes.jobOffer, arguments: offerId);
 }
 
 class MimooRiderApp extends StatelessWidget {
@@ -175,11 +176,13 @@ class MimooRiderApp extends StatelessWidget {
                     child:
                         BiometricGate(child: child ?? const SizedBox.shrink()),
                   ),
-                  initialRoute: auth.isSignedIn ? '/home' : '/login',
+                  // Splash plays first, then goes to the same route the app
+                  // already chose from the session state.
+                  initialRoute: '/splash',
                   routes: {
+                    '/splash': (_) => SplashScreen(
+                        nextRoute: auth.isSignedIn ? '/home' : '/login'),
                     '/login': (_) => const LoginScreen(),
-                    '/register': (_) => const RegistrationScreen(),
-                    '/pending': (_) => const PendingApprovalScreen(),
                     MimooRoutes.home: (_) => const MainShell(),
                     '/delivery': (context) {
                       final parcel = repositories.parcels
@@ -217,7 +220,6 @@ class MimooRiderApp extends StatelessWidget {
                             items: repositories.notifications.notifications
                                 .map((notification) => AppNotification(
                                       switch (notification.kind) {
-                                        'job_offer' => NotifKind.jobOffer,
                                         'parcel_assigned' =>
                                           NotifKind.parcelAssigned,
                                         'remittance' => NotifKind.remittance,
@@ -235,12 +237,6 @@ class MimooRiderApp extends StatelessWidget {
                                 .toList(growable: false),
                             onMarkAllRead:
                                 repositories.notifications.markAllRead,
-                            onTap: (notification) {
-                              if (notification.kind == NotifKind.jobOffer) {
-                                Navigator.of(context)
-                                    .pushNamed(MimooRoutes.jobOffer);
-                              }
-                            },
                           ),
                         ),
                     MimooRoutes.profile: (_) => const ProfileScreen(),
@@ -271,76 +267,6 @@ class MimooRiderApp extends StatelessWidget {
                         return const _RouteDataError();
                       }
                       return HistoryJobDetailScreen(job: argument);
-                    },
-                    MimooRoutes.jobOffer: (context) {
-                      final argument =
-                          ModalRoute.of(context)?.settings.arguments;
-                      final pendingOffers = repositories.offers.offers
-                          .where((offer) => offer.state == 'pending')
-                          .toList();
-                      final selectedOffer = argument is int
-                          ? repositories.offers.offers
-                              .where((offer) => offer.id == argument)
-                              .fold<db.JobOffer?>(
-                                  null, (found, offer) => found ?? offer)
-                          : pendingOffers.fold<db.JobOffer?>(
-                              null, (found, offer) => found ?? offer);
-                      if (selectedOffer == null) return const _RouteDataError();
-                      final parcel = repositories.parcels
-                          .byTracking(selectedOffer.parcelId);
-                      if (parcel == null) return const _RouteDataError();
-                      return JobOfferScreen(
-                        offer: JobOffer(
-                          id: '${selectedOffer.id}',
-                          tracking: parcel.trackingNo,
-                          merchant: parcel.sellerName,
-                          pickupArea: parcel.sellerAddress,
-                          dropArea: parcel.address,
-                          parcelLabel: parcel.item ?? '1 parcel',
-                          pickupPay: selectedOffer.payout,
-                          cod: selectedOffer.codAmount,
-                          km: selectedOffer.km,
-                          expiresAt: selectedOffer.expiresAt,
-                        ),
-                        onAccept: () async {
-                          // Block accept when offline.
-                          final riderStatus = RiderStatusScope.of(context);
-                          if (!riderStatus.isOnline) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    "You're offline. Go Active to accept jobs."),
-                              ),
-                            );
-                            return OfferResult.taken;
-                          }
-                          // Errors (expired 409, max-jobs 409) are caught in
-                          // JobOfferScreen._accept() and shown as a SnackBar.
-                          await repositories.offers
-                              .setState(selectedOffer.id!, 'accepted');
-                          if (!context.mounted) return OfferResult.taken;
-                          Navigator.of(context).pushReplacementNamed(
-                              MimooRoutes.pickupDetail,
-                              arguments: parcel.trackingNo);
-                          return OfferResult.accepted;
-                        },
-                        onDecline: () {
-                          repositories.offers
-                              .setState(selectedOffer.id!, 'declined')
-                              .then((_) {
-                            if (context.mounted) Navigator.of(context).pop();
-                          }).catchError((_) {
-                            // Decline failures are non-critical; swallow silently.
-                          });
-                        },
-                        onBackHome: () => Navigator.of(context)
-                            .pushNamedAndRemoveUntil(
-                                MimooRoutes.home, (_) => false),
-                        onExpired: () {
-                          repositories.offers
-                              .setState(selectedOffer.id!, 'expired');
-                        },
-                      );
                     },
                     MimooRoutes.pickupDetail: (context) {
                       final parcel = repositories.parcels.fromArgs(
@@ -475,57 +401,6 @@ class MimooRiderApp extends StatelessWidget {
                               await repositories.remittances.refresh();
                             },
                           ),
-                        ),
-                    MimooRoutes.activationSetPassword: (context) =>
-                        SetPasswordScreen(
-                          riderId: 'RDR-2026-0842',
-                          fleetName: 'Bilis Hatid Express Inc.',
-                          expiresAt: DateTime.now()
-                              .add(const Duration(hours: 23, minutes: 59)),
-                          // TODO(api): submit the password to the activation endpoint.
-                          onActivate: (password) async {
-                            Navigator.of(context).pushReplacementNamed(
-                                MimooRoutes.activationSuccess);
-                          },
-                        ),
-                    MimooRoutes.activationLinkExpired: (context) =>
-                        LinkExpiredScreen(
-                          fleetName: 'Bilis Hatid Express Inc.',
-                          email: 'pedrojose.garcia@example.com',
-                          phone: '+639171234567',
-                          onBackToLogin: () => Navigator.of(context)
-                              .pushNamedAndRemoveUntil('/login', (_) => false),
-                          // TODO(api): ask the logistics company to resend the invitation.
-                          onRequestResend: () async {
-                            await Future<void>.delayed(
-                                const Duration(milliseconds: 400));
-                          },
-                        ),
-                    MimooRoutes.activationSuccess: (context) =>
-                        ActivationSuccessScreen(
-                          riderName: 'Pedro Jose Garcia',
-                          fleetName: 'Bilis Hatid Express Inc.',
-                          vehicle: 'Motorcycle · 123ABC',
-                          hub: 'Quezon City Hub',
-                          referenceId: 'RDR-2026-0842',
-                          onLogin: () => Navigator.of(context)
-                              .pushNamedAndRemoveUntil('/login', (_) => false),
-                        ),
-                    MimooRoutes.registrationApproved: (context) =>
-                        RegistrationApprovedScreen(
-                          fleetName: 'Bilis Hatid Express Inc.',
-                          riderId: 'RDR-2026-0842',
-                          hubName: 'Quezon City Hub',
-                          onLogin: () => Navigator.of(context)
-                              .pushNamedAndRemoveUntil('/login', (_) => false),
-                        ),
-                    MimooRoutes.registrationRejected: (context) =>
-                        RegistrationRejectedScreen(
-                          reason:
-                              "Driver's license photo is blurry and the expiry date is unreadable.",
-                          supportPhone: '+639171234567',
-                          onEditAndResubmit: () =>
-                              Navigator.of(context).pushNamed('/register'),
                         ),
                     MimooRoutes.suspended: (context) => SuspendedScreen(
                           fleetName: 'Bilis Hatid Express Inc.',

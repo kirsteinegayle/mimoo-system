@@ -6,11 +6,12 @@ import '../../services/api_service.dart';
 import '../../services/return_repository.dart';
 import '../../services/review_repository.dart' show PickedImage;
 import '../../utils/image_pick.dart';
+import '../../theme/app_theme.dart';
 
-const _kPrimary = Color(0xFF34175B);
-const _kSecondary = Color(0xFF6B38D4);
-const _kBorder = Color(0xFFDDD8F0);
-const _kSubtext = Color(0xFF8A84A3);
+const _kPrimary = AppColors.primary;
+const _kSecondary = AppColors.accent;
+const _kBorder = AppColors.border;
+const _kSubtext = AppColors.textMuted;
 
 String returnStatusLabel(String s) {
   switch (s) {
@@ -35,11 +36,11 @@ Color returnStatusColor(String s) {
   switch (s) {
     case 'approved':
     case 'refunded':
-      return const Color(0xFF1DB966);
+      return AppColors.success;
     case 'rejected':
-      return Colors.red.shade600;
+      return AppColors.error;
     case 'escalated':
-      return const Color(0xFFFF6B00);
+      return AppColors.orange;
     default:
       return _kSecondary;
   }
@@ -205,7 +206,7 @@ class _ReturnRequestFormPageState extends State<ReturnRequestFormPage> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(top: 12),
-              child: Text(_error!, style: const TextStyle(color: Colors.red)),
+              child: Text(_error!, style: const TextStyle(color: AppColors.error)),
             ),
           const SizedBox(height: 20),
           FilledButton(
@@ -302,14 +303,14 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(e.message),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: const Text('Something went wrong. Please try again.'),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ));
     } finally {
@@ -391,7 +392,7 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
                                 errorBuilder: (_, __, ___) => Container(
                                     width: 72,
                                     height: 72,
-                                    color: const Color(0xFFEFE9FD))),
+                                    color: AppColors.chip)),
                           ),
                         ),
                       ),
@@ -421,7 +422,7 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
                       if (rr.canEscalate)
                         FilledButton.icon(
                           style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFFFF6B00),
+                              backgroundColor: AppColors.orange,
                               minimumSize: const Size.fromHeight(48)),
                           onPressed: _escalating ? null : _escalate,
                           icon: const Icon(Icons.campaign_outlined),

@@ -1,15 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../core/api_config.dart';
 import '../core/rider_status_controller.dart';
-import '../data/repositories/app_repositories_scope.dart';
-import '../widgets/mimoo_drawer.dart';
+import '../mock/rider_mock.dart';
+import '../widgets/motion.dart';
 import '../widgets/shell.dart';
-import 'home_tab.dart';
-import 'jobs_tab.dart';
-import 'history_tab.dart';
-import 'earnings_tab.dart';
+import 'redesign/home_screen.dart';
+import 'redesign/inbox_screen.dart';
+import 'redesign/job_actions.dart';
+import 'redesign/job_router.dart';
+import 'redesign/jobs_screen.dart';
+import 'redesign/profile_tab.dart';
+import 'redesign/wallet_screen.dart';
 
+/// Bottom nav: Home | Jobs | Scan (centre action) | Wallet | Profile.
+/// History lives in Jobs → "Done". The drawer is no longer used.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
   @override
@@ -21,10 +27,33 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   RiderStatusController? _status;
   bool _refreshedLocation = false;
 
+  String? _shownLoadError;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // API mode: load jobs / wallet / notifications once the shell opens.
+    RiderMock.instance.addListener(_onStoreChanged);
+    if (!useMock) unawaited(RiderMock.instance.refresh());
+  }
+
+  /// Shows a load error once (e.g. server down) as a SnackBar.
+  void _onStoreChanged() {
+    final error = RiderMock.instance.loadError;
+    if (error == null) {
+      _shownLoadError = null;
+      return;
+    }
+    if (error == _shownLoadError || !mounted) return;
+    _shownLoadError = error;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(error),
+        action: SnackBarAction(
+            label: 'Retry', onPressed: () => RiderMock.instance.refresh()),
+      ));
   }
 
   @override
@@ -38,6 +67,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    RiderMock.instance.removeListener(_onStoreChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -50,48 +80,59 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     }
   }
 
+  void _go(int tab) => setState(() => _i = tab);
+
+  Widget _tab(int i) => switch (i) {
+        0 => HomeScreen(
+            onOpenJob: openJobDetail,
+            onOpenJobs: () => _go(1),
+            onOpenWallet: () => _go(2),
+          ),
+        1 => JobsScreen(
+            onOpen: openJobDetail,
+            onAction: (context, job) =>
+                runJobAction(context, job, openJobDetail),
+          ),
+        2 => const WalletScreen(),
+        _ => const ProfileTab(),
+      };
+
   @override
   Widget build(BuildContext context) {
-    final repositories = AppRepositoriesScope.of(context);
+    final mock = RiderMock.instance;
     return ListenableBuilder(
-      listenable: Listenable.merge([
-        repositories.notifications,
-        repositories.conversations,
-      ]),
-      builder: (context, _) {
-        final unreadNotifications = repositories.notifications.notifications
-            .where((notification) => notification.readAt == null)
-            .length;
-        final unreadMessages =
-            repositories.conversations.conversations.fold<int>(
-          0,
-          (count, conversation) =>
-              count +
-              repositories.conversations
-                  .messagesFor(conversation.id ?? -1)
-                  .where((message) =>
-                      message.sender != 'rider' && message.readAt == null)
-                  .length,
-        );
-        return Scaffold(
-          appBar: MimooAppBar(
-            unreadMessages: unreadMessages,
-            unreadNotifications: unreadNotifications,
+      listenable: mock,
+      builder: (context, _) => Scaffold(
+        appBar: MimooAppBar(
+          unreadMessages: mock.unreadMessages,
+          unreadNotifications: mock.unreadNotifications,
+          onMessages: () => openMessages(context),
+          onNotifications: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                  builder: (_) => InboxScreen(onOpenJob: openJobDetail))),
+        ),
+        // Tab content fades + slides slightly when switching tabs.
+        body: AnimatedSwitcher(
+          duration: motion(context, const Duration(milliseconds: 260)),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                      begin: const Offset(0, 0.02), end: Offset.zero)
+                  .animate(animation),
+              child: child,
+            ),
           ),
-          drawer: const MimooDrawer(),
-          body: IndexedStack(index: _i, children: [
-            HomeTab(onOpenEarnings: () => setState(() => _i = 2)),
-            const JobsTab(),
-            const EarningsTab(),
-            const HistoryTab(),
-          ]),
-          bottomNavigationBar: MimooBottomNav(
-            index: _i,
-            onTap: (v) => setState(() => _i = v),
-            onScan: () => Navigator.pushNamed(context, '/scan-waybill'),
-          ),
-        );
-      },
+          child: KeyedSubtree(key: ValueKey(_i), child: _tab(_i)),
+        ),
+        bottomNavigationBar: MimooBottomNav(
+          index: _i,
+          onTap: _go,
+          onScan: () => openMockScan(context),
+        ),
+      ),
     );
   }
 }

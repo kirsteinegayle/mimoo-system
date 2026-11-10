@@ -11,7 +11,6 @@ import '../data/repositories/app_repositories_scope.dart';
 import '../data/repositories/local_repositories.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../widgets/common.dart';
-import '../widgets/mimoo_drawer.dart';
 
 class HelpCenterScreen extends StatefulWidget {
   const HelpCenterScreen({super.key});
@@ -109,7 +108,6 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     return MScaffold(
       title: l10n.helpTitle,
       onBack: () => Navigator.maybePop(context),
-      drawer: const MimooDrawer(),
       body: ListView(padding: MS.pagePadding, children: [
         Text(l10n.helpHeading, style: ts(22, w: FontWeight.w700, c: c.text)),
         const SizedBox(height: 4),

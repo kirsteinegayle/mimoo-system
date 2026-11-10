@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ReactNode, useState, useRef, useEffect } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
+import TrackingLine from '@/components/tracking-line';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
 const fontSyne = { fontFamily: 'Syne, sans-serif' };
@@ -19,6 +20,10 @@ interface IncomingParcel {
     weight: number;
     shipped_at: string;
     status: string;
+    // Delivery tracking from orders.tracking_* (display only)
+    tracking_status?: string | null;
+    tracking_message?: string | null;
+    tracking_updated_at?: string | null;
 }
 
 interface Props {
@@ -681,6 +686,9 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
                                                         </div>
                                                     </div>
 
+                                                    {/* Delivery tracking (nothing shown when null) */}
+                                                    <TrackingLine tracking={scannedOrderData} className="mt-4" />
+
                                                     {/* Action Buttons */}
                                                     <div className="grid grid-cols-2 gap-3 mt-6">
                                                         <button 
@@ -778,6 +786,8 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
                                                                 </svg>
                                                                 <span className="text-xs text-gray-500">Shipped {parcel.shipped_at}</span>
                                                             </div>
+
+                                                            <TrackingLine tracking={parcel} className="mt-3" />
                                                         </div>
                                                     ))}
                                                 </div>

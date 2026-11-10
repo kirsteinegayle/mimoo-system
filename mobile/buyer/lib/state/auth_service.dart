@@ -285,6 +285,12 @@ class AuthService {
       }
     }
 
+    await clearLocalSession();
+  }
+
+  /// Local-only sign-out (no server call): clears the saved token and cached
+  /// profile. Used when the server already rejected the token (HTTP 401).
+  Future<void> clearLocalSession() async {
     ApiService.token = null;
     _isLoggedIn = false;
     _buyerName = null;

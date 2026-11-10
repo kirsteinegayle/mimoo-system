@@ -1,5 +1,7 @@
 import { Head, Link } from "@inertiajs/react";
+import { useEffect, useState } from "react";
 import { BuyerHeader } from "@/components/buyer-header";
+import { trackingLabel } from "@/components/tracking-line";
 import { Package, MapPin, Truck, Clock, CheckCircle2, XCircle } from "lucide-react";
 
 interface OrderItem {
@@ -45,12 +47,107 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
   pending: { label: "Pending", color: "bg-gray-100 text-gray-700", icon: Clock },
   paid: { label: "Paid", color: "bg-blue-100 text-blue-700", icon: CheckCircle2 },
   packed: { label: "Packed", color: "bg-indigo-100 text-indigo-700", icon: Package },
-  shipped: { label: "Shipped", color: "bg-purple-100 text-purple-700", icon: Truck },
+  // shipped and in_transit both read "In Transit" (no backwards step on out for delivery).
+  shipped: { label: "In Transit", color: "bg-purple-100 text-purple-700", icon: Truck },
   in_transit: { label: "In Transit", color: "bg-purple-100 text-purple-700", icon: Truck },
   completed: { label: "Delivered", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
   cancelled: { label: "Cancelled", color: "bg-red-100 text-red-700", icon: XCircle },
   failed: { label: "Failed", color: "bg-red-100 text-red-700", icon: XCircle },
 };
+
+const IN_TRANSIT_STEPS = ["Order placed", "Packed", "In Transit"];
+
+/** Rider events shown as detail on the current "In Transit" step. */
+const RIDER_DETAIL = ["out_for_delivery", "delivered", "delivery_failed", "returning_to_sender"];
+
+/**
+ * Order placed -> Packed -> In Transit (all reached, last = current).
+ * Used for both in_transit and shipped, so the timeline never moves backwards
+ * when the rider goes out for delivery (in_transit -> shipped).
+ */
+function InTransitTimeline({ trackingStatus }: { trackingStatus?: string | null }) {
+  const last = IN_TRANSIT_STEPS.length - 1;
+  const detail = trackingStatus && RIDER_DETAIL.includes(trackingStatus) ? trackingLabel(trackingStatus) : null;
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <Truck className="w-5 h-5 text-purple-600" />
+        Order Status
+      </h2>
+      <ol className="flex items-start">
+        {IN_TRANSIT_STEPS.map((step, i) => (
+          <li key={step} className="flex-1 flex flex-col items-center text-center relative">
+            {i > 0 && <span className="absolute top-3 right-1/2 w-full h-0.5 bg-purple-500" aria-hidden="true" />}
+            <span
+              className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center ${
+                i === last ? "bg-purple-600 ring-4 ring-purple-100" : "bg-purple-500"
+              }`}
+            >
+              <CheckCircle2 className="w-4 h-4 text-white" />
+            </span>
+            <span className={`mt-2 text-xs ${i === last ? "font-semibold text-purple-900" : "text-gray-600"}`}>
+              {i === last && detail ? `${step} · ${detail}` : step}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+interface DeliveryCode {
+  code: string;
+  expires_at: string;
+  rider_first_name: string | null;
+}
+
+/** Rider OTP: shown only while the backend returns an active code. Memory only. */
+function DeliveryCodeBanner({ orderId }: { orderId: number }) {
+  const [dc, setDc] = useState<DeliveryCode | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/orders/${orderId}/delivery-code`, {
+          headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        const body = res.ok ? await res.json() : null;
+        const d = body?.data;
+        if (alive) setDc(d && typeof d.code === "string" && d.expires_at ? d : null);
+      } catch {
+        if (alive) setDc(null);
+      }
+      if (alive) setNow(Date.now());
+    };
+    load();
+    const t = window.setInterval(load, 30000);
+    return () => {
+      alive = false;
+      window.clearInterval(t);
+    };
+  }, [orderId]);
+
+  if (!dc) return null;
+  const exp = new Date(dc.expires_at);
+  if (isNaN(exp.getTime()) || exp.getTime() <= now) return null;
+
+  return (
+    <div className="bg-purple-50 rounded-lg border border-purple-300 p-6 mb-6">
+      <p className="text-sm font-medium text-purple-900">
+        Give this code to your rider{dc.rider_first_name ? ` (${dc.rider_first_name})` : ""}:
+      </p>
+      <p className="text-3xl font-bold tracking-[0.4em] text-purple-900 font-mono my-2">{dc.code}</p>
+      <p className="text-xs text-gray-600">
+        Expires at {exp.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}. Only share it when you
+        receive your parcel.
+      </p>
+    </div>
+  );
+}
 
 export default function OrderDetail({ order, auth }: PageProps) {
   const user = auth?.user;
@@ -99,7 +196,15 @@ export default function OrderDetail({ order, auth }: PageProps) {
           )}
         </div>
 
+        {/* In-transit timeline (same steps as the buyer app); other statuses unchanged */}
+        {(order.status === "in_transit" || order.status === "shipped") && (
+          <InTransitTimeline trackingStatus={order.tracking_status} />
+        )}
+
         {/* Tracking information */}
+        {/* Rider delivery code (hidden unless active) */}
+        <DeliveryCodeBanner orderId={order.id} />
+
         {order.tracking_message && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">

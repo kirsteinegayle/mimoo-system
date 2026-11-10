@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ReactNode, useState } from 'react';
 import CourierLayout from './CourierLayout';
+import TrackingLine from '@/components/tracking-line';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
 const fontSyne = { fontFamily: 'Syne, sans-serif' };
@@ -19,6 +20,10 @@ interface Shipment {
     assignment_status: 'pending' | 'accepted' | 'rejected';
     is_overdue: boolean;
     is_expiring_soon: boolean;
+    // Delivery tracking from orders.tracking_* (display only)
+    tracking_status?: string | null;
+    tracking_message?: string | null;
+    tracking_updated_at?: string | null;
 }
 
 interface Stats {
@@ -103,6 +108,10 @@ interface ShipmentDetails {
     payment_method: string;
     items_count: number;
     assigned_by: string;
+    // Delivery tracking from orders.tracking_* (display only)
+    tracking_status?: string | null;
+    tracking_message?: string | null;
+    tracking_updated_at?: string | null;
 }
 
 interface HistoryEntry {
@@ -513,7 +522,10 @@ export default function IncomingShipments({ auth, company, shipments: initialShi
                                                     <div className="text-xs text-gray-400">{shipment.dimensions}</div>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-gray-600">{shipment.assigned_date}</td>
-                                                <td className="px-6 py-4">{getStatusBadge(shipment.assignment_status, shipment.is_overdue, shipment.is_expiring_soon)}</td>
+                                                <td className="px-6 py-4">
+                                                    {getStatusBadge(shipment.assignment_status, shipment.is_overdue, shipment.is_expiring_soon)}
+                                                    <TrackingLine tracking={shipment} className="mt-2 min-w-[200px]" />
+                                                </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
                                                         <button
@@ -621,6 +633,9 @@ export default function IncomingShipments({ auth, company, shipments: initialShi
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Delivery tracking (nothing shown when null) */}
+                                <TrackingLine tracking={selectedShipment} />
 
                                 {/* Seller Details */}
                                 {selectedShipment.seller && (

@@ -5,6 +5,7 @@ import '../data/parcel_flow.dart';
 import '../data/repositories/app_repositories_scope.dart';
 import '../data/repositories/repository_interfaces.dart';
 import '../widgets/common.dart';
+import '../widgets/empty_state.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -114,6 +115,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         borderRadius: BorderRadius.circular(99),
                         borderSide: BorderSide.none))),
             const SizedBox(height: 12),
+            if (filtered.isEmpty)
+              EmptyState(
+                icon: Icons.chat_bubble_outline_rounded,
+                title: _query.isEmpty ? 'No messages' : 'No matches',
+                message: _query.isEmpty
+                    ? 'Chats with sellers, buyers and your hub will show up here.'
+                    : 'Try a different name or tracking number.',
+              ),
             for (final conversation in filtered)
               if (conversation.id case final id?)
                 Builder(builder: (context) {

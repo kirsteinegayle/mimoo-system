@@ -233,8 +233,11 @@ class _LoginPageState extends State<LoginPage> {
         children: [
           Text('New to ${MimooBrand.name}? ',
               style: mimooText(size: 13, color: MimooBrand.subtext)),
-          GestureDetector(
-            onTap: () => Navigator.push(
+          TextButton(
+            style: TextButton.styleFrom(
+                minimumSize: const Size(0, 44),
+                padding: const EdgeInsets.symmetric(horizontal: 6)),
+            onPressed: () => Navigator.push(
               context,
               MimooPageRoute(builder: (_) => const RegisterPage()),
             ),
