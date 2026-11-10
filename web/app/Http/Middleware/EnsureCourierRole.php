@@ -22,9 +22,8 @@ class EnsureCourierRole
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $role = $user->role ?? $user->account_type;
-
-        if ($role !== 'courier') {
+        // Both checks are required: account_type='logistics' AND role='courier'.
+        if ($user->account_type !== 'logistics' || $user->role !== 'courier') {
             return response()->json(['message' => 'This endpoint is for courier accounts only.'], 403);
         }
 

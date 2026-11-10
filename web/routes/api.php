@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CourierAuthController;
 use App\Http\Controllers\Api\CourierDashboardController;
+use App\Http\Controllers\Api\CourierFacilityApiController;
 use App\Http\Controllers\Api\CourierShipmentController;
 use App\Http\Controllers\Api\CourierPickupController;
 use App\Http\Controllers\Api\CourierScanController;
@@ -161,14 +162,22 @@ Route::prefix('courier-app')->group(function () {
 
         // Pickup management
         Route::get('/pickups',                          [CourierPickupController::class, 'index']);
+        Route::get('/pickups/{id}',                     [CourierPickupController::class, 'show'])->whereNumber('id');
         Route::post('/pickups/{id}/schedule',           [CourierPickupController::class, 'schedule'])->middleware('throttle:30,1,courier-pickup-schedule')->whereNumber('id');
         Route::post('/pickups/{id}/assign-personnel',   [CourierPickupController::class, 'assignPersonnel'])->middleware('throttle:30,1,courier-pickup-assign')->whereNumber('id');
         Route::post('/pickups/{id}/confirm',            [CourierPickupController::class, 'confirm'])->middleware('throttle:30,1,courier-pickup-confirm')->whereNumber('id');
         Route::post('/pickups/{id}/record-failed',      [CourierPickupController::class, 'recordFailed'])->middleware('throttle:30,1,courier-pickup-failed')->whereNumber('id');
+        Route::post('/pickups/{id}/reschedule',         [CourierPickupController::class, 'reschedule'])->middleware('throttle:30,1,courier-pickup-reschedule')->whereNumber('id');
+        Route::post('/pickups/{id}/cancel',             [CourierPickupController::class, 'cancel'])->middleware('throttle:30,1,courier-pickup-cancel')->whereNumber('id');
 
         // Parcel scanning
         Route::get('/facilities',              [CourierScanController::class, 'facilities']);
         Route::get('/parcel/{waybill}',        [CourierScanController::class, 'show']);
         Route::post('/scan-parcel',            [CourierScanController::class, 'scan'])->middleware('throttle:60,1,courier-scan');
+
+        // Facility management
+        Route::post('/facilities',             [CourierFacilityApiController::class, 'store'])->middleware('throttle:20,1,courier-facility-store');
+        Route::put('/facilities/{id}',         [CourierFacilityApiController::class, 'update'])->middleware('throttle:20,1,courier-facility-update')->whereNumber('id');
+        Route::delete('/facilities/{id}',      [CourierFacilityApiController::class, 'destroy'])->middleware('throttle:20,1,courier-facility-delete')->whereNumber('id');
     });
 });

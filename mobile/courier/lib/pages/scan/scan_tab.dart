@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../models/courier_models.dart';
 import '../../services/courier_repository.dart';
 import '../../services/api_service.dart';
@@ -11,8 +14,11 @@ class ScanTab extends StatefulWidget {
   State<ScanTab> createState() => _ScanTabState();
 }
 
-class _ScanTabState extends State<ScanTab> {
+class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
   final _waybillCtrl = TextEditingController();
+  final _scanner = MobileScannerController(
+    formats: const [BarcodeFormat.all],
+  );
 
   List<FacilityItem> _facilities = [];
   FacilityItem? _selectedFacility;
@@ -21,6 +27,10 @@ class _ScanTabState extends State<ScanTab> {
   bool _loadingFacilities = true;
   bool _lookingUp = false;
   bool _confirming = false;
+  bool _cameraOn = true;
+  bool _torchOn = false;
+  String? _lastCode;
+  DateTime? _lastScanAt;
   String? _lookupError;
   String? _facilError;
   String? _confirmMsg;
@@ -29,13 +39,49 @@ class _ScanTabState extends State<ScanTab> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadFacilities();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _scanner.dispose();
     _waybillCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_scanner.value.isInitialized) return;
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_scanner.start());
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      unawaited(_scanner.stop());
+    }
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    if (_lookingUp || _confirming) return;
+    final code = capture.barcodes.firstOrNull?.rawValue?.trim();
+    if (code == null || code.isEmpty) return;
+    final upper = code.toUpperCase();
+    final now = DateTime.now();
+    if (_lastCode == upper &&
+        _lastScanAt != null &&
+        now.difference(_lastScanAt!) < const Duration(seconds: 4)) {
+      return;
+    }
+    _lastCode = upper;
+    _lastScanAt = now;
+    _waybillCtrl.text = upper;
+    _lookup();
+  }
+
+  Future<void> _toggleTorch() async {
+    await _scanner.toggleTorch();
+    if (mounted) setState(() => _torchOn = !_torchOn);
   }
 
   Future<void> _loadFacilities() async {
@@ -108,6 +154,8 @@ class _ScanTabState extends State<ScanTab> {
         _confirmColor = kGreen;
         _confirming = false;
         _parcel = null;
+        _lastCode = null;
+        _lastScanAt = null;
         _waybillCtrl.clear();
       });
     } on ApiException catch (e) {
@@ -129,156 +177,293 @@ class _ScanTabState extends State<ScanTab> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Parcel Scanner', style: pjs(size: 18, weight: FontWeight.w800)),
-        const SizedBox(height: 4),
-        Text('Enter the waybill number to look up a parcel.',
-            style: pjs(size: 13, color: kSubtext)),
-        const SizedBox(height: 20),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cameraHeight =
+            (constraints.maxHeight - 220).clamp(280.0, 900.0).toDouble();
 
-        // Waybill input
-        Row(children: [
-          Expanded(
-            child: TextField(
-              controller: _waybillCtrl,
-              textCapitalization: TextCapitalization.characters,
-              style: pjs(size: 14, weight: FontWeight.w600),
-              decoration: mimooInput(
-                  hint: 'e.g. MIM00000001', icon: Icons.qr_code_scanner),
-              onSubmitted: (_) => _lookup(),
-            ),
-          ),
-          const SizedBox(width: 10),
-          SizedBox(
-            height: 50,
-            child: FilledButton(
-              onPressed: _lookingUp ? null : _lookup,
-              style: FilledButton.styleFrom(
-                backgroundColor: kPrimary,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: _lookingUp
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : Text('Search',
-                      style: pjs(
-                          size: 13,
-                          weight: FontWeight.w700,
-                          color: Colors.white)),
-            ),
-          ),
-        ]),
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Parcel Scanner',
+                style: pjs(size: 18, weight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(
+                'Point the camera at a QR code or barcode, or enter the waybill.',
+                style: pjs(size: 13, color: kSubtext)),
+            const SizedBox(height: 14),
 
-        // Error
-        if (_lookupError != null) ...[
-          const SizedBox(height: 10),
-          _Alert(_lookupError!, kFlash),
-        ],
-
-        // Success message
-        if (_confirmMsg != null) ...[
-          const SizedBox(height: 10),
-          _Alert(_confirmMsg!, _confirmColor),
-        ],
-
-        // Parcel info
-        if (_parcel != null) ...[
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: kCard,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: kBorder),
-            ),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Parcel Info',
-                  style:
-                      pjs(size: 13, weight: FontWeight.w800, color: kPrimary)),
-              const Divider(height: 12, color: kBorder),
-              _ParcelRow('Waybill', _parcel!.waybillNumber),
-              _ParcelRow('Order', _parcel!.orderNumber),
-              _ParcelRow('Buyer', _parcel!.buyerName),
-              _ParcelRow('Address', _parcel!.buyerAddress),
-              _ParcelRow('Dest.', _parcel!.destination),
-              _ParcelRow('Payment', _parcel!.paymentMethod),
-              _ParcelRow(
-                  'Total', '₱${_parcel!.totalAmount.toStringAsFixed(2)}'),
-              _ParcelRow('Status', _parcel!.status),
-              if (_parcel!.weight != null)
-                _ParcelRow('Weight', '${_parcel!.weight} kg'),
-            ]),
-          ),
-          const SizedBox(height: 16),
-
-          // Facility selector
-          if (_loadingFacilities)
-            const Center(child: CircularProgressIndicator(color: kPrimary))
-          else if (_facilError != null)
-            // ignore: prefer_const_constructors
-            _Alert(_facilError!, kFlash)
-          else if (_facilities.isEmpty)
-            // ignore: prefer_const_constructors
-            _Alert('No active facilities found. Add a facility first.',
-                Colors.orange)
-          else ...[
-            Text('Receiving Facility',
-                style: pjs(size: 13, weight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            // ignore: deprecated_member_use
-            DropdownButtonFormField<FacilityItem>(
-              initialValue: _selectedFacility,
-              onChanged: (f) => setState(() => _selectedFacility = f),
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: kBorder)),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              ),
-              items: _facilities
-                  .map((f) => DropdownMenuItem(
-                        value: f,
-                        child: Text(f.displayLabel, style: pjs(size: 13)),
-                      ))
-                  .toList(),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: FilledButton.icon(
-                onPressed: _confirming ? null : _confirmScan,
-                style: FilledButton.styleFrom(
-                  backgroundColor: kGreen,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+            if (_cameraOn)
+              Container(
+                height: cameraHeight,
+                width: double.infinity,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1035),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: kBorder),
                 ),
-                icon: _confirming
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.check_circle_outline,
-                        color: Colors.white),
-                label: Text(_confirming ? 'Processing…' : 'Confirm Receipt',
-                    style: pjs(
-                        size: 15,
-                        weight: FontWeight.w800,
-                        color: Colors.white)),
+                child: Stack(fit: StackFit.expand, children: [
+                  MobileScanner(
+                    controller: _scanner,
+                    onDetect: _onDetect,
+                    errorBuilder: (_, __, ___) => _cameraDenied(),
+                  ),
+                  IgnorePointer(
+                    child: Center(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final frameWidth =
+                              (constraints.maxWidth - 48).clamp(240.0, 400.0);
+                          final frameHeight =
+                              (frameWidth * 0.48).clamp(130.0, 200.0);
+                          return Container(
+                            width: frameWidth,
+                            height: frameHeight,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: kSecondary, width: 3),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Row(children: [
+                      IconButton(
+                        tooltip: 'Toggle flashlight',
+                        onPressed: _toggleTorch,
+                        icon: Icon(
+                          _torchOn ? Icons.flashlight_on : Icons.flashlight_off,
+                          color: Colors.amber,
+                          size: 20,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Hide camera',
+                        onPressed: () => setState(() => _cameraOn = false),
+                        icon: const Icon(Icons.close,
+                            color: Colors.white, size: 20),
+                      ),
+                    ]),
+                  ),
+                  Positioned(
+                    bottom: 10,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Text('Align the code within the frame',
+                            style: pjs(size: 10, color: Colors.white)),
+                      ),
+                    ),
+                  ),
+                ]),
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => setState(() => _cameraOn = true),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: kPrimary),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(Icons.qr_code_scanner, color: kPrimary),
+                  label: Text('Open camera scanner',
+                      style: pjs(
+                          size: 13, weight: FontWeight.w700, color: kPrimary)),
+                ),
               ),
-            ),
-          ],
+            const SizedBox(height: 16),
+            Text('Or enter the waybill manually',
+                style: pjs(size: 12, weight: FontWeight.w700, color: kSubtext)),
+            const SizedBox(height: 8),
+
+            // Waybill input
+            Row(children: [
+              Expanded(
+                child: TextField(
+                  controller: _waybillCtrl,
+                  textCapitalization: TextCapitalization.characters,
+                  style: pjs(size: 14, weight: FontWeight.w600),
+                  decoration: mimooInput(
+                      hint: 'e.g. MIM00000001', icon: Icons.qr_code_scanner),
+                  onSubmitted: (_) => _lookup(),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 50,
+                child: FilledButton(
+                  onPressed: _lookingUp ? null : _lookup,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: kPrimary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _lookingUp
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : Text('Search',
+                          style: pjs(
+                              size: 13,
+                              weight: FontWeight.w700,
+                              color: Colors.white)),
+                ),
+              ),
+            ]),
+
+            // Error
+            if (_lookupError != null) ...[
+              const SizedBox(height: 10),
+              _Alert(_lookupError!, kFlash),
+            ],
+
+            // Success message
+            if (_confirmMsg != null) ...[
+              const SizedBox(height: 10),
+              _Alert(_confirmMsg!, _confirmColor),
+            ],
+
+            // Parcel info
+            if (_parcel != null) ...[
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: kCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: kBorder),
+                ),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Parcel Info',
+                          style: pjs(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: kPrimary)),
+                      const Divider(height: 12, color: kBorder),
+                      _ParcelRow('Waybill', _parcel!.waybillNumber),
+                      _ParcelRow('Order', _parcel!.orderNumber),
+                      _ParcelRow('Buyer', _parcel!.buyerName),
+                      _ParcelRow('Address', _parcel!.buyerAddress),
+                      _ParcelRow('Dest.', _parcel!.destination),
+                      _ParcelRow('Payment', _parcel!.paymentMethod),
+                      _ParcelRow('Total',
+                          '₱${_parcel!.totalAmount.toStringAsFixed(2)}'),
+                      _ParcelRow('Status', _parcel!.status),
+                      if (_parcel!.weight != null)
+                        _ParcelRow('Weight', '${_parcel!.weight} kg'),
+                    ]),
+              ),
+              const SizedBox(height: 16),
+
+              // Facility selector
+              if (_loadingFacilities)
+                const Center(child: CircularProgressIndicator(color: kPrimary))
+              else if (_facilError != null)
+                // ignore: prefer_const_constructors
+                _Alert(_facilError!, kFlash)
+              else if (_facilities.isEmpty)
+                // ignore: prefer_const_constructors
+                _Alert('No active facilities found. Add a facility first.',
+                    Colors.orange)
+              else ...[
+                Text('Receiving Facility',
+                    style: pjs(size: 13, weight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                // ignore: deprecated_member_use
+                DropdownButtonFormField<FacilityItem>(
+                  initialValue: _selectedFacility,
+                  onChanged: (f) => setState(() => _selectedFacility = f),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: kBorder)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                  ),
+                  items: _facilities
+                      .map((f) => DropdownMenuItem(
+                            value: f,
+                            child: Text(f.displayLabel, style: pjs(size: 13)),
+                          ))
+                      .toList(),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: FilledButton.icon(
+                    onPressed: _confirming ? null : _confirmScan,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: kGreen,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: _confirming
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.check_circle_outline,
+                            color: Colors.white),
+                    label: Text(_confirming ? 'Processing…' : 'Confirm Receipt',
+                        style: pjs(
+                            size: 15,
+                            weight: FontWeight.w800,
+                            color: Colors.white)),
+                  ),
+                ),
+              ],
+            ],
+          ]),
+        );
+      },
+    );
+  }
+
+  Widget _cameraDenied() {
+    return Container(
+      color: const Color(0xFF1A1035),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.videocam_off_outlined,
+              color: Colors.white70, size: 38),
+          const SizedBox(height: 8),
+          Text('Camera access is needed to scan',
+              style:
+                  pjs(size: 14, weight: FontWeight.w700, color: Colors.white)),
+          Text('You can still enter the waybill manually below.',
+              textAlign: TextAlign.center,
+              style: pjs(size: 11, color: Colors.white60)),
+          const SizedBox(height: 6),
+          TextButton.icon(
+            onPressed: () => unawaited(openAppSettings()),
+            icon: const Icon(Icons.settings, size: 16),
+            label: Text('Open Settings',
+                style: pjs(size: 12, weight: FontWeight.w700)),
+          ),
         ],
-      ]),
+      ),
     );
   }
 }

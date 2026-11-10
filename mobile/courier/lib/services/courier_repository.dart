@@ -70,9 +70,17 @@ class CourierRepository {
   }
 
   Future<ShipmentDetail> shipmentDetail(int id) async {
-    final res =
-        await ApiService.get('$_prefix/shipments/$id') as Map<String, dynamic>;
-    return ShipmentDetail.fromJson(res['data'] as Map<String, dynamic>);
+    final response = await ApiService.get('$_prefix/shipments/$id');
+    if (response is! Map<String, dynamic>) {
+      throw const FormatException(
+          'Shipment detail response must be a JSON object.');
+    }
+    final data = response['data'];
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException(
+          'Shipment detail response is missing its data object.');
+    }
+    return ShipmentDetail.fromJson(data);
   }
 
   Future<void> acceptShipment(int id) async {
@@ -164,5 +172,375 @@ class CourierRepository {
       '$_prefix/scan-parcel',
       body: {'waybill_number': waybill, 'facility_id': facilityId},
     );
+  }
+
+  // ── Notifications ────────────────────────────────────────────────────────
+
+  Future<({List<CourierNotificationItem> items, PageMeta meta})> notifications({
+    String filter = 'all',
+    String category = 'all',
+    int page = 1,
+  }) async {
+    final params = <String, String>{'page': '$page'};
+    if (filter != 'all') params['filter'] = filter;
+    if (category != 'all') params['category'] = category;
+
+    final res = await ApiService.get(
+      '$_prefix/notifications',
+      queryParameters: params,
+    ) as Map<String, dynamic>;
+    final items = (res['data'] as List<dynamic>)
+        .map((j) => CourierNotificationItem.fromJson(j as Map<String, dynamic>))
+        .toList();
+    return (
+      items: items,
+      meta: PageMeta.fromJson(res['meta'] as Map<String, dynamic>),
+    );
+  }
+
+  Future<int> unreadNotificationCount() async {
+    final res = await ApiService.get('$_prefix/notifications/unread-count')
+        as Map<String, dynamic>;
+    return ((res['data'] as Map<String, dynamic>)['unread'] as num?)?.toInt() ??
+        0;
+  }
+
+  Future<void> markNotificationRead(int id) async {
+    await ApiService.post('$_prefix/notifications/$id/read');
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    await ApiService.post('$_prefix/notifications/read-all');
+  }
+
+  // ── Messages ─────────────────────────────────────────────────────────────
+
+  Future<List<ConversationSummary>> conversations() async {
+    final res = await ApiService.get('$_prefix/messages/conversations')
+        as Map<String, dynamic>;
+    return (res['data'] as List<dynamic>)
+        .map((j) => ConversationSummary.fromJson(j as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<ChatThread> thread(int conversationId) async {
+    final res = await ApiService.get(
+      '$_prefix/messages/$conversationId/messages',
+    ) as Map<String, dynamic>;
+    return ChatThread.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
+  Future<ChatMessage> sendMessage(int conversationId, String body) async {
+    final res = await ApiService.post(
+      '$_prefix/messages/$conversationId/messages',
+      body: {'body': body},
+    ) as Map<String, dynamic>;
+    return ChatMessage.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
+  Future<int> unreadMessageCount() async {
+    final res = await ApiService.get('$_prefix/messages/unread-count')
+        as Map<String, dynamic>;
+    return ((res['data'] as Map<String, dynamic>)['unread'] as num?)?.toInt() ??
+        0;
+  }
+
+  // ── Timeline ─────────────────────────────────────────────────────────────
+
+  Future<List<TimelineEvent>> timeline({int? tripId, int perPage = 40}) async {
+    final params = <String, String>{'per_page': '$perPage'};
+    if (tripId != null) params['trip_id'] = '$tripId';
+    final res = await ApiService.get(
+      '$_prefix/timeline',
+      queryParameters: params,
+    ) as Map<String, dynamic>;
+    return (res['data'] as List<dynamic>)
+        .map((j) => TimelineEvent.fromJson(j as Map<String, dynamic>))
+        .toList();
+  }
+
+  // ── Trips ────────────────────────────────────────────────────────────────
+
+  Future<({List<CourierTrip> items, Map<String, int> stats})> trips({
+    String filter = 'active',
+    String? dateFrom,
+    String? dateTo,
+  }) async {
+    final params = <String, String>{'filter': filter};
+    if (dateFrom != null) params['date_from'] = dateFrom;
+    if (dateTo != null) params['date_to'] = dateTo;
+    final res = await ApiService.get(
+      '$_prefix/trips',
+      queryParameters: params,
+    ) as Map<String, dynamic>;
+    final statsRaw = res['stats'] as Map<String, dynamic>? ?? {};
+    return (
+      items: (res['data'] as List<dynamic>)
+          .map((j) => CourierTrip.fromJson(j as Map<String, dynamic>))
+          .toList(),
+      stats: statsRaw.map((k, v) => MapEntry(k, (v as num).toInt())),
+    );
+  }
+
+  Future<CourierTrip> tripDetail(int id) async {
+    final res =
+        await ApiService.get('$_prefix/trips/$id') as Map<String, dynamic>;
+    return CourierTrip.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
+  Future<void> acceptTrip(int id) async {
+    await ApiService.post('$_prefix/trips/$id/accept');
+  }
+
+  Future<void> declineTrip(int id, String reason) async {
+    await ApiService.post(
+      '$_prefix/trips/$id/decline',
+      body: {'reason': reason},
+    );
+  }
+
+  Future<void> startLoading(int id) async {
+    await ApiService.post('$_prefix/trips/$id/start-loading');
+  }
+
+  Future<Map<String, dynamic>> scanTripParcel(int id, String waybill) async {
+    final res = await ApiService.post(
+      '$_prefix/trips/$id/scan',
+      body: {'waybill_number': waybill},
+    ) as Map<String, dynamic>;
+    return res;
+  }
+
+  Future<void> departTrip(
+    int id, {
+    required String sealNumber,
+    required double latitude,
+    required double longitude,
+  }) async {
+    await ApiService.post(
+      '$_prefix/trips/$id/depart',
+      body: {
+        'seal_number': sealNumber,
+        'latitude': latitude,
+        'longitude': longitude,
+      },
+    );
+  }
+
+  Future<void> reportDelay(
+    int id, {
+    required String reason,
+    required String newEta,
+  }) async {
+    await ApiService.post(
+      '$_prefix/trips/$id/delay',
+      body: {'reason': reason, 'new_eta': newEta},
+    );
+  }
+
+  Future<void> arriveTrip(
+    int id, {
+    required double latitude,
+    required double longitude,
+  }) async {
+    await ApiService.post(
+      '$_prefix/trips/$id/arrive',
+      body: {'latitude': latitude, 'longitude': longitude},
+    );
+  }
+
+  Future<void> addTripNote(int id, String note) async {
+    await ApiService.post(
+      '$_prefix/trips/$id/note',
+      body: {'note': note},
+    );
+  }
+
+  Future<void> cancelTrip(int id, String reason) async {
+    await ApiService.post(
+      '$_prefix/trips/$id/cancel',
+      body: {'reason': reason},
+    );
+  }
+
+  // ── Profile & duty ───────────────────────────────────────────────────────
+
+  Future<CourierProfile> profile() async {
+    final res =
+        await ApiService.get('$_prefix/profile') as Map<String, dynamic>;
+    return CourierProfile.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
+  Future<CourierProfile> updateVehicle({
+    String? vehicleType,
+    String? plateNumber,
+    double? loadCapacityKg,
+    String? licenseNumber,
+    String? licenseExpiry,
+  }) async {
+    final body = <String, dynamic>{};
+    if (vehicleType != null) body['vehicle_type'] = vehicleType;
+    if (plateNumber != null) body['plate_number'] = plateNumber;
+    if (loadCapacityKg != null) body['load_capacity_kg'] = loadCapacityKg;
+    if (licenseNumber != null) body['license_number'] = licenseNumber;
+    if (licenseExpiry != null) body['license_expiry'] = licenseExpiry;
+
+    final res = await ApiService.put(
+      '$_prefix/profile/vehicle',
+      body: body,
+    ) as Map<String, dynamic>;
+    return CourierProfile.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
+  Future<CourierDocumentItem> uploadDocument({
+    required String type,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final res = await ApiService.postMultipart(
+      '$_prefix/profile/documents',
+      field: 'file',
+      bytes: bytes,
+      filename: filename,
+      fields: {'type': type},
+    ) as Map<String, dynamic>;
+    return CourierDocumentItem.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    await ApiService.post(
+      '$_prefix/profile/change-password',
+      body: {
+        'current_password': currentPassword,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+    );
+  }
+
+  Future<DutyState> duty() async {
+    final res = await ApiService.get('$_prefix/duty') as Map<String, dynamic>;
+    return DutyState.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
+  Future<DutyState> submitChecklist({
+    required Map<String, String> items,
+    Map<String, String> notes = const {},
+    double? latitude,
+    double? longitude,
+  }) async {
+    final body = <String, dynamic>{'items': items, 'notes': notes};
+    if (latitude != null) body['latitude'] = latitude;
+    if (longitude != null) body['longitude'] = longitude;
+    final res = await ApiService.post(
+      '$_prefix/duty/checklist',
+      body: body,
+    ) as Map<String, dynamic>;
+    final data = res['data'] as Map<String, dynamic>;
+    return DutyState(
+      dutyStatus: data['duty_status'] as String? ?? 'off_duty',
+      status: 'approved',
+      licenseExpired: false,
+      latestChecklist:
+          ChecklistRecord.fromJson(data['checklist'] as Map<String, dynamic>),
+    );
+  }
+
+  Future<void> goOnDuty({
+    required double latitude,
+    required double longitude,
+    double? accuracy,
+  }) async {
+    await ApiService.post(
+      '$_prefix/duty/on',
+      body: {
+        'latitude': latitude,
+        'longitude': longitude,
+        if (accuracy != null) 'accuracy': accuracy,
+      },
+    );
+  }
+
+  Future<void> goOffDuty() async {
+    await ApiService.post('$_prefix/duty/off');
+  }
+
+  Future<void> updateLocation({
+    required double latitude,
+    required double longitude,
+  }) async {
+    await ApiService.post(
+      '$_prefix/duty/location',
+      body: {'latitude': latitude, 'longitude': longitude},
+    );
+  }
+
+  // ── History & pay ────────────────────────────────────────────────────────
+
+  Future<HistorySummary> historySummary({
+    String period = 'week',
+    String? dateFrom,
+    String? dateTo,
+  }) async {
+    final params = <String, String>{'period': period};
+    if (dateFrom != null) params['date_from'] = dateFrom;
+    if (dateTo != null) params['date_to'] = dateTo;
+    final res = await ApiService.get(
+      '$_prefix/history/summary',
+      queryParameters: params,
+    ) as Map<String, dynamic>;
+    return HistorySummary.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
+  Future<({List<PaymentItem> items, double total, int count})> payments({
+    String period = 'week',
+    String? dateFrom,
+    String? dateTo,
+  }) async {
+    final params = <String, String>{'period': period};
+    if (dateFrom != null) params['date_from'] = dateFrom;
+    if (dateTo != null) params['date_to'] = dateTo;
+    final res = await ApiService.get(
+      '$_prefix/history/payments',
+      queryParameters: params,
+    ) as Map<String, dynamic>;
+    final meta = res['meta'] as Map<String, dynamic>? ?? {};
+    return (
+      items: (res['data'] as List<dynamic>)
+          .map((j) => PaymentItem.fromJson(j as Map<String, dynamic>))
+          .toList(),
+      total: (meta['total'] as num?)?.toDouble() ?? 0,
+      count: (meta['count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Future<List<HistoryTrip>> historyTrips({
+    String status = 'all',
+    String? search,
+    String? dateFrom,
+    String? dateTo,
+  }) async {
+    final params = <String, String>{};
+    if (status != 'all') params['status'] = status;
+    if (search != null && search.isNotEmpty) params['search'] = search;
+    if (dateFrom != null) params['date_from'] = dateFrom;
+    if (dateTo != null) params['date_to'] = dateTo;
+    final res = await ApiService.get(
+      '$_prefix/history/trips',
+      queryParameters: params.isEmpty ? null : params,
+    ) as Map<String, dynamic>;
+    return (res['data'] as List<dynamic>)
+        .map((j) => HistoryTrip.fromJson(j as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<HistoryTripDetail> historyTripDetail(int id) async {
+    final res = await ApiService.get('$_prefix/history/trips/$id')
+        as Map<String, dynamic>;
+    return HistoryTripDetail.fromJson(res['data'] as Map<String, dynamic>);
   }
 }

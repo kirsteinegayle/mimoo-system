@@ -31,9 +31,9 @@ class CourierAuthController extends Controller
             return response()->json(['message' => 'Invalid email or password.'], 401);
         }
 
-        // Must be a logistics/courier account.
-        $role = $user->role ?? $user->account_type;
-        if ($role !== 'courier') {
+        // Must be an approved logistics account with the courier role.
+        // Both checks are required: account_type='logistics' AND role='courier'.
+        if ($user->account_type !== 'logistics' || $user->role !== 'courier') {
             return response()->json(['message' => 'This app is for courier accounts only.'], 401);
         }
 
@@ -59,6 +59,7 @@ class CourierAuthController extends Controller
                     'contact_first_name' => $user->contact_first_name ?? $user->first_name,
                     'contact_last_name'  => $user->contact_last_name  ?? $user->last_name,
                     'role'               => $user->role,
+                    'account_type'       => $user->account_type,
                 ],
                 'token' => $token,
             ],
@@ -91,6 +92,7 @@ class CourierAuthController extends Controller
                     'contact_first_name' => $user->contact_first_name ?? $user->first_name,
                     'contact_last_name'  => $user->contact_last_name  ?? $user->last_name,
                     'role'               => $user->role,
+                    'account_type'       => $user->account_type,
                 ],
             ],
         ]);

@@ -41,14 +41,18 @@ class AuthService {
 
   Future<void> restoreSession() async {
     final token = await _storage.read(key: _keyToken);
-    if (token != null && token.isNotEmpty) {
-      ApiService.token = token;
-      _courierName = await _storage.read(key: _keyName);
-      _courierId = await _storage.read(key: _keyId);
-      _courierEmail = await _storage.read(key: _keyEmail);
-      _companyName = await _storage.read(key: _keyCompanyName);
-      _isLoggedIn = true;
-      if (onLoginCallback != null) await onLoginCallback!();
+    if (token == null || token.isEmpty) {
+      return;
+    }
+
+    ApiService.token = token;
+    _courierName = await _storage.read(key: _keyName);
+    _courierId = await _storage.read(key: _keyId);
+    _courierEmail = await _storage.read(key: _keyEmail);
+    _companyName = await _storage.read(key: _keyCompanyName);
+    _isLoggedIn = true;
+    if (onLoginCallback != null) {
+      await onLoginCallback!();
     }
   }
 
@@ -71,18 +75,27 @@ class AuthService {
     _courierEmail = courier.email;
     _companyName = courier.companyName;
 
-    if (onLoginCallback != null) await onLoginCallback!();
+    if (onLoginCallback != null) {
+      await onLoginCallback!();
+    }
   }
 
-  // ── Logout ────────────────────────────────────────────────────────────────
+  // ── Logout / expiry ───────────────────────────────────────────────────────
 
   Future<void> logout() async {
     if (_isLoggedIn && ApiService.token != null) {
       try {
         await ApiService.post('/courier-app/logout');
-      } catch (_) {}
+      } catch (_) {
+        // The local session is cleared even when the server is unreachable.
+      }
     }
 
+    await clearSession();
+  }
+
+  /// Clears the local session without calling the API (used on 401).
+  Future<void> clearSession() async {
     ApiService.token = null;
     _isLoggedIn = false;
     _courierName = null;

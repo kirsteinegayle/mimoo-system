@@ -23,8 +23,30 @@ class CourierShipmentController extends CourierBaseController
             'order.buyer',
         ])->where('courier_id', $courier->id);
 
+        // Same filters as the web IncomingShipmentsController.
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('order', function ($q) use ($search) {
+                $q->where('waybill_number', 'like', "%{$search}%")
+                  ->orWhere('id', 'like', "%{$search}%");
+            });
+        }
+
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('assignment_status', $request->status);
+        }
+
+        if ($request->filled('seller')) {
+            $query->whereHas('order.items', function ($q) use ($request) {
+                $q->where('seller_id', $request->seller);
+            });
+        }
+
+        if ($request->filled('destination')) {
+            $destination = $request->destination;
+            $query->whereHas('order', function ($q) use ($destination) {
+                $q->where('shipping_address', 'like', "%{$destination}%");
+            });
         }
 
         if ($request->filled('date_from')) {
@@ -40,9 +62,46 @@ class CourierShipmentController extends CourierBaseController
 
         $items = $paginated->map(fn ($a) => $this->summarise($a));
 
+        // Summary stats — identical counters to the web page.
+        $base = fn () => ShipmentAssignment::where('courier_id', $courier->id);
+        $stats = [
+            'total'    => $base()->count(),
+            'pending'  => $base()->where('assignment_status', 'pending')->count(),
+            'accepted' => $base()->where('assignment_status', 'accepted')->count(),
+            'rejected' => $base()->where('assignment_status', 'rejected')->count(),
+            'expiring' => $base()->where('assignment_status', 'pending')
+                ->where('acceptance_deadline', '>', now())
+                ->where('acceptance_deadline', '<=', now()->addHours(2))
+                ->count()
+                + $base()->where('assignment_status', 'pending')
+                ->where('acceptance_deadline', '<', now())
+                ->count(),
+        ];
+
+        // Unique sellers — same list used by the web filter dropdown.
+        $sellers = ShipmentAssignment::where('courier_id', $courier->id)
+            ->with('order.items')
+            ->get()
+            ->pluck('order.items')
+            ->flatten()
+            ->pluck('seller_id')
+            ->unique()
+            ->map(function ($sellerId) {
+                $seller = User::find($sellerId);
+
+                return [
+                    'id'   => $sellerId,
+                    'name' => $seller ? ($seller->business_name ?? $seller->name) : 'Unknown',
+                ];
+            })
+            ->filter()
+            ->values();
+
         return response()->json([
-            'data' => $items,
-            'meta' => [
+            'data'    => $items,
+            'stats'   => $stats,
+            'sellers' => $sellers,
+            'meta'    => [
                 'current_page' => $paginated->currentPage(),
                 'last_page'    => $paginated->lastPage(),
                 'per_page'     => $paginated->perPage(),
@@ -71,6 +130,7 @@ class CourierShipmentController extends CourierBaseController
 
         $order  = $assignment->order;
         $seller = $this->sellerFromOrder($order);
+        $buyerDestination = $this->buyerDestinationFromAddress($order->shipping_address);
 
         $history = $assignment->history->map(fn ($h) => [
             'action'       => $h->action,
@@ -91,14 +151,16 @@ class CourierShipmentController extends CourierBaseController
                 'accepted_at'         => $assignment->accepted_at?->format('M d, Y H:i A'),
                 'rejected_at'         => $assignment->rejected_at?->format('M d, Y H:i A'),
                 'rejection_reason'    => $assignment->rejection_reason,
-                'weight'              => $assignment->weight,
-                'dimensions'          => $assignment->dimensions,
-                'pickup_instructions' => $assignment->pickup_instructions,
+                'weight'              => $assignment->weight ?? 'Not provided',
+                'dimensions'          => $assignment->dimensions ?? 'Not provided',
+                'pickup_instructions' => $assignment->pickup_instructions ?? 'No special instructions',
                 'total_amount'        => $order->total,
                 'payment_method'      => $order->payment_method,
                 'items_count'         => $order->items->count(),
                 'seller'              => $seller,
                 'shipping_address'    => $order->shipping_address,
+                'buyer_destination'   => $buyerDestination,
+                'assigned_by'         => $assignment->assigner->name ?? 'System',
                 'is_overdue'          => $assignment->isOverdue(),
                 'is_expiring_soon'    => $assignment->isExpiringSoon(),
                 'history'             => $history,
@@ -189,11 +251,15 @@ class CourierShipmentController extends CourierBaseController
             'waybill_number'      => $order->waybill_number,
             'order_number'        => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
             'seller_name'         => $seller['name'] ?? 'N/A',
-            'destination'         => $order->shipping_municipality_city
-                                        ?? $this->cityFromAddress($order->shipping_address),
+            'seller_id'           => $seller['id'] ?? null,
+            'pickup_address'      => $seller['address'] ?? 'Not provided',
+            'destination'         => $this->destinationSummary($order->shipping_address),
+            'weight'              => $a->weight ?? 'Not provided',
+            'dimensions'          => $a->dimensions ?? 'Not provided',
             'assignment_status'   => $a->assignment_status,
             'pickup_status'       => $a->pickup_status,
             'assigned_at'         => $a->assigned_at->format('M d, Y H:i'),
+            'assigned_date'       => $a->assigned_at->format('M d, Y H:i'),
             'is_overdue'          => $a->isOverdue(),
             'is_expiring_soon'    => $a->isExpiringSoon(),
         ];
@@ -210,25 +276,86 @@ class CourierShipmentController extends CourierBaseController
             return null;
         }
 
+        $address = trim(implode(', ', array_filter([
+            $seller->street_address,
+            $seller->municipality_city,
+            $seller->province,
+        ])));
+
         return [
             'id'      => $seller->id,
             'name'    => $seller->business_name ?? $seller->name,
             'email'   => $seller->email,
             'phone'   => $seller->contact_number ?? 'Not provided',
-            'address' => trim(implode(', ', array_filter([
-                $seller->street_address,
-                $seller->municipality_city,
-                $seller->province,
-            ]))),
+            'address' => $address !== '' ? $address : 'Not provided',
+            'city'    => $seller->municipality_city ?? 'Not provided',
+            'province'=> $seller->province ?? 'Not provided',
         ];
     }
 
-    private function cityFromAddress(?string $address): string
+    /**
+     * Destination label shown on the web list/card: "City, Barangay".
+     */
+    private function destinationSummary(?string $address): string
+    {
+        $parts = $this->addressParts($address);
+
+        if (count($parts) >= 3) {
+            $barangay = preg_replace('/^(Brgy\.?|Barangay)\s+/i', '', $parts[1] ?? '');
+            $city     = preg_replace('/^(City of|Municipality of)\s+/i', '', $parts[count($parts) - 2] ?? '');
+
+            if ($city && $barangay) {
+                return "{$city}, {$barangay}";
+            }
+            if ($city) {
+                return $city;
+            }
+        }
+
+        if (count($parts) >= 2) {
+            return $parts[count($parts) - 2];
+        }
+
+        return $parts[0] ?? 'Not provided';
+    }
+
+    /**
+     * Limited buyer destination shown on the web detail modal.
+     */
+    private function buyerDestinationFromAddress(?string $address): array
+    {
+        $parts = $this->addressParts($address);
+        $out = [
+            'city'     => 'Not provided',
+            'barangay' => 'Not provided',
+            'province' => 'Not provided',
+            'region'   => 'Not provided',
+        ];
+
+        if (count($parts) >= 4) {
+            $out['barangay'] = preg_replace('/^(Brgy\.?|Barangay)\s+/i', '', $parts[1] ?? 'Not provided');
+            $out['city']     = preg_replace('/^(City of|Municipality of)\s+/i', '', $parts[count($parts) - 2] ?? 'Not provided');
+
+            $provinceOrRegion = $parts[count($parts) - 1] ?? '';
+            if (preg_match('/(Region|NCR|CALABARZON|Metro Manila)/i', $provinceOrRegion)) {
+                $out['region'] = $provinceOrRegion;
+            } else {
+                $out['province'] = $provinceOrRegion;
+            }
+        } elseif (count($parts) >= 2) {
+            $out['city']     = $parts[count($parts) - 1];
+            $out['barangay'] = $parts[count($parts) - 2];
+        }
+
+        return $out;
+    }
+
+    private function addressParts(?string $address): array
     {
         if (! $address) {
-            return 'Not provided';
+            return [];
         }
-        $parts = array_map('trim', explode(',', $address));
-        return count($parts) >= 2 ? $parts[count($parts) - 2] : ($parts[0] ?? 'Not provided');
+
+        return array_map('trim', explode(',', $address));
     }
 }

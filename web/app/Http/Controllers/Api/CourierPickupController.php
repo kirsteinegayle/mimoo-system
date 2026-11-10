@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\CourierPersonnel;
 use App\Models\ShipmentAssignment;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,8 +23,34 @@ class CourierPickupController extends CourierBaseController
             ->where('courier_id', $courier->id)
             ->where('assignment_status', 'accepted');
 
+        // Same filters as the web PickupManagementController.
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('order', function ($q) use ($search) {
+                $q->where('waybill_number', 'like', "%{$search}%");
+            });
+        }
+
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('pickup_status', $request->status);
+        }
+
+        if ($request->filled('seller')) {
+            $query->whereHas('order.items', function ($q) use ($request) {
+                $q->where('seller_id', $request->seller);
+            });
+        }
+
+        if ($request->filled('service_area')) {
+            $area = $request->service_area;
+            $query->whereHas('order.items', function ($q) use ($area) {
+                $q->whereHas('product', function ($pq) use ($area) {
+                    $pq->whereHas('seller', function ($sq) use ($area) {
+                        $sq->where('municipality_city', 'like', "%{$area}%")
+                           ->orWhere('province', 'like', "%{$area}%");
+                    });
+                });
+            });
         }
 
         if ($request->filled('date_from')) {
@@ -44,22 +71,56 @@ class CourierPickupController extends CourierBaseController
             ->orderBy('scheduled_date', 'asc')
             ->paginate($perPage);
 
-        $items = $paginated->map(fn ($a) => [
-            'id'                      => $a->id,
-            'waybill_number'          => $a->order->waybill_number,
-            'order_number'            => 'MIM-' . str_pad($a->order->id, 8, '0', STR_PAD_LEFT),
-            'pickup_status'           => $a->pickup_status,
-            'scheduled_date'          => $a->scheduled_date?->format('M d, Y'),
-            'scheduled_time_window'   => $a->scheduled_time_window ?? 'Not scheduled',
-            'assigned_personnel'      => $a->personnel?->name ?? 'Not assigned',
-            'attempt_count'           => $a->attempt_count,
-        ]);
+        $items = $paginated->map(function ($a) {
+            $order  = $a->order;
+            $seller = null;
 
-        // Summary stats
+            if ($order->items->isNotEmpty()) {
+                $firstItem = $order->items->first();
+                $seller = User::find($firstItem->seller_id);
+            }
+
+            $pickupAddress = 'Not provided';
+            $serviceArea   = 'Not provided';
+            if ($seller) {
+                if ($seller->street_address) {
+                    $pickupAddress = $seller->street_address;
+                    if ($seller->municipality_city) {
+                        $pickupAddress .= ', ' . $seller->municipality_city;
+                    }
+                    if ($seller->province) {
+                        $pickupAddress .= ', ' . $seller->province;
+                    }
+                }
+                $serviceArea = trim(($seller->municipality_city ?? '')
+                    . ($seller->province ? ', ' . $seller->province : ''), ', ');
+                $serviceArea = $serviceArea !== '' ? $serviceArea : 'Not provided';
+            }
+
+            return [
+                'id'                      => $a->id,
+                'waybill_number'          => $order->waybill_number,
+                'order_number'            => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
+                'seller_name'             => $seller ? ($seller->business_name ?? $seller->name) : 'N/A',
+                'seller_id'               => $seller?->id,
+                'seller_contact'          => $seller->contact_number ?? 'Not provided',
+                'pickup_address'          => $pickupAddress,
+                'service_area'            => $serviceArea,
+                'pickup_status'           => $a->pickup_status,
+                'scheduled_date'          => $a->scheduled_date?->format('M d, Y'),
+                'scheduled_time_window'   => $a->scheduled_time_window ?? 'Not scheduled',
+                'assigned_personnel'      => $a->personnel?->name ?? 'Not assigned',
+                'attempt_count'           => $a->attempt_count,
+            ];
+        });
+
+        // Summary stats — identical counters to the web page.
         $base   = ShipmentAssignment::where('courier_id', $courier->id)->where('assignment_status', 'accepted');
         $stats  = [
             'pending_pickup'   => (clone $base)->where('pickup_status', 'pending_pickup')->count(),
             'scheduled_today'  => (clone $base)->where('pickup_status', 'scheduled')->whereDate('scheduled_date', today())->count(),
+            'assigned'         => (clone $base)->whereNotNull('assigned_personnel_id')
+                ->whereIn('pickup_status', ['pending_pickup', 'scheduled'])->count(),
             'picked_up'        => (clone $base)->where('pickup_status', 'picked_up')->count(),
             'failed'           => (clone $base)->where('pickup_status', 'failed')->count(),
         ];
@@ -70,10 +131,30 @@ class CourierPickupController extends CourierBaseController
             ->orderBy('name')
             ->get(['id', 'name', 'role', 'contact_number']);
 
+        // Unique sellers — same list used by the web filter dropdown.
+        $sellers = ShipmentAssignment::where('courier_id', $courier->id)
+            ->where('assignment_status', 'accepted')
+            ->with('order.items')
+            ->get()
+            ->pluck('order.items')
+            ->flatten()
+            ->pluck('seller_id')
+            ->unique()
+            ->map(function ($sellerId) {
+                $seller = User::find($sellerId);
+
+                return [
+                    'id'   => $sellerId,
+                    'name' => $seller ? ($seller->business_name ?? $seller->name) : 'Unknown',
+                ];
+            })
+            ->values();
+
         return response()->json([
             'data'      => $items,
             'stats'     => $stats,
             'personnel' => $personnel,
+            'sellers'   => $sellers,
             'meta'      => [
                 'current_page' => $paginated->currentPage(),
                 'last_page'    => $paginated->lastPage(),
@@ -228,6 +309,167 @@ class CourierPickupController extends CourierBaseController
             'attempt_count' => $count,
             'warning'       => $warning,
         ]);
+    }
+
+    /**
+     * GET /api/courier-app/pickups/{id}
+     * Pickup detail + history (mirrors the web pickup detail modal).
+     */
+    public function show(Request $request, int $id): JsonResponse
+    {
+        $assignment = ShipmentAssignment::with([
+            'order.items',
+            'personnel',
+            'history.performer',
+            'pickedUpBy',
+        ])
+            ->where('courier_id', $request->user()->id)
+            ->where('assignment_status', 'accepted')
+            ->find($id);
+
+        if (! $assignment) {
+            return response()->json(['message' => 'Pickup not found.'], 404);
+        }
+
+        $order  = $assignment->order;
+        $seller = null;
+
+        if ($order->items->isNotEmpty()) {
+            $firstItem = $order->items->first();
+            $sellerUser = User::find($firstItem->seller_id);
+            if ($sellerUser) {
+                $seller = [
+                    'id'       => $sellerUser->id,
+                    'name'     => $sellerUser->business_name ?? $sellerUser->name,
+                    'email'    => $sellerUser->email,
+                    'phone'    => $sellerUser->contact_number ?? 'Not provided',
+                    'address'  => $sellerUser->street_address ?? 'Not provided',
+                    'city'     => $sellerUser->municipality_city ?? 'Not provided',
+                    'province' => $sellerUser->province ?? 'Not provided',
+                ];
+            }
+        }
+
+        $history = $assignment->history->map(fn ($h) => [
+            'action'       => $h->action,
+            'performed_by' => $h->performer->name ?? 'System',
+            'notes'        => $h->notes,
+            'created_at'   => $h->created_at->format('M d, Y H:i A'),
+        ]);
+
+        return response()->json([
+            'data' => [
+                'id'                    => $assignment->id,
+                'waybill_number'        => $order->waybill_number,
+                'order_number'          => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
+                'pickup_status'         => $assignment->pickup_status,
+                'weight'                => $assignment->weight ?? 'Not provided',
+                'dimensions'            => $assignment->dimensions ?? 'Not provided',
+                'pickup_instructions'   => $assignment->pickup_instructions ?? 'No special instructions',
+                'scheduled_date'        => $assignment->scheduled_date?->format('M d, Y'),
+                'scheduled_time_window' => $assignment->scheduled_time_window,
+                'assigned_personnel'    => $assignment->personnel ? [
+                    'id'      => $assignment->personnel->id,
+                    'name'    => $assignment->personnel->name,
+                    'role'    => $assignment->personnel->role,
+                    'contact' => $assignment->personnel->contact_number,
+                ] : null,
+                'picked_up_at'          => $assignment->picked_up_at?->format('M d, Y H:i A'),
+                'picked_up_by_name'     => $assignment->pickedUpBy?->name,
+                'attempt_count'         => $assignment->attempt_count,
+                'last_attempt_at'       => $assignment->last_attempt_at?->format('M d, Y H:i A'),
+                'cancellation_reason'   => $assignment->cancellation_reason,
+                'failure_reason'        => $assignment->failure_reason,
+                'seller'                => $seller,
+                'items_count'           => $order->items->count(),
+                'history'               => $history,
+            ],
+        ]);
+    }
+
+    /**
+     * POST /api/courier-app/pickups/{id}/reschedule
+     * Same validation and status rules as the web controller.
+     */
+    public function reschedule(Request $request, int $id): JsonResponse
+    {
+        $request->validate([
+            'scheduled_date'        => ['required', 'date', 'after_or_equal:today'],
+            'scheduled_time_window' => ['required', 'string', 'max:50'],
+            'reason'                => ['required', 'string', 'min:10', 'max:500'],
+        ], [
+            'reason.required' => 'Please provide a reason for rescheduling.',
+            'reason.min'      => 'Reason must be at least 10 characters.',
+        ]);
+
+        $assignment = $this->findAccepted($request, $id);
+        if (! $assignment) {
+            return response()->json(['message' => 'Pickup not found.'], 404);
+        }
+
+        if (! in_array($assignment->pickup_status, ['scheduled', 'failed'], true)) {
+            return response()->json([
+                'message' => 'Can only reschedule from scheduled or failed status.',
+            ], 422);
+        }
+
+        $assignment->update([
+            'pickup_status'         => 'scheduled',
+            'scheduled_date'        => $request->scheduled_date,
+            'scheduled_time_window' => $request->scheduled_time_window,
+        ]);
+
+        // The web records the invalid action 're-scheduled'. The enum only
+        // allows assigned/accepted/rejected/re-assigned, so use 're-assigned'
+        // (the schema-safe value) and keep the real wording in notes.
+        $assignment->addHistory('re-assigned', $request->user()->id,
+            "Rescheduled to {$request->scheduled_date} {$request->scheduled_time_window}. Reason: "
+            . trim($request->reason));
+
+        return response()->json(['message' => 'Pickup rescheduled successfully!']);
+    }
+
+    /**
+     * POST /api/courier-app/pickups/{id}/cancel
+     * Same validation and status rules as the web controller.
+     */
+    public function cancel(Request $request, int $id): JsonResponse
+    {
+        $request->validate([
+            'reason' => ['required', 'string', 'min:10', 'max:500'],
+        ], [
+            'reason.required' => 'Please provide a reason for cancellation.',
+            'reason.min'      => 'Reason must be at least 10 characters.',
+        ]);
+
+        $assignment = $this->findAccepted($request, $id);
+        if (! $assignment) {
+            return response()->json(['message' => 'Pickup not found.'], 404);
+        }
+
+        if (! $assignment->canTransitionTo('cancelled')) {
+            return response()->json([
+                'message' => 'Cannot cancel pickup in current status.',
+            ], 422);
+        }
+
+        $reason = trim($request->reason);
+        if ($reason === '') {
+            return response()->json([
+                'message' => 'Cancellation reason cannot be empty or whitespace only.',
+            ], 422);
+        }
+
+        $assignment->update([
+            'pickup_status'       => 'cancelled',
+            'cancellation_reason' => $reason,
+        ]);
+
+        // The web records the invalid action 'cancelled'. Use the schema-safe
+        // 'rejected' value and keep the real wording in notes.
+        $assignment->addHistory('rejected', $request->user()->id, "Pickup cancelled: {$reason}");
+
+        return response()->json(['message' => 'Pickup cancelled.']);
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

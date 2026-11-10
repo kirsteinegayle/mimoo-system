@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/courier_models.dart';
 import '../../services/courier_repository.dart';
 import '../../services/api_service.dart';
@@ -450,15 +451,48 @@ class _ShipmentDetailPageState extends State<ShipmentDetailPage> {
           ? const Center(child: CircularProgressIndicator(color: kPrimary))
           : _error != null
               ? Center(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text(_error!, style: pjs(size: 13, color: kSubtext)),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: _load,
-                      style: FilledButton.styleFrom(backgroundColor: kPrimary),
-                      child: const Text('Try again'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.cloud_off_outlined,
+                            size: 42, color: kSubtext),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Couldn’t load shipment details',
+                          style: pjs(size: 16, weight: FontWeight.w800),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _error!,
+                          style: pjs(size: 13, color: kSubtext),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 10,
+                          runSpacing: 8,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.arrow_back),
+                              label: const Text('Back to shipments'),
+                            ),
+                            FilledButton.icon(
+                              onPressed: _load,
+                              style: FilledButton.styleFrom(
+                                  backgroundColor: kPrimary),
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Try again'),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ]),
+                  ),
                 )
               : _buildDetail(),
     );
@@ -467,44 +501,122 @@ class _ShipmentDetailPageState extends State<ShipmentDetailPage> {
   Widget _buildDetail() {
     final d = _detail!;
     final isPending = d.assignmentStatus == 'pending';
+    final statusLabel = d.assignmentStatus.isEmpty
+        ? 'Not provided'
+        : d.assignmentStatus
+            .split('_')
+            .map((word) => word.isEmpty
+                ? word
+                : '${word[0].toUpperCase()}${word.substring(1)}')
+            .join(' ');
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _InfoCard(title: 'Shipment', children: [
-          _Row('Waybill', d.waybillNumber),
-          _Row('Order', d.orderNumber),
-          _Row('Status', d.assignmentStatus.toUpperCase()),
-          _Row('Assigned', d.assignedAt),
-          _Row('Deadline', d.acceptanceDeadline),
-          if (d.acceptedAt != null) _Row('Accepted', d.acceptedAt!),
-          if (d.rejectedAt != null) ...[
-            _Row('Rejected', d.rejectedAt!),
-            if (d.rejectionReason != null) _Row('Reason', d.rejectionReason!),
-          ],
-        ]),
+        if (d.isOverdue || d.isExpiringSoon)
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: d.isOverdue
+                  ? kFlash.withValues(alpha: 0.08)
+                  : Colors.orange.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: d.isOverdue
+                    ? kFlash.withValues(alpha: 0.3)
+                    : Colors.orange.withValues(alpha: 0.35),
+              ),
+            ),
+            child: Row(children: [
+              Icon(
+                d.isOverdue
+                    ? Icons.warning_amber_rounded
+                    : Icons.timer_outlined,
+                color: d.isOverdue ? kFlash : Colors.orange.shade800,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  d.isOverdue
+                      ? 'The acceptance deadline has passed.'
+                      : 'This shipment is nearing its acceptance deadline.',
+                  style: pjs(size: 12, weight: FontWeight.w600),
+                ),
+              ),
+            ]),
+          ),
+        _InfoCard(
+            title: 'Shipment',
+            description:
+                'Use these identifiers to confirm you opened the correct assignment. Pending shipments still need a decision.',
+            children: [
+              _Row(
+                'Waybill',
+                d.waybillNumber.isEmpty ? 'Not provided' : d.waybillNumber,
+                trailing: d.waybillNumber.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Copy waybill number',
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.copy_outlined, size: 18),
+                        onPressed: () async {
+                          await Clipboard.setData(
+                              ClipboardData(text: d.waybillNumber));
+                          if (mounted) {
+                            _showSnack('Waybill copied.', kPrimary);
+                          }
+                        },
+                      ),
+              ),
+              _Row('Order', d.orderNumber),
+              _Row('Assignment status', statusLabel),
+              _Row('Assigned', d.assignedAt),
+              _Row('Accept by', d.acceptanceDeadline),
+              _Row('Pickup status', _displayStatus(d.pickupStatus)),
+              if (d.acceptedAt != null) _Row('Accepted', d.acceptedAt!),
+              if (d.rejectedAt != null) ...[
+                _Row('Rejected', d.rejectedAt!),
+                if (d.rejectionReason != null)
+                  _Row('Reason', d.rejectionReason!),
+              ],
+            ]),
         const SizedBox(height: 10),
         if (d.seller != null) ...[
-          _InfoCard(title: 'Seller / Pickup', children: [
-            _Row('Name', d.seller!['name']?.toString() ?? ''),
-            _Row('Phone', d.seller!['phone']?.toString() ?? ''),
-            _Row('Address', d.seller!['address']?.toString() ?? ''),
-          ]),
+          _InfoCard(
+              title: 'Seller / Pickup',
+              description:
+                  'Where the parcel originates. Verify the seller and pickup address before collection.',
+              children: [
+                _Row('Name', d.seller!['name']?.toString() ?? ''),
+                _Row('Phone', d.seller!['phone']?.toString() ?? ''),
+                _Row('Address', d.seller!['address']?.toString() ?? ''),
+              ]),
           const SizedBox(height: 10),
         ],
-        _InfoCard(title: 'Delivery', children: [
-          _Row('Destination', d.shippingAddress),
-          _Row('Payment', d.paymentMethod.toUpperCase()),
-          _Row('Total', '₱${d.totalAmount.toStringAsFixed(2)}'),
-          _Row('Items', '${d.itemsCount}'),
-          if (d.weight != null) _Row('Weight', '${d.weight} kg'),
-          if (d.pickupInstructions != null && d.pickupInstructions!.isNotEmpty)
-            _Row('Instructions', d.pickupInstructions!),
-        ]),
+        _InfoCard(
+          title: 'Delivery',
+          description:
+              'Destination and parcel summary for planning the handoff. Total is the order amount, not a courier payout.',
+          children: [
+            _Row('Destination', d.shippingAddress),
+            _Row('Payment method', _displayStatus(d.paymentMethod)),
+            _Row('Order total', '₱${d.totalAmount.toStringAsFixed(2)}'),
+            _Row('Item count', '${d.itemsCount}'),
+            if (d.weight != null) _Row('Weight', '${d.weight} kg'),
+            if (d.dimensions != null)
+              _Row('Dimensions', d.dimensions.toString()),
+            if (d.pickupInstructions != null &&
+                d.pickupInstructions!.isNotEmpty)
+              _Row('Instructions', d.pickupInstructions!),
+          ],
+        ),
         const SizedBox(height: 10),
         if (d.history.isNotEmpty) ...[
           _InfoCard(
-              title: 'History',
+              title: 'Assignment history',
+              description:
+                  'A record of assignment changes, who made them, and when.',
               children: d.history
                   .map(
                     (h) => Padding(
@@ -533,6 +645,14 @@ class _ShipmentDetailPageState extends State<ShipmentDetailPage> {
           const SizedBox(height: 10),
         ],
         if (isPending) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              'Choose Accept to take this assignment, or Reject and provide a reason (at least 10 characters).',
+              style: pjs(size: 12, color: kSubtext),
+              textAlign: TextAlign.center,
+            ),
+          ),
           Row(children: [
             Expanded(
               child: OutlinedButton(
@@ -583,14 +703,29 @@ class _ShipmentDetailPageState extends State<ShipmentDetailPage> {
       ],
     );
   }
+
+  String _displayStatus(String value) {
+    if (value.isEmpty) return 'Not provided';
+    return value
+        .split(RegExp(r'[_\s]+'))
+        .map((word) => word.isEmpty
+            ? word
+            : '${word[0].toUpperCase()}${word.substring(1)}')
+        .join(' ');
+  }
 }
 
 // ── Shared widgets ────────────────────────────────────────────────────────────
 
 class _InfoCard extends StatelessWidget {
-  const _InfoCard({required this.title, required this.children});
+  const _InfoCard({
+    required this.title,
+    required this.children,
+    this.description,
+  });
   final String title;
   final List<Widget> children;
+  final String? description;
 
   @override
   Widget build(BuildContext context) {
@@ -605,6 +740,10 @@ class _InfoCard extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(title,
             style: pjs(size: 13, weight: FontWeight.w800, color: kPrimary)),
+        if (description != null) ...[
+          const SizedBox(height: 4),
+          Text(description!, style: pjs(size: 11, color: kSubtext)),
+        ],
         const Divider(height: 12, color: kBorder),
         ...children,
       ]),
@@ -613,9 +752,10 @@ class _InfoCard extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row(this.label, this.value);
+  const _Row(this.label, this.value, {this.trailing});
   final String label;
   final String value;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -627,7 +767,9 @@ class _Row extends StatelessWidget {
           child: Text(label, style: pjs(size: 12, color: kSubtext)),
         ),
         Expanded(
-            child: Text(value, style: pjs(size: 12, weight: FontWeight.w600))),
+          child: Text(value, style: pjs(size: 12, weight: FontWeight.w600)),
+        ),
+        if (trailing != null) trailing!,
       ]),
     );
   }

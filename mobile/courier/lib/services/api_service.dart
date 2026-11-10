@@ -6,8 +6,8 @@ import '../config/app_config.dart';
 /// Central HTTP client for the Mimoo Courier app.
 ///
 /// Usage:
-///   final data = await ApiService.get('/courier/dashboard');
-///   final res  = await ApiService.post('/courier/login', body: {...}, includeAuth: false);
+///   final data = await ApiService.get('/courier-app/dashboard');
+///   final res  = await ApiService.post('/courier-app/login', body: {...}, includeAuth: false);
 ///
 /// Set [ApiService.token] after login. It is sent as a Bearer token on every
 /// subsequent authenticated request. Clear it on logout.
@@ -22,6 +22,13 @@ class ApiService {
   /// Bearer token for authenticated requests.
   static String? token;
 
+  /// Invoked once when an authenticated request returns 401 so the app can
+  /// clear the saved session and return to Login.
+  static void Function()? onUnauthorized;
+
+  /// HTTP client, replaceable in tests.
+  static http.Client httpClient = http.Client();
+
   /// Request timeout: 45 s in debug (first hit to `php artisan serve` can be slow),
   /// 30 s in release.
   static const Duration _timeout =
@@ -32,6 +39,11 @@ class ApiService {
   /// Returns a user-facing error string for any exception thrown by this client.
   static String friendlyError(Object e) {
     if (e is ApiException) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('could not be found')) {
+        return 'The server is missing the courier API routes. '
+            'Update the Laravel backend and try again.';
+      }
       if (e.statusCode == 401) {
         return 'Your session has expired. Please log in again.';
       }
@@ -55,7 +67,8 @@ class ApiService {
       return 'Cannot reach the server. Check your connection and try again.';
     }
     if (t.contains('FormatException') || t.contains('is not a subtype')) {
-      return 'Unexpected response from the server.';
+      return 'The server returned data this app cannot read. Check that the '
+          'Courier app and backend are using compatible versions, then retry.';
     }
     return 'Something went wrong. Please try again.';
   }
@@ -68,10 +81,10 @@ class ApiService {
     bool includeAuth = true,
   }) async {
     final uri = _uri(endpoint).replace(queryParameters: queryParameters);
-    final res = await http
+    final res = await httpClient
         .get(uri, headers: _headers(includeAuth: includeAuth))
         .timeout(_timeout);
-    return _handle(res);
+    return _handle(res, includeAuth: includeAuth);
   }
 
   static Future<dynamic> post(
@@ -79,14 +92,15 @@ class ApiService {
     Map<String, dynamic>? body,
     bool includeAuth = true,
   }) async {
-    final res = await http
+    final uri = _uri(endpoint);
+    final res = await httpClient
         .post(
-          _uri(endpoint),
+          uri,
           headers: _headers(includeAuth: includeAuth),
           body: body != null ? jsonEncode(body) : null,
         )
         .timeout(_timeout);
-    return _handle(res);
+    return _handle(res, includeAuth: includeAuth);
   }
 
   static Future<dynamic> put(
@@ -94,14 +108,15 @@ class ApiService {
     Map<String, dynamic>? body,
     bool includeAuth = true,
   }) async {
-    final res = await http
+    final uri = _uri(endpoint);
+    final res = await httpClient
         .put(
-          _uri(endpoint),
+          uri,
           headers: _headers(includeAuth: includeAuth),
           body: body != null ? jsonEncode(body) : null,
         )
         .timeout(_timeout);
-    return _handle(res);
+    return _handle(res, includeAuth: includeAuth);
   }
 
   static Future<dynamic> patch(
@@ -109,27 +124,52 @@ class ApiService {
     Map<String, dynamic>? body,
     bool includeAuth = true,
   }) async {
-    final res = await http
+    final uri = _uri(endpoint);
+    final res = await httpClient
         .patch(
-          _uri(endpoint),
+          uri,
           headers: _headers(includeAuth: includeAuth),
           body: body != null ? jsonEncode(body) : null,
         )
         .timeout(_timeout);
-    return _handle(res);
+    return _handle(res, includeAuth: includeAuth);
   }
 
   static Future<dynamic> delete(
     String endpoint, {
     bool includeAuth = true,
   }) async {
-    final res = await http
+    final uri = _uri(endpoint);
+    final res = await httpClient
         .delete(
-          _uri(endpoint),
+          uri,
           headers: _headers(includeAuth: includeAuth),
         )
         .timeout(_timeout);
-    return _handle(res);
+    return _handle(res, includeAuth: includeAuth);
+  }
+
+  /// Uploads a single file with optional multipart fields.
+  static Future<dynamic> postMultipart(
+    String endpoint, {
+    required String field,
+    required List<int> bytes,
+    required String filename,
+    Map<String, String> fields = const {},
+    bool includeAuth = true,
+  }) async {
+    final request = http.MultipartRequest('POST', _uri(endpoint))
+      ..headers.addAll(_headers(includeAuth: includeAuth));
+    request.fields.addAll(fields);
+    request.files.add(http.MultipartFile.fromBytes(
+      field,
+      bytes,
+      filename: filename,
+    ));
+
+    final streamedResponse = await httpClient.send(request).timeout(_timeout);
+    final res = await http.Response.fromStream(streamedResponse);
+    return _handle(res, includeAuth: includeAuth);
   }
 
   // ── Internals ─────────────────────────────────────────────────────────────
@@ -150,7 +190,7 @@ class ApiService {
     return Uri.parse('$_baseUrl$path');
   }
 
-  static dynamic _handle(http.Response res) {
+  static dynamic _handle(http.Response res, {bool includeAuth = true}) {
     if (kDebugMode) {
       // Log status + URL; body excerpt only on errors. Token is never logged.
       final excerpt =
@@ -163,6 +203,10 @@ class ApiService {
     if (res.statusCode >= 200 && res.statusCode < 300) {
       if (res.body.isEmpty) return <String, dynamic>{};
       return jsonDecode(res.body);
+    }
+
+    if (res.statusCode == 401 && includeAuth) {
+      onUnauthorized?.call();
     }
 
     String message;

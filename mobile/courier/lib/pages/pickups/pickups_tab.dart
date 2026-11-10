@@ -259,22 +259,6 @@ class _PickupsTabState extends State<PickupsTab> {
   Widget build(BuildContext context) {
     return Stack(children: [
       Column(children: [
-        // Stats bar
-        if (_stats.isNotEmpty)
-          Container(
-            color: kCard,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _MiniStat('Pending', _stats['pending_pickup'] ?? 0, kSecondary),
-                _MiniStat('Today', _stats['scheduled_today'] ?? 0, kGreen),
-                _MiniStat('Done', _stats['picked_up'] ?? 0, kGreen),
-                _MiniStat('Failed', _stats['failed'] ?? 0, kFlash),
-              ],
-            ),
-          ),
-        const Divider(height: 1, color: kBorder),
         // Filter
         SizedBox(
           height: 44,
@@ -296,10 +280,19 @@ class _PickupsTabState extends State<PickupsTab> {
                       : s == 'picked_up'
                           ? 'Picked Up'
                           : s[0].toUpperCase() + s.substring(1);
+              final count = switch (s) {
+                'all' => _stats['total'],
+                'pending_pickup' => _stats['pending_pickup'],
+                'scheduled' => _stats['scheduled'],
+                'picked_up' => _stats['picked_up'],
+                'failed' => _stats['failed'],
+                _ => null,
+              };
+              final label = count == null ? lbl : '$lbl ($count)';
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: FilterChip(
-                  label: Text(lbl,
+                  label: Text(label,
                       style: pjs(
                           size: 12,
                           weight: FontWeight.w600,
@@ -388,21 +381,6 @@ class _PickupsTabState extends State<PickupsTab> {
 }
 
 // ── Mini stat ─────────────────────────────────────────────────────────────────
-
-class _MiniStat extends StatelessWidget {
-  const _MiniStat(this.label, this.count, this.color);
-  final String label;
-  final int count;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) =>
-      Column(mainAxisSize: MainAxisSize.min, children: [
-        Text('$count',
-            style: pjs(size: 18, weight: FontWeight.w900, color: color)),
-        Text(label, style: pjs(size: 10, color: kSubtext)),
-      ]);
-}
 
 // ── Pickup card ───────────────────────────────────────────────────────────────
 
