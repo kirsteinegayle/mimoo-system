@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { router } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import { Bell } from "lucide-react";
 
 /**
@@ -11,7 +11,7 @@ import { Bell } from "lucide-react";
  * in. Guests never fetch: clicking calls onGuestClick (existing guest flow).
  */
 
-interface BuyerNotificationItem {
+export interface BuyerNotificationItem {
   id: number;
   type: string;
   title: string;
@@ -25,11 +25,27 @@ interface NotificationBellProps {
   isLoggedIn: boolean;
   onGuestClick?: () => void;
   buttonClassName?: string;
+  /** Session routes base: {base}/feed, {base}/{id}/read, {base}/read-all, and the feed page {base}. */
+  baseUrl?: string;
 }
 
 const POLL_MS = 30_000;
+const DROPDOWN_LIMIT = 10;
 
-function csrfHeaders(): Record<string, string> {
+/**
+ * Where a notification leads: data.url / data.link when it is a same-site
+ * path ("/..."), else the order page when data.order_id is set, else null.
+ */
+export function notificationHref(n: BuyerNotificationItem): string | null {
+  const d = n.data ?? {};
+  for (const key of ["url", "link"] as const) {
+    const v = d[key];
+    if (typeof v === "string" && v.startsWith("/") && !v.startsWith("//")) return v;
+  }
+  return d.order_id ? `/orders/${d.order_id}` : null;
+}
+
+export function csrfHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
   // XSRF-TOKEN cookie is refreshed on every response (survives login without a reload).
   const cookie = document.cookie.split("; ").find((c) => c.startsWith("XSRF-TOKEN="));
@@ -42,7 +58,7 @@ function csrfHeaders(): Record<string, string> {
   return headers;
 }
 
-function timeAgo(iso: string | null): string {
+export function timeAgo(iso: string | null): string {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
   if (Number.isNaN(diff)) return "";
@@ -58,6 +74,7 @@ export function NotificationBell({
   isLoggedIn,
   onGuestClick,
   buttonClassName = "relative flex items-center text-white transition-colors hover:text-white/80",
+  baseUrl = "/buyer/notifications",
 }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -67,18 +84,18 @@ export function NotificationBell({
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/buyer/notifications/feed", {
+      const res = await fetch(`${baseUrl}/feed`, {
         headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
         credentials: "same-origin",
       });
       if (!res.ok) return; // 401/403 (not a buyer) → keep badge hidden
       const json = await res.json();
-      setItems(Array.isArray(json.data) ? json.data : []);
+      setItems(Array.isArray(json.data) ? json.data.slice(0, DROPDOWN_LIMIT) : []);
       setUnread(Number(json.meta?.unread_count ?? 0));
     } catch {
       // network error: keep the last known state
     }
-  }, []);
+  }, [baseUrl]);
 
   // Initial load + 30 s refresh while logged in.
   useEffect(() => {
@@ -130,7 +147,7 @@ export function NotificationBell({
       setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)));
       setUnread((u) => Math.max(0, u - 1));
       try {
-        const res = await post(`/buyer/notifications/${n.id}/read`);
+        const res = await post(`${baseUrl}/${n.id}/read`);
         if (res.ok) {
           const json = await res.json();
           if (typeof json.unread_count === "number") setUnread(json.unread_count);
@@ -140,14 +157,15 @@ export function NotificationBell({
       }
     }
     setOpen(false);
-    if (n.data?.order_id) router.visit(`/orders/${n.data.order_id}`);
+    const href = notificationHref(n);
+    if (href) router.visit(href);
   };
 
   const markAll = async () => {
     setItems((prev) => prev.map((x) => ({ ...x, is_read: true })));
     setUnread(0);
     try {
-      await post("/buyer/notifications/read-all");
+      await post(`${baseUrl}/read-all`);
     } catch {
       // ignore: next poll corrects the count
     }
@@ -215,6 +233,14 @@ export function NotificationBell({
               ))
             )}
           </div>
+
+          <Link
+            href={baseUrl}
+            onClick={() => setOpen(false)}
+            className="block border-t border-neutral-100 px-4 py-2.5 text-center text-xs font-semibold text-violet-700 hover:bg-neutral-50 hover:underline"
+          >
+            View all
+          </Link>
         </div>
       )}
     </div>

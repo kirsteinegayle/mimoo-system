@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../config/features.dart';
 import '../../services/courier_repository.dart';
 import '../../state/auth_service.dart';
 import '../../theme/mimoo_theme.dart';
 import '../account/account_tab.dart';
 import '../dashboard/dashboard_tab.dart';
+import '../delivery/delivery_management_page.dart';
 import '../messages/messages_page.dart';
 import '../notifications/notifications_page.dart';
 import '../pickups/pickups_tab.dart';
+import '../riders/rider_management_page.dart';
 import '../scan/scan_tab.dart';
 import '../shipments/shipments_tab.dart';
 import '../trips/trips_page.dart';
@@ -27,7 +30,11 @@ class _HomePageState extends State<HomePage> {
     ShipmentsTab(),
     ScanTab(),
     PickupsTab(),
-    TripsPage(embedded: true),
+    // Delivery tab: rider assignment (same as web Delivery Management).
+    // Linehaul trips have no backend route yet (CourierFeatures.trips).
+    CourierFeatures.trips
+        ? TripsPage(embedded: true)
+        : DeliveryManagementPage(),
   ];
 
   static const _labels = [
@@ -71,7 +78,9 @@ class _HomePageState extends State<HomePage> {
         title: Text(_appBarTitles[_selectedIndex],
             style: pjs(size: 17, weight: FontWeight.w800)),
         elevation: 0,
-        actions: _selectedIndex == 0
+        // Message / notification icons only when their backend exists.
+        actions: _selectedIndex == 0 &&
+                (CourierFeatures.messages || CourierFeatures.notifications)
             ? const [_HomeHeaderActions(), SizedBox(width: 4)]
             : null,
       ),
@@ -89,15 +98,12 @@ class _HomePageState extends State<HomePage> {
         ),
         onNotifications: () => _openPage(const NotificationsPage()),
         onMessages: () => _openPage(const MessagesPage()),
-        onRiderManagement: () => _openPage(const CourierMenuPage(
-          title: 'Rider Management',
-          icon: Icons.groups_outlined,
-          message: 'No rider records are available yet.',
-        )),
+        onRiderManagement: () => _openPage(const RiderManagementPage()),
+        // Placeholder only: no backend call (CourierFeatures.codRemittance).
         onCodRemittance: () => _openPage(const CourierMenuPage(
           title: 'COD & Remittance',
           icon: Icons.account_balance_wallet_outlined,
-          message: 'No COD or remittance records are available yet.',
+          message: 'Coming soon. COD and remittance records will appear here.',
         )),
         onHelpCenter: () => _openPage(const HelpCenterPage()),
       ),
@@ -191,16 +197,18 @@ class _CourierDrawer extends StatelessWidget {
                       onAccount();
                     },
                   ),
-                  _DrawerItem(
-                    icon: Icons.notifications_none_outlined,
-                    label: 'Notification',
-                    onTap: onNotifications,
-                  ),
-                  _DrawerItem(
-                    icon: Icons.chat_bubble_outline,
-                    label: 'Message',
-                    onTap: onMessages,
-                  ),
+                  if (CourierFeatures.notifications)
+                    _DrawerItem(
+                      icon: Icons.notifications_none_outlined,
+                      label: 'Notification',
+                      onTap: onNotifications,
+                    ),
+                  if (CourierFeatures.messages)
+                    _DrawerItem(
+                      icon: Icons.chat_bubble_outline,
+                      label: 'Message',
+                      onTap: onMessages,
+                    ),
                   const Divider(height: 16, indent: 16, endIndent: 16),
                   _DrawerItem(
                     icon: Icons.groups_outlined,

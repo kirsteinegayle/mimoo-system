@@ -8,9 +8,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** Rider app: payout line per completed job. */
 class RiderEarning extends Model
 {
-    /** MOCK rates (same values as the rider app mock). Replace with real rates. */
-    public const PICKUP_RATE   = 30.00;
+    /** Pickup payout per parcel (change here). Recorded by RiderPickupController::scan(). */
+    public const PICKUP_RATE   = 20.00;
+    /** MOCK rate (same value as the rider app mock). Replace with the real rate. */
     public const DELIVERY_RATE = 50.00;
+
+    public const TYPE_PICKUP   = 'pickup';
+    public const TYPE_DELIVERY = 'delivery';
 
     protected $fillable = [
         'rider_user_id', 'delivery_job_id', 'shipment_assignment_id', 'order_id',

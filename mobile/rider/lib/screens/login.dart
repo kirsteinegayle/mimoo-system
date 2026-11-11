@@ -5,7 +5,6 @@ import '../core/api_config.dart';
 import '../core/app_info.dart';
 import '../core/auth_controller.dart';
 import '../core/error_messages.dart';
-import '../core/settings_controller.dart';
 import '../core/theme.dart';
 import '../data/repositories/app_repositories_scope.dart';
 import '../data/api/rider_api.dart';
@@ -69,52 +68,6 @@ class _LoginScreenState extends State<LoginScreen> {
           .signIn(_emailController.text.trim(), _passwordController.text);
       if (!mounted) return;
       AuthScope.of(context).signIn();
-      Navigator.pushReplacementNamed(context, '/home');
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _error = friendlyError(error));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _loginWithPasskey() async {
-    if (_isLoading) return;
-    if (!useMock) {
-      // TODO(api): passkey sign-in has no server endpoint yet.
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Passkey sign-in is not available yet. Use your email and password.')));
-      return;
-    }
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final settings = SettingsScope.of(context);
-      final authScope = AuthScope.of(context);
-
-      if (!settings.passkeySetUp) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text(
-                  'No passkey registered. Sign in with your password first, then set up a passkey in Settings.')));
-        }
-        return;
-      }
-
-      final ok = await settings.authenticateBiometric('Sign in to Mimoo Rider');
-      if (!mounted) return;
-      if (!ok) {
-        setState(() => _error = 'Biometric authentication failed. Please try again.');
-        return;
-      }
-
-      // Biometrics passed — sign in by refreshing local data without password check.
-      await AppRepositoriesScope.of(context).signIn('rider@mimoo.ph', '___passkey___');
-      if (!mounted) return;
-      authScope.signIn();
       Navigator.pushReplacementNamed(context, '/home');
     } catch (error) {
       if (!mounted) return;
@@ -357,14 +310,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   label: 'Sign in',
                   loading: _isLoading,
                   onPressed: _isLoading ? null : _login,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Center(
-                child: TextButton.icon(
-                  onPressed: _isLoading ? null : _loginWithPasskey,
-                  icon: const Icon(Icons.fingerprint, size: 20),
-                  label: const Text('Sign in with passkey'),
                 ),
               ),
             ]),

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
-import { Star, ChevronRight, Minus, Plus, Package, ShoppingCart, Flag, Heart } from "lucide-react";
+import { Star, ChevronRight, Minus, Plus, Package, ShoppingCart, Flag, Heart, MessageCircle } from "lucide-react";
 import { BuyerHeader } from "@/components/buyer-header";
 import { toast } from "sonner";
 
@@ -12,8 +12,40 @@ import { toast } from "sonner";
 
 type UserRole = "guest" | "buyer" | "seller";
 
+interface PublicReview {
+  id: number;
+  rating: number;
+  comment: string | null;
+  images: string[];
+  buyer_name: string;
+  variant: { combination?: Record<string, string> } | null;
+  is_edited: boolean;
+  seller_reply: string | null;
+  created_at: string | null;
+}
+
+interface ReviewsPayload {
+  data: PublicReview[];
+  meta: {
+    rating_avg: number | null;
+    rating_count: number;
+    breakdown: Record<string, number>;
+    current_page: number;
+    last_page: number;
+    has_more: boolean;
+  };
+}
+
+function reviewDate(iso: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+}
+
 interface ProductDetailProps {
   auth?: { user: any };
+  /** Real reviews (same data as the mobile GET /api/buyer/products/{id}/reviews). */
+  reviews?: ReviewsPayload;
   product: {
     id: number;
     name: string;
@@ -521,7 +553,23 @@ function ProductInfo({
 // Seller Info Card
 // ---------------------------------------------------------------------------
 
-function SellerInfo({ sellerName, sellerId, profilePhoto }: { sellerName: string; sellerId: number; profilePhoto?: string | null }) {
+function SellerInfo({
+  sellerName,
+  sellerId,
+  profilePhoto,
+  productId,
+  user,
+}: {
+  sellerName: string;
+  sellerId: number;
+  profilePhoto?: string | null;
+  productId?: string | number;
+  user?: any;
+}) {
+  // "Chat with seller": guests are sent to login by /messages; hidden for the
+  // seller themself and for non-buyer accounts.
+  const canChat = !!sellerId && (!user || (user.account_type === "buyer" && Number(user.id) !== Number(sellerId)));
+  const chatHref = `/messages?seller_id=${sellerId}${productId ? `&product_id=${productId}` : ""}`;
   const initials = sellerName
     .split(' ')
     .map(word => word[0])
@@ -583,13 +631,24 @@ function SellerInfo({ sellerName, sellerId, profilePhoto }: { sellerName: string
           </div>
         </div>
         
-        {/* View Store Button */}
-        <Link
-          href={`/seller/${sellerId}`}
-          className="rounded-lg border-2 border-violet-900 bg-white px-4 py-2 text-sm font-semibold text-violet-900 transition-colors hover:bg-violet-50"
-        >
-          View Store
-        </Link>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {canChat && (
+            <Link
+              href={chatHref}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-violet-900 bg-violet-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-800"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Chat with seller
+            </Link>
+          )}
+          {/* View Store Button */}
+          <Link
+            href={`/seller/${sellerId}`}
+            className="rounded-lg border-2 border-violet-900 bg-white px-4 py-2 text-center text-sm font-semibold text-violet-900 transition-colors hover:bg-violet-50"
+          >
+            View Store
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -599,8 +658,31 @@ function SellerInfo({ sellerName, sellerId, profilePhoto }: { sellerName: string
 // Main Page
 // ---------------------------------------------------------------------------
 
-export default function ProductDetail({ auth, product }: ProductDetailProps) {
+export default function ProductDetail({ auth, product, reviews: initialReviews }: ProductDetailProps) {
   const user = auth?.user;
+  const [reviewList, setReviewList] = useState<PublicReview[]>(initialReviews?.data ?? []);
+  const [reviewMeta, setReviewMeta] = useState<ReviewsPayload["meta"] | null>(initialReviews?.meta ?? null);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
+
+  async function loadMoreReviews() {
+    if (!reviewMeta?.has_more || reviewsLoading) return;
+    setReviewsLoading(true);
+    setReviewsError(null);
+    try {
+      const res = await fetch(`/api/buyer/products/${product.id}/reviews?per_page=10&page=${reviewMeta.current_page + 1}`, {
+        headers: { Accept: "application/json" },
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || "Could not load more reviews.");
+      setReviewList((prev) => [...prev, ...(json.data ?? []).filter((r: PublicReview) => !prev.some((x) => x.id === r.id))]);
+      setReviewMeta(json.meta ?? null);
+    } catch (e: any) {
+      setReviewsError(e?.message || "Could not load more reviews.");
+    } finally {
+      setReviewsLoading(false);
+    }
+  }
   const role: UserRole = user?.account_type ? (user.account_type as UserRole) : "guest";
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
@@ -877,229 +959,136 @@ export default function ProductDetail({ auth, product }: ProductDetailProps) {
             sellerName={product.seller_name} 
             sellerId={product.seller_id} 
             profilePhoto={product.seller_profile_photo}
+            productId={product.id}
+            user={user}
           />
         </div>
 
-        {/* Reviews Section */}
-        <div className="mt-8 rounded-xl border border-neutral-200 bg-white p-6">
-          <div className="flex items-center justify-between mb-6">
+        {/* Reviews Section (real reviews; written from My Purchases after the order is completed) */}
+        <div id="reviews" className="mt-8 rounded-xl border border-neutral-200 bg-white p-6">
+          <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
             <h2 className="text-xl font-bold text-neutral-900">Customer Reviews</h2>
-            <button className="rounded-lg border-2 border-violet-900 bg-white px-4 py-2 text-sm font-semibold text-violet-900 transition-colors hover:bg-violet-50">
-              Write a Review
-            </button>
+            {user?.account_type === "buyer" && (
+              <Link
+                href="/orders?status=to_review"
+                className="rounded-lg border-2 border-violet-900 bg-white px-4 py-2 text-sm font-semibold text-violet-900 transition-colors hover:bg-violet-50"
+              >
+                Write a Review
+              </Link>
+            )}
           </div>
 
-          {/* Rating Summary */}
-          <div className="mb-8 rounded-lg bg-violet-50 p-6 border border-violet-200">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Overall Rating */}
-              <div className="flex flex-col items-center justify-center">
-                <div className="text-5xl font-bold text-violet-900 mb-2">4.8</div>
-                <div className="flex items-center mb-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-6 w-6 ${
-                        i < 5 ? 'fill-amber-400 text-amber-400' : 'fill-neutral-200 text-neutral-200'
-                      }`}
-                    />
-                  ))}
+          {!reviewMeta || reviewMeta.rating_count === 0 ? (
+            <div className="rounded-lg border border-dashed border-violet-200 bg-violet-50/40 p-10 text-center">
+              <Star className="mx-auto mb-3 h-10 w-10 text-violet-200" />
+              <p className="font-semibold text-neutral-800">No reviews yet</p>
+              <p className="mt-1 text-sm text-neutral-500">Buyers can review this product after their order is completed.</p>
+            </div>
+          ) : (
+            <>
+              {/* Rating Summary */}
+              <div className="mb-8 rounded-lg bg-violet-50 p-6 border border-violet-200">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="text-5xl font-bold text-violet-900 mb-2">{(reviewMeta.rating_avg ?? 0).toFixed(1)}</div>
+                    <div className="flex items-center mb-2">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Star
+                          key={i}
+                          className={`h-6 w-6 ${i <= Math.round(reviewMeta.rating_avg ?? 0) ? "fill-amber-400 text-amber-400" : "fill-neutral-200 text-neutral-200"}`}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-sm text-neutral-600">
+                      Based on {reviewMeta.rating_count} review{reviewMeta.rating_count === 1 ? "" : "s"}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {[5, 4, 3, 2, 1].map((stars) => {
+                      const n = reviewMeta.breakdown?.[String(stars)] ?? 0;
+                      const pct = reviewMeta.rating_count ? Math.round((n / reviewMeta.rating_count) * 100) : 0;
+                      return (
+                        <div key={stars} className="flex items-center gap-3">
+                          <div className="flex items-center gap-1 w-12">
+                            <span className="text-sm font-medium text-neutral-700">{stars}</span>
+                            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                          </div>
+                          <div className="flex-1 h-2 bg-neutral-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-sm text-neutral-600 w-12 text-right">{n}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="text-sm text-neutral-600">Based on 127 reviews</div>
               </div>
 
-              {/* Rating Breakdown */}
-              <div className="space-y-2">
-                {[5, 4, 3, 2, 1].map((stars) => (
-                  <div key={stars} className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 w-12">
-                      <span className="text-sm font-medium text-neutral-700">{stars}</span>
-                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+              {/* Review List */}
+              <div className="space-y-6">
+                {reviewList.map((r) => (
+                  <div key={r.id} className="border-b border-neutral-200 pb-6 last:border-0 last:pb-0">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
+                        {r.buyer_name.substring(0, 1).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2 gap-3">
+                          <div>
+                            <div className="font-semibold text-neutral-900">{r.buyer_name}</div>
+                            <div className="text-xs text-neutral-500">
+                              Verified Purchase • {reviewDate(r.created_at)}
+                              {r.is_edited && " • Edited"}
+                              {r.variant?.combination && Object.keys(r.variant.combination).length > 0 && (
+                                <> • {Object.entries(r.variant.combination).map(([k, v]) => `${k}: ${v}`).join(", ")}</>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center shrink-0">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                              <Star key={i} className={`h-4 w-4 ${i <= r.rating ? "fill-amber-400 text-amber-400" : "fill-neutral-200 text-neutral-200"}`} />
+                            ))}
+                          </div>
+                        </div>
+                        {r.comment && <p className="text-sm text-neutral-700 leading-relaxed mb-3 whitespace-pre-wrap break-words">{r.comment}</p>}
+                        {r.images.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {r.images.map((src) => (
+                              <a key={src} href={src} target="_blank" rel="noopener noreferrer">
+                                <img src={src} alt="Review photo" className="h-20 w-20 rounded-lg object-cover border border-neutral-200" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                        {r.seller_reply && (
+                          <div className="mt-4 ml-4 rounded-lg bg-violet-50 p-4 border-l-4 border-violet-600">
+                            <div className="font-semibold text-neutral-900 text-sm mb-1">
+                              {product.seller_name} <span className="text-xs font-normal text-violet-700">(Seller)</span>
+                            </div>
+                            <p className="text-sm text-neutral-700 whitespace-pre-wrap break-words">{r.seller_reply}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1 h-2 bg-neutral-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-amber-400 rounded-full"
-                        style={{ width: `${stars === 5 ? 75 : stars === 4 ? 15 : stars === 3 ? 7 : stars === 2 ? 2 : 1}%` }}
-                      />
-                    </div>
-                    <span className="text-sm text-neutral-600 w-12 text-right">
-                      {stars === 5 ? 95 : stars === 4 ? 19 : stars === 3 ? 9 : stars === 2 ? 3 : 1}
-                    </span>
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
 
-          {/* Review List */}
-          <div className="space-y-6">
-            {/* Sample Review 1 */}
-            <div className="border-b border-neutral-200 pb-6 last:border-0 last:pb-0">
-              <div className="flex items-start gap-4">
-                {/* Avatar */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
-                  MA
+              {reviewsError && <p className="mt-4 text-center text-sm text-red-600">{reviewsError}</p>}
+              {reviewMeta.has_more && (
+                <div className="mt-8 text-center">
+                  <button
+                    type="button"
+                    onClick={loadMoreReviews}
+                    disabled={reviewsLoading}
+                    className="rounded-lg border border-violet-300 bg-white px-6 py-2.5 text-sm font-semibold text-violet-900 transition-colors hover:bg-violet-50 disabled:opacity-50"
+                  >
+                    {reviewsLoading ? "Loading..." : "Load More Reviews"}
+                  </button>
                 </div>
-                
-                {/* Review Content */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <div className="font-semibold text-neutral-900">Maria Santos</div>
-                      <div className="text-xs text-neutral-500">Verified Purchase • 2 weeks ago</div>
-                    </div>
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < 5 ? 'fill-amber-400 text-amber-400' : 'fill-neutral-200 text-neutral-200'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-neutral-700 leading-relaxed mb-3">
-                    Excellent product! Exactly as described. The quality is top-notch and delivery was fast. 
-                    The seller was very responsive to my questions. Highly recommend this to anyone looking for quality products!
-                  </p>
-                  
-                  {/* Review Images */}
-                  <div className="flex gap-2 mb-3">
-                    <div className="h-20 w-20 rounded-lg bg-neutral-100 border border-neutral-200" />
-                    <div className="h-20 w-20 rounded-lg bg-neutral-100 border border-neutral-200" />
-                    <div className="h-20 w-20 rounded-lg bg-neutral-100 border border-neutral-200" />
-                  </div>
-                  
-                  {/* Helpful Button */}
-                  <div className="flex items-center gap-4 text-sm">
-                    <button className="text-neutral-600 hover:text-violet-700 font-medium">
-                      👍 Helpful (24)
-                    </button>
-                    <button className="text-neutral-600 hover:text-violet-700 font-medium">
-                      Reply
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Sample Review 2 */}
-            <div className="border-b border-neutral-200 pb-6 last:border-0 last:pb-0">
-              <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">
-                  JD
-                </div>
-                
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <div className="font-semibold text-neutral-900">Juan Dela Cruz</div>
-                      <div className="text-xs text-neutral-500">Verified Purchase • 1 month ago</div>
-                    </div>
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < 4 ? 'fill-amber-400 text-amber-400' : 'fill-neutral-200 text-neutral-200'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-neutral-700 leading-relaxed mb-3">
-                    Good value for money. The product works as expected and meets my needs. 
-                    Shipping took a bit longer than expected but overall satisfied with my purchase.
-                  </p>
-                  
-                  <div className="flex items-center gap-4 text-sm">
-                    <button className="text-neutral-600 hover:text-violet-700 font-medium">
-                      👍 Helpful (12)
-                    </button>
-                    <button className="text-neutral-600 hover:text-violet-700 font-medium">
-                      Reply
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Sample Review 3 */}
-            <div className="border-b border-neutral-200 pb-6 last:border-0 last:pb-0">
-              <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-600 text-sm font-bold text-white">
-                  AR
-                </div>
-                
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <div className="font-semibold text-neutral-900">Anna Reyes</div>
-                      <div className="text-xs text-neutral-500">Verified Purchase • 2 months ago</div>
-                    </div>
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < 5 ? 'fill-amber-400 text-amber-400' : 'fill-neutral-200 text-neutral-200'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-neutral-700 leading-relaxed mb-3">
-                    Love it! 💖 This product exceeded my expectations. Great quality, fast shipping, 
-                    and excellent customer service. Will definitely order again!
-                  </p>
-                  
-                  {/* Review Images */}
-                  <div className="flex gap-2 mb-3">
-                    <div className="h-20 w-20 rounded-lg bg-neutral-100 border border-neutral-200" />
-                  </div>
-                  
-                  <div className="flex items-center gap-4 text-sm">
-                    <button className="text-neutral-600 hover:text-violet-700 font-medium">
-                      👍 Helpful (18)
-                    </button>
-                    <button className="text-neutral-600 hover:text-violet-700 font-medium">
-                      Reply
-                    </button>
-                  </div>
-
-                  {/* Seller Reply */}
-                  <div className="mt-4 ml-4 rounded-lg bg-violet-50 p-4 border-l-4 border-violet-600">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-xs font-bold text-white">
-                        {product.seller_name.substring(0, 2).toUpperCase()}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-neutral-900 text-sm mb-1">
-                          {product.seller_name} <span className="text-xs font-normal text-violet-700">(Seller)</span>
-                        </div>
-                        <p className="text-sm text-neutral-700">
-                          Thank you so much for your kind words! We're thrilled you're happy with your purchase. 
-                          Looking forward to serving you again! 🙏
-                        </p>
-                        <div className="text-xs text-neutral-500 mt-2">2 months ago</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Load More Button */}
-          <div className="mt-8 text-center">
-            <button className="rounded-lg border border-violet-300 bg-white px-6 py-2.5 text-sm font-semibold text-violet-900 transition-colors hover:bg-violet-50">
-              Load More Reviews
-            </button>
-          </div>
+              )}
+            </>
+          )}
         </div>
       </main>
 

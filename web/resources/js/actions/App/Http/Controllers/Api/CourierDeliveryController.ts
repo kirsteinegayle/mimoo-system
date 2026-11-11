@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::riders
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:37
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:38
  * @route '/api/courier-app/delivery-riders'
  */
 export const riders = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ riders.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::riders
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:37
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:38
  * @route '/api/courier-app/delivery-riders'
  */
 riders.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ riders.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::riders
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:37
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:38
  * @route '/api/courier-app/delivery-riders'
  */
 riders.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ riders.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::riders
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:37
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:38
  * @route '/api/courier-app/delivery-riders'
  */
 riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::riders
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:37
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:38
  * @route '/api/courier-app/delivery-riders'
  */
     const ridersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::riders
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:37
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:38
  * @route '/api/courier-app/delivery-riders'
  */
         ridersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::riders
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:37
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:38
  * @route '/api/courier-app/delivery-riders'
  */
         ridersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     riders.form = ridersForm
 /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::assign
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:64
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:148
  * @route '/api/courier-app/delivery-jobs'
  */
 export const assign = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ assign.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::assign
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:64
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:148
  * @route '/api/courier-app/delivery-jobs'
  */
 assign.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ assign.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::assign
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:64
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:148
  * @route '/api/courier-app/delivery-jobs'
  */
 assign.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +113,7 @@ assign.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::assign
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:64
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:148
  * @route '/api/courier-app/delivery-jobs'
  */
     const assignForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -123,7 +123,7 @@ assign.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::assign
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:64
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:148
  * @route '/api/courier-app/delivery-jobs'
  */
         assignForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -132,6 +132,84 @@ assign.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
         })
     
     assign.form = assignForm
-const CourierDeliveryController = { riders, assign }
+/**
+* @see \App\Http\Controllers\Api\CourierDeliveryController::orders
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:86
+ * @route '/api/courier-app/delivery-orders'
+ */
+export const orders = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: orders.url(options),
+    method: 'get',
+})
+
+orders.definition = {
+    methods: ["get","head"],
+    url: '/api/courier-app/delivery-orders',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Api\CourierDeliveryController::orders
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:86
+ * @route '/api/courier-app/delivery-orders'
+ */
+orders.url = (options?: RouteQueryOptions) => {
+    return orders.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Api\CourierDeliveryController::orders
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:86
+ * @route '/api/courier-app/delivery-orders'
+ */
+orders.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: orders.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Api\CourierDeliveryController::orders
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:86
+ * @route '/api/courier-app/delivery-orders'
+ */
+orders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: orders.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Api\CourierDeliveryController::orders
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:86
+ * @route '/api/courier-app/delivery-orders'
+ */
+    const ordersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: orders.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\CourierDeliveryController::orders
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:86
+ * @route '/api/courier-app/delivery-orders'
+ */
+        ordersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: orders.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\CourierDeliveryController::orders
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:86
+ * @route '/api/courier-app/delivery-orders'
+ */
+        ordersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: orders.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    orders.form = ordersForm
+const CourierDeliveryController = { riders, assign, orders }
 
 export default CourierDeliveryController

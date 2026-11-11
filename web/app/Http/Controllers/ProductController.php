@@ -875,31 +875,22 @@ class ProductController extends Controller
         $user = Auth::user();
         $product = Product::findOrFail($id);
 
-        $validated = $request->validate([
-            'reason' => 'required|string|in:misleading,inappropriate,counterfeit,spam,other',
-            'description' => 'required|string|max:500',
-        ], [
-            'reason.required' => 'Please select a reason for reporting.',
-            'description.required' => 'Please provide details about why you are reporting this product.',
-        ]);
+        // Same rules as the buyer mobile API (ProductReportService); web response shape unchanged.
+        $validated = $request->validate(
+            \App\Services\ProductReportService::rules(),
+            \App\Services\ProductReportService::messages()
+        );
 
-        // Check if user already reported this product
-        $existingReport = \App\Models\ProductReport::where('product_id', $id)
-            ->where('reported_by', $user->id)
-            ->where('status', 'pending')
-            ->first();
+        $result = \App\Services\ProductReportService::submit($user, $product, $validated);
 
-        if ($existingReport) {
+        if ($result['error'] === \App\Services\ProductReportService::ERR_DUPLICATE) {
             return response()->json(['error' => 'You have already reported this product.'], 400);
         }
+        if ($result['error'] === \App\Services\ProductReportService::ERR_OWN) {
+            return response()->json(['error' => 'You cannot report your own product.'], 400);
+        }
 
-        $report = \App\Models\ProductReport::create([
-            'product_id' => $id,
-            'reported_by' => $user->id,
-            'reason' => $validated['reason'],
-            'description' => $validated['description'],
-            'status' => 'pending',
-        ]);
+        $report = $result['report'];
 
         return response()->json([
             'message' => 'Product reported successfully. Our team will review it shortly.',
@@ -994,9 +985,13 @@ class ProductController extends Controller
             ]);
 
             // Delete the product (soft delete)
+            $reportedProduct = $report->product;
             if ($report->product) {
                 $report->product->delete();
             }
+
+            // Reporter + seller notifications (inserted after commit; no reporter identity to the seller).
+            \App\Services\ProductReportNotificationService::reviewed($report, $reportedProduct);
 
             DB::commit();
 
@@ -1041,6 +1036,9 @@ class ProductController extends Controller
                 'reviewed_at' => now(),
                 'admin_notes' => $validated['notes'],
             ]);
+
+            // Reporter notification only (product kept, so nothing to the seller).
+            \App\Services\ProductReportNotificationService::reviewed($report, $report->product);
 
             DB::commit();
 

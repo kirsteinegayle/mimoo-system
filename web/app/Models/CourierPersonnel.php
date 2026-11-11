@@ -19,6 +19,13 @@ class CourierPersonnel extends Model
         'contact_number',
         'role',
         'status',
+        'is_online',
+        'last_checked_in_at',
+    ];
+
+    protected $casts = [
+        'is_online'          => 'boolean',
+        'last_checked_in_at' => 'datetime',
     ];
 
     /**

@@ -1,5 +1,6 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 import facility from './facility'
+import deliveryManagementCbf2b8 from './delivery-management'
 /**
  * @see routes/web.php:83
  * @route '/courier/dashboard'
@@ -449,7 +450,7 @@ branchFacility.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     branchFacility.form = branchFacilityForm
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::riderManagement
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
 export const riderManagement = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -464,7 +465,7 @@ riderManagement.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::riderManagement
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
 riderManagement.url = (options?: RouteQueryOptions) => {
@@ -473,7 +474,7 @@ riderManagement.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::riderManagement
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
 riderManagement.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -482,7 +483,7 @@ riderManagement.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 })
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::riderManagement
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
 riderManagement.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -492,7 +493,7 @@ riderManagement.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
     /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::riderManagement
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
     const riderManagementForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -502,7 +503,7 @@ riderManagement.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
             /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::riderManagement
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
         riderManagementForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -511,7 +512,7 @@ riderManagement.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
         })
             /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::riderManagement
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
         riderManagementForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -526,7 +527,8 @@ riderManagement.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     
     riderManagement.form = riderManagementForm
 /**
- * @see routes/web.php:426
+* @see \App\Http\Controllers\Courier\DeliveryManagementController::deliveryManagement
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:27
  * @route '/courier/delivery-management'
  */
 export const deliveryManagement = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -540,7 +542,8 @@ deliveryManagement.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:426
+* @see \App\Http\Controllers\Courier\DeliveryManagementController::deliveryManagement
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:27
  * @route '/courier/delivery-management'
  */
 deliveryManagement.url = (options?: RouteQueryOptions) => {
@@ -548,7 +551,8 @@ deliveryManagement.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:426
+* @see \App\Http\Controllers\Courier\DeliveryManagementController::deliveryManagement
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:27
  * @route '/courier/delivery-management'
  */
 deliveryManagement.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -556,7 +560,8 @@ deliveryManagement.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =
     method: 'get',
 })
 /**
- * @see routes/web.php:426
+* @see \App\Http\Controllers\Courier\DeliveryManagementController::deliveryManagement
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:27
  * @route '/courier/delivery-management'
  */
 deliveryManagement.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -565,7 +570,8 @@ deliveryManagement.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
 })
 
     /**
- * @see routes/web.php:426
+* @see \App\Http\Controllers\Courier\DeliveryManagementController::deliveryManagement
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:27
  * @route '/courier/delivery-management'
  */
     const deliveryManagementForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -574,7 +580,8 @@ deliveryManagement.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     })
 
             /**
- * @see routes/web.php:426
+* @see \App\Http\Controllers\Courier\DeliveryManagementController::deliveryManagement
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:27
  * @route '/courier/delivery-management'
  */
         deliveryManagementForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -582,7 +589,8 @@ deliveryManagement.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
             method: 'get',
         })
             /**
- * @see routes/web.php:426
+* @see \App\Http\Controllers\Courier\DeliveryManagementController::deliveryManagement
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:27
  * @route '/courier/delivery-management'
  */
         deliveryManagementForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -597,7 +605,7 @@ deliveryManagement.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     
     deliveryManagement.form = deliveryManagementForm
 /**
- * @see routes/web.php:435
+ * @see routes/web.php:430
  * @route '/courier/cod-remittance'
  */
 export const codRemittance = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -611,7 +619,7 @@ codRemittance.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:435
+ * @see routes/web.php:430
  * @route '/courier/cod-remittance'
  */
 codRemittance.url = (options?: RouteQueryOptions) => {
@@ -619,7 +627,7 @@ codRemittance.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:435
+ * @see routes/web.php:430
  * @route '/courier/cod-remittance'
  */
 codRemittance.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -627,7 +635,7 @@ codRemittance.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:435
+ * @see routes/web.php:430
  * @route '/courier/cod-remittance'
  */
 codRemittance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -636,7 +644,7 @@ codRemittance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
 })
 
     /**
- * @see routes/web.php:435
+ * @see routes/web.php:430
  * @route '/courier/cod-remittance'
  */
     const codRemittanceForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -645,7 +653,7 @@ codRemittance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     })
 
             /**
- * @see routes/web.php:435
+ * @see routes/web.php:430
  * @route '/courier/cod-remittance'
  */
         codRemittanceForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -653,7 +661,7 @@ codRemittance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
             method: 'get',
         })
             /**
- * @see routes/web.php:435
+ * @see routes/web.php:430
  * @route '/courier/cod-remittance'
  */
         codRemittanceForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -668,7 +676,7 @@ codRemittance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     
     codRemittance.form = codRemittanceForm
 /**
- * @see routes/web.php:444
+ * @see routes/web.php:439
  * @route '/courier/reports'
  */
 export const reports = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -682,7 +690,7 @@ reports.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:444
+ * @see routes/web.php:439
  * @route '/courier/reports'
  */
 reports.url = (options?: RouteQueryOptions) => {
@@ -690,7 +698,7 @@ reports.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:444
+ * @see routes/web.php:439
  * @route '/courier/reports'
  */
 reports.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -698,7 +706,7 @@ reports.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:444
+ * @see routes/web.php:439
  * @route '/courier/reports'
  */
 reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -707,7 +715,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:444
+ * @see routes/web.php:439
  * @route '/courier/reports'
  */
     const reportsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -716,7 +724,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:444
+ * @see routes/web.php:439
  * @route '/courier/reports'
  */
         reportsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -724,7 +732,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:444
+ * @see routes/web.php:439
  * @route '/courier/reports'
  */
         reportsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -739,7 +747,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     reports.form = reportsForm
 /**
- * @see routes/web.php:453
+ * @see routes/web.php:448
  * @route '/courier/support'
  */
 export const support = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -753,7 +761,7 @@ support.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:453
+ * @see routes/web.php:448
  * @route '/courier/support'
  */
 support.url = (options?: RouteQueryOptions) => {
@@ -761,7 +769,7 @@ support.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:453
+ * @see routes/web.php:448
  * @route '/courier/support'
  */
 support.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -769,7 +777,7 @@ support.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:453
+ * @see routes/web.php:448
  * @route '/courier/support'
  */
 support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -778,7 +786,7 @@ support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:453
+ * @see routes/web.php:448
  * @route '/courier/support'
  */
     const supportForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -787,7 +795,7 @@ support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:453
+ * @see routes/web.php:448
  * @route '/courier/support'
  */
         supportForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -795,7 +803,7 @@ support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:453
+ * @see routes/web.php:448
  * @route '/courier/support'
  */
         supportForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -810,7 +818,7 @@ support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     support.form = supportForm
 /**
- * @see routes/web.php:462
+ * @see routes/web.php:457
  * @route '/courier/messages'
  */
 export const messages = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -824,7 +832,7 @@ messages.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:462
+ * @see routes/web.php:457
  * @route '/courier/messages'
  */
 messages.url = (options?: RouteQueryOptions) => {
@@ -832,7 +840,7 @@ messages.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:462
+ * @see routes/web.php:457
  * @route '/courier/messages'
  */
 messages.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -840,7 +848,7 @@ messages.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:462
+ * @see routes/web.php:457
  * @route '/courier/messages'
  */
 messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -849,7 +857,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:462
+ * @see routes/web.php:457
  * @route '/courier/messages'
  */
     const messagesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -858,7 +866,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:462
+ * @see routes/web.php:457
  * @route '/courier/messages'
  */
         messagesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -866,7 +874,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:462
+ * @see routes/web.php:457
  * @route '/courier/messages'
  */
         messagesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -881,7 +889,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     messages.form = messagesForm
 /**
- * @see routes/web.php:471
+ * @see routes/web.php:466
  * @route '/courier/settings'
  */
 export const settings = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -895,7 +903,7 @@ settings.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:471
+ * @see routes/web.php:466
  * @route '/courier/settings'
  */
 settings.url = (options?: RouteQueryOptions) => {
@@ -903,7 +911,7 @@ settings.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:471
+ * @see routes/web.php:466
  * @route '/courier/settings'
  */
 settings.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -911,7 +919,7 @@ settings.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:471
+ * @see routes/web.php:466
  * @route '/courier/settings'
  */
 settings.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -920,7 +928,7 @@ settings.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:471
+ * @see routes/web.php:466
  * @route '/courier/settings'
  */
     const settingsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -929,7 +937,7 @@ settings.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:471
+ * @see routes/web.php:466
  * @route '/courier/settings'
  */
         settingsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -937,7 +945,7 @@ settings.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:471
+ * @see routes/web.php:466
  * @route '/courier/settings'
  */
         settingsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -960,7 +968,7 @@ sortingTransfers: Object.assign(sortingTransfers, sortingTransfers),
 branchFacility: Object.assign(branchFacility, branchFacility),
 facility: Object.assign(facility, facility),
 riderManagement: Object.assign(riderManagement, riderManagement),
-deliveryManagement: Object.assign(deliveryManagement, deliveryManagement),
+deliveryManagement: Object.assign(deliveryManagement, deliveryManagementCbf2b8),
 codRemittance: Object.assign(codRemittance, codRemittance),
 reports: Object.assign(reports, reports),
 support: Object.assign(support, support),

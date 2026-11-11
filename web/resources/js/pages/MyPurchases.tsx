@@ -13,7 +13,10 @@ import {
   Search,
   Loader2,
   RefreshCw,
+  MessageCircle,
+  RotateCcw,
 } from "lucide-react";
+import { ReturnRequestModal, ReturnStatusBadge } from "@/components/buyer/returns-reviews";
 import { BuyerHeader } from "@/components/buyer-header";
 import { toast } from "sonner";
 
@@ -27,6 +30,7 @@ interface OrderItem {
   product_name: string;
   product_image: string | null;
   seller_name: string;
+  seller_id?: number | null;
   quantity: number;
   unit_price: number;
   subtotal: number;
@@ -56,12 +60,19 @@ interface Order {
   tracking_updated_at?: string | null;
   assigned_courier_name?: string | null;
   items: OrderItem[];
+  sellers?: { id: number; name: string }[];
+  // Return / review flags (same rules as the mobile app)
+  can_return?: boolean;
+  return_status?: string | null;
+  return_id?: number | null;
+  can_review?: boolean;
 }
 
 interface PageProps {
   orders: Order[];
   auth: { user: any };
   cartCount?: number;
+  returnReasons?: string[];
   [key: string]: any;
 }
 
@@ -120,7 +131,8 @@ function readTabFromUrl(url: string): TabKey {
 
 export default function MyPurchases() {
   const page = usePage<PageProps>();
-  const { orders: initialOrders, auth, cartCount } = page.props;
+  const { orders: initialOrders, auth, cartCount, returnReasons = [] } = page.props;
+  const [returnFor, setReturnFor] = useState<Order | null>(null);
   const user = auth?.user;
 
   const [orders, setOrders] = useState<Order[]>(initialOrders ?? []);
@@ -139,7 +151,7 @@ export default function MyPurchases() {
   }, []);
 
   // Fetch fresh orders from backend
-  async function fetchOrders() {
+  async function fetchOrders(silent = false) {
     try {
       setRefreshing(true);
       const response = await fetch('/orders/data', {
@@ -152,7 +164,7 @@ export default function MyPurchases() {
       if (response.ok) {
         const data = await response.json();
         setOrders(data.orders || []);
-        toast.success('Orders updated');
+        if (!silent) toast.success('Orders updated');
       } else {
         toast.error('Failed to refresh orders');
       }
@@ -228,13 +240,22 @@ export default function MyPurchases() {
       <BuyerHeader user={user} onLogout={handleLogout} cartCount={cartCount ?? 0} />
 
       <main className="max-w-[1000px] mx-auto px-4 sm:px-6 py-6 pb-16">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
           <h1 className="text-[1.3rem] font-bold text-[#2A1B4D]" style={{ fontFamily: "'Syne', sans-serif" }}>
             My Purchases
           </h1>
+          <div className="flex items-center gap-2 flex-wrap">
+          <Link href="/returns" className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.82rem] font-semibold text-[#4B2E7E] hover:bg-[#F9F7FC] rounded-lg border border-[#B9A6DE] transition">
+            <RotateCcw className="w-4 h-4" />
+            My Returns
+          </Link>
+          <Link href="/my-reviews" className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.82rem] font-semibold text-[#4B2E7E] hover:bg-[#F9F7FC] rounded-lg border border-[#B9A6DE] transition">
+            <Star className="w-4 h-4" />
+            My Reviews
+          </Link>
           <button
             type="button"
-            onClick={fetchOrders}
+            onClick={() => fetchOrders()}
             disabled={refreshing}
             className="inline-flex items-center gap-2 px-3 py-2 text-[0.82rem] font-semibold text-[#4B2E7E] hover:bg-[#F9F7FC] rounded-lg border border-[#B9A6DE] transition disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh orders"
@@ -242,6 +263,7 @@ export default function MyPurchases() {
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
+          </div>
         </div>
 
         {/* Status navigation */}
@@ -457,13 +479,13 @@ export default function MyPurchases() {
                         Pay now
                       </Link>
                     )}
-                    {key === "to_review" && (
+                    {key === "to_review" && (order.can_review || order.reviewed) && (
                       <Link
-                        href={`/orders/${order.id}/review`}
+                        href={`/orders/${order.id}#reviews`}
                         className="inline-flex items-center gap-2 bg-[#4B2E7E] text-white font-bold text-[0.82rem] px-4 py-2 rounded-lg hover:bg-[#3a2360] transition"
                       >
                         <Star className="w-4 h-4" />
-                        {order.reviewed ? "Edit review" : "Rate order"}
+                        {order.can_review ? "Rate order" : "My review"}
                       </Link>
                     )}
 
@@ -498,6 +520,40 @@ export default function MyPurchases() {
                         )}
                       </button>
                     )}
+
+                    {/* Return / refund (eligibility from the server, same rules as mobile) */}
+                    {order.can_return && (
+                      <button
+                        type="button"
+                        onClick={() => setReturnFor(order)}
+                        className="inline-flex items-center gap-2 border-[1.5px] border-[#B9A6DE] text-[#4B2E7E] font-bold text-[0.82rem] px-4 py-2 rounded-lg hover:bg-[#F9F7FC] transition"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Request return
+                      </button>
+                    )}
+                    {order.return_status && order.return_id && (
+                      <Link href={`/returns?id=${order.return_id}`} className="inline-flex items-center" title="View return details">
+                        <ReturnStatusBadge status={order.return_status} />
+                      </Link>
+                    )}
+
+                    {/* Chat with seller (hidden for the seller themself / non-buyer accounts) */}
+                    {(() => {
+                      const chat = (order.sellers ?? []).filter(
+                        (s) => s.id && (!user || (user.account_type === "buyer" && Number(user.id) !== Number(s.id))),
+                      );
+                      return chat.map((s) => (
+                        <Link
+                          key={s.id}
+                          href={`/messages?seller_id=${s.id}`}
+                          className="inline-flex items-center gap-2 border-[1.5px] border-[#B9A6DE] text-[#4B2E7E] font-bold text-[0.82rem] px-4 py-2 rounded-lg hover:bg-[#F9F7FC] transition"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          {chat.length > 1 ? `Chat with ${s.name}` : "Chat with seller"}
+                        </Link>
+                      ));
+                    })()}
                   </div>
                 </article>
               );
@@ -505,6 +561,20 @@ export default function MyPurchases() {
           )}
         </div>
       </main>
+
+      {returnFor && (
+        <ReturnRequestModal
+          orderId={returnFor.id}
+          orderNumber={returnFor.order_number}
+          reasons={returnReasons}
+          onClose={() => setReturnFor(null)}
+          onDone={(msg) => {
+            setReturnFor(null);
+            toast.success(msg);
+            fetchOrders(true);
+          }}
+        />
+      )}
     </div>
   );
 }

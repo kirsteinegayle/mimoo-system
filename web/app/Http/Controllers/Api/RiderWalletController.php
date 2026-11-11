@@ -106,8 +106,51 @@ class RiderWalletController extends Controller
                 'today_count' => $sum(now()->startOfDay())->count(),
                 'week'        => (float) $sum(now()->startOfWeek())->sum('amount'),
                 'week_count'  => $sum(now()->startOfWeek())->count(),
+                // Additive: per-day totals for the weekly chart.
+                'days'        => $this->lastSevenDays($userId),
             ],
         ]);
+    }
+
+    /**
+     * Earnings per day for the last 7 days (6 days ago .. today, oldest first).
+     * Days without earnings are included as 0.00. Uses the same clock as the
+     * today/week totals above (now() in the app timezone, startOfDay).
+     * `total` sums every earning type; pickup/delivery/other split the total.
+     */
+    private function lastSevenDays(int $userId): array
+    {
+        $from = now()->startOfDay()->subDays(6);
+
+        $byDay = RiderEarning::where('rider_user_id', $userId)
+            ->where('earned_at', '>=', $from)
+            ->get(['type', 'amount', 'earned_at'])
+            ->groupBy(fn (RiderEarning $e) => $e->earned_at->toDateString());
+
+        $days = [];
+        for ($i = 0; $i < 7; $i++) {
+            $day  = $from->copy()->addDays($i);
+            $rows = $byDay->get($day->toDateString(), collect());
+            $amt  = fn (?string $type) => round((float) $rows
+                ->filter(fn ($e) => $type === null
+                    ? ! in_array($e->type, [RiderEarning::TYPE_PICKUP, RiderEarning::TYPE_DELIVERY], true)
+                    : $e->type === $type)
+                ->sum('amount'), 2);
+
+            $days[] = [
+                'date'           => $day->toDateString(),
+                'label'          => $day->isToday() ? 'Today' : $day->format('D'),
+                'total'          => round((float) $rows->sum('amount'), 2),
+                'pickup'         => $amt(RiderEarning::TYPE_PICKUP),
+                'delivery'       => $amt(RiderEarning::TYPE_DELIVERY),
+                'other'          => $amt(null),
+                'count'          => $rows->count(),
+                'pickup_count'   => $rows->where('type', RiderEarning::TYPE_PICKUP)->count(),
+                'delivery_count' => $rows->where('type', RiderEarning::TYPE_DELIVERY)->count(),
+            ];
+        }
+
+        return $days;
     }
 
     /** GET /notifications */

@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { BuyerHeader } from '@/components/buyer-header';
 import { Package, Users, Star, MessageCircle, Truck, CheckCircle, Share2 } from 'lucide-react';
@@ -44,6 +44,9 @@ interface ViewSellerProps {
 
 export default function ViewSeller({ auth, seller }: ViewSellerProps) {
   const user = auth?.user;
+  // "Chat with seller": guests go to login via /messages; hidden for the seller
+  // themself, non-buyer accounts, or when the seller id is missing.
+  const canChat = !!seller?.id && (!user || (user.account_type === 'buyer' && Number(user.id) !== Number(seller.id)));
   const [cartCount, setCartCount] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<SellerStats | null>(null);
@@ -193,10 +196,15 @@ export default function ViewSeller({ auth, seller }: ViewSellerProps) {
               <button className="rounded-lg bg-violet-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 transition">
                 + Follow
               </button>
-              <button className="rounded-lg border border-violet-600 bg-white px-6 py-2.5 text-sm font-semibold text-violet-600 hover:bg-violet-50 transition flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
-                Chat Store
-              </button>
+              {canChat && (
+                <Link
+                  href={`/messages?seller_id=${seller.id}`}
+                  className="rounded-lg border border-violet-600 bg-white px-6 py-2.5 text-sm font-semibold text-violet-600 hover:bg-violet-50 transition flex items-center gap-2"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Chat with seller
+                </Link>
+              )}
             </div>
           </div>
 

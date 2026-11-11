@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\RiderAuthController::login
- * @see app/Http/Controllers/Api/RiderAuthController.php:31
+ * @see app/Http/Controllers/Api/RiderAuthController.php:34
  * @route '/api/rider-app/login'
  */
 export const login = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ login.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderAuthController::login
- * @see app/Http/Controllers/Api/RiderAuthController.php:31
+ * @see app/Http/Controllers/Api/RiderAuthController.php:34
  * @route '/api/rider-app/login'
  */
 login.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ login.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\RiderAuthController::login
- * @see app/Http/Controllers/Api/RiderAuthController.php:31
+ * @see app/Http/Controllers/Api/RiderAuthController.php:34
  * @route '/api/rider-app/login'
  */
 login.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -35,7 +35,7 @@ login.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\RiderAuthController::login
- * @see app/Http/Controllers/Api/RiderAuthController.php:31
+ * @see app/Http/Controllers/Api/RiderAuthController.php:34
  * @route '/api/rider-app/login'
  */
     const loginForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -45,7 +45,7 @@ login.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\RiderAuthController::login
- * @see app/Http/Controllers/Api/RiderAuthController.php:31
+ * @see app/Http/Controllers/Api/RiderAuthController.php:34
  * @route '/api/rider-app/login'
  */
         loginForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -56,7 +56,7 @@ login.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     login.form = loginForm
 /**
 * @see \App\Http\Controllers\Api\RiderAuthController::logout
- * @see app/Http/Controllers/Api/RiderAuthController.php:87
+ * @see app/Http/Controllers/Api/RiderAuthController.php:90
  * @route '/api/rider-app/logout'
  */
 export const logout = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -71,7 +71,7 @@ logout.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderAuthController::logout
- * @see app/Http/Controllers/Api/RiderAuthController.php:87
+ * @see app/Http/Controllers/Api/RiderAuthController.php:90
  * @route '/api/rider-app/logout'
  */
 logout.url = (options?: RouteQueryOptions) => {
@@ -80,7 +80,7 @@ logout.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\RiderAuthController::logout
- * @see app/Http/Controllers/Api/RiderAuthController.php:87
+ * @see app/Http/Controllers/Api/RiderAuthController.php:90
  * @route '/api/rider-app/logout'
  */
 logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -90,7 +90,7 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\RiderAuthController::logout
- * @see app/Http/Controllers/Api/RiderAuthController.php:87
+ * @see app/Http/Controllers/Api/RiderAuthController.php:90
  * @route '/api/rider-app/logout'
  */
     const logoutForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -100,7 +100,7 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\RiderAuthController::logout
- * @see app/Http/Controllers/Api/RiderAuthController.php:87
+ * @see app/Http/Controllers/Api/RiderAuthController.php:90
  * @route '/api/rider-app/logout'
  */
         logoutForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -111,7 +111,7 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     logout.form = logoutForm
 /**
 * @see \App\Http\Controllers\Api\RiderAuthController::me
- * @see app/Http/Controllers/Api/RiderAuthController.php:97
+ * @see app/Http/Controllers/Api/RiderAuthController.php:100
  * @route '/api/rider-app/me'
  */
 export const me = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -126,7 +126,7 @@ me.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderAuthController::me
- * @see app/Http/Controllers/Api/RiderAuthController.php:97
+ * @see app/Http/Controllers/Api/RiderAuthController.php:100
  * @route '/api/rider-app/me'
  */
 me.url = (options?: RouteQueryOptions) => {
@@ -135,7 +135,7 @@ me.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\RiderAuthController::me
- * @see app/Http/Controllers/Api/RiderAuthController.php:97
+ * @see app/Http/Controllers/Api/RiderAuthController.php:100
  * @route '/api/rider-app/me'
  */
 me.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -144,7 +144,7 @@ me.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\RiderAuthController::me
- * @see app/Http/Controllers/Api/RiderAuthController.php:97
+ * @see app/Http/Controllers/Api/RiderAuthController.php:100
  * @route '/api/rider-app/me'
  */
 me.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -154,7 +154,7 @@ me.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\RiderAuthController::me
- * @see app/Http/Controllers/Api/RiderAuthController.php:97
+ * @see app/Http/Controllers/Api/RiderAuthController.php:100
  * @route '/api/rider-app/me'
  */
     const meForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -164,7 +164,7 @@ me.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\RiderAuthController::me
- * @see app/Http/Controllers/Api/RiderAuthController.php:97
+ * @see app/Http/Controllers/Api/RiderAuthController.php:100
  * @route '/api/rider-app/me'
  */
         meForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -173,7 +173,7 @@ me.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Api\RiderAuthController::me
- * @see app/Http/Controllers/Api/RiderAuthController.php:97
+ * @see app/Http/Controllers/Api/RiderAuthController.php:100
  * @route '/api/rider-app/me'
  */
         meForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

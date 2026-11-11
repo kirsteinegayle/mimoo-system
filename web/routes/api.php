@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\DeliveryPodPhotoController;
 use App\Http\Controllers\Api\RiderAuthController;
 use App\Http\Controllers\Api\RiderPickupController;
 use App\Http\Controllers\Api\RiderDeliveryController;
+use App\Http\Controllers\Api\DeliveryChatController;
 use App\Http\Controllers\Api\RiderWalletController;
 use Illuminate\Support\Facades\Route;
 
@@ -99,6 +100,10 @@ Route::prefix('buyer')->group(function () {
         Route::post('/orders/{id}/receive', [BuyerOrderController::class, 'receive'])->middleware('throttle:10,1,buyer-order-receive')->whereNumber('id');
         Route::get('/orders/{id}/delivery-code', [BuyerDeliveryCodeController::class, 'show'])->middleware('throttle:30,1,buyer-delivery-code')->whereNumber('id');
         Route::get('/orders/{id}/pod-photo',     [DeliveryPodPhotoController::class, 'buyerOrderPhoto'])->middleware('throttle:60,1,buyer-pod-photo')->whereNumber('id');
+        // Rider <-> buyer delivery chat (polling)
+        Route::get('/orders/{id}/chat',          [DeliveryChatController::class, 'buyerIndex'])->middleware('throttle:120,1,buyer-delivery-chat')->whereNumber('id');
+        Route::post('/orders/{id}/chat',         [DeliveryChatController::class, 'buyerSend'])->middleware('throttle:30,1,buyer-delivery-chat-send')->whereNumber('id');
+        Route::post('/orders/{id}/chat/read',    [DeliveryChatController::class, 'buyerRead'])->middleware('throttle:60,1,buyer-delivery-chat-read')->whereNumber('id');
 
         // Vouchers
         Route::get('/vouchers',            [BuyerVoucherController::class, 'index']);
@@ -137,6 +142,9 @@ Route::prefix('buyer')->group(function () {
         Route::get('/chat',                      [BuyerChatController::class, 'index']);
         Route::get('/chat/{id}/messages',        [BuyerChatController::class, 'messages'])->whereNumber(['id']);
         Route::post('/chat/{id}/messages',       [BuyerChatController::class, 'send'])->middleware('throttle:30,1,chat-send')->whereNumber(['id']);
+
+        // Product report (same rules as the web via ProductReportService)
+        Route::post('/products/{id}/report',     [\App\Http\Controllers\Api\BuyerProductReportController::class, 'store'])->middleware('throttle:10,1,product-report')->whereNumber(['id']);
 
         Route::post('/logout', [AuthController::class, 'buyerLogout']);
     });
@@ -191,6 +199,11 @@ Route::prefix('courier-app')->group(function () {
         // Delivery rider assignment (creates delivery_jobs for the rider app)
         Route::get('/delivery-riders',         [CourierDeliveryController::class, 'riders'])->middleware('throttle:60,1,courier-delivery-riders');
         Route::post('/delivery-jobs',          [CourierDeliveryController::class, 'assign'])->middleware('throttle:30,1,courier-delivery-assign');
+        // Courier app: Delivery Management list, read-only Rider Management, profile, change password.
+        Route::get('/delivery-orders',         [CourierDeliveryController::class, 'orders'])->middleware('throttle:60,1,courier-delivery-orders');
+        Route::get('/riders',                  [\App\Http\Controllers\Api\CourierAppAccountController::class, 'riders'])->middleware('throttle:60,1,courier-riders');
+        Route::get('/profile',                 [\App\Http\Controllers\Api\CourierAppAccountController::class, 'profile']);
+        Route::post('/profile/change-password', [\App\Http\Controllers\Api\CourierAppAccountController::class, 'changePassword'])->middleware('throttle:6,1,courier-change-password');
     });
 });
 
@@ -207,10 +220,15 @@ Route::prefix('rider-app')->group(function () {
         Route::post('/logout', [RiderAuthController::class, 'logout']);
         Route::get('/me',     [RiderAuthController::class, 'me']);
 
+        // Shift status (online / offline). Idempotent; own personnel row only.
+        Route::post('/check-in',  [\App\Http\Controllers\Api\RiderShiftController::class, 'checkIn'])->middleware('throttle:30,1,rider-shift');
+        Route::post('/check-out', [\App\Http\Controllers\Api\RiderShiftController::class, 'checkOut'])->middleware('throttle:30,1,rider-shift');
+
         // Pickup jobs assigned to this rider
         Route::get('/pickups',              [RiderPickupController::class, 'index']);
         Route::get('/pickups/{id}',         [RiderPickupController::class, 'show'])->whereNumber('id');
         Route::post('/pickups/{id}/scan',   [RiderPickupController::class, 'scan'])->middleware('throttle:30,1,rider-scan')->whereNumber('id');
+        Route::post('/pickups/{id}/drop-at-hub', [RiderPickupController::class, 'dropAtHub'])->middleware('throttle:30,1,rider-drop')->whereNumber('id');
 
         // History
         Route::get('/history', [RiderPickupController::class, 'history']);
@@ -224,6 +242,11 @@ Route::prefix('rider-app')->group(function () {
         Route::post('/deliveries/{id}/deliver',          [RiderDeliveryController::class, 'deliver'])->middleware('throttle:20,1,rider-deliver')->whereNumber('id');
         Route::post('/deliveries/{id}/fail',             [RiderDeliveryController::class, 'fail'])->middleware('throttle:30,1,rider-delivery')->whereNumber('id');
         Route::post('/deliveries/{id}/return',           [RiderDeliveryController::class, 'returnToSender'])->middleware('throttle:30,1,rider-delivery')->whereNumber('id');
+
+        // Rider <-> buyer delivery chat (polling). {id} = delivery_jobs.id
+        Route::get('/jobs/{id}/messages',       [DeliveryChatController::class, 'riderIndex'])->middleware('throttle:120,1,rider-chat')->whereNumber('id');
+        Route::post('/jobs/{id}/messages',      [DeliveryChatController::class, 'riderSend'])->middleware('throttle:30,1,rider-chat-send')->whereNumber('id');
+        Route::post('/jobs/{id}/messages/read', [DeliveryChatController::class, 'riderRead'])->middleware('throttle:60,1,rider-chat-read')->whereNumber('id');
 
         // Wallet: COD held / remit, earnings, notifications
         Route::get('/cod',                       [RiderWalletController::class, 'cod']);

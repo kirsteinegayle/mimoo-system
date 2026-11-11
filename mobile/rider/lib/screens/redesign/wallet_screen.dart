@@ -9,7 +9,9 @@ import '../../widgets/motion.dart';
 import 'job_actions.dart' show confirmSheet, runGuarded;
 
 /// Wallet: earnings (Today / This week) with pickup + delivery breakdown and
-/// a small bar chart, COD on hand with Remit COD, and remit history. MOCK.
+/// a small bar chart, COD on hand with Remit COD, and remit history.
+/// API mode: the weekly chart shows real per-day earnings for the last 7 days
+/// (GET /earnings data.days). Mock mode keeps the mock data.
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
   @override
@@ -50,16 +52,17 @@ class _WalletScreenState extends State<WalletScreen> {
         final pickups = week ? mock.pickupsWeek : mock.pickupsToday;
         final deliveries = week ? mock.deliveriesWeek : mock.deliveriesToday;
         final total = week ? mock.earnedWeek : mock.earnedToday;
+        final pickupAmount = mock.pickupAmount(week: week);
+        final deliveryAmount = mock.deliveryAmount(week: week);
         final bars = week
-            ? [
-                for (final d in mock.weekDays)
-                  _Bar(d.day, d.pickups * kPickupRate,
-                      d.deliveries * kDeliveryRate)
-              ]
+            ? [for (final d in mock.weekBars) _Bar(d.day, d.pickup, d.delivery)]
             : [
-                _Bar('Pickup', pickups * kPickupRate, 0),
-                _Bar('Delivery', 0, deliveries * kDeliveryRate),
+                _Bar('Pickup', pickupAmount, 0),
+                _Bar('Delivery', 0, deliveryAmount),
               ];
+        String detail(int count, double rate) => useMock
+            ? '$count × ${peso(rate)}'
+            : '$count parcel${count == 1 ? '' : 's'}';
         final sections = <Widget>[
           _RangeToggle(
             value: _range,
@@ -102,6 +105,12 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                 ),
               ),
+              if (week && !useMock)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text('Chart: last 7 days',
+                      style: MT.bodySm.copyWith(color: c.muted)),
+                ),
               const SizedBox(height: MS.md),
               Row(children: [
                 _legend(c.primary, 'Pickup'),
@@ -112,14 +121,14 @@ class _WalletScreenState extends State<WalletScreen> {
               _BreakdownRow(
                   color: c.primary,
                   label: 'Pickup',
-                  detail: '$pickups × ${peso(kPickupRate)}',
-                  amount: pickups * kPickupRate),
+                  detail: detail(pickups, kPickupRate),
+                  amount: pickupAmount),
               const SizedBox(height: 12),
               _BreakdownRow(
                   color: c.coral,
                   label: 'Delivery',
-                  detail: '$deliveries × ${peso(kDeliveryRate)}',
-                  amount: deliveries * kDeliveryRate),
+                  detail: detail(deliveries, kDeliveryRate),
+                  amount: deliveryAmount),
             ]),
           ),
           MCard(

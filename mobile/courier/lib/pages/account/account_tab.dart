@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/features.dart';
 import '../../models/courier_models.dart';
 import '../../services/api_service.dart';
 import '../../services/courier_repository.dart';
@@ -63,12 +64,17 @@ class _AccountTabState extends State<AccountTab> {
     } catch (e) {
       failure = e;
     }
-    try {
-      duty = await CourierRepository.instance.duty();
-    } catch (_) {}
-    try {
-      trips = (await CourierRepository.instance.trips()).items;
-    } catch (_) {}
+    // Duty and trips have no backend route yet (see CourierFeatures).
+    if (CourierFeatures.duty) {
+      try {
+        duty = await CourierRepository.instance.duty();
+      } catch (_) {}
+    }
+    if (CourierFeatures.trips) {
+      try {
+        trips = (await CourierRepository.instance.trips()).items;
+      } catch (_) {}
+    }
     if (!mounted) return;
     final resolved = profile ?? _fallbackProfile();
     setState(() {
@@ -300,7 +306,8 @@ class _AccountTabState extends State<AccountTab> {
                       const SizedBox(height: 6),
                       Wrap(spacing: 6, runSpacing: 6, children: [
                         CourierStatusBadge(status: p.status),
-                        CourierStatusBadge(status: duty.dutyStatus),
+                        if (CourierFeatures.duty)
+                          CourierStatusBadge(status: duty.dutyStatus),
                       ]),
                     ]),
               ),
@@ -321,6 +328,7 @@ class _AccountTabState extends State<AccountTab> {
               ),
             ),
           ],
+          if (CourierFeatures.duty) ...[
           const SizedBox(height: 10),
           CourierInfoCard(
             title: 'Duty status',
@@ -397,7 +405,8 @@ class _AccountTabState extends State<AccountTab> {
               ],
             ],
           ),
-          if (_activeTrip != null) ...[
+          ],
+          if (CourierFeatures.trips && _activeTrip != null) ...[
             const SizedBox(height: 10),
             GestureDetector(
               onTap: () => _open(TripDetailPage(id: _activeTrip!.id)),
@@ -443,36 +452,43 @@ class _AccountTabState extends State<AccountTab> {
             ),
           ],
           const SizedBox(height: 16),
-          _MenuTile(
-            icon: Icons.local_shipping_outlined,
-            title: 'My Trips',
-            subtitle: 'Accept, load, depart and complete trips',
-            onTap: () => _open(const TripsPage()),
-          ),
-          _MenuTile(
-            icon: Icons.payments_outlined,
-            title: 'History & Pay',
-            subtitle: 'Completed trips, receipts and earnings',
-            onTap: () => _open(const HistoryPage()),
-          ),
-          _MenuTile(
-            icon: Icons.person_outline,
-            title: 'Profile & Vehicle',
-            subtitle: 'Driver details, plate and license',
-            onTap: () => _open(const ProfilePage()),
-          ),
-          _MenuTile(
-            icon: Icons.folder_outlined,
-            title: 'Documents',
-            subtitle: 'OR/CR, license and other requirements',
-            onTap: () => _open(const DocumentsPage()),
-          ),
-          _MenuTile(
-            icon: Icons.lock_outline,
-            title: 'Change Password',
-            subtitle: 'Update your account password',
-            onTap: () => _open(const ChangePasswordPage()),
-          ),
+          if (CourierFeatures.trips)
+            _MenuTile(
+              icon: Icons.local_shipping_outlined,
+              title: 'My Trips',
+              subtitle: 'Accept, load, depart and complete trips',
+              onTap: () => _open(const TripsPage()),
+            ),
+          if (CourierFeatures.history)
+            _MenuTile(
+              icon: Icons.payments_outlined,
+              title: 'History & Pay',
+              subtitle: 'Completed trips, receipts and earnings',
+              onTap: () => _open(const HistoryPage()),
+            ),
+          if (CourierFeatures.profile)
+            _MenuTile(
+              icon: Icons.person_outline,
+              title: CourierFeatures.vehicle ? 'Profile & Vehicle' : 'Profile',
+              subtitle: CourierFeatures.vehicle
+                  ? 'Driver details, plate and license'
+                  : 'Company and contact details',
+              onTap: () => _open(const ProfilePage()),
+            ),
+          if (CourierFeatures.documents)
+            _MenuTile(
+              icon: Icons.folder_outlined,
+              title: 'Documents',
+              subtitle: 'OR/CR, license and other requirements',
+              onTap: () => _open(const DocumentsPage()),
+            ),
+          if (CourierFeatures.profile)
+            _MenuTile(
+              icon: Icons.lock_outline,
+              title: 'Change Password',
+              subtitle: 'Update your account password',
+              onTap: () => _open(const ChangePasswordPage()),
+            ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,

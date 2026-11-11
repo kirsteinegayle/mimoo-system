@@ -8,9 +8,11 @@ use App\Models\ChatMessage;
 use App\Models\ChatThread;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\ChatNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -184,6 +186,7 @@ class BuyerChatController extends Controller
             ->where('sender_id', '!=', $buyerId)
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
+        ChatNotificationService::threadRead($thread, $buyerId);
 
         return response()->json([
             'data'   => $msgs->map(fn ($m) => $this->formatMessage($m, $buyerId))->values(),
@@ -226,13 +229,19 @@ class BuyerChatController extends Controller
             $path = $this->storeImage($request->file('image'), self::FOLDER, self::PREFIX);
         }
 
-        $m = ChatMessage::create([
-            'thread_id'  => $thread->id,
-            'sender_id'  => $buyerId,
-            'body'       => $body !== '' ? $body : null,
-            'image_path' => $path,
-        ]);
-        $thread->update(['last_message_at' => $m->created_at]);
+        // Message + thread timestamp commit together; the seller notification
+        // (one per unread batch) is inserted after the commit.
+        $m = DB::transaction(function () use ($thread, $buyerId, $body, $path) {
+            $m = ChatMessage::create([
+                'thread_id'  => $thread->id,
+                'sender_id'  => $buyerId,
+                'body'       => $body !== '' ? $body : null,
+                'image_path' => $path,
+            ]);
+            $thread->update(['last_message_at' => $m->created_at]);
+            ChatNotificationService::messageSent($thread, $m);
+            return $m;
+        });
 
         return response()->json(['data' => $this->formatMessage($m, $buyerId)], 201);
     }

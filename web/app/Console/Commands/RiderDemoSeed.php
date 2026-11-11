@@ -31,8 +31,12 @@ class RiderDemoSeed extends Command
     public function handle(): int
     {
         // ── Already done? ─────────────────────────────────────────────────────
-        if (User::where('email', 'demo.rider@mimoo-demo.test')->exists()) {
-            $this->info('Rider demo data already seeded. Nothing to do.');
+        if ($existing = User::where('email', 'demo.rider@mimoo-demo.test')->first()) {
+            // Only refresh shift status so the courier can assign deliveries
+            // (readyRiders() lists checked-in riders only). Nothing else changes.
+            $n = CourierPersonnel::where('user_id', $existing->id)->where('status', 'active')
+                ->update(['is_online' => true, 'last_checked_in_at' => now()]);
+            $this->info('Rider demo data already seeded. Demo rider set online' . ($n ? '.' : ' (no active personnel row).'));
             return 0;
         }
 
@@ -79,8 +83,11 @@ class RiderDemoSeed extends Command
                 'contact_number' => '09001234567',
                 'role'           => 'rider',
                 'status'         => 'active',
+                // Online so the demo courier sees this rider in delivery-riders.
+                'is_online'          => true,
+                'last_checked_in_at' => now(),
             ]);
-            $this->line("  Created personnel: id={$personnel->id}");
+            $this->line("  Created personnel: id={$personnel->id} (online)");
 
             // ── 4. Buyer + order (minimal) ────────────────────────────────────
             $buyer = User::where('email', 'demo.buyer.rider@mimoo-demo.test')->first();

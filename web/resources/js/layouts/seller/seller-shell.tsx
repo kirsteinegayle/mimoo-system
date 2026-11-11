@@ -1,6 +1,5 @@
 import { Link, router } from '@inertiajs/react';
 import {
-    Bell,
     Box,
     ChevronDown,
     Cog,
@@ -14,6 +13,7 @@ import {
     Users,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { NotificationBell } from '@/components/notification-bell';
 import type { FormEvent, ReactNode } from 'react';
 
 // ─── Nav definition ───────────────────────────────────────────────────────────
@@ -163,9 +163,12 @@ export default function SellerShell({ active, children }: SellerShellProps) {
                         <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50">
                             <MessageSquare className="h-4 w-4" strokeWidth={1.5} />
                         </button>
-                        <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50">
-                            <Bell className="h-4 w-4" strokeWidth={1.5} />
-                        </button>
+                        {/* Seller notifications (shared bell, seller routes) */}
+                        <NotificationBell
+                            isLoggedIn
+                            baseUrl="/seller/notifications"
+                            buttonClassName="relative flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                        />
                         
                         {/* Account Dropdown */}
                         <div className="relative" ref={menuRef}>

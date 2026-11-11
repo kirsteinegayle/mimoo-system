@@ -198,12 +198,12 @@ servePhoto.head = (args: { filename: string | number } | [filename: string | num
  * @see app/Http/Controllers/Api/BuyerReviewController.php:106
  * @route '/api/buyer/orders/{orderId}/items/{itemId}/review'
  */
-export const store = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(args, options),
+const store995509ed2817248c8a46f482b82502d4 = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store995509ed2817248c8a46f482b82502d4.url(args, options),
     method: 'post',
 })
 
-store.definition = {
+store995509ed2817248c8a46f482b82502d4.definition = {
     methods: ["post"],
     url: '/api/buyer/orders/{orderId}/items/{itemId}/review',
 } satisfies RouteDefinition<["post"]>
@@ -213,7 +213,7 @@ store.definition = {
  * @see app/Http/Controllers/Api/BuyerReviewController.php:106
  * @route '/api/buyer/orders/{orderId}/items/{itemId}/review'
  */
-store.url = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions) => {
+store995509ed2817248c8a46f482b82502d4.url = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions) => {
     if (Array.isArray(args)) {
         args = {
                     orderId: args[0],
@@ -228,7 +228,7 @@ store.url = (args: { orderId: string | number, itemId: string | number } | [orde
                                 itemId: args.itemId,
                 }
 
-    return store.definition.url
+    return store995509ed2817248c8a46f482b82502d4.definition.url
             .replace('{orderId}', parsedArgs.orderId.toString())
             .replace('{itemId}', parsedArgs.itemId.toString())
             .replace(/\/+$/, '') + queryParams(options)
@@ -239,8 +239,8 @@ store.url = (args: { orderId: string | number, itemId: string | number } | [orde
  * @see app/Http/Controllers/Api/BuyerReviewController.php:106
  * @route '/api/buyer/orders/{orderId}/items/{itemId}/review'
  */
-store.post = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(args, options),
+store995509ed2817248c8a46f482b82502d4.post = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store995509ed2817248c8a46f482b82502d4.url(args, options),
     method: 'post',
 })
 
@@ -249,8 +249,8 @@ store.post = (args: { orderId: string | number, itemId: string | number } | [ord
  * @see app/Http/Controllers/Api/BuyerReviewController.php:106
  * @route '/api/buyer/orders/{orderId}/items/{itemId}/review'
  */
-    const storeForm = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(args, options),
+    const store995509ed2817248c8a46f482b82502d4Form = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store995509ed2817248c8a46f482b82502d4.url(args, options),
         method: 'post',
     })
 
@@ -259,23 +259,106 @@ store.post = (args: { orderId: string | number, itemId: string | number } | [ord
  * @see app/Http/Controllers/Api/BuyerReviewController.php:106
  * @route '/api/buyer/orders/{orderId}/items/{itemId}/review'
  */
-        storeForm.post = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(args, options),
+        store995509ed2817248c8a46f482b82502d4Form.post = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store995509ed2817248c8a46f482b82502d4.url(args, options),
             method: 'post',
         })
     
-    store.form = storeForm
+    store995509ed2817248c8a46f482b82502d4.form = store995509ed2817248c8a46f482b82502d4Form
+    /**
+* @see \App\Http\Controllers\Api\BuyerReviewController::store
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:106
+ * @route '/buyer/orders/{orderId}/items/{itemId}/review'
+ */
+const store983cf0c587d548d183c0c5680960d5d0 = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store983cf0c587d548d183c0c5680960d5d0.url(args, options),
+    method: 'post',
+})
+
+store983cf0c587d548d183c0c5680960d5d0.definition = {
+    methods: ["post"],
+    url: '/buyer/orders/{orderId}/items/{itemId}/review',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\Api\BuyerReviewController::store
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:106
+ * @route '/buyer/orders/{orderId}/items/{itemId}/review'
+ */
+store983cf0c587d548d183c0c5680960d5d0.url = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions) => {
+    if (Array.isArray(args)) {
+        args = {
+                    orderId: args[0],
+                    itemId: args[1],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        orderId: args.orderId,
+                                itemId: args.itemId,
+                }
+
+    return store983cf0c587d548d183c0c5680960d5d0.definition.url
+            .replace('{orderId}', parsedArgs.orderId.toString())
+            .replace('{itemId}', parsedArgs.itemId.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Api\BuyerReviewController::store
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:106
+ * @route '/buyer/orders/{orderId}/items/{itemId}/review'
+ */
+store983cf0c587d548d183c0c5680960d5d0.post = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store983cf0c587d548d183c0c5680960d5d0.url(args, options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\Api\BuyerReviewController::store
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:106
+ * @route '/buyer/orders/{orderId}/items/{itemId}/review'
+ */
+    const store983cf0c587d548d183c0c5680960d5d0Form = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store983cf0c587d548d183c0c5680960d5d0.url(args, options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\BuyerReviewController::store
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:106
+ * @route '/buyer/orders/{orderId}/items/{itemId}/review'
+ */
+        store983cf0c587d548d183c0c5680960d5d0Form.post = (args: { orderId: string | number, itemId: string | number } | [orderId: string | number, itemId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store983cf0c587d548d183c0c5680960d5d0.url(args, options),
+            method: 'post',
+        })
+    
+    store983cf0c587d548d183c0c5680960d5d0.form = store983cf0c587d548d183c0c5680960d5d0Form
+
+/**
+* Multiple routes resolve to \App\Http\Controllers\Api\BuyerReviewController::store, so this export is a
+* dictionary keyed by URI rather than a callable. Call a specific route with `store['<uri>'](...)`,
+* or import the route by name from your generated `routes/` directory.
+*/
+export const store = {
+    '/api/buyer/orders/{orderId}/items/{itemId}/review': store995509ed2817248c8a46f482b82502d4,
+    '/buyer/orders/{orderId}/items/{itemId}/review': store983cf0c587d548d183c0c5680960d5d0,
+}
+
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::update
  * @see app/Http/Controllers/Api/BuyerReviewController.php:155
  * @route '/api/buyer/reviews/{id}'
  */
-export const update = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
-    url: update.url(args, options),
+const updateda7a4af9c09529bfc715df7a59d1ec84 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: updateda7a4af9c09529bfc715df7a59d1ec84.url(args, options),
     method: 'put',
 })
 
-update.definition = {
+updateda7a4af9c09529bfc715df7a59d1ec84.definition = {
     methods: ["put"],
     url: '/api/buyer/reviews/{id}',
 } satisfies RouteDefinition<["put"]>
@@ -285,7 +368,7 @@ update.definition = {
  * @see app/Http/Controllers/Api/BuyerReviewController.php:155
  * @route '/api/buyer/reviews/{id}'
  */
-update.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+updateda7a4af9c09529bfc715df7a59d1ec84.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { id: args }
     }
@@ -303,7 +386,7 @@ update.url = (args: { id: string | number } | [id: string | number ] | string | 
                         id: args.id,
                 }
 
-    return update.definition.url
+    return updateda7a4af9c09529bfc715df7a59d1ec84.definition.url
             .replace('{id}', parsedArgs.id.toString())
             .replace(/\/+$/, '') + queryParams(options)
 }
@@ -313,8 +396,8 @@ update.url = (args: { id: string | number } | [id: string | number ] | string | 
  * @see app/Http/Controllers/Api/BuyerReviewController.php:155
  * @route '/api/buyer/reviews/{id}'
  */
-update.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
-    url: update.url(args, options),
+updateda7a4af9c09529bfc715df7a59d1ec84.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: updateda7a4af9c09529bfc715df7a59d1ec84.url(args, options),
     method: 'put',
 })
 
@@ -323,8 +406,8 @@ update.put = (args: { id: string | number } | [id: string | number ] | string | 
  * @see app/Http/Controllers/Api/BuyerReviewController.php:155
  * @route '/api/buyer/reviews/{id}'
  */
-    const updateForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: update.url(args, {
+    const updateda7a4af9c09529bfc715df7a59d1ec84Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: updateda7a4af9c09529bfc715df7a59d1ec84.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
                         ...(options?.query ?? options?.mergeQuery ?? {}),
@@ -338,8 +421,8 @@ update.put = (args: { id: string | number } | [id: string | number ] | string | 
  * @see app/Http/Controllers/Api/BuyerReviewController.php:155
  * @route '/api/buyer/reviews/{id}'
  */
-        updateForm.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: update.url(args, {
+        updateda7a4af9c09529bfc715df7a59d1ec84Form.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: updateda7a4af9c09529bfc715df7a59d1ec84.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',
                             ...(options?.query ?? options?.mergeQuery ?? {}),
@@ -348,7 +431,102 @@ update.put = (args: { id: string | number } | [id: string | number ] | string | 
             method: 'post',
         })
     
-    update.form = updateForm
+    updateda7a4af9c09529bfc715df7a59d1ec84.form = updateda7a4af9c09529bfc715df7a59d1ec84Form
+    /**
+* @see \App\Http\Controllers\Api\BuyerReviewController::update
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @route '/buyer/reviews/{id}'
+ */
+const updatef078704e6a349b5990fe8179723e8e08 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: updatef078704e6a349b5990fe8179723e8e08.url(args, options),
+    method: 'put',
+})
+
+updatef078704e6a349b5990fe8179723e8e08.definition = {
+    methods: ["put"],
+    url: '/buyer/reviews/{id}',
+} satisfies RouteDefinition<["put"]>
+
+/**
+* @see \App\Http\Controllers\Api\BuyerReviewController::update
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @route '/buyer/reviews/{id}'
+ */
+updatef078704e6a349b5990fe8179723e8e08.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { id: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    id: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        id: args.id,
+                }
+
+    return updatef078704e6a349b5990fe8179723e8e08.definition.url
+            .replace('{id}', parsedArgs.id.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Api\BuyerReviewController::update
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @route '/buyer/reviews/{id}'
+ */
+updatef078704e6a349b5990fe8179723e8e08.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: updatef078704e6a349b5990fe8179723e8e08.url(args, options),
+    method: 'put',
+})
+
+    /**
+* @see \App\Http\Controllers\Api\BuyerReviewController::update
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @route '/buyer/reviews/{id}'
+ */
+    const updatef078704e6a349b5990fe8179723e8e08Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: updatef078704e6a349b5990fe8179723e8e08.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\BuyerReviewController::update
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @route '/buyer/reviews/{id}'
+ */
+        updatef078704e6a349b5990fe8179723e8e08Form.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: updatef078704e6a349b5990fe8179723e8e08.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    updatef078704e6a349b5990fe8179723e8e08.form = updatef078704e6a349b5990fe8179723e8e08Form
+
+/**
+* Multiple routes resolve to \App\Http\Controllers\Api\BuyerReviewController::update, so this export is a
+* dictionary keyed by URI rather than a callable. Call a specific route with `update['<uri>'](...)`,
+* or import the route by name from your generated `routes/` directory.
+*/
+export const update = {
+    '/api/buyer/reviews/{id}': updateda7a4af9c09529bfc715df7a59d1ec84,
+    '/buyer/reviews/{id}': updatef078704e6a349b5990fe8179723e8e08,
+}
+
 const BuyerReviewController = { productReviews, servePhoto, store, update }
 
 export default BuyerReviewController

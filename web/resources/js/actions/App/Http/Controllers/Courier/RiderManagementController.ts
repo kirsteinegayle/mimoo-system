@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::index
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::index
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::index
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::index
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::index
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::index
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::index
- * @see app/Http/Controllers/Courier/RiderManagementController.php:15
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:19
  * @route '/courier/rider-management'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::approve
- * @see app/Http/Controllers/Courier/RiderManagementController.php:127
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:131
  * @route '/api/courier/riders/{id}/approve'
  */
 export const approve = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ approve.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::approve
- * @see app/Http/Controllers/Courier/RiderManagementController.php:127
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:131
  * @route '/api/courier/riders/{id}/approve'
  */
 approve.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -122,7 +122,7 @@ approve.url = (args: { id: string | number } | [id: string | number ] | string |
 
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::approve
- * @see app/Http/Controllers/Courier/RiderManagementController.php:127
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:131
  * @route '/api/courier/riders/{id}/approve'
  */
 approve.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -132,7 +132,7 @@ approve.post = (args: { id: string | number } | [id: string | number ] | string 
 
     /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::approve
- * @see app/Http/Controllers/Courier/RiderManagementController.php:127
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:131
  * @route '/api/courier/riders/{id}/approve'
  */
     const approveForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -142,7 +142,7 @@ approve.post = (args: { id: string | number } | [id: string | number ] | string 
 
             /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::approve
- * @see app/Http/Controllers/Courier/RiderManagementController.php:127
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:131
  * @route '/api/courier/riders/{id}/approve'
  */
         approveForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -153,7 +153,7 @@ approve.post = (args: { id: string | number } | [id: string | number ] | string 
     approve.form = approveForm
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::reject
- * @see app/Http/Controllers/Courier/RiderManagementController.php:174
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:308
  * @route '/api/courier/riders/{id}/reject'
  */
 export const reject = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -168,7 +168,7 @@ reject.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::reject
- * @see app/Http/Controllers/Courier/RiderManagementController.php:174
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:308
  * @route '/api/courier/riders/{id}/reject'
  */
 reject.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -196,7 +196,7 @@ reject.url = (args: { id: string | number } | [id: string | number ] | string | 
 
 /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::reject
- * @see app/Http/Controllers/Courier/RiderManagementController.php:174
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:308
  * @route '/api/courier/riders/{id}/reject'
  */
 reject.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -206,7 +206,7 @@ reject.post = (args: { id: string | number } | [id: string | number ] | string |
 
     /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::reject
- * @see app/Http/Controllers/Courier/RiderManagementController.php:174
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:308
  * @route '/api/courier/riders/{id}/reject'
  */
     const rejectForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -216,7 +216,7 @@ reject.post = (args: { id: string | number } | [id: string | number ] | string |
 
             /**
 * @see \App\Http\Controllers\Courier\RiderManagementController::reject
- * @see app/Http/Controllers/Courier/RiderManagementController.php:174
+ * @see app/Http/Controllers/Courier/RiderManagementController.php:308
  * @route '/api/courier/riders/{id}/reject'
  */
         rejectForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

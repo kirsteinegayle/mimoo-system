@@ -11,6 +11,12 @@ class ShipmentAssignment extends Model
 {
     use HasFactory;
 
+    /** Seller "Parcel picked up" notification when pickup_status becomes picked_up (never throws). */
+    protected static function booted(): void
+    {
+        static::updated(fn (ShipmentAssignment $sa) => \App\Services\SellerNotificationService::shipmentUpdated($sa));
+    }
+
     protected $fillable = [
         'order_id',
         'courier_id',

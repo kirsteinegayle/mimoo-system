@@ -119,9 +119,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsChangePassword => 'Change password';
 
   @override
-  String get settingsPasskey => 'Passkey';
-
-  @override
   String get settingsEmergencyContact => 'Emergency contact';
 
   @override
@@ -325,12 +322,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helpCategoryAccount => 'Account & safety';
 
   @override
-  String get settingsPasskeyNotSet => 'Not set up';
-
-  @override
-  String get settingsPasskeySet => 'Set up on this device';
-
-  @override
   String get settingsEmergencyNone => 'No emergency contact yet';
 
   @override
@@ -464,51 +455,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emergencyDeleteTooltip => 'Delete contact';
-
-  @override
-  String get passkeyActiveTitle => 'Passkey is active';
-
-  @override
-  String get passkeyInactiveTitle => 'Passkey is not set up';
-
-  @override
-  String get passkeyWhatTitle => 'What is a passkey?';
-
-  @override
-  String get passkeyWhatBody =>
-      'A passkey lets you sign in without typing a password. It uses the screen lock or biometrics on this device and is safer than a password because it never leaves your phone.';
-
-  @override
-  String get passkeyComingTitle => 'Real passkey support is coming soon';
-
-  @override
-  String get passkeyComingBody =>
-      'For now, creating a passkey uses your device biometrics as a placeholder.';
-
-  @override
-  String get passkeyCreate => 'Create passkey';
-
-  @override
-  String get passkeyRemove => 'Remove passkey';
-
-  @override
-  String get passkeyRemoveTitle => 'Remove passkey?';
-
-  @override
-  String get passkeyRemoveBody =>
-      'You will need your password to sign in on this device.';
-
-  @override
-  String get passkeyAuthError => 'Biometric check failed or is unavailable.';
-
-  @override
-  String get passkeyCreated => 'Passkey set up on this device.';
-
-  @override
-  String get passkeyRemoved => 'Passkey removed.';
-
-  @override
-  String get passkeyReason => 'Create a passkey for Mimoo Rider';
 
   @override
   String get permissionsTitle => 'Location & permissions';

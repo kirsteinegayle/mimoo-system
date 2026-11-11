@@ -423,13 +423,8 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::post('/api/courier/riders/{id}/reject', [\App\Http\Controllers\Courier\RiderManagementController::class, 'reject'])->middleware('role:courier,logistics_staff');
     
     // Courier - Delivery Management
-    Route::get('/courier/delivery-management', function () {
-        $user = auth()->user();
-        return Inertia::render('courier/DeliveryManagement', [
-            'auth' => ['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'account_type' => $user->account_type]],
-            'company' => ['name' => $user->company_name ?? $user->business_name ?? 'Courier Company', 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? ''))],
-        ]);
-    })->name('courier.delivery-management')->middleware('role:courier,logistics_staff');
+    Route::get('/courier/delivery-management', [\App\Http\Controllers\Courier\DeliveryManagementController::class, 'index'])->name('courier.delivery-management')->middleware('role:courier,logistics_staff');
+    Route::post('/courier/delivery-management/assign', [\App\Http\Controllers\Courier\DeliveryManagementController::class, 'assign'])->name('courier.delivery-management.assign')->middleware(['role:courier,logistics_staff', 'throttle:30,1']);
     
     // Courier - COD & Remittance
     Route::get('/courier/cod-remittance', function () {
@@ -1685,8 +1680,23 @@ Route::get('/homepage', function (Illuminate\Http\Request $request) {
     ]);
 })->name('homepage');
 
-Route::get('/messages', function () {
-    return view('messages');
+// Buyer <-> seller chat page (real threads, same data as the mobile app).
+// resources/views/messages.blade.php (old hardcoded mock) is no longer used.
+// ?thread={id} opens a thread; ?seller_id=&product_id= starts/opens the thread with that seller.
+Route::get('/messages', function (\Illuminate\Http\Request $request) {
+    $user = $request->user();
+    if ($user->account_type === 'seller') {
+        return redirect('/seller/messages');
+    }
+    abort_unless($user->account_type === 'buyer', 403);
+
+    $int = fn (string $key) => ctype_digit((string) $request->query($key)) ? (int) $request->query($key) : null;
+
+    return Inertia::render('BuyerMessages', [
+        'initialThreadId' => $int('thread'),
+        'startSellerId'   => $int('seller_id'),
+        'startProductId'  => $int('product_id'),
+    ]);
 })->middleware(['auth', 'approved'])->name('messages');
 
 // Buyer checkout and order routes
@@ -1752,6 +1762,11 @@ Route::get('/product/{id}', function (string $id) {
             'variant_options' => $product->variant_options ?? null,
             'variants' => $product->variants ?? null,
         ],
+        // Real reviews (additive): same data and shape as the mobile
+        // GET /api/buyer/products/{id}/reviews (names masked).
+        'reviews' => app(\App\Http\Controllers\Api\BuyerReviewController::class)
+            ->productReviews(\Illuminate\Http\Request::create('/', 'GET', ['per_page' => 10]), (int) $product->id)
+            ->getData(true),
     ]);
 })->name('product.show');
 
@@ -1861,13 +1876,47 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/buyer/notifications/feed', [\App\Http\Controllers\Api\BuyerNotificationController::class, 'index']);
     Route::post('/buyer/notifications/read-all', [\App\Http\Controllers\Api\BuyerNotificationController::class, 'markAllRead'])->middleware('throttle:30,1,web-notification-markallread');
     Route::post('/buyer/notifications/{id}/read', [\App\Http\Controllers\Api\BuyerNotificationController::class, 'markRead'])->middleware('throttle:60,1,web-notification-markread')->whereNumber('id');
+    // Buyer notification feed page (Inertia, buyer only, newest first, paginated).
+    Route::get('/buyer/notifications', [\App\Http\Controllers\Buyer\NotificationController::class, 'index'])->name('buyer.notifications');
     
+    // Buyer <-> seller chat for the web (session auth). Same controller, queries
+    // and JSON shape as /api/buyer/chat* used by the mobile app; buyer only.
+    Route::post('/buyer/chat/start', [\App\Http\Controllers\Api\BuyerChatController::class, 'start'])->middleware('throttle:20,1,web-chat-start');
+    Route::get('/buyer/chat/threads', [\App\Http\Controllers\Api\BuyerChatController::class, 'index'])->middleware('throttle:120,1,web-chat-threads');
+    Route::get('/buyer/chat/{id}/messages', [\App\Http\Controllers\Api\BuyerChatController::class, 'messages'])->middleware('throttle:120,1,web-chat-messages')->whereNumber('id');
+    Route::post('/buyer/chat/{id}/messages', [\App\Http\Controllers\Api\BuyerChatController::class, 'send'])->middleware('throttle:30,1,web-chat-send')->whereNumber('id');
+
+    // Returns / refunds for the web (session auth). Same controller, rules and
+    // JSON shape as /api/buyer/* used by the mobile app; buyer only.
+    Route::post('/buyer/orders/{id}/return', [\App\Http\Controllers\Api\BuyerReturnController::class, 'store'])->middleware('throttle:10,1,web-return-store')->whereNumber('id');
+    Route::get('/buyer/returns', [\App\Http\Controllers\Api\BuyerReturnController::class, 'index']);
+    Route::get('/buyer/returns/{id}', [\App\Http\Controllers\Api\BuyerReturnController::class, 'show'])->whereNumber('id');
+    Route::post('/buyer/returns/{id}/escalate', [\App\Http\Controllers\Api\BuyerReturnController::class, 'escalate'])->middleware('throttle:5,1,web-return-escalate')->whereNumber('id');
+    Route::get('/returns', fn () => Inertia::render('BuyerReturns'))->name('buyer.returns');
+
+    // Reviews for the web (session auth). Same controller as the mobile app.
+    Route::post('/buyer/orders/{orderId}/items/{itemId}/review', [\App\Http\Controllers\Api\BuyerReviewController::class, 'store'])->middleware('throttle:10,1,web-review-store')->whereNumber(['orderId', 'itemId']);
+    Route::put('/buyer/reviews/{id}', [\App\Http\Controllers\Api\BuyerReviewController::class, 'update'])->middleware('throttle:10,1,web-review-update')->whereNumber('id');
+    Route::get('/my-reviews', [\App\Http\Controllers\Buyer\MyReviewsController::class, 'index'])->name('buyer.reviews');
+
     // Product Reports
     Route::post('/api/products/{id}/report', [ProductController::class, 'reportProduct']);
 });
 
 // Protected seller product routes
 Route::middleware(['auth', 'verified', 'approved'])->group(function () {
+    // Seller in-app notifications (seller accounts only; each seller sees only their own rows).
+    Route::get('/seller/notifications', [\App\Http\Controllers\Seller\NotificationController::class, 'page'])->name('seller.notifications');
+    Route::get('/seller/notifications/feed', [\App\Http\Controllers\Seller\NotificationController::class, 'feed']);
+    Route::post('/seller/notifications/read-all', [\App\Http\Controllers\Seller\NotificationController::class, 'markAllRead'])->middleware('throttle:30,1,seller-notification-markallread');
+    Route::post('/seller/notifications/{id}/read', [\App\Http\Controllers\Seller\NotificationController::class, 'markRead'])->middleware('throttle:60,1,seller-notification-markread')->whereNumber('id');
+
+    // Seller side of buyer <-> seller chat (seller accounts only; own threads only, 404 otherwise).
+    Route::get('/seller/chat/threads', [\App\Http\Controllers\Api\SellerChatController::class, 'index'])->middleware('throttle:120,1,seller-chat-threads');
+    Route::get('/seller/chat/{id}/messages', [\App\Http\Controllers\Api\SellerChatController::class, 'messages'])->middleware('throttle:120,1,seller-chat-messages')->whereNumber('id');
+    Route::post('/seller/chat/{id}/messages', [\App\Http\Controllers\Api\SellerChatController::class, 'send'])->middleware('throttle:30,1,seller-chat-send')->whereNumber('id');
+    Route::post('/seller/chat/{id}/read', [\App\Http\Controllers\Api\SellerChatController::class, 'markRead'])->middleware('throttle:60,1,seller-chat-read')->whereNumber('id');
+
     // Analytics
     Route::get('/api/seller/analytics', [\App\Http\Controllers\SellerAnalyticsController::class, 'index']);
     

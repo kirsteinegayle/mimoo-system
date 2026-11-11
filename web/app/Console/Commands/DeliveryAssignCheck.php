@@ -50,6 +50,10 @@ class DeliveryAssignCheck extends Command
         try {
             $ctrl = app(CourierDeliveryController::class);
 
+            // Fixture (rolled back): readyRiders() lists only checked-in riders.
+            CourierPersonnel::where('courier_id', $courier->id)->where('status', 'active')->whereNotNull('user_id')
+                ->update(['is_online' => true, 'last_checked_in_at' => now()]);
+
             // 1. Rider list
             $res  = $ctrl->riders($this->req($courier));
             $list = $res->getData(true)['data'] ?? [];
@@ -65,6 +69,8 @@ class DeliveryAssignCheck extends Command
                 ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('delivery_jobs')->whereColumn('delivery_jobs.order_id', 'orders.id'))
                 ->orderBy('id')->get();
             $acceptedIds = ShipmentAssignment::where('courier_id', $courier->id)->where('assignment_status', 'accepted')->pluck('order_id');
+            // Fixture (rolled back): the pickup rule needs picked-up parcels.
+            ShipmentAssignment::where('courier_id', $courier->id)->where('assignment_status', 'accepted')->update(['pickup_status' => 'picked_up']);
             $noSaOrder  = $assignable->first(fn ($o) => ! $acceptedIds->contains($o->id));
             $okOrder    = $assignable->first(fn ($o) => $acceptedIds->contains($o->id));
             $removedJob = false;
@@ -80,6 +86,23 @@ class DeliveryAssignCheck extends Command
                 }
             }
             $badStatus  = Order::whereIn('status', ['pending', 'packed', 'cancelled', 'completed'])->orderBy('id')->first();
+
+            // 1b. Pickup rule: 'scheduled' -> 422; web page shows Awaiting pickup / Assign Rider.
+            if ($okOrder) {
+                $setPickup = fn (string $s) => ShipmentAssignment::where('order_id', $okOrder->id)->where('courier_id', $courier->id)->update(['pickup_status' => $s]);
+                $web       = app(\App\Http\Controllers\Courier\DeliveryManagementController::class);
+                $pageRow   = function () use ($web, $courier, $okOrder) {
+                    $inertia = tap($this->req($courier), fn ($r) => $r->headers->set('X-Inertia', 'true'));
+                    $row = collect($web->index($this->req($courier))->toResponse($inertia)->getData(true)['props']['orders'])->firstWhere('id', $okOrder->id);
+                    return json_encode(['picked_up' => $row['picked_up'] ?? null, 'assignable' => $row['assignable'] ?? null]);
+                };
+
+                $setPickup('scheduled');
+                $this->call404or("pickup: order #{$okOrder->id} scheduled", $ctrl, $courier, $okOrder->id, $ready['personnel_id'], 422);
+                $this->row('page: scheduled → Awaiting pickup', $pageRow(), '{"picked_up":false,"assignable":false}', 'no Assign Rider button');
+                $setPickup('picked_up');
+                $this->row('page: picked_up → Assign Rider', $pageRow(), '{"picked_up":true,"assignable":true}', 'Assign Rider button');
+            }
 
             // 2. Validation
             try {
@@ -217,7 +240,7 @@ class DeliveryAssignCheck extends Command
         if (! $exists) {
             ShipmentAssignment::create([
                 'order_id' => $order->id, 'courier_id' => $courier->id, 'assigned_by' => $courier->id,
-                'assigned_at' => now(), 'assignment_status' => 'accepted', 'accepted_at' => now(),
+                'assigned_at' => now(), 'assignment_status' => 'accepted', 'accepted_at' => now(), 'pickup_status' => 'picked_up',
                 'acceptance_deadline' => now()->addDay(),
             ]);
         }

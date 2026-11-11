@@ -9,6 +9,7 @@ import 'what_happened_page.dart';
 import 'return_refund_models.dart';
 import 'refund_details_screen.dart';
 import 'real_order_actions.dart';
+import '../../config/features.dart';
 import '../../data/sample_products.dart';
 import '../../models/product.dart';
 import '../../models/order.dart' as api_order;
@@ -1415,6 +1416,11 @@ class _OrderCard extends StatelessWidget {
           ? RealOrderActions(order: order.apiOrder!, onChanged: onRated)
           : const SizedBox.shrink();
     }
+
+    // Legacy mock-only actions (Track, Contact, Rate, Return/Refund, View
+    // Refund, cancellation details) point at prototype pages with no API.
+    // Hidden unless explicitly re-enabled in config/features.dart.
+    if (!Features.legacyMockOrderPages) return const SizedBox.shrink();
 
     switch (order.status) {
       // ── To Pay — Cancel Order + View Details ────────────────────────────

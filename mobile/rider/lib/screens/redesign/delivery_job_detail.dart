@@ -13,6 +13,7 @@ import '../../widgets/job_widgets.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/success_burst.dart';
 import '../pickup_detail_screen.dart' show showNavigationPicker;
+import 'delivery_chat_screen.dart';
 import 'job_actions.dart';
 
 /// Delivery detail: Attempt x/3, map to the buyer (when the address has
@@ -338,6 +339,16 @@ class _DeliveryJobDetailScreenState extends State<DeliveryJobDetailScreen> {
                         lng: job.buyerLng,
                         title: 'Navigate to Buyer'))),
           ]),
+          const SizedBox(height: MS.md),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => DeliveryChatScreen(job: job))),
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: const Text('Chat with buyer'),
+            ),
+          ),
         ]),
       );
 

@@ -324,7 +324,7 @@ assignPersonnel.post = (args: { id: string | number } | [id: string | number ] |
     assignPersonnel.form = assignPersonnelForm
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::reschedule
- * @see app/Http/Controllers/Courier/PickupManagementController.php:361
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:369
  * @route '/api/courier/pickups/{id}/reschedule'
  */
 export const reschedule = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -339,7 +339,7 @@ reschedule.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::reschedule
- * @see app/Http/Controllers/Courier/PickupManagementController.php:361
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:369
  * @route '/api/courier/pickups/{id}/reschedule'
  */
 reschedule.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -367,7 +367,7 @@ reschedule.url = (args: { id: string | number } | [id: string | number ] | strin
 
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::reschedule
- * @see app/Http/Controllers/Courier/PickupManagementController.php:361
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:369
  * @route '/api/courier/pickups/{id}/reschedule'
  */
 reschedule.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -377,7 +377,7 @@ reschedule.post = (args: { id: string | number } | [id: string | number ] | stri
 
     /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::reschedule
- * @see app/Http/Controllers/Courier/PickupManagementController.php:361
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:369
  * @route '/api/courier/pickups/{id}/reschedule'
  */
     const rescheduleForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -387,7 +387,7 @@ reschedule.post = (args: { id: string | number } | [id: string | number ] | stri
 
             /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::reschedule
- * @see app/Http/Controllers/Courier/PickupManagementController.php:361
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:369
  * @route '/api/courier/pickups/{id}/reschedule'
  */
         rescheduleForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -398,7 +398,7 @@ reschedule.post = (args: { id: string | number } | [id: string | number ] | stri
     reschedule.form = rescheduleForm
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::cancel
- * @see app/Http/Controllers/Courier/PickupManagementController.php:406
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:414
  * @route '/api/courier/pickups/{id}/cancel'
  */
 export const cancel = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -413,7 +413,7 @@ cancel.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::cancel
- * @see app/Http/Controllers/Courier/PickupManagementController.php:406
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:414
  * @route '/api/courier/pickups/{id}/cancel'
  */
 cancel.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -441,7 +441,7 @@ cancel.url = (args: { id: string | number } | [id: string | number ] | string | 
 
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::cancel
- * @see app/Http/Controllers/Courier/PickupManagementController.php:406
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:414
  * @route '/api/courier/pickups/{id}/cancel'
  */
 cancel.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -451,7 +451,7 @@ cancel.post = (args: { id: string | number } | [id: string | number ] | string |
 
     /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::cancel
- * @see app/Http/Controllers/Courier/PickupManagementController.php:406
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:414
  * @route '/api/courier/pickups/{id}/cancel'
  */
     const cancelForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -461,7 +461,7 @@ cancel.post = (args: { id: string | number } | [id: string | number ] | string |
 
             /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::cancel
- * @see app/Http/Controllers/Courier/PickupManagementController.php:406
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:414
  * @route '/api/courier/pickups/{id}/cancel'
  */
         cancelForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -472,7 +472,7 @@ cancel.post = (args: { id: string | number } | [id: string | number ] | string |
     cancel.form = cancelForm
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::recordFailed
- * @see app/Http/Controllers/Courier/PickupManagementController.php:452
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:460
  * @route '/api/courier/pickups/{id}/record-failed'
  */
 export const recordFailed = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -487,7 +487,7 @@ recordFailed.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::recordFailed
- * @see app/Http/Controllers/Courier/PickupManagementController.php:452
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:460
  * @route '/api/courier/pickups/{id}/record-failed'
  */
 recordFailed.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -515,7 +515,7 @@ recordFailed.url = (args: { id: string | number } | [id: string | number ] | str
 
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::recordFailed
- * @see app/Http/Controllers/Courier/PickupManagementController.php:452
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:460
  * @route '/api/courier/pickups/{id}/record-failed'
  */
 recordFailed.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -525,7 +525,7 @@ recordFailed.post = (args: { id: string | number } | [id: string | number ] | st
 
     /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::recordFailed
- * @see app/Http/Controllers/Courier/PickupManagementController.php:452
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:460
  * @route '/api/courier/pickups/{id}/record-failed'
  */
     const recordFailedForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -535,7 +535,7 @@ recordFailed.post = (args: { id: string | number } | [id: string | number ] | st
 
             /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::recordFailed
- * @see app/Http/Controllers/Courier/PickupManagementController.php:452
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:460
  * @route '/api/courier/pickups/{id}/record-failed'
  */
         recordFailedForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -546,7 +546,7 @@ recordFailed.post = (args: { id: string | number } | [id: string | number ] | st
     recordFailed.form = recordFailedForm
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::confirmPickup
- * @see app/Http/Controllers/Courier/PickupManagementController.php:508
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:516
  * @route '/api/courier/pickups/{id}/confirm'
  */
 export const confirmPickup = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -561,7 +561,7 @@ confirmPickup.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::confirmPickup
- * @see app/Http/Controllers/Courier/PickupManagementController.php:508
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:516
  * @route '/api/courier/pickups/{id}/confirm'
  */
 confirmPickup.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -589,7 +589,7 @@ confirmPickup.url = (args: { id: string | number } | [id: string | number ] | st
 
 /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::confirmPickup
- * @see app/Http/Controllers/Courier/PickupManagementController.php:508
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:516
  * @route '/api/courier/pickups/{id}/confirm'
  */
 confirmPickup.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -599,7 +599,7 @@ confirmPickup.post = (args: { id: string | number } | [id: string | number ] | s
 
     /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::confirmPickup
- * @see app/Http/Controllers/Courier/PickupManagementController.php:508
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:516
  * @route '/api/courier/pickups/{id}/confirm'
  */
     const confirmPickupForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -609,7 +609,7 @@ confirmPickup.post = (args: { id: string | number } | [id: string | number ] | s
 
             /**
 * @see \App\Http\Controllers\Courier\PickupManagementController::confirmPickup
- * @see app/Http/Controllers/Courier/PickupManagementController.php:508
+ * @see app/Http/Controllers/Courier/PickupManagementController.php:516
  * @route '/api/courier/pickups/{id}/confirm'
  */
         confirmPickupForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

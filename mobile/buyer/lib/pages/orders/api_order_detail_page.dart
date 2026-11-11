@@ -4,6 +4,7 @@ import '../../models/order.dart' as api_order;
 import '../../services/api_service.dart';
 import '../../services/order_repository.dart';
 import 'real_order_actions.dart';
+import 'delivery_chat_page.dart';
 import '../../widgets/order_tracking_section.dart';
 import '../../widgets/delivery_code_card.dart';
 import '../../widgets/proof_of_delivery_card.dart';
@@ -115,6 +116,29 @@ class _ApiOrderDetailPageState extends State<ApiOrderDetailPage> {
                       // for shipped / completed; text fallback otherwise).
                       // Rider OTP — only visible while an active code exists.
                       DeliveryCodeCard(orderId: o.id),
+                      // Rider chat — in transit / To Receive orders only.
+                      if (o.status == api_order.OrderStatus.shipped ||
+                          o.status == api_order.OrderStatus.inTransit ||
+                          o.status == api_order.OrderStatus.outForDelivery)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) => DeliveryChatPage(
+                                          orderId: o.id,
+                                          orderNumber: o.orderNumber))),
+                              icon: const Icon(Icons.chat_bubble_outline),
+                              label: const Text('Chat with Rider'),
+                              style: OutlinedButton.styleFrom(
+                                  foregroundColor: _kPrimary,
+                                  side: const BorderSide(color: _kBorder),
+                                  padding: const EdgeInsets.symmetric(vertical: 12)),
+                            ),
+                          ),
+                        ),
                       OrderTrackingSection(order: o),
                       // Proof of delivery — only once delivered; hides itself
                       // when the server has no photo (404).

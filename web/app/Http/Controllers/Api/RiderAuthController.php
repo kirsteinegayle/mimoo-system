@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ResolvesRiderHub;
 use App\Http\Controllers\Controller;
 use App\Models\CourierPersonnel;
 use App\Models\User;
@@ -25,6 +26,8 @@ use Illuminate\Support\Facades\Hash;
  */
 class RiderAuthController extends Controller
 {
+    use ResolvesRiderHub;
+
     /**
      * POST /api/rider-app/login
      */
@@ -123,6 +126,34 @@ class RiderAuthController extends Controller
             'role'           => $user->role,
             'courier_id'     => $personnel->courier_id,
             'status'         => $personnel->status,
+            // Additive: real hub (branch from the approved rider application)
+            // and courier company. hub is null when no branch is linked.
+            'hub'             => $this->hubPayload($this->riderHub($user, $personnel)),
+            'courier_company' => $this->courierCompanyName($personnel),
+        ] + $this->vehiclePayload($user, $personnel) + [
+            // Additive: shift status (POST /check-in, /check-out).
+            'is_online'          => (bool) $personnel->is_online,
+            'last_checked_in_at' => $personnel->last_checked_in_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Vehicle from the approved rider application (riders.email = users.email,
+     * same courier company). Both null for riders with no application
+     * (e.g. demo seeds).
+     */
+    private function vehiclePayload(User $user, CourierPersonnel $personnel): array
+    {
+        $email = strtolower(trim((string) $user->email));
+        $app = $email === '' ? null : \App\Models\Rider::whereRaw('LOWER(email) = ?', [$email])
+            ->where('verification_status', 'approved')
+            ->where('courier_company_id', $personnel->courier_id)
+            ->latest('id')
+            ->first(['vehicle_type', 'plate_number']);
+
+        return [
+            'vehicle_type' => $app?->vehicle_type,
+            'plate_number' => $app?->plate_number,
         ];
     }
 }

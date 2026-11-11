@@ -10,6 +10,7 @@ import '../checkout/checkout_page.dart';
 import '../auth/login_page.dart';
 import '../seller/seller_store_page.dart';
 import '../../widgets/product_reviews_section.dart';
+import '../../widgets/report_product_sheet.dart';
 import '../../services/product_repository.dart';
 import '../chat/chat_screen.dart';
 import '../../utils/animations.dart';
@@ -300,11 +301,59 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
           ],
         ),
-        IconButton(
-          icon: Icon(Icons.more_vert, color: _kText),
-          onPressed: () {},
-        ),
+        // Report product (hidden when this buyer is the product's seller).
+        if (!_isOwnProduct)
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: _kText),
+            tooltip: 'More',
+            onSelected: (v) {
+              if (v == 'report') _openReportSheet();
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem<String>(
+                value: 'report',
+                child: Row(
+                  children: [
+                    const Icon(Icons.flag_outlined, size: 18, color: Colors.redAccent),
+                    const SizedBox(width: 10),
+                    Text('Report product', style: _pjs(size: 13)),
+                  ],
+                ),
+              ),
+            ],
+          ),
       ],
+    );
+  }
+
+  bool get _isOwnProduct {
+    final me = AuthService.instance.buyerId;
+    return me != null && _sellerId != null && me == '$_sellerId';
+  }
+
+  Future<void> _openReportSheet() async {
+    if (!AuthService.instance.isLoggedIn) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LoginPage(onLoginSuccess: _openReportSheet),
+        ),
+      );
+      return;
+    }
+    final msg = await showReportProductSheet(
+      context,
+      productId: _product.id,
+      productName: _product.name,
+    );
+    if (!mounted || msg == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg,
+            style: _pjs(size: 13, color: Colors.white, weight: FontWeight.w600)),
+        backgroundColor: _kPrimary,
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 

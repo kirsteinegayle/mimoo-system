@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/api_config.dart';
 import '../../core/theme.dart';
 import '../../data/api/rider_api.dart';
 import '../../mock/rider_mock.dart';
@@ -53,12 +54,14 @@ Future<void> runJobAction(
           body: 'Confirm that ${job.tracking} was handed over at '
               '${mock.profile.hub}.',
           action: 'Dropped at Hub');
-      if (ok) {
-        mock.dropAtHub(job);
-        if (context.mounted) {
+      if (ok && context.mounted) {
+        final done = await runGuarded(context, () => mock.dropAtHub(job));
+        if (done && context.mounted) {
           await showSuccess(context,
               title: 'Dropped at hub',
-              subtitle: '+${peso(kPickupRate)} pickup payout');
+              subtitle: useMock
+                  ? '+${peso(kPickupRate)} pickup payout'
+                  : 'Handed over at ${mock.profile.hub}.');
         }
       }
     case MockStage.readyToDeliver:

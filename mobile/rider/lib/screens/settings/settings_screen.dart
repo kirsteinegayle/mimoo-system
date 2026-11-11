@@ -27,14 +27,6 @@ class SettingsScreen extends StatelessWidget {
                 Navigator.pushNamed(context, '/settings/change-password'),
           ),
           _Tile(
-            icon: Icons.fingerprint_rounded,
-            title: l10n.settingsPasskey,
-            subtitle: settings.passkeySetUp
-                ? l10n.settingsPasskeySet
-                : l10n.settingsPasskeyNotSet,
-            onTap: () => Navigator.pushNamed(context, '/settings/passkey'),
-          ),
-          _Tile(
             icon: Icons.emergency_outlined,
             title: l10n.settingsEmergencyContact,
             subtitle: settings.emergencyContacts.isEmpty

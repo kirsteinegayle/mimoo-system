@@ -13,6 +13,8 @@ interface OrderItem {
   id: number;
   name: string;
   seller: string;
+  /** users.id of the seller; when present, "Chat now" opens that seller's thread. */
+  sellerId?: number;
   variation: string;
   unitPrice: number;
   qty: number;
@@ -520,7 +522,12 @@ export default function ViewOrder() {
                       <span className="badge">Verified</span>
                       <span className="seller-name">{g.seller}</span>
                       <span className="sep" aria-hidden="true" />
-                      <Link href="/messages" className="chat-link">{icons.chat} Chat now</Link>
+                      <Link
+                        href={g.items[0]?.sellerId ? `/messages?seller_id=${g.items[0].sellerId}` : "/messages"}
+                        className="chat-link"
+                      >
+                        {icons.chat} Chat now
+                      </Link>
                     </div>
 
                     {g.items.map((it) => (

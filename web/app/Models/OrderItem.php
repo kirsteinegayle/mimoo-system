@@ -10,6 +10,12 @@ class OrderItem extends Model
 {
     use HasFactory;
 
+    /** Seller "New order" notification (one per seller per order; never throws). */
+    protected static function booted(): void
+    {
+        static::created(fn (OrderItem $item) => \App\Services\SellerNotificationService::orderItemCreated($item));
+    }
+
     protected $fillable = [
         'order_id',
         'product_id',

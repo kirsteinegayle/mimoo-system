@@ -438,8 +438,10 @@ class RiderDeliveryController extends Controller
      *
      * Never touches completed / cancelled orders or orders with an open return
      * request, never moves status backwards, never writes payment_status.
-     * The status change goes through Eloquent, so updated_at and the normal
-     * "Order shipped" buyer notification behave as for any status change.
+     * The status change goes through Eloquent, so updated_at and model events
+     * behave as for any status change, EXCEPT the generic "Order shipped"
+     * buyer notification: the rider's own "Out for delivery" notification
+     * (notifyBuyer) covers this step, so the buyer gets exactly one.
      */
     public static function syncOrderStatus(Order $order, string $trackingStatus): void
     {
@@ -450,7 +452,9 @@ class RiderDeliveryController extends Controller
             return;
         }
         if ($order->status === 'in_transit') {
-            $order->update(['status' => 'shipped']);
+            \App\Services\BuyerNotificationService::withoutOrderStatusNotification(
+                fn () => $order->update(['status' => 'shipped'])
+            );
         }
     }
 

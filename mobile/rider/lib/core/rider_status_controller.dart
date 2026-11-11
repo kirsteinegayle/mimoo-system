@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../data/repositories/repository_interfaces.dart';
 import '../data/models/entities.dart';
 import '../data/parcel_flow.dart' show riderOnline;
+import '../mock/rider_mock.dart' show RiderMock;
 import '../screens/location_permission_sheet.dart';
 
 /// Owns the rider's shift state so the switch can live in the shell app bar.
@@ -123,6 +124,8 @@ class RiderStatusController extends ChangeNotifier {
     riderOnline.value = true;
     notifyListeners();
     try {
+      // API mode: POST /check-in first (no-op in mock mode), then local state.
+      await RiderMock.instance.setOnline(true);
       await _profile.setCheckedIn(true);
     } catch (error) {
       _online = false;
@@ -142,6 +145,8 @@ class RiderStatusController extends ChangeNotifier {
     riderOnline.value = false;
     notifyListeners();
     try {
+      // API mode: POST /check-out first (no-op in mock mode), then local state.
+      await RiderMock.instance.setOnline(false);
       await _profile.setCheckedIn(false);
     } catch (error) {
       _online = !_suspended;

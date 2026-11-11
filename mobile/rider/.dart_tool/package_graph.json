@@ -824,6 +824,19 @@
       ]
     },
     {
+      "name": "logger",
+      "version": "2.8.0",
+      "dependencies": [
+        "clock",
+        "meta"
+      ]
+    },
+    {
+      "name": "dart_earcut",
+      "version": "1.2.0",
+      "dependencies": []
+    },
+    {
       "name": "async",
       "version": "2.13.1",
       "dependencies": [
@@ -1226,6 +1239,13 @@
       ]
     },
     {
+      "name": "unicode",
+      "version": "0.3.1",
+      "dependencies": [
+        "lists"
+      ]
+    },
+    {
       "name": "petitparser",
       "version": "7.0.2",
       "dependencies": [
@@ -1234,29 +1254,9 @@
       ]
     },
     {
-      "name": "dart_earcut",
-      "version": "1.2.0",
-      "dependencies": []
-    },
-    {
-      "name": "unicode",
-      "version": "0.3.1",
-      "dependencies": [
-        "lists"
-      ]
-    },
-    {
       "name": "lists",
       "version": "1.0.1",
       "dependencies": [
-        "meta"
-      ]
-    },
-    {
-      "name": "logger",
-      "version": "2.8.0",
-      "dependencies": [
-        "clock",
         "meta"
       ]
     }

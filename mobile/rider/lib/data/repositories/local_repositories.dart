@@ -825,22 +825,19 @@ class AppRepositories implements RepositoryBundle {
 
   @override
   Future<void> signIn(String email, String password) async {
-    // Passkey bypass: biometrics already verified in the caller.
-    if (password != '___passkey___') {
-      final rows = await database.database.query(
-        'rider_accounts',
-        where: 'email = ?',
-        whereArgs: [email.trim().toLowerCase()],
-        limit: 1,
-      );
-      if (rows.isEmpty) {
-        throw Exception('No account found for that email.');
-      }
-      final stored = rows.first['password_hash'] as String;
-      final given = hashPassword(password);
-      if (given != stored) {
-        throw Exception('Email or password is incorrect.');
-      }
+    final rows = await database.database.query(
+      'rider_accounts',
+      where: 'email = ?',
+      whereArgs: [email.trim().toLowerCase()],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      throw Exception('No account found for that email.');
+    }
+    final stored = rows.first['password_hash'] as String;
+    final given = hashPassword(password);
+    if (given != stored) {
+      throw Exception('Email or password is incorrect.');
     }
     // Refresh all repositories after a successful sign-in.
     await Future.wait([

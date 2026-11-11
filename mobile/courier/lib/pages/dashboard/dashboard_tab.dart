@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/features.dart';
 import '../../models/courier_models.dart';
 import '../../services/courier_repository.dart';
 import '../../services/api_service.dart';
@@ -33,9 +34,11 @@ class _DashboardTabState extends State<DashboardTab> {
     try {
       final s = await CourierRepository.instance.dashboard();
       List<TimelineEvent> timeline = [];
-      try {
-        timeline = await CourierRepository.instance.timeline(perPage: 8);
-      } catch (_) {}
+      if (CourierFeatures.timeline) {
+        try {
+          timeline = await CourierRepository.instance.timeline(perPage: 8);
+        } catch (_) {}
+      }
       if (!mounted) return;
       setState(() {
         _stats = s;
@@ -92,8 +95,10 @@ class _DashboardTabState extends State<DashboardTab> {
             _ErrorState(message: _error!, onRetry: _load),
           ] else if (_stats != null) ...[
             _StatsGrid(stats: _stats!),
-            const SizedBox(height: 16),
-            _DispatchTimeline(events: _timeline),
+            if (CourierFeatures.timeline) ...[
+              const SizedBox(height: 16),
+              _DispatchTimeline(events: _timeline),
+            ],
           ],
         ],
       ),

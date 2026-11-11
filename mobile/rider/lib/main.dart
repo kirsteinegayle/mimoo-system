@@ -34,7 +34,6 @@ import 'screens/settings/about_screen.dart';
 import 'screens/settings/change_password_screen.dart';
 import 'screens/settings/emergency_contacts_screen.dart';
 import 'screens/settings/legal_screen.dart';
-import 'screens/settings/passkey_screen.dart';
 import 'screens/settings/permissions_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/splash_screen.dart';
@@ -54,7 +53,6 @@ abstract final class MimooRoutes {
   static const profile = '/profile';
   static const settings = '/settings';
   static const settingsChangePassword = '/settings/change-password';
-  static const settingsPasskey = '/settings/passkey';
   static const settingsEmergencyContacts = '/settings/emergency-contacts';
   static const settingsPermissions = '/settings/permissions';
   static const settingsPrivacy = '/settings/privacy';
@@ -243,7 +241,6 @@ class MimooRiderApp extends StatelessWidget {
                     MimooRoutes.settings: (_) => const SettingsScreen(),
                     MimooRoutes.settingsChangePassword: (_) =>
                         const ChangePasswordScreen(),
-                    MimooRoutes.settingsPasskey: (_) => const PasskeyScreen(),
                     MimooRoutes.settingsEmergencyContacts: (_) =>
                         const EmergencyContactsScreen(),
                     MimooRoutes.settingsPermissions: (_) =>

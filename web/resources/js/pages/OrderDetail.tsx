@@ -1,8 +1,9 @@
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { BuyerHeader } from "@/components/buyer-header";
 import { trackingLabel } from "@/components/tracking-line";
-import { Package, MapPin, Truck, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Package, MapPin, Truck, Clock, CheckCircle2, XCircle, MessageCircle, RotateCcw, Star, CheckCircle } from "lucide-react";
+import { ReturnRequestModal, ReturnStatusBadge, ReviewModal, Stars, type ReviewTarget } from "@/components/buyer/returns-reviews";
 
 interface OrderItem {
   id: number;
@@ -12,6 +13,15 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  seller_id?: number | null;
+  seller_name?: string | null;
+  review?: { id: number; rating: number; comment: string | null; can_edit: boolean } | null;
+  can_review?: boolean;
+}
+
+interface OrderSeller {
+  id: number;
+  name: string;
 }
 
 interface Order {
@@ -33,11 +43,16 @@ interface Order {
   assigned_courier_name: string | null;
   current_facility_name: string | null;
   items: OrderItem[];
+  sellers?: OrderSeller[];
+  can_return?: boolean;
+  return_status?: string | null;
+  return_id?: number | null;
 }
 
 interface PageProps {
   order: Order;
   auth: { user: any };
+  returnReasons?: string[];
 }
 
 const peso = (n: number) =>
@@ -149,10 +164,25 @@ function DeliveryCodeBanner({ orderId }: { orderId: number }) {
   );
 }
 
-export default function OrderDetail({ order, auth }: PageProps) {
+export default function OrderDetail({ order, auth, returnReasons = [] }: PageProps) {
   const user = auth?.user;
+  const [returnOpen, setReturnOpen] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // After a return/review is saved, reload the order so every flag stays server-driven.
+  function done(message: string) {
+    setReturnOpen(false);
+    setReviewTarget(null);
+    setNotice(message);
+    router.reload({ only: ["order"] });
+  }
   const config = statusConfig[order.status] || statusConfig.pending;
   const StatusIcon = config.icon;
+  // "Chat with seller": hidden for the seller themself and for non-buyer accounts.
+  const chatSellers = (order.sellers ?? []).filter(
+    (s) => s.id && (!user || (user.account_type === "buyer" && Number(user.id) !== Number(s.id))),
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -173,6 +203,13 @@ export default function OrderDetail({ order, auth }: PageProps) {
             Back to My Purchases
           </Link>
         </div>
+
+        {notice && (
+          <div className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
+            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4" />{notice}</span>
+            <button type="button" onClick={() => setNotice(null)} className="text-green-700 hover:underline">Dismiss</button>
+          </div>
+        )}
 
         {/* Order header */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -267,8 +304,24 @@ export default function OrderDetail({ order, auth }: PageProps) {
         </div>
 
         {/* Order items */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
+        <div id="reviews" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 scroll-mt-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-gray-900">Order Items</h2>
+            {chatSellers.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {chatSellers.map((s) => (
+                  <Link
+                    key={s.id}
+                    href={`/messages?seller_id=${s.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-purple-300 px-3 py-1.5 text-sm font-medium text-purple-700 hover:bg-purple-50 transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    {chatSellers.length > 1 ? `Chat with ${s.name}` : "Chat with seller"}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
           
           <div className="space-y-4">
             {order.items.map((item) => (
@@ -288,6 +341,30 @@ export default function OrderDetail({ order, auth }: PageProps) {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-gray-900 truncate">{item.product_name}</h3>
                   <p className="text-sm text-gray-500 mt-1">Quantity: {item.quantity}</p>
+                  {item.review ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                      <Stars value={item.review.rating} />
+                      <span className="text-gray-500">Your review</span>
+                      {item.review.can_edit && (
+                        <button
+                          type="button"
+                          onClick={() => setReviewTarget({ mode: "edit", reviewId: item.review!.id, productName: item.product_name, rating: item.review!.rating, comment: item.review!.comment })}
+                          className="font-medium text-purple-700 hover:underline"
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+                  ) : item.can_review ? (
+                    <button
+                      type="button"
+                      onClick={() => setReviewTarget({ mode: "create", orderId: order.id, itemId: item.id, productName: item.product_name })}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-purple-300 px-3 py-1 text-sm font-medium text-purple-700 hover:bg-purple-50 transition-colors"
+                    >
+                      <Star className="h-4 w-4" />
+                      Write a review
+                    </button>
+                  ) : null}
                 </div>
                 
                 <div className="text-right">
@@ -303,6 +380,42 @@ export default function OrderDetail({ order, auth }: PageProps) {
             ))}
           </div>
         </div>
+
+        {/* Return / refund (same rules as the mobile app) */}
+        {(order.can_return || order.return_status) && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <RotateCcw className="w-5 h-5 text-purple-600" />
+                  Return / Refund
+                </h2>
+                {order.return_status ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <ReturnStatusBadge status={order.return_status} />
+                    {order.return_id && (
+                      <Link href={`/returns?id=${order.return_id}`} className="text-sm font-medium text-purple-700 hover:underline">
+                        View details
+                      </Link>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-500">Something wrong with your order? You can request a return within 7 days.</p>
+                )}
+              </div>
+              {order.can_return && (
+                <button
+                  type="button"
+                  onClick={() => setReturnOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-purple-300 px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-50 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Request return / refund
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Order summary */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -348,6 +461,17 @@ export default function OrderDetail({ order, auth }: PageProps) {
           )}
         </div>
       </main>
+
+      {returnOpen && (
+        <ReturnRequestModal
+          orderId={order.id}
+          orderNumber={order.order_number}
+          reasons={returnReasons}
+          onClose={() => setReturnOpen(false)}
+          onDone={done}
+        />
+      )}
+      {reviewTarget && <ReviewModal target={reviewTarget} onClose={() => setReviewTarget(null)} onDone={done} />}
     </div>
   );
 }

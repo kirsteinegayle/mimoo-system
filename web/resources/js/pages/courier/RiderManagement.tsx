@@ -52,12 +52,22 @@ export default function RiderManagement({ auth, company, pendingApplications = [
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [selectedBranch, setSelectedBranch] = useState<string>('');
+    const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [approveError, setApproveError] = useState<string | null>(null);
+    const [processing, setProcessing] = useState(false);
+
+    // Server flashes { success } or { error } and redirects back (Inertia).
+    const readFlash = (flash: unknown): { success?: string; error?: string } =>
+        (flash && typeof flash === 'object' ? flash : {}) as { success?: string; error?: string };
+    const firstError = (errors: Record<string, string>, fallback: string) =>
+        Object.values(errors)[0] || fallback;
 
     const handleApprove = (riderId: number) => {
         const rider = pendingApplications.find(r => r.id === riderId);
         if (rider) {
             setSelectedRider(rider);
             setSelectedBranch('');
+            setApproveError(null);
             setShowApproveModal(true);
         }
     };
@@ -71,28 +81,45 @@ export default function RiderManagement({ auth, company, pendingApplications = [
             router.post(`/api/courier/riders/${selectedRider.id}/approve`, 
                 { assigned_branch_id: selectedBranch }, 
                 {
-                    onSuccess: () => {
+                    preserveScroll: true,
+                    onStart: () => {
+                        setProcessing(true);
+                        setApproveError(null);
+                    },
+                    onFinish: () => setProcessing(false),
+                    onSuccess: (page) => {
+                        const flash = readFlash(page.flash);
+                        if (flash.error) {
+                            // e.g. email already used by another account: keep the modal open.
+                            setApproveError(flash.error);
+                            return;
+                        }
                         setShowApproveModal(false);
                         setSelectedRider(null);
                         setSelectedBranch('');
-                        router.reload();
+                        setNotice({ type: 'success', text: flash.success || 'Rider application approved.' });
                     },
                     onError: (errors) => {
-                        console.error('Failed to approve rider:', errors);
-                        alert('Failed to approve rider. Please try again.');
-                    }
+                        setApproveError(firstError(errors, 'Failed to approve rider. Please try again.'));
+                    },
                 }
             );
         }
     };
 
     const handleReject = (riderId: number) => {
-        const reason = prompt('Please provide a reason for rejection:');
+        const reason = prompt('Please provide a reason for rejection (at least 10 characters):');
         if (reason) {
             router.post(`/api/courier/riders/${riderId}/reject`, { reason }, {
-                onSuccess: () => {
-                    alert('Rider application rejected.');
-                    router.reload();
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    const flash = readFlash(page.flash);
+                    setNotice(flash.error
+                        ? { type: 'error', text: flash.error }
+                        : { type: 'success', text: flash.success || 'Rider application rejected.' });
+                },
+                onError: (errors) => {
+                    setNotice({ type: 'error', text: firstError(errors, 'Failed to reject rider. Please try again.') });
                 },
             });
         }
@@ -132,6 +159,27 @@ export default function RiderManagement({ auth, company, pendingApplications = [
     return (
         <CourierLayout auth={auth} company={company} activeTab="rider-management" pageTitle="Rider Management">
             <Head title="Rider Management" />
+
+            {notice && (
+                <div
+                    role={notice.type === 'error' ? 'alert' : 'status'}
+                    className={`mb-4 flex items-start justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+                        notice.type === 'success'
+                            ? 'border-green-200 bg-green-50 text-green-800'
+                            : 'border-red-200 bg-red-50 text-red-800'
+                    }`}
+                >
+                    <span>{notice.text}</span>
+                    <button
+                        type="button"
+                        onClick={() => setNotice(null)}
+                        className="shrink-0 font-medium opacity-70 hover:opacity-100"
+                        aria-label="Dismiss message"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
             
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
@@ -579,7 +627,18 @@ export default function RiderManagement({ auth, company, pendingApplications = [
                                     ))}
                                 </select>
                                 <p className="text-xs text-gray-500 mt-1">Choose a branch based on the rider's service areas</p>
+                                {branches.length === 0 && (
+                                    <p className="text-xs text-amber-700 mt-1">
+                                        Your company has no active branch yet. Add one in Branch &amp; Facility before approving riders.
+                                    </p>
+                                )}
                             </div>
+
+                            {approveError && (
+                                <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                                    {approveError}
+                                </div>
+                            )}
                         </div>
 
                         <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
@@ -595,7 +654,7 @@ export default function RiderManagement({ auth, company, pendingApplications = [
                             </button>
                             <button
                                 onClick={confirmApproval}
-                                disabled={!selectedBranch}
+                                disabled={!selectedBranch || processing}
                                 className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Approve & Assign

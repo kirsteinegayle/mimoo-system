@@ -119,9 +119,6 @@ class AppLocalizationsFil extends AppLocalizations {
   String get settingsChangePassword => 'Palitan ang password';
 
   @override
-  String get settingsPasskey => 'Passkey';
-
-  @override
   String get settingsEmergencyContact => 'Emergency contact';
 
   @override
@@ -326,12 +323,6 @@ class AppLocalizationsFil extends AppLocalizations {
   String get helpCategoryAccount => 'Account at kaligtasan';
 
   @override
-  String get settingsPasskeyNotSet => 'Hindi pa naka-set up';
-
-  @override
-  String get settingsPasskeySet => 'Naka-set up sa device na ito';
-
-  @override
   String get settingsEmergencyNone => 'Wala pang emergency contact';
 
   @override
@@ -466,53 +457,6 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get emergencyDeleteTooltip => 'Tanggalin ang contact';
-
-  @override
-  String get passkeyActiveTitle => 'Aktibo ang passkey';
-
-  @override
-  String get passkeyInactiveTitle => 'Hindi pa naka-set up ang passkey';
-
-  @override
-  String get passkeyWhatTitle => 'Ano ang passkey?';
-
-  @override
-  String get passkeyWhatBody =>
-      'Ang passkey ay nagbibigay-daan para mag-sign in nang hindi nagta-type ng password. Gumagamit ito ng screen lock o biometrics ng device at mas ligtas kaysa password dahil hindi ito lumalabas sa iyong telepono.';
-
-  @override
-  String get passkeyComingTitle =>
-      'Malapit nang dumating ang tunay na passkey support';
-
-  @override
-  String get passkeyComingBody =>
-      'Sa ngayon, ang paggawa ng passkey ay gumagamit ng biometrics ng device bilang pansamantalang kapalit.';
-
-  @override
-  String get passkeyCreate => 'Gumawa ng passkey';
-
-  @override
-  String get passkeyRemove => 'Alisin ang passkey';
-
-  @override
-  String get passkeyRemoveTitle => 'Alisin ang passkey?';
-
-  @override
-  String get passkeyRemoveBody =>
-      'Kakailanganin mo ang password para mag-sign in sa device na ito.';
-
-  @override
-  String get passkeyAuthError =>
-      'Nabigo ang biometric check o hindi ito available.';
-
-  @override
-  String get passkeyCreated => 'Naka-set up na ang passkey sa device na ito.';
-
-  @override
-  String get passkeyRemoved => 'Naalis na ang passkey.';
-
-  @override
-  String get passkeyReason => 'Gumawa ng passkey para sa Mimoo Rider';
 
   @override
   String get permissionsTitle => 'Lokasyon at mga pahintulot';

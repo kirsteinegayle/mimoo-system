@@ -333,26 +333,34 @@ class PickupManagementController extends Controller
             'personnel_id' => 'required|exists:courier_personnel,id',
         ]);
 
-        // Verify personnel belongs to this courier
-        $personnel = CourierPersonnel::where('id', $request->personnel_id)
-            ->where('courier_id', $user->id)
-            ->where('status', 'active')
-            ->firstOrFail();
+        // Shared rules (same as the courier app): rider personnel of this courier
+        // with an active rider-app account; pickup not yet picked up / cancelled.
+        // The assignment row is locked so a rider scan cannot race the reassign.
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $user, $id) {
+            $assignment = ShipmentAssignment::where('courier_id', $user->id)
+                ->where('assignment_status', 'accepted')
+                ->lockForUpdate()
+                ->findOrFail($id);
 
-        $assignment = ShipmentAssignment::where('courier_id', $user->id)
-            ->where('assignment_status', 'accepted')
-            ->findOrFail($id);
+            $check = \App\Services\PickupAssignmentRules::check($user->id, (int) $request->personnel_id, $assignment);
+            if (! $check['ok']) {
+                return response()->json(['success' => false, 'message' => $check['message']], $check['status']);
+            }
+            $personnel = $check['personnel'];
 
-        $assignment->update([
-            'assigned_personnel_id' => $personnel->id,
-        ]);
+            $assignment->update([
+                'assigned_personnel_id' => $personnel->id,
+            ]);
 
-        $assignment->addHistory('personnel_assigned', $user->id, "Assigned to {$personnel->name}");
+            // 're-assigned' (same as the courier app): 'personnel_assigned' is not in the
+            // shipment_assignment_history.action enum and made this request fail.
+            $assignment->addHistory('re-assigned', $user->id, "Assigned to {$personnel->name}");
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Personnel assigned successfully!',
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Personnel assigned successfully!',
+            ]);
+        });
     }
 
     /**

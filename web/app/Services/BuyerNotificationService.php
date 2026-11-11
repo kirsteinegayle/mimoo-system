@@ -36,6 +36,26 @@ class BuyerNotificationService
         'closed'    => ['Return request closed',    'Your return request for order %s was closed.'],
     ];
 
+    /** >0 while inside withoutOrderStatusNotification(). */
+    private static int $suppressStatus = 0;
+
+    /**
+     * Runs $fn without the generic order-status notification. Used when the
+     * caller sends its own, more specific notification for the same step
+     * (rider "Out for delivery" instead of "Order shipped"). Only
+     * orderStatusChanged() is skipped; the status change itself, model events
+     * and every other notification run normally.
+     */
+    public static function withoutOrderStatusNotification(callable $fn): mixed
+    {
+        self::$suppressStatus++;
+        try {
+            return $fn();
+        } finally {
+            self::$suppressStatus--;
+        }
+    }
+
     public static function orderNumber(int $orderId): string
     {
         return 'MIM-' . str_pad((string) $orderId, 8, '0', STR_PAD_LEFT);
@@ -57,6 +77,9 @@ class BuyerNotificationService
 
     public static function orderStatusChanged(Order $order): void
     {
+        if (self::$suppressStatus > 0) {
+            return;
+        }
         self::safely(function () use ($order) {
             $status = $order->status;
             if (! isset(self::NOTIFY_STATUSES[$status])) {

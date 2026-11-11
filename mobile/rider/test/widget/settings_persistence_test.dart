@@ -85,19 +85,6 @@ void main() {
     expect(settings2.biometric, isTrue);
   });
 
-  test('SettingsController persists passkey flag', () async {
-    final prefs = await SharedPreferences.getInstance();
-    final settings = SettingsController(prefs);
-
-    expect(settings.passkeySetUp, isFalse);
-
-    await settings.setPasskeySetUp(true);
-    expect(settings.passkeySetUp, isTrue);
-
-    final settings2 = SettingsController(prefs);
-    expect(settings2.passkeySetUp, isTrue);
-  });
-
   test('SettingsController emergency contacts serialize and persist', () async {
     final prefs = await SharedPreferences.getInstance();
     final settings = SettingsController(prefs);

@@ -212,7 +212,7 @@ earnings.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     earnings.form = earningsForm
 /**
 * @see \App\Http\Controllers\Api\RiderWalletController::notifications
- * @see app/Http/Controllers/Api/RiderWalletController.php:114
+ * @see app/Http/Controllers/Api/RiderWalletController.php:157
  * @route '/api/rider-app/notifications'
  */
 export const notifications = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -227,7 +227,7 @@ notifications.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderWalletController::notifications
- * @see app/Http/Controllers/Api/RiderWalletController.php:114
+ * @see app/Http/Controllers/Api/RiderWalletController.php:157
  * @route '/api/rider-app/notifications'
  */
 notifications.url = (options?: RouteQueryOptions) => {
@@ -236,7 +236,7 @@ notifications.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\RiderWalletController::notifications
- * @see app/Http/Controllers/Api/RiderWalletController.php:114
+ * @see app/Http/Controllers/Api/RiderWalletController.php:157
  * @route '/api/rider-app/notifications'
  */
 notifications.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -245,7 +245,7 @@ notifications.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\RiderWalletController::notifications
- * @see app/Http/Controllers/Api/RiderWalletController.php:114
+ * @see app/Http/Controllers/Api/RiderWalletController.php:157
  * @route '/api/rider-app/notifications'
  */
 notifications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -255,7 +255,7 @@ notifications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
 
     /**
 * @see \App\Http\Controllers\Api\RiderWalletController::notifications
- * @see app/Http/Controllers/Api/RiderWalletController.php:114
+ * @see app/Http/Controllers/Api/RiderWalletController.php:157
  * @route '/api/rider-app/notifications'
  */
     const notificationsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -265,7 +265,7 @@ notifications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
 
             /**
 * @see \App\Http\Controllers\Api\RiderWalletController::notifications
- * @see app/Http/Controllers/Api/RiderWalletController.php:114
+ * @see app/Http/Controllers/Api/RiderWalletController.php:157
  * @route '/api/rider-app/notifications'
  */
         notificationsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -274,7 +274,7 @@ notifications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
         })
             /**
 * @see \App\Http\Controllers\Api\RiderWalletController::notifications
- * @see app/Http/Controllers/Api/RiderWalletController.php:114
+ * @see app/Http/Controllers/Api/RiderWalletController.php:157
  * @route '/api/rider-app/notifications'
  */
         notificationsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -290,7 +290,7 @@ notifications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     notifications.form = notificationsForm
 /**
 * @see \App\Http\Controllers\Api\RiderWalletController::markRead
- * @see app/Http/Controllers/Api/RiderWalletController.php:134
+ * @see app/Http/Controllers/Api/RiderWalletController.php:177
  * @route '/api/rider-app/notifications/{id}/read'
  */
 export const markRead = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -305,7 +305,7 @@ markRead.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderWalletController::markRead
- * @see app/Http/Controllers/Api/RiderWalletController.php:134
+ * @see app/Http/Controllers/Api/RiderWalletController.php:177
  * @route '/api/rider-app/notifications/{id}/read'
  */
 markRead.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -333,7 +333,7 @@ markRead.url = (args: { id: string | number } | [id: string | number ] | string 
 
 /**
 * @see \App\Http\Controllers\Api\RiderWalletController::markRead
- * @see app/Http/Controllers/Api/RiderWalletController.php:134
+ * @see app/Http/Controllers/Api/RiderWalletController.php:177
  * @route '/api/rider-app/notifications/{id}/read'
  */
 markRead.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -343,7 +343,7 @@ markRead.post = (args: { id: string | number } | [id: string | number ] | string
 
     /**
 * @see \App\Http\Controllers\Api\RiderWalletController::markRead
- * @see app/Http/Controllers/Api/RiderWalletController.php:134
+ * @see app/Http/Controllers/Api/RiderWalletController.php:177
  * @route '/api/rider-app/notifications/{id}/read'
  */
     const markReadForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -353,7 +353,7 @@ markRead.post = (args: { id: string | number } | [id: string | number ] | string
 
             /**
 * @see \App\Http\Controllers\Api\RiderWalletController::markRead
- * @see app/Http/Controllers/Api/RiderWalletController.php:134
+ * @see app/Http/Controllers/Api/RiderWalletController.php:177
  * @route '/api/rider-app/notifications/{id}/read'
  */
         markReadForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

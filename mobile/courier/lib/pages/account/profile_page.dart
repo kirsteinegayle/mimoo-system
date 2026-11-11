@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/features.dart';
 import '../../models/courier_models.dart';
 import '../../services/api_service.dart';
 import '../../services/courier_repository.dart';
@@ -63,7 +64,8 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         backgroundColor: kCard,
         title:
-            Text('Profile & Vehicle', style: pjs(size: 17, weight: FontWeight.w800)),
+            Text(CourierFeatures.vehicle ? 'Profile & Vehicle' : 'Profile',
+                style: pjs(size: 17, weight: FontWeight.w800)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: kPrimary))
@@ -83,8 +85,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         CourierInfoRow('Phone', _profile!.phone ?? ''),
                         CourierInfoRow(
                             'Status', displayStatus(_profile!.status)),
-                        CourierInfoRow(
-                            'Duty', displayStatus(_profile!.dutyStatus)),
+                        if (CourierFeatures.duty)
+                          CourierInfoRow(
+                              'Duty', displayStatus(_profile!.dutyStatus)),
                         if (_profile!.homeHub != null)
                           CourierInfoRow(
                             'Home hub',
@@ -108,6 +111,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                     ],
+                    // Vehicle and documents have no backend route yet.
+                    if (CourierFeatures.vehicle) ...[
                     const SizedBox(height: 10),
                     CourierInfoCard(
                       title: 'Vehicle & license',
@@ -138,6 +143,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             'License expiry', _profile!.licenseExpiry ?? ''),
                       ],
                     ),
+                    ],
+                    if (CourierFeatures.documents) ...[
                     const SizedBox(height: 10),
                     CourierInfoCard(
                       title: 'Documents on file',
@@ -173,6 +180,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                       ],
                     ),
+                    ],
                   ],
                 ),
     );

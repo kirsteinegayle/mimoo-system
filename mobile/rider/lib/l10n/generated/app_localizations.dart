@@ -308,12 +308,6 @@ abstract class AppLocalizations {
   /// **'Change password'**
   String get settingsChangePassword;
 
-  /// No description provided for @settingsPasskey.
-  ///
-  /// In en, this message translates to:
-  /// **'Passkey'**
-  String get settingsPasskey;
-
   /// No description provided for @settingsEmergencyContact.
   ///
   /// In en, this message translates to:
@@ -668,18 +662,6 @@ abstract class AppLocalizations {
   /// **'Account & safety'**
   String get helpCategoryAccount;
 
-  /// No description provided for @settingsPasskeyNotSet.
-  ///
-  /// In en, this message translates to:
-  /// **'Not set up'**
-  String get settingsPasskeyNotSet;
-
-  /// No description provided for @settingsPasskeySet.
-  ///
-  /// In en, this message translates to:
-  /// **'Set up on this device'**
-  String get settingsPasskeySet;
-
   /// No description provided for @settingsEmergencyNone.
   ///
   /// In en, this message translates to:
@@ -931,90 +913,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete contact'**
   String get emergencyDeleteTooltip;
-
-  /// No description provided for @passkeyActiveTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Passkey is active'**
-  String get passkeyActiveTitle;
-
-  /// No description provided for @passkeyInactiveTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Passkey is not set up'**
-  String get passkeyInactiveTitle;
-
-  /// No description provided for @passkeyWhatTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'What is a passkey?'**
-  String get passkeyWhatTitle;
-
-  /// No description provided for @passkeyWhatBody.
-  ///
-  /// In en, this message translates to:
-  /// **'A passkey lets you sign in without typing a password. It uses the screen lock or biometrics on this device and is safer than a password because it never leaves your phone.'**
-  String get passkeyWhatBody;
-
-  /// No description provided for @passkeyComingTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Real passkey support is coming soon'**
-  String get passkeyComingTitle;
-
-  /// No description provided for @passkeyComingBody.
-  ///
-  /// In en, this message translates to:
-  /// **'For now, creating a passkey uses your device biometrics as a placeholder.'**
-  String get passkeyComingBody;
-
-  /// No description provided for @passkeyCreate.
-  ///
-  /// In en, this message translates to:
-  /// **'Create passkey'**
-  String get passkeyCreate;
-
-  /// No description provided for @passkeyRemove.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove passkey'**
-  String get passkeyRemove;
-
-  /// No description provided for @passkeyRemoveTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove passkey?'**
-  String get passkeyRemoveTitle;
-
-  /// No description provided for @passkeyRemoveBody.
-  ///
-  /// In en, this message translates to:
-  /// **'You will need your password to sign in on this device.'**
-  String get passkeyRemoveBody;
-
-  /// No description provided for @passkeyAuthError.
-  ///
-  /// In en, this message translates to:
-  /// **'Biometric check failed or is unavailable.'**
-  String get passkeyAuthError;
-
-  /// No description provided for @passkeyCreated.
-  ///
-  /// In en, this message translates to:
-  /// **'Passkey set up on this device.'**
-  String get passkeyCreated;
-
-  /// No description provided for @passkeyRemoved.
-  ///
-  /// In en, this message translates to:
-  /// **'Passkey removed.'**
-  String get passkeyRemoved;
-
-  /// No description provided for @passkeyReason.
-  ///
-  /// In en, this message translates to:
-  /// **'Create a passkey for Mimoo Rider'**
-  String get passkeyReason;
 
   /// No description provided for @permissionsTitle.
   ///

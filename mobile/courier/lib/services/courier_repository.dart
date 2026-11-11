@@ -543,4 +543,55 @@ class CourierRepository {
         as Map<String, dynamic>;
     return HistoryTripDetail.fromJson(res['data'] as Map<String, dynamic>);
   }
+
+  // ── Delivery Management (same API as the web Delivery Management) ────────
+
+  Future<({List<DeliveryOrderItem> items, Map<String, int> meta})>
+      deliveryOrders() async {
+    final res = await ApiService.get('$_prefix/delivery-orders')
+        as Map<String, dynamic>;
+    final items = (res['data'] as List<dynamic>? ?? [])
+        .map((e) => DeliveryOrderItem.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+    final meta = (res['meta'] as Map<String, dynamic>? ?? {})
+        .map((k, v) => MapEntry(k, (v as num?)?.toInt() ?? 0));
+    return (items: items, meta: meta);
+  }
+
+  /// Online riders of this courier only (server-side readyRiders()).
+  Future<({List<DeliveryRiderItem> items, String? message})>
+      deliveryRiders() async {
+    final res = await ApiService.get('$_prefix/delivery-riders')
+        as Map<String, dynamic>;
+    final items = (res['data'] as List<dynamic>? ?? [])
+        .map((e) => DeliveryRiderItem.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+    final message = (res['meta'] as Map?)?['message']?.toString();
+    return (items: items, message: message);
+  }
+
+  /// POST /delivery-jobs. Returns the server message.
+  Future<String> assignDeliveryRider(int orderId, int personnelId) async {
+    final res = await ApiService.post(
+      '$_prefix/delivery-jobs',
+      body: {'order_id': orderId, 'personnel_id': personnelId},
+    ) as Map<String, dynamic>;
+    return res['message']?.toString() ?? 'Delivery rider assigned.';
+  }
+
+  // ── Rider Management (read-only) ─────────────────────────────────────────
+
+  Future<({List<CourierRiderItem> items, int online, String? note})>
+      riders() async {
+    final res = await ApiService.get('$_prefix/riders') as Map<String, dynamic>;
+    final items = (res['data'] as List<dynamic>? ?? [])
+        .map((e) => CourierRiderItem.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+    final meta = res['meta'] as Map<String, dynamic>? ?? {};
+    return (
+      items: items,
+      online: (meta['online'] as num?)?.toInt() ?? 0,
+      note: meta['note']?.toString(),
+    );
+  }
 }

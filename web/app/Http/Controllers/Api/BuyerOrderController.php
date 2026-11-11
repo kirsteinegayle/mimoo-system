@@ -64,15 +64,12 @@ class BuyerOrderController extends Controller
         // Reviews for this order's items (one per item) — Module 3
         $reviews = Review::whereIn('order_item_id', $order->items->pluck('id'))
             ->get()->keyBy('order_item_id');
-        $reviewWindowOpen = $order->status === 'completed'
-            && $order->updated_at->copy()->addDays(Review::REVIEW_WINDOW_DAYS)->isFuture();
+        // Same rules as the buyer web pages (App\Services\ReturnReviewRules).
+        $reviewWindowOpen = \App\Services\ReturnReviewRules::reviewWindowOpen($order);
 
         // Latest return request — Module 4
-        $latestReturn = ReturnRequest::where('order_id', $order->id)->latest('id')->first();
-        $hasOpenReturn = $latestReturn && $latestReturn->isOpen();
-        $canReturn = in_array($order->status, ['shipped', 'completed'], true)
-            && $order->updated_at->copy()->addDays(ReturnRequest::REQUEST_WINDOW_DAYS)->isFuture()
-            && ! $hasOpenReturn;
+        $latestReturn = \App\Services\ReturnReviewRules::latestReturn($order);
+        $canReturn = \App\Services\ReturnReviewRules::canReturn($order, $latestReturn);
 
         $items = $order->items->map(function ($item) use ($detail, $reviews, $reviewWindowOpen) {
             $review = $reviews->get($item->id);

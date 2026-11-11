@@ -114,7 +114,14 @@ class ProfileTab extends StatelessWidget {
             radius: 20,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Column(children: [
-              _info(c, Icons.warehouse_outlined, 'Hub', p.hub),
+              _info(
+                  c,
+                  Icons.warehouse_outlined,
+                  'Hub',
+                  p.hubAssigned
+                      ? [p.hub, if (p.hubAddress != null) p.hubAddress!].join('\n')
+                      : 'Not assigned yet'
+                          '${p.courierCompany != null ? ' · ${p.courierCompany}' : ''}'),
               const Divider(height: 1),
               _info(c, Icons.location_city_outlined, 'Municipality',
                   p.municipality),

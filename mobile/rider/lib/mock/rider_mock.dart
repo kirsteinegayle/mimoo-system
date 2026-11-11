@@ -6,10 +6,13 @@
 // MOCK: No API calls, no database writes, no secrets. Replace with real
 // repositories when the backend endpoints are ready.
 
+import 'dart:async' show unawaited;
+
 import 'package:flutter/foundation.dart';
 
 import '../core/api_config.dart';
 import '../data/api/rider_api.dart';
+import '../data/parcel_flow.dart' show riderOnline;
 import '../data/api/transport.dart' show UploadFile;
 
 // ── MOCK constants ──────────────────────────────────────────────────────────
@@ -223,6 +226,38 @@ class MockRemit {
   final int parcels;
 }
 
+/// One day of real earnings from GET /api/rider-app/earnings (data.days).
+class ServerEarningDay {
+  const ServerEarningDay({
+    required this.date,
+    required this.label,
+    required this.total,
+    required this.pickup,
+    required this.pickupCount,
+    required this.deliveryCount,
+  });
+
+  /// Server calendar date (no time part).
+  final DateTime date;
+  final String label;
+  final double total, pickup;
+  final int pickupCount, deliveryCount;
+
+  static ServerEarningDay? tryParse(Map<String, dynamic> j) {
+    final date = DateTime.tryParse('${j['date']}');
+    if (date == null) return null;
+    double n(String k) => (j[k] as num?)?.toDouble() ?? 0;
+    return ServerEarningDay(
+      date: DateTime(date.year, date.month, date.day),
+      label: (j['label'] ?? '').toString(),
+      total: n('total'),
+      pickup: n('pickup'),
+      pickupCount: (j['pickup_count'] as num?)?.toInt() ?? 0,
+      deliveryCount: (j['delivery_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 class MockNotification {
   MockNotification(this.title, this.body, this.at,
       {this.jobId, this.unread = true, this.serverId});
@@ -242,8 +277,19 @@ class MockProfile {
     required this.municipality,
     required this.vehicleType,
     required this.plateNo,
+    this.hubAddress,
+    this.hubAssigned = true,
+    this.courierCompany,
   });
   final String name, riderId, status, hub, municipality, vehicleType, plateNo;
+
+  /// API mode: address of the rider's branch (null when unknown).
+  final String? hubAddress;
+
+  /// API mode: false when no branch is linked to the rider yet ([hub] then
+  /// reads "your hub" so sentences still work).
+  final bool hubAssigned;
+  final String? courierCompany;
   String get firstName => name.split(' ').first;
   String get initials =>
       name.split(' ').where((p) => p.isNotEmpty).take(2).map((p) => p[0]).join();
@@ -273,9 +319,9 @@ class RiderMock extends ChangeNotifier {
   double _srvToday = 0, _srvWeek = 0;
   int _srvTodayCount = 0, _srvWeekCount = 0;
 
-  /// Pickups the rider marked "Dropped at Hub". There is no rider API for the
-  /// hub hand-over yet, so this lives in memory only (lost on restart).
-  final Set<int> _droppedPickupIds = {};
+  /// GET /earnings data.days: last 7 days, oldest first (empty = not loaded).
+  List<ServerEarningDay> _srvDays = const [];
+
 
   /// True while refresh() is loading from the API.
   bool get loading => _loading;
@@ -292,7 +338,12 @@ class RiderMock extends ChangeNotifier {
     municipality: 'Malolos, Bulacan',
     vehicleType: 'Motorcycle',
     plateNo: 'ABC 1234',
+    hubAddress: 'Malolos, Bulacan',
   );
+
+  /// API mode: latest rider payload from GET /me (hub can change after
+  /// login). Falls back to the login payload saved in RiderApi.
+  Map<String, dynamic>? _meRider;
 
   /// MOCK: unread chat messages (Messages header icon badge).
   int unreadMessages = 2;
@@ -341,16 +392,31 @@ class RiderMock extends ChangeNotifier {
     return at.year == now.year && at.month == now.month && at.day == now.day;
   }
 
-  // API mode: earnings come from GET /earnings, which only records delivery
-  // payouts (the backend has no pickup payout yet), so pickups count as 0.
+  // API mode: earnings come from GET /earnings. data.days holds the per-day
+  // split for the last 7 days (server clock, today last). An older server
+  // without data.days falls back to the today/week totals.
+  ServerEarningDay? get _srvTodayDay => _srvDays.isEmpty ? null : _srvDays.last;
+
+  /// Server days in the current week (Monday .. today). Uses the server's own
+  /// "today" date, so the sum matches the server `week` total.
+  Iterable<ServerEarningDay> get _srvThisWeek {
+    final today = _srvTodayDay?.date;
+    if (today == null) return const [];
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    return _srvDays.where((d) => !d.date.isBefore(monday));
+  }
+
+  Iterable<ServerEarningDay> _srvRange(bool week) =>
+      week ? _srvThisWeek : [if (_srvTodayDay != null) _srvTodayDay!];
+
   int get pickupsToday => !useMock
-      ? 0
+      ? (_srvTodayDay?.pickupCount ?? 0)
       : _jobs
           .where((j) =>
               j.stage == MockStage.droppedAtHub && _isToday(j.completedAt))
           .length;
   int get deliveriesToday => !useMock
-      ? _srvTodayCount
+      ? (_srvTodayDay?.deliveryCount ?? _srvTodayCount)
       : _jobs
           .where((j) => j.stage == MockStage.delivered && _isToday(j.completedAt))
           .length;
@@ -358,10 +424,15 @@ class RiderMock extends ChangeNotifier {
       ? _srvToday
       : pickupsToday * kPickupRate + deliveriesToday * kDeliveryRate;
 
-  /// Per-day totals for the week, today last. The API has no per-day split,
-  /// so API mode shows "Earlier" (this week before today) and "Today".
+  /// Per-day job counts, today last. Mock: Mon..today. API: the last 7 days
+  /// from data.days ("Earlier" / "Today" only if the server has no split).
   List<({String day, int pickups, int deliveries})> get weekDays => !useMock
-      ? [
+      ? _srvDays.isNotEmpty
+          ? [
+              for (final d in _srvDays)
+                (day: d.label, pickups: d.pickupCount, deliveries: d.deliveryCount)
+            ]
+          : [
           (
             day: 'Earlier',
             pickups: 0,
@@ -377,12 +448,46 @@ class RiderMock extends ChangeNotifier {
             deliveries: deliveriesToday
           ),
         ];
-  int get pickupsWeek => weekDays.fold(0, (s, d) => s + d.pickups);
-  int get deliveriesWeek =>
-      !useMock ? _srvWeekCount : weekDays.fold(0, (s, d) => s + d.deliveries);
+  int get pickupsWeek => !useMock
+      ? _srvThisWeek.fold(0, (s, d) => s + d.pickupCount)
+      : weekDays.fold(0, (s, d) => s + d.pickups);
+  int get deliveriesWeek => !useMock
+      ? (_srvDays.isEmpty
+          ? _srvWeekCount
+          : _srvThisWeek.fold(0, (s, d) => s + d.deliveryCount))
+      : weekDays.fold(0, (s, d) => s + d.deliveries);
   double get earnedWeek => !useMock
       ? _srvWeek
       : pickupsWeek * kPickupRate + deliveriesWeek * kDeliveryRate;
+
+  /// Peso amounts for the Wallet breakdown. Mock: count × rate.
+  /// API: what the server recorded ("delivery" also holds any other type,
+  /// so pickup + delivery always equals the total).
+  double pickupAmount({required bool week}) => !useMock
+      ? _srvRange(week).fold(0.0, (s, d) => s + d.pickup)
+      : (week ? pickupsWeek : pickupsToday) * kPickupRate;
+  double deliveryAmount({required bool week}) => !useMock
+      ? (_srvDays.isEmpty
+          ? (week ? _srvWeek : _srvToday)
+          : _srvRange(week).fold(0.0, (s, d) => s + d.total - d.pickup))
+      : (week ? deliveriesWeek : deliveriesToday) * kDeliveryRate;
+
+  /// Weekly chart bars in pesos, today last. API: real per-day earnings for
+  /// the last 7 days (0.00 days included). Mock: counts × mock rates.
+  List<({String day, double pickup, double delivery})> get weekBars =>
+      !useMock && _srvDays.isNotEmpty
+          ? [
+              for (final d in _srvDays)
+                (day: d.label, pickup: d.pickup, delivery: d.total - d.pickup)
+            ]
+          : [
+              for (final d in weekDays)
+                (
+                  day: d.day,
+                  pickup: d.pickups * kPickupRate,
+                  delivery: d.deliveries * kDeliveryRate
+                )
+            ];
 
   MockJob? byId(String id) {
     for (final j in _jobs) {
@@ -442,11 +547,12 @@ class RiderMock extends ChangeNotifier {
     _jobs.clear();
     _remits.clear();
     _notifications.clear();
-    _droppedPickupIds.clear();
+    _meRider = null;
     _srvCodHeld = 0;
     _srvCodParcels = 0;
     _srvToday = _srvWeek = 0;
     _srvTodayCount = _srvWeekCount = 0;
+    _srvDays = const [];
     _loadError = null;
     notifyListeners();
   }
@@ -475,12 +581,18 @@ class RiderMock extends ChangeNotifier {
   }
 
   /// 2 → 3: pickup handed over at the hub.
-  /// MOCK in both modes: the backend has no rider "drop at hub" endpoint yet.
-  void dropAtHub(MockJob job) {
+  /// API mode: POST /pickups/{id}/drop-at-hub (server records it once; a
+  /// repeat is a no-op). MOCK mode: in memory only.
+  Future<void> dropAtHub(MockJob job) async {
     if (job.stage != MockStage.pickedUp) return;
-    if (job.serverId != null) _droppedPickupIds.add(job.serverId!);
+    DateTime? at;
+    if (!useMock && job.serverId != null) {
+      final body = await _api.post('/pickups/${job.serverId}/drop-at-hub');
+      final data = (body['data'] as Map?)?.cast<String, dynamic>();
+      at = DateTime.tryParse('${data?['dropped_at']}')?.toLocal();
+    }
     job.stage = MockStage.droppedAtHub;
-    job.completedAt = DateTime.now();
+    job.completedAt = at ?? DateTime.now();
     notifyListeners();
   }
 
@@ -687,9 +799,12 @@ class RiderMock extends ChangeNotifier {
   }
 
   void _applyProfile() {
-    final r = _api.rider;
+    final r = _meRider ?? _api.rider;
     if (r == null) return;
     final status = (r['status'] as String? ?? 'active');
+    final hub = (r['hub'] as Map?)?.cast<String, dynamic>();
+    final hubName = _str(hub?['name']);
+    final company = _str(r['courier_company']);
     profile = MockProfile(
       name: (r['name'] as String?)?.trim().isNotEmpty == true
           ? (r['name'] as String).trim()
@@ -698,15 +813,55 @@ class RiderMock extends ChangeNotifier {
       status: status.isEmpty
           ? 'Active'
           : '${status[0].toUpperCase()}${status.substring(1)}',
-      // TODO(api): hub, municipality and vehicle are not in the rider API yet.
-      hub: 'the hub',
+      // Hub = branch from the approved rider application (GET /me "hub").
+      hub: hubName.isNotEmpty ? hubName : 'your hub',
+      hubAddress: _str(hub?['address']).isEmpty ? null : _str(hub?['address']),
+      hubAssigned: hubName.isNotEmpty,
+      courierCompany: company.isEmpty ? null : company,
+      // TODO(api): municipality is not in the rider API yet.
       municipality: '-',
-      vehicleType: '-',
-      plateNo: '-',
+      // Vehicle from the approved rider application (GET /me); '-' if none.
+      vehicleType: _vehicleLabel(_str(r['vehicle_type'])),
+      plateNo: _str(r['plate_number']).trim().isEmpty
+          ? '-'
+          : _str(r['plate_number']).trim(),
     );
   }
 
+  static String _vehicleLabel(String v) {
+    final s = v.trim();
+    if (s.isEmpty) return '-';
+    return '${s[0].toUpperCase()}${s.substring(1).toLowerCase()}';
+  }
+
+  /// API mode: POST /check-in or /check-out (idempotent on the server).
+  /// Throws ApiException on failure so the shift switch can roll back.
+  /// Mock mode: no-op (the local repository keeps the shift state).
+  Future<void> setOnline(bool online) async {
+    if (useMock || !_api.hasToken) return;
+    final body = await _api.post(online ? '/check-in' : '/check-out');
+    final data = (body['data'] as Map?)?.cast<String, dynamic>();
+    if (_meRider != null && data != null) {
+      _meRider = {..._meRider!, ...data};
+    }
+  }
+
   Future<void> _loadAll() async {
+    try {
+      final me = await _api.get('/me');
+      _meRider = ((me['data'] as Map?)?['rider'] as Map?)?.cast<String, dynamic>();
+      // Keep the server shift status in line with the app's switch (e.g.
+      // the rider went online before this build, or the server was reset).
+      final serverOnline = _meRider?['is_online'];
+      if (serverOnline is bool && serverOnline != riderOnline.value) {
+        unawaited(setOnline(riderOnline.value).catchError((Object e) {
+          debugPrint('RiderMock shift sync failed: $e');
+        }));
+      }
+    } on ApiException catch (e) {
+      if (e.isUnauthorized) rethrow;
+      // Keep the saved login payload if /me fails.
+    }
     _applyProfile();
     final lists = await Future.wait([
       _api.get('/deliveries?status=all&per_page=50'),
@@ -784,6 +939,11 @@ class RiderMock extends ChangeNotifier {
     _srvTodayCount = (earn['today_count'] as num?)?.toInt() ?? 0;
     _srvWeek = (earn['week'] as num?)?.toDouble() ?? 0;
     _srvWeekCount = (earn['week_count'] as num?)?.toInt() ?? 0;
+    _srvDays = (earn['days'] as List? ?? const [])
+        .whereType<Map>()
+        .map((d) => ServerEarningDay.tryParse(d.cast<String, dynamic>()))
+        .whereType<ServerEarningDay>()
+        .toList(growable: false);
     notifyListeners();
   }
 
@@ -889,7 +1049,7 @@ class RiderMock extends ChangeNotifier {
       case 'scheduled':
         stage = MockStage.readyToPickUp;
       case 'picked_up':
-        stage = _droppedPickupIds.contains(job.serverId)
+        stage = d['dropped_at_hub'] is Map
             ? MockStage.droppedAtHub
             : MockStage.pickedUp;
       default:
@@ -908,7 +1068,11 @@ class RiderMock extends ChangeNotifier {
       ..item = count > 0 ? '$count item${count == 1 ? '' : 's'}' : 'Parcel'
       ..weight = d['weight'] == null ? '-' : '${_str(d['weight'])} kg';
     job.sellerArea = _areaOf(job.sellerAddress);
-    if (stage == MockStage.droppedAtHub) job.completedAt ??= DateTime.now();
+    if (stage == MockStage.droppedAtHub) {
+      final drop = (d['dropped_at_hub'] as Map?)?.cast<String, dynamic>();
+      job.completedAt ??=
+          DateTime.tryParse('${drop?['dropped_at']}')?.toLocal() ?? DateTime.now();
+    }
     return true;
   }
 

@@ -1137,3 +1137,121 @@ class HistoryTripDetail {
     );
   }
 }
+
+// ── Delivery Management (GET /delivery-orders, /delivery-riders) ─────────────
+
+class DeliveryOrderItem {
+  const DeliveryOrderItem({
+    required this.id,
+    required this.orderNumber,
+    required this.waybillNumber,
+    required this.status,
+    required this.shippingName,
+    required this.shippingAddress,
+    required this.paymentMethod,
+    required this.codAmount,
+    required this.pickedUp,
+    required this.assignable,
+    this.pickupStatus,
+    this.jobStatus,
+    this.jobRiderName,
+  });
+
+  final int id;
+  final String orderNumber;
+  final String waybillNumber;
+  final String status;
+  final String shippingName;
+  final String shippingAddress;
+  final String paymentMethod;
+  final double codAmount;
+  final bool pickedUp;
+  final bool assignable;
+  final String? pickupStatus;
+  final String? jobStatus;
+  final String? jobRiderName;
+
+  bool get hasJob => jobStatus != null;
+
+  factory DeliveryOrderItem.fromJson(Map<String, dynamic> j) {
+    final job = _readMap(j['job']);
+    return DeliveryOrderItem(
+      id: _readInt(j['id']),
+      orderNumber: _readString(j['order_number']),
+      waybillNumber: _readString(j['waybill_number']),
+      status: _readString(j['status']),
+      shippingName: _readString(j['shipping_name']),
+      shippingAddress: _readString(j['shipping_address']),
+      paymentMethod: _readString(j['payment_method']),
+      codAmount: _readDouble(j['cod_amount']),
+      pickedUp: j['picked_up'] == true,
+      assignable: j['assignable'] == true,
+      pickupStatus: j['pickup_status']?.toString(),
+      jobStatus: job == null ? null : _readString(job['status']),
+      jobRiderName: job?['rider_name']?.toString(),
+    );
+  }
+}
+
+class DeliveryRiderItem {
+  const DeliveryRiderItem({
+    required this.personnelId,
+    required this.name,
+    required this.activeJobs,
+    this.vehicleType,
+  });
+
+  final int personnelId;
+  final String name;
+  final int activeJobs;
+  final String? vehicleType;
+
+  factory DeliveryRiderItem.fromJson(Map<String, dynamic> j) =>
+      DeliveryRiderItem(
+        personnelId: _readInt(j['personnel_id']),
+        name: _readString(j['name']),
+        activeJobs: _readInt(j['active_delivery_jobs']),
+        vehicleType: j['vehicle_type']?.toString(),
+      );
+}
+
+// ── Rider Management, read-only (GET /riders) ────────────────────────────────
+
+class CourierRiderItem {
+  const CourierRiderItem({
+    required this.personnelId,
+    required this.name,
+    required this.status,
+    required this.approved,
+    required this.isOnline,
+    required this.activeJobs,
+    this.contactNumber,
+    this.vehicleType,
+    this.plateNumber,
+    this.lastCheckedInAt,
+  });
+
+  final int personnelId;
+  final String name;
+  final String status;
+  final bool approved;
+  final bool isOnline;
+  final int activeJobs;
+  final String? contactNumber;
+  final String? vehicleType;
+  final String? plateNumber;
+  final String? lastCheckedInAt;
+
+  factory CourierRiderItem.fromJson(Map<String, dynamic> j) => CourierRiderItem(
+        personnelId: _readInt(j['personnel_id']),
+        name: _readString(j['name']),
+        status: _readString(j['status']),
+        approved: j['approved'] == true,
+        isOnline: j['is_online'] == true,
+        activeJobs: _readInt(j['active_delivery_jobs']),
+        contactNumber: j['contact_number']?.toString(),
+        vehicleType: j['vehicle_type']?.toString(),
+        plateNumber: j['plate_number']?.toString(),
+        lastCheckedInAt: j['last_checked_in_at']?.toString(),
+      );
+}

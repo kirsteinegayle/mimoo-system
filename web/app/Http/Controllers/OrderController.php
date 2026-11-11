@@ -388,6 +388,7 @@ class OrderController extends Controller
 
         return Inertia::render('MyPurchases', [
             'orders' => $orders,
+            'returnReasons' => \App\Models\ReturnRequest::REASONS,
         ]);
     }
 
@@ -404,6 +405,61 @@ class OrderController extends Controller
     }
 
     /**
+     * Distinct sellers of an order (for "Chat with seller"): [{id, name}].
+     * Expects items.seller to be loaded.
+     */
+    private function orderSellers(Order $order): array
+    {
+        return $order->items
+            ->filter(fn ($item) => $item->seller_id && $item->seller)
+            ->unique('seller_id')
+            ->map(fn ($item) => [
+                'id'   => (int) $item->seller_id,
+                'name' => $item->seller->business_name ?: $item->seller->name,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Return + review state of an order for the buyer web (same rules as the
+     * mobile API via ReturnReviewRules). Additive fields only.
+     *
+     * @return array{order: array, items: array<int, array>}
+     */
+    private function returnReviewState(Order $order): array
+    {
+        $latest  = \App\Services\ReturnReviewRules::latestReturn($order);
+        $open    = \App\Services\ReturnReviewRules::reviewWindowOpen($order);
+        $reviews = \App\Models\Review::whereIn('order_item_id', $order->items->pluck('id'))->get()->keyBy('order_item_id');
+
+        $items = [];
+        foreach ($order->items as $item) {
+            $review = $reviews->get($item->id);
+            $items[$item->id] = [
+                'review'     => $review ? [
+                    'id'       => $review->id,
+                    'rating'   => $review->rating,
+                    'comment'  => $review->comment,
+                    'can_edit' => $review->canBeEdited(),
+                ] : null,
+                'can_review' => ! $review && $open,
+            ];
+        }
+
+        return [
+            'order' => [
+                'can_return'    => \App\Services\ReturnReviewRules::canReturn($order, $latest),
+                'return_status' => $latest?->status,
+                'return_id'     => $latest?->id,
+                'reviewed'      => $reviews->isNotEmpty(),
+                'can_review'    => collect($items)->contains(fn ($i) => $i['can_review']),
+            ],
+            'items' => $items,
+        ];
+    }
+
+    /**
      * Get formatted orders data.
      */
     private function getOrdersData(): array
@@ -412,7 +468,10 @@ class OrderController extends Controller
             ->with(['items.product', 'items.seller', 'assignedCourier'])
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(fn($order) => [
+            ->map(function ($order) {
+                // Return/review flags (additive): same rules as the mobile API.
+                $rr = $this->returnReviewState($order);
+                return [
                 'id' => $order->id,
                 'order_number' => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
                 'waybill_number' => $order->waybill_number,
@@ -433,13 +492,16 @@ class OrderController extends Controller
                     'product_name' => $item->product_name,
                     'product_image' => $item->product?->main_image,
                     'seller_name' => $item->seller?->name,
+                    'seller_id' => $item->seller_id,
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                     'subtotal' => (float) ($item->quantity * $item->unit_price),
                     'variant_id' => $item->variant_id,
                     'variant_snapshot' => $item->variant_snapshot,
-                ]),
-            ])
+                ] + ($rr['items'][$item->id] ?? [])),
+                'sellers' => $this->orderSellers($order),
+            ] + $rr['order'];
+            })
             ->toArray();
     }
 
@@ -448,12 +510,14 @@ class OrderController extends Controller
      */
     public function show(int $id): Response
     {
-        $order = Order::with(['items.product', 'assignedCourier', 'currentFacility'])->findOrFail($id);
+        $order = Order::with(['items.product', 'items.seller', 'assignedCourier', 'currentFacility'])->findOrFail($id);
 
         // Ensure buyer can only see their own order
         if ($order->buyer_id !== Auth::id()) {
             abort(403);
         }
+
+        $rr = $this->returnReviewState($order);
 
         return Inertia::render('OrderDetail', [
             'order' => [
@@ -483,8 +547,13 @@ class OrderController extends Controller
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                     'subtotal' => (float) $item->subtotal,
-                ]),
-            ],
+                    'seller_id' => $item->seller_id,
+                    'seller_name' => $item->seller ? ($item->seller->business_name ?: $item->seller->name) : null,
+                ] + ($rr['items'][$item->id] ?? [])),
+                'sellers' => $this->orderSellers($order),
+            ] + $rr['order'],
+            // Same list as the mobile API validates against.
+            'returnReasons' => \App\Models\ReturnRequest::REASONS,
         ]);
     }
 
