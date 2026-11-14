@@ -41,6 +41,52 @@ class SellerNotificationService
         });
     }
 
+    /** A buyer opened a return request: tell the seller(s) of the order once (they used to find out only by opening the page). */
+    public static function returnRequested(\App\Models\ReturnRequest $rr): void
+    {
+        self::safely(function () use ($rr) {
+            if (! $rr->order_id) {
+                return;
+            }
+            $sellers = $rr->seller_id ? [(int) $rr->seller_id] : self::sellersOf((int) $rr->order_id);
+            $num     = BuyerNotificationService::orderNumber((int) $rr->order_id);
+            self::createFor($sellers, (int) $rr->order_id, 'return_requested', 'New return request',
+                "A buyer requested a return for order {$num}.", 'return_requested:' . $rr->id, ['return_id' => $rr->id], '/seller/returns');
+        });
+    }
+
+    /** Buyer escalated a rejected return: tell every seller of that order, once per request. */
+    public static function returnEscalated(\App\Models\ReturnRequest $rr): void
+    {
+        self::safely(function () use ($rr) {
+            if (! $rr->order_id) {
+                return;
+            }
+            $num = BuyerNotificationService::orderNumber((int) $rr->order_id);
+            self::createFor(self::sellersOf((int) $rr->order_id), (int) $rr->order_id, 'return_escalated', 'Return escalated',
+                "The buyer escalated the return request for order {$num} to admin review.", 'return_escalated:' . $rr->id,
+                ['return_id' => $rr->id], '/seller/returns');
+        });
+    }
+
+    /** Generic one-recipient notification (used by role messaging); same dedupe + after-commit insert. */
+    public static function custom(int $sellerId, string $type, string $title, string $message, string $key, array $data, string $url): void
+    {
+        self::safely(function () use ($sellerId, $type, $title, $message, $key, $data, $url) {
+            DB::afterCommit(function () use ($sellerId, $type, $title, $message, $key, $data, $url) {
+                try {
+                    $now = now();
+                    DB::table('seller_notifications')->insertOrIgnore([
+                        'seller_id' => $sellerId, 'type' => $type, 'title' => $title, 'message' => $message,
+                        'data' => json_encode($data), 'url' => $url, 'dedupe_key' => $key, 'created_at' => $now, 'updated_at' => $now,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::warning('Seller notification insert failed: ' . $e->getMessage(), ['key' => $key]);
+                }
+            });
+        });
+    }
+
     public static function shipmentUpdated(ShipmentAssignment $sa): void
     {
         self::safely(function () use ($sa) {
@@ -90,13 +136,13 @@ class SellerNotificationService
     }
 
     private static function createFor(array $sellerIds, int $orderId, string $type, string $title,
-        string $message, string $key, array $extra = []): void
+        string $message, string $key, array $extra = [], string $url = self::URL): void
     {
         if ($sellerIds === []) {
             return;
         }
 
-        DB::afterCommit(function () use ($sellerIds, $orderId, $type, $title, $message, $key, $extra) {
+        DB::afterCommit(function () use ($sellerIds, $orderId, $type, $title, $message, $key, $extra, $url) {
             try {
                 $now  = now();
                 $data = json_encode(['order_id' => $orderId] + $extra);
@@ -106,7 +152,7 @@ class SellerNotificationService
                     'title'      => $title,
                     'message'    => $message,
                     'data'       => $data,
-                    'url'        => self::URL,
+                    'url'        => $url,
                     'dedupe_key' => $key,
                     'created_at' => $now,
                     'updated_at' => $now,

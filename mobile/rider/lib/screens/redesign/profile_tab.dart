@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../core/auth_controller.dart';
 import '../../core/rider_status_controller.dart';
 import '../../core/theme.dart';
+import '../../core/api_config.dart';
+import '../../data/api/team_messages_service.dart';
 import '../../data/repositories/app_repositories_scope.dart';
 import '../../mock/rider_mock.dart';
 import '../../widgets/motion.dart';
@@ -140,7 +142,7 @@ class ProfileTab extends StatelessWidget {
               _divider(),
               _link(c, Icons.chat_bubble_outline_rounded, 'Messages',
                   () => openMessages(context),
-                  badge: mock.unreadMessages),
+                  badge: useMock ? mock.unreadMessages : TeamMessagesService.unread.value),
               _divider(),
               _link(
                   c,

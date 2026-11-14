@@ -12,6 +12,7 @@ import {
     Truck,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useAdminListFilters, type AdminListFilters, type AdminListPagination } from '@/hooks/use-admin-list-filters';
 import AdminShell from '@/layouts/admin/admin-shell';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -36,6 +37,8 @@ interface Stats {
 interface Props {
     registrations: Registration[];
     stats: Stats;
+    filters: AdminListFilters;
+    pagination: AdminListPagination;
 }
 
 // ─── Stat cards ───────────────────────────────────────────────────────────────
@@ -122,9 +125,8 @@ function StatusBadge({ status }: { status: 'pending' | 'approved' | 'disapproved
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function LogisticsApproval({ registrations, stats }: Props) {
-    const [statusFilter, setStatusFilter] = useState('All');
-    const [search, setSearch] = useState('');
+export default function LogisticsApproval({ registrations, stats, filters, pagination }: Props) {
+    const { statusFilter, setStatusFilter, search, setSearch, sort, setSort, goToPage } = useAdminListFilters('/admin/logistics-approval', filters);
     const [selectedLogistics, setSelectedLogistics] = useState<any>(null);
     const [showModal, setShowModal] = useState(false);
     const [loadingDetails, setLoadingDetails] = useState(false);
@@ -141,18 +143,8 @@ export default function LogisticsApproval({ registrations, stats }: Props) {
         return () => window.removeEventListener('keydown', handleEsc);
     }, [previewDoc]);
 
-    // Filter registrations
-    const filteredRegistrations = registrations.filter((reg) => {
-        const matchesStatus =
-            statusFilter === 'All' ||
-            reg.status.toLowerCase() === statusFilter.toLowerCase();
-        const matchesSearch =
-            search === '' ||
-            reg.company_name.toLowerCase().includes(search.toLowerCase()) ||
-            reg.email.toLowerCase().includes(search.toLowerCase());
-
-        return matchesStatus && matchesSearch;
-    });
+    // Filtering, sorting and paging happen on the server (see useAdminListFilters).
+    const filteredRegistrations = registrations;
 
     async function handleViewDetails(userId: number) {
         setLoadingDetails(true);
@@ -239,9 +231,14 @@ export default function LogisticsApproval({ registrations, stats }: Props) {
                             </div>
                             {/* Sort */}
                             <div className="relative">
-                                <select className="h-8 appearance-none rounded-md border border-gray-200 bg-white pl-3 pr-7 text-xs text-gray-600 shadow-sm focus:outline-none">
-                                    <option>Newest first</option>
-                                    <option>Oldest first</option>
+                                <select
+                                    value={sort}
+                                    onChange={(e) => setSort(e.target.value)}
+                                    aria-label="Sort by date"
+                                    className="h-8 appearance-none rounded-md border border-gray-200 bg-white pl-3 pr-7 text-xs text-gray-600 shadow-sm focus:outline-none"
+                                >
+                                    <option value="newest">Newest first</option>
+                                    <option value="oldest">Oldest first</option>
                                 </select>
                                 <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
                             </div>
@@ -387,9 +384,33 @@ export default function LogisticsApproval({ registrations, stats }: Props) {
                     {/* Table footer / pagination stub */}
                     <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3">
                         <p className="text-xs text-gray-400">
-                            Showing {filteredRegistrations.length} of {registrations.length} result
-                            {registrations.length !== 1 ? 's' : ''}
+                            {pagination.total === 0
+                                ? 'No results'
+                                : `Showing ${pagination.from}-${pagination.to} of ${pagination.total} result${pagination.total !== 1 ? 's' : ''}`}
                         </p>
+                        {pagination.last_page > 1 && (
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    disabled={pagination.current_page <= 1}
+                                    onClick={() => goToPage(pagination.current_page - 1)}
+                                    className="h-7 rounded-md border border-gray-200 px-3 text-xs text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Previous
+                                </button>
+                                <span className="text-xs text-gray-500">
+                                    Page {pagination.current_page} of {pagination.last_page}
+                                </span>
+                                <button
+                                    type="button"
+                                    disabled={pagination.current_page >= pagination.last_page}
+                                    onClick={() => goToPage(pagination.current_page + 1)}
+                                    className="h-7 rounded-md border border-gray-200 px-3 text-xs text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 

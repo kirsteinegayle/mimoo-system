@@ -26,7 +26,7 @@ class DeliveryManagementController extends Controller
 
     public function index(Request $request)
     {
-        $courier = $request->user();
+        $courier = \App\Support\CourierCompanyResolver::scope($request->user());
 
         $pickupStatus = ShipmentAssignment::where('courier_id', $courier->id)
             ->where('assignment_status', 'accepted')
@@ -68,7 +68,7 @@ class DeliveryManagementController extends Controller
                     'shipping_name' => $o->shipping_name,
                     'shipping_address' => $o->shipping_address,
                     'payment_method' => $o->payment_method,
-                    'cod_amount' => strtolower((string) $o->payment_method) === 'cod' && strtolower((string) $o->payment_status) !== 'paid'
+                    'cod_amount' => strtolower((string) $o->payment_method) === 'cod' && ! in_array(strtolower((string) $o->payment_status), ['paid', 'refunded'], true)
                         ? (float) $o->total : 0.0,
                     'picked_up' => $pickedUp,
                     'assignable' => ! $job && $pickedUp && in_array($o->status, self::ASSIGNABLE_ORDER_STATUSES, true),

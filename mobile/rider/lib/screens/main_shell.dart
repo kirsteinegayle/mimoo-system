@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/api_config.dart';
 import '../core/rider_status_controller.dart';
+import '../data/api/team_messages_service.dart';
 import '../mock/rider_mock.dart';
 import '../widgets/motion.dart';
 import '../widgets/shell.dart';
@@ -28,11 +29,17 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   bool _refreshedLocation = false;
 
   String? _shownLoadError;
+  Timer? _unreadTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Real unread messages for the header badge (every 30 s while the shell is open).
+    if (!useMock) {
+      unawaited(TeamMessagesService.instance.refreshUnread());
+      _unreadTimer = Timer.periodic(const Duration(seconds: 30), (_) => TeamMessagesService.instance.refreshUnread());
+    }
     // API mode: load jobs / wallet / notifications once the shell opens.
     RiderMock.instance.addListener(_onStoreChanged);
     if (!useMock) unawaited(RiderMock.instance.refresh());
@@ -67,6 +74,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _unreadTimer?.cancel();
     RiderMock.instance.removeListener(_onStoreChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -101,10 +109,10 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final mock = RiderMock.instance;
     return ListenableBuilder(
-      listenable: mock,
+      listenable: Listenable.merge([mock, TeamMessagesService.unread]),
       builder: (context, _) => Scaffold(
         appBar: MimooAppBar(
-          unreadMessages: mock.unreadMessages,
+          unreadMessages: useMock ? mock.unreadMessages : TeamMessagesService.unread.value,
           unreadNotifications: mock.unreadNotifications,
           onMessages: () => openMessages(context),
           onNotifications: () => Navigator.of(context).push(

@@ -6,7 +6,6 @@ import '../../services/order_repository.dart';
 import 'real_order_actions.dart';
 import 'delivery_chat_page.dart';
 import '../../widgets/order_tracking_section.dart';
-import '../../widgets/delivery_code_card.dart';
 import '../../widgets/proof_of_delivery_card.dart';
 import '../../theme/app_theme.dart';
 
@@ -114,8 +113,7 @@ class _ApiOrderDetailPageState extends State<ApiOrderDetailPage> {
                       )),
                       // Status timeline + delivery-address map (map only
                       // for shipped / completed; text fallback otherwise).
-                      // Rider OTP — only visible while an active code exists.
-                      DeliveryCodeCard(orderId: o.id),
+                      // The rider delivery code was removed (proof of delivery photo only): no code card.
                       // Rider chat — in transit / To Receive orders only.
                       if (o.status == api_order.OrderStatus.shipped ||
                           o.status == api_order.OrderStatus.inTransit ||

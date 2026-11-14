@@ -21,6 +21,7 @@ import BuyerProductReportController from './BuyerProductReportController'
 import CourierAuthController from './CourierAuthController'
 import CourierDashboardController from './CourierDashboardController'
 import CourierShipmentController from './CourierShipmentController'
+import CourierAppNotificationController from './CourierAppNotificationController'
 import CourierPickupController from './CourierPickupController'
 import CourierScanController from './CourierScanController'
 import CourierFacilityApiController from './CourierFacilityApiController'
@@ -57,6 +58,7 @@ BuyerProductReportController: Object.assign(BuyerProductReportController, BuyerP
 CourierAuthController: Object.assign(CourierAuthController, CourierAuthController),
 CourierDashboardController: Object.assign(CourierDashboardController, CourierDashboardController),
 CourierShipmentController: Object.assign(CourierShipmentController, CourierShipmentController),
+CourierAppNotificationController: Object.assign(CourierAppNotificationController, CourierAppNotificationController),
 CourierPickupController: Object.assign(CourierPickupController, CourierPickupController),
 CourierScanController: Object.assign(CourierScanController, CourierScanController),
 CourierFacilityApiController: Object.assign(CourierFacilityApiController, CourierFacilityApiController),

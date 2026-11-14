@@ -16,7 +16,7 @@ class FacilityController extends Controller
      */
     public function index()
     {
-        $courier = Auth::user();
+        $courier = \App\Support\CourierCompanyResolver::scope(Auth::user());
         
         $facilities = CourierFacility::where('courier_id', $courier->id)
             ->with('parentFacility')
@@ -63,7 +63,7 @@ class FacilityController extends Controller
      */
     public function store(Request $request)
     {
-        $courier = Auth::user();
+        $courier = \App\Support\CourierCompanyResolver::scope(Auth::user());
 
         $validated = $request->validate([
             'facility_name' => [
@@ -129,7 +129,7 @@ class FacilityController extends Controller
      */
     public function update(Request $request, CourierFacility $facility)
     {
-        $courier = Auth::user();
+        $courier = \App\Support\CourierCompanyResolver::scope(Auth::user());
 
         // Ensure facility belongs to authenticated courier
         if ($facility->courier_id !== $courier->id) {
@@ -189,7 +189,7 @@ class FacilityController extends Controller
      */
     public function destroy(CourierFacility $facility)
     {
-        $courier = Auth::user();
+        $courier = \App\Support\CourierCompanyResolver::scope(Auth::user());
 
         // Ensure facility belongs to authenticated courier
         if ($facility->courier_id !== $courier->id) {
@@ -213,7 +213,7 @@ class FacilityController extends Controller
      */
     public function generateFromServiceAreas(Request $request)
     {
-        $courier = Auth::user();
+        $courier = \App\Support\CourierCompanyResolver::scope(Auth::user());
         
         // Get courier's registered service areas from courier_companies table or registration data
         // For now, we'll accept cities from the request

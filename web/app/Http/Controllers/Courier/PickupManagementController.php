@@ -7,6 +7,7 @@ use App\Models\CourierPersonnel;
 use App\Models\ShipmentAssignment;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class PickupManagementController extends Controller
@@ -17,7 +18,8 @@ class PickupManagementController extends Controller
      */
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         // Build query - MUST filter by assignment_status='accepted'
         $query = ShipmentAssignment::with([
@@ -213,7 +215,8 @@ class PickupManagementController extends Controller
      */
     public function show($id)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         $assignment = ShipmentAssignment::with([
             'order.items',
@@ -290,7 +293,8 @@ class PickupManagementController extends Controller
      */
     public function schedule(Request $request, $id)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         $request->validate([
             'scheduled_date' => 'required|date|after_or_equal:today',
@@ -314,7 +318,7 @@ class PickupManagementController extends Controller
             'scheduled_time_window' => $request->scheduled_time_window,
         ]);
 
-        $assignment->addHistory('scheduled', $user->id, "Scheduled for {$request->scheduled_date} {$request->scheduled_time_window}");
+        $assignment->addHistory('re-assigned', $actor->id, "Pickup scheduled for {$request->scheduled_date} {$request->scheduled_time_window}");
 
         return response()->json([
             'success' => true,
@@ -327,7 +331,8 @@ class PickupManagementController extends Controller
      */
     public function assignPersonnel(Request $request, $id)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         $request->validate([
             'personnel_id' => 'required|exists:courier_personnel,id',
@@ -336,7 +341,7 @@ class PickupManagementController extends Controller
         // Shared rules (same as the courier app): rider personnel of this courier
         // with an active rider-app account; pickup not yet picked up / cancelled.
         // The assignment row is locked so a rider scan cannot race the reassign.
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $user, $id) {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $user, $actor, $id) {
             $assignment = ShipmentAssignment::where('courier_id', $user->id)
                 ->where('assignment_status', 'accepted')
                 ->lockForUpdate()
@@ -354,7 +359,7 @@ class PickupManagementController extends Controller
 
             // 're-assigned' (same as the courier app): 'personnel_assigned' is not in the
             // shipment_assignment_history.action enum and made this request fail.
-            $assignment->addHistory('re-assigned', $user->id, "Assigned to {$personnel->name}");
+            $assignment->addHistory('re-assigned', $actor->id, "Assigned to {$personnel->name}");
 
             return response()->json([
                 'success' => true,
@@ -368,7 +373,8 @@ class PickupManagementController extends Controller
      */
     public function reschedule(Request $request, $id)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         $request->validate([
             'scheduled_date' => 'required|date|after_or_equal:today',
@@ -397,8 +403,8 @@ class PickupManagementController extends Controller
         ]);
 
         $assignment->addHistory(
-            're-scheduled',
-            $user->id,
+            're-assigned', // schema-safe enum value (assigned|accepted|rejected|re-assigned); wording kept in notes
+            $actor->id,
             "Rescheduled to {$request->scheduled_date} {$request->scheduled_time_window}. Reason: {$request->reason}"
         );
 
@@ -413,7 +419,8 @@ class PickupManagementController extends Controller
      */
     public function cancel(Request $request, $id)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         $request->validate([
             'reason' => 'required|string|min:10|max:500',
@@ -446,7 +453,7 @@ class PickupManagementController extends Controller
             'cancellation_reason' => $reason,
         ]);
 
-        $assignment->addHistory('cancelled', $user->id, $reason);
+        $assignment->addHistory('rejected', $actor->id, "Pickup cancelled: {$reason}");
 
         return response()->json([
             'success' => true,
@@ -459,7 +466,8 @@ class PickupManagementController extends Controller
      */
     public function recordFailed(Request $request, $id)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         $request->validate([
             'reason' => 'required|string|min:10|max:500',
@@ -496,7 +504,7 @@ class PickupManagementController extends Controller
             'last_attempt_at' => now(),
         ]);
 
-        $assignment->addHistory('failed_attempt', $user->id, "Attempt #{$attemptCount} failed. Reason: {$reason}");
+        $assignment->addHistory('rejected', $actor->id, "Attempt #{$attemptCount} failed. Reason: {$reason}");
 
         $warning = $attemptCount >= 3 
             ? "This is attempt #{$attemptCount}. Consider cancelling if pickup cannot be completed." 
@@ -515,7 +523,8 @@ class PickupManagementController extends Controller
      */
     public function confirmPickup(Request $request, $id)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         $request->validate([
             'scanned_waybill' => 'required|string',
@@ -527,6 +536,11 @@ class PickupManagementController extends Controller
             ->where('assignment_status', 'accepted')
             ->with('order')
             ->findOrFail($id);
+
+        // Already picked up (e.g. the rider scanned a moment ago): nothing to do, nothing doubled.
+        if ($assignment->pickup_status === 'picked_up') {
+            return response()->json(['success' => true, 'message' => 'Pickup was already confirmed.', 'idempotent' => true]);
+        }
 
         if (!$assignment->canTransitionTo('picked_up')) {
             return response()->json([
@@ -546,13 +560,24 @@ class PickupManagementController extends Controller
             ], 400);
         }
 
-        $assignment->update([
-            'pickup_status' => 'picked_up',
-            'picked_up_at' => now(),
-            'picked_up_by' => $user->id,
-        ]);
+        $claimed = DB::transaction(function () use ($assignment, $actor) {
+            // Row lock + re-check: a rider scan and this confirm can never both write.
+            $locked = ShipmentAssignment::whereKey($assignment->id)->lockForUpdate()->first();
+            if (! $locked || $locked->pickup_status === 'picked_up' || ! $locked->canTransitionTo('picked_up')) {
+                return false;
+            }
+            $locked->update([
+                'pickup_status' => 'picked_up',
+                'picked_up_at' => now(),
+                'picked_up_by' => $actor->id,
+            ]);
+            $locked->addHistory('accepted', $actor->id, 'Parcel picked up and scanned');
 
-        $assignment->addHistory('picked_up', $user->id, "Parcel picked up and scanned");
+            return true;
+        });
+        if (! $claimed) {
+            return response()->json(['success' => true, 'message' => 'Pickup was already confirmed.', 'idempotent' => true]);
+        }
 
         return response()->json([
             'success' => true,

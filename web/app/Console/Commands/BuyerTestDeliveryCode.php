@@ -15,14 +15,14 @@ use Illuminate\Support\Str;
 /**
  * artisan buyer:test-delivery-code
  *
- * End-to-end checks for GET /api/buyer/orders/{id}/delivery-code using the
- * REAL rider flow (DEMO data only):
- *   BC-1 rider goes out for delivery and requests a code
- *   BC-2 owner buyer sees a 6-digit code (stored encrypted, not plain)
- *   BC-3 another buyer gets the same 404 (no code)
+ * End-to-end checks for the delivery flow WITHOUT a delivery code (proof of delivery only),
+ * using the REAL rider flow (DEMO data only):
+ *   BC-1 rider goes out for delivery; an old app's code request issues nothing
+ *   BC-2 owner buyer sees no code (code null, reason not_required)
+ *   BC-3 another buyer gets the same 404
  *   BC-4 no token gets 401
- *   BC-5 rider delivers with the SAME digits the buyer saw -> accepted
- *   BC-6 after delivery the buyer gets no code and code_encrypted is cleared
+ *   BC-5 deliver without the POD photo -> 422 with a clear message
+ *   BC-6 POD + deliver -> accepted (a stray otp field is ignored)
  *
  * Needs: rider:demo-seed + rider:demo-delivery. This DELIVERS the demo job, so
  * afterwards run rider:demo-clean, rider:demo-seed, rider:demo-delivery for
@@ -79,23 +79,20 @@ class BuyerTestDeliveryCode extends Command
             $codePath = "/api/buyer/orders/{$job->order_id}/delivery-code";
             $base     = "/api/rider-app/deliveries/{$job->id}";
 
-            // BC-1 rider: out for delivery + request code
+            // BC-1 rider: out for delivery. An old app may still ask for a code: nothing is issued.
             $r1 = $this->call2('POST', "{$base}/out-for-delivery", $riderToken);
             $r2 = $this->call2('POST', "{$base}/otp", $riderToken);
-            $r1->getStatusCode() === 200 && $r2->getStatusCode() === 200
-                ? $this->ok('BC-1', 'rider out for delivery and requested a code')
+            $b2 = json_decode($r2->getContent(), true) ?? [];
+            $r1->getStatusCode() === 200 && $r2->getStatusCode() === 200 && ! isset($b2['debug_otp']) && $job->otps()->count() === 0
+                ? $this->ok('BC-1', 'rider out for delivery; the old code request issues nothing')
                 : $this->bad('BC-1', "HTTP {$r1->getStatusCode()} / {$r2->getStatusCode()}");
 
-            // BC-2 owner sees the code; DB holds it encrypted, not plain
+            // BC-2 owner buyer: the code card stays hidden (code null, reason not_required)
             $r = $this->call2('GET', $codePath, $buyerToken);
-            $seen = json_decode($r->getContent(), true)['data']['code'] ?? null;
-            $enc  = $job->otps()->whereNull('verified_at')->latest('id')->value('code_encrypted');
-            if ($r->getStatusCode() === 200 && is_string($seen) && preg_match('/^\d{6}$/', $seen)
-                && is_string($enc) && ! str_contains($enc, $seen)) {
-                $this->ok('BC-2', 'owner sees a 6-digit code; stored encrypted');
-            } else {
-                $this->bad('BC-2', 'HTTP ' . $r->getStatusCode() . ' ' . substr($r->getContent(), 0, 120));
-            }
+            $d = json_decode($r->getContent(), true)['data'] ?? [];
+            $r->getStatusCode() === 200 && array_key_exists('code', $d) && $d['code'] === null && ($d['reason'] ?? '') === 'not_required'
+                ? $this->ok('BC-2', 'owner sees no code (' . ($d['reason'] ?? '') . ')')
+                : $this->bad('BC-2', 'HTTP ' . $r->getStatusCode() . ' ' . substr($r->getContent(), 0, 120));
 
             // BC-3 another buyer
             $r = $this->call2('GET', $codePath, $otherToken);
@@ -110,24 +107,23 @@ class BuyerTestDeliveryCode extends Command
                 ? $this->ok('BC-4', 'no token gets 401')
                 : $this->bad('BC-4', 'HTTP ' . $r->getStatusCode());
 
-            // BC-5 rider delivers with the digits the buyer saw (hash check)
-            $pod = $this->callPod("{$base}/pod", $riderToken);
-            $body = ['otp' => (string) $seen];
+            // BC-5 delivering without the POD photo is refused with a clear message
+            $body = [];
             if ($job->hasCod()) {
                 $body['cod_collected'] = (float) $job->cod_amount;
             }
             $r = $this->call2('POST', "{$base}/deliver", $riderToken, $body);
-            $pod->getStatusCode() === 200 && $r->getStatusCode() === 200
-                ? $this->ok('BC-5', 'rider deliver accepted the same 6 digits')
-                : $this->bad('BC-5', "POD HTTP {$pod->getStatusCode()}, deliver HTTP {$r->getStatusCode()} " . substr($r->getContent(), 0, 120));
+            $m = json_decode($r->getContent(), true)['message'] ?? '';
+            $r->getStatusCode() === 422 && str_contains($m, 'Proof of delivery is required')
+                ? $this->ok('BC-5', 'no POD: 422 "' . $m . '"')
+                : $this->bad('BC-5', 'HTTP ' . $r->getStatusCode() . ' ' . substr($r->getContent(), 0, 120));
 
-            // BC-6 after delivery: no code, encrypted copy cleared
-            $r = $this->call2('GET', $codePath, $buyerToken);
-            $d = json_decode($r->getContent(), true)['data'] ?? [];
-            $left = $job->otps()->whereNotNull('code_encrypted')->count();
-            $r->getStatusCode() === 200 && array_key_exists('code', $d) && $d['code'] === null && $left === 0
-                ? $this->ok('BC-6', 'after delivery: code null (' . ($d['reason'] ?? '') . '), code_encrypted cleared')
-                : $this->bad('BC-6', 'HTTP ' . $r->getStatusCode() . " encrypted rows left={$left}");
+            // BC-6 with the POD photo it is delivered (no code asked; a stray otp field is ignored)
+            $pod = $this->callPod("{$base}/pod", $riderToken);
+            $r = $this->call2('POST', "{$base}/deliver", $riderToken, $body + ['otp' => '000000']);
+            $pod->getStatusCode() === 200 && $r->getStatusCode() === 200
+                ? $this->ok('BC-6', 'POD + deliver accepted, otp field ignored')
+                : $this->bad('BC-6', "POD HTTP {$pod->getStatusCode()}, deliver HTTP {$r->getStatusCode()} " . substr($r->getContent(), 0, 120));
         } finally {
             $buyer->tokens()->where('name', 'bc-test')->delete();
             if ($other) {

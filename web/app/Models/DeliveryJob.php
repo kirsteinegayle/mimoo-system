@@ -39,7 +39,11 @@ class DeliveryJob extends Model
     /** Seller notification on out for delivery / delivered / failed (never throws). */
     protected static function booted(): void
     {
-        static::updated(fn (DeliveryJob $job) => \App\Services\SellerNotificationService::deliveryJobUpdated($job));
+        static::updated(function (DeliveryJob $job) {
+            \App\Services\SellerNotificationService::deliveryJobUpdated($job);
+            \App\Services\CourierNotificationService::deliveryJobUpdated($job);
+        });
+        static::created(fn (DeliveryJob $job) => \App\Services\CourierNotificationService::deliveryJobCreated($job));
     }
 
     protected $fillable = [

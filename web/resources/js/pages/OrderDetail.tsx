@@ -239,8 +239,7 @@ export default function OrderDetail({ order, auth, returnReasons = [] }: PagePro
         )}
 
         {/* Tracking information */}
-        {/* Rider delivery code (hidden unless active) */}
-        <DeliveryCodeBanner orderId={order.id} />
+        {/* The rider delivery code was removed: proof of delivery (photo) confirms the delivery */}
 
         {order.tracking_message && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -431,8 +430,8 @@ export default function OrderDetail({ order, auth, returnReasons = [] }: PagePro
             
             <div className="flex justify-between text-gray-600">
               <span>Payment Status</span>
-              <span className={`font-medium ${order.payment_status === "paid" ? "text-green-600" : "text-yellow-600"}`}>
-                {order.payment_status === "paid" ? "Paid" : "Unpaid"}
+              <span className={`font-medium ${order.payment_status === "paid" ? "text-green-600" : order.payment_status === "refunded" ? "text-blue-600" : "text-yellow-600"}`}>
+                {order.payment_status === "paid" ? "Paid" : order.payment_status === "refunded" ? "Refunded" : "Unpaid"}
               </span>
             </div>
             

@@ -107,8 +107,31 @@ class BuyerNotificationService
                 'return_status',
                 $title,
                 sprintf($tpl, self::orderNumber($rr->order_id)),
-                ['order_id' => $rr->order_id, 'return_id' => $rr->id, 'status' => $status]
+                ['order_id' => $rr->order_id, 'return_id' => $rr->id, 'status' => $status, 'url' => '/returns']
             );
+        });
+    }
+
+    /**
+     * Refund status changes. "refunded" is NOT repeated here: it is the same moment the
+     * return request becomes refunded, which already sends "Refund completed".
+     */
+    public static function refundStatusChanged(\App\Models\Refund $refund): void
+    {
+        self::safely(function () use ($refund) {
+            $copy = [
+                'processing' => ['Refund processing', 'Your refund for order %s is being processed.'],
+                'failed'     => ['Refund delayed', 'We could not complete your refund for order %s yet. We will try again.'],
+            ][$refund->status] ?? null;
+            if (! $copy) {
+                return;
+            }
+            $rr = $refund->returnRequest;
+            if (! $rr) {
+                return;
+            }
+            self::create($rr->buyer_id, 'refund_status', $copy[0], sprintf($copy[1], self::orderNumber((int) $refund->order_id)),
+                ['order_id' => $refund->order_id, 'return_id' => $rr->id, 'refund_id' => $refund->id, 'status' => $refund->status, 'url' => '/returns']);
         });
     }
 

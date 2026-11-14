@@ -44,6 +44,17 @@ class CourierCompanyResolver
         return User::whereKey($courierId)->where('role', 'courier')->first();
     }
 
+    /**
+     * The user whose id owns courier_id-scoped rows for this actor: the courier
+     * company when one resolves (courier -> itself, logistics_staff / rider ->
+     * their company), otherwise the actor itself (which then matches nothing,
+     * same as before). Use for READ/WRITE scoping; keep the actor for audit ids.
+     */
+    public static function scope(User $actor): User
+    {
+        return self::resolve($actor) ?? $actor;
+    }
+
     public static function resolveId(?User $user): ?int
     {
         return self::resolve($user)?->id;

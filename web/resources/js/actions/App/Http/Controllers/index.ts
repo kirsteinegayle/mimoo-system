@@ -1,5 +1,7 @@
 import Api from './Api'
+import MessagingController from './MessagingController'
 import SellerDashboardController from './SellerDashboardController'
+import Logistics from './Logistics'
 import Courier from './Courier'
 import RiderRegistrationController from './RiderRegistrationController'
 import Auth from './Auth'
@@ -17,7 +19,9 @@ import SellerDashboardStreamController from './SellerDashboardStreamController'
 import Settings from './Settings'
 const Controllers = {
     Api: Object.assign(Api, Api),
+MessagingController: Object.assign(MessagingController, MessagingController),
 SellerDashboardController: Object.assign(SellerDashboardController, SellerDashboardController),
+Logistics: Object.assign(Logistics, Logistics),
 Courier: Object.assign(Courier, Courier),
 RiderRegistrationController: Object.assign(RiderRegistrationController, RiderRegistrationController),
 Auth: Object.assign(Auth, Auth),

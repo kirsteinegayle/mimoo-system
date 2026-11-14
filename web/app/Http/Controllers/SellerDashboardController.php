@@ -259,9 +259,27 @@ class SellerDashboardController extends Controller
         return match ($status) {
             'pending' => 'To Ship',
             'paid' => 'To Ship',
-            'shipped' => 'In Transit',
+            'packed' => 'To Ship',
+            'shipped', 'in_transit' => 'In Transit',
             'completed' => 'Delivered',
             default => ucfirst($status),
         };
+    }
+
+    /**
+     * Save the seller's store (brand) name. It lives in users.business_name so the
+     * admin seller list and detail read the same value the seller sees.
+     */
+    public function updateStoreName(Request $request)
+    {
+        $data = $request->validate([
+            'store_name' => ['required', 'string', 'min:2', 'max:255'],
+        ]);
+
+        $user = Auth::user();
+        $user->business_name = trim($data['store_name']);
+        $user->save();
+
+        return back()->with('success', 'Store name saved.');
     }
 }

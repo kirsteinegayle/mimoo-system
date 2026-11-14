@@ -10,9 +10,8 @@ import '../l10n/generated/app_localizations.dart';
 import '../widgets/common.dart';
 import 'delivered.dart';
 
-/// Proof of delivery: 1) live photo upload  2) 6-digit OTP verified server-side
-///                    3) COD exact amount.
-/// Prepaid parcels skip step 3.
+/// Proof of delivery: 1) live photo upload  2) COD exact amount (COD parcels only).
+/// Prepaid parcels finish right after the photo. There is no delivery code any more.
 class PodFlowScreen extends StatefulWidget {
   final DispatchParcel parcel;
   const PodFlowScreen({super.key, required this.parcel});
@@ -29,24 +28,14 @@ class _PodFlowScreenState extends State<PodFlowScreen> {
   String? _uploadedPath;
   bool _uploading = false;
 
-  bool _otpSending = false;
-  bool _otpVerifying = false;
-  bool _otpVerified = false;
-  int _otpResendAfter = 60; // seconds
-  DateTime? _otpSentAt;
-  String? _otpError;
-  String? _otpLockoutUntil;
-  String? _debugOtp; // only populated in kDebugMode
-
   bool _finishing = false;
-  String otp = '';
   String cod = '';
 
   final ImagePicker _picker = ImagePicker();
 
   DispatchParcel get parcel => widget.parcel;
   double get due => parcel.cod;
-  int get stepCount => parcel.isCod ? 3 : 2;
+  int get stepCount => parcel.isCod ? 2 : 1;
   double get codVal => double.tryParse(cod) ?? 0;
   bool get codMatch => (codVal * 100).round() == (due * 100).round();
 
@@ -128,77 +117,12 @@ class _PodFlowScreenState extends State<PodFlowScreen> {
     }
   }
 
-  // ── Step 2: OTP send + verify ────────────────────────────────────────────
-
-  Future<void> _sendOtp() async {
-    if (_otpSending) return;
-    // Respect resend cooldown.
-    if (_otpSentAt != null) {
-      final elapsed = DateTime.now().difference(_otpSentAt!).inSeconds;
-      if (elapsed < _otpResendAfter) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-                'Wait ${_otpResendAfter - elapsed}s before resending.')));
-        return;
-      }
-    }
-    setState(() {
-      _otpSending = true;
-      _otpError = null;
-      _otpLockoutUntil = null;
-      otp = '';
-      _otpVerified = false;
-    });
-    try {
-      final result = await AppRepositoriesScope.of(context)
-          .parcels
-          .sendDeliveryOtp(parcel.trackingNo);
-      if (!mounted) return;
-      setState(() {
-        _otpSentAt = DateTime.now();
-        _otpResendAfter = (result['resend_after'] as num?)?.toInt() ?? 60;
-        if (kDebugMode) _debugOtp = result['debug_otp'] as String?;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      setState(() => _otpError = msg.isEmpty ? 'Could not send OTP.' : msg);
-    } finally {
-      if (mounted) setState(() => _otpSending = false);
-    }
-  }
-
-  Future<void> _verifyOtp() async {
-    if (_otpVerifying || otp.length != 6) return;
-    setState(() {
-      _otpVerifying = true;
-      _otpError = null;
-    });
-    try {
-      await AppRepositoriesScope.of(context)
-          .parcels
-          .verifyDeliveryOtp(parcel.trackingNo, otp);
-      if (!mounted) return;
-      setState(() => _otpVerified = true);
-      // Auto-advance to step 3 (or finish for prepaid).
-      if (parcel.isCod) {
-        setState(() => step = 2);
-      } else {
-        await _finish();
-      }
-    } catch (e) {
-      if (!mounted) return;
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      setState(() {
-        _otpError = msg.isEmpty ? 'Incorrect code.' : msg;
-        otp = ''; // clear so rider types again
-        // Check for lockout message.
-        if (msg.toLowerCase().contains('locked')) {
-          _otpLockoutUntil = msg;
-        }
-      });
-    } finally {
-      if (mounted) setState(() => _otpVerifying = false);
+  /// After the photo: COD parcels go to the payment step, prepaid parcels are finished.
+  void _afterPhoto() {
+    if (parcel.isCod) {
+      setState(() => step = 1);
+    } else {
+      _finish();
     }
   }
 
@@ -216,7 +140,7 @@ class _PodFlowScreenState extends State<PodFlowScreen> {
       await AppRepositoriesScope.of(context).parcels.completeDelivery(
             parcel.trackingNo,
             photoPath: path,
-            otpVerified: true, // enforced server-side via delivery_otp_verified_at
+            otpVerified: true, // legacy parameter: no code exists any more; the server requires the photo
             codCollected: parcel.isCod ? codVal : 0,
           );
       if (!mounted) return;
@@ -275,7 +199,7 @@ class _PodFlowScreenState extends State<PodFlowScreen> {
                   MChip(parcel.isCod ? 'COD parcel' : 'Paid online',
                       bg: parcel.isCod ? MC.tertiaryFixed : MC.greenBg,
                       fg: parcel.isCod ? const Color(0xFF92002A) : MC.green),
-                  if (parcel.isCod && step != 2)
+                  if (parcel.isCod && step != 1)
                     Text(peso(due),
                         style: MT.currency.copyWith(color: MC.primary)),
                 ]),
@@ -283,8 +207,6 @@ class _PodFlowScreenState extends State<PodFlowScreen> {
           const SizedBox(height: 12),
           if (step == 0)
             ..._photoStep()
-          else if (step == 1)
-            ..._otpStep()
           else
             ..._codStep(),
         ])),
@@ -341,12 +263,9 @@ class _PodFlowScreenState extends State<PodFlowScreen> {
                               const SizedBox(width: 8),
                               if (_uploadedPath != null)
                                 FilledButton.icon(
-                                    onPressed: () {
-                                      setState(() => step = 1);
-                                      _sendOtp();
-                                    },
+                                    onPressed: _afterPhoto,
                                     icon: const Icon(Icons.arrow_forward),
-                                    label: const Text('Use Photo')),
+                                    label: Text(parcel.isCod ? 'Use Photo' : 'Use Photo & Finish')),
                             ])
                           : _photo == null
                               ? GestureDetector(
@@ -369,84 +288,11 @@ class _PodFlowScreenState extends State<PodFlowScreen> {
               bg: MC.greenBg, fg: MC.green),
         const SizedBox(height: 4),
         PillButton(
-          'Continue to Step 2',
-          onPressed: _uploadedPath == null
-              ? null
-              : () {
-                  setState(() => step = 1);
-                  _sendOtp();
-                },
+          parcel.isCod ? 'Continue to payment' : 'Confirm delivered',
+          loading: _finishing,
+          onPressed: _uploadedPath == null ? null : _afterPhoto,
         ),
       ];
-
-  // ── Step 2 widget ─────────────────────────────────────────────────────────
-
-  List<Widget> _otpStep() {
-    final locked = _otpLockoutUntil != null;
-    return [
-      Text('Ask the buyer for the 6-digit delivery code', style: MT.headlineMd),
-      const SizedBox(height: 4),
-      if (_otpSentAt != null)
-        Text('Code sent to buyer\'s registered contact.',
-            style: MT.bodySm.copyWith(color: MC.onSurfaceVariant))
-      else if (_otpSending)
-        Text('Sending code…', style: MT.bodySm.copyWith(color: MC.onSurfaceVariant)),
-      const SizedBox(height: 12),
-      if (locked)
-        InfoBanner(Icons.lock_clock, _otpLockoutUntil!,
-            bg: MC.errorContainer, fg: const Color(0xFF93000A))
-      else if (_otpError != null && _otpLockoutUntil == null)
-        InfoBanner(Icons.error_outline, _otpError!,
-            bg: MC.errorContainer, fg: const Color(0xFF93000A)),
-      if (kDebugMode && _debugOtp != null) ...[
-        const SizedBox(height: 4),
-        InfoBanner(
-            Icons.bug_report, 'DEBUG — buyer code: $_debugOtp',
-            bg: MC.amberBg, fg: MC.amberText),
-      ],
-      const SizedBox(height: 8),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        for (var i = 0; i < 6; i++)
-          Container(
-              width: 48,
-              height: 56,
-              decoration: BoxDecoration(
-                  color: _otpVerified
-                      ? MC.greenBg
-                      : (i == otp.length ? MC.primaryFixed : MC.low),
-                  borderRadius: BorderRadius.circular(12)),
-              child: Center(
-                  child: Text(i < otp.length ? otp[i] : '',
-                      style: MT.currency))),
-      ]),
-      const SizedBox(height: 16),
-      Keypad(
-          bottomLeft: ' ',
-          onKey: (k) {
-            if (locked || _otpVerified || _otpVerifying) return;
-            if (k != ' ' && otp.length < 6) setState(() => otp += k);
-          },
-          onBackspace: () {
-            if (locked || _otpVerified || _otpVerifying) return;
-            if (otp.isNotEmpty) {
-              setState(() => otp = otp.substring(0, otp.length - 1));
-            }
-          }),
-      const SizedBox(height: 12),
-      if (!locked && _otpSentAt != null)
-        TextButton(
-            onPressed: _otpSending ? null : _sendOtp,
-            child: Text(_otpSending ? 'Sending…' : 'Resend code')),
-      const SizedBox(height: 4),
-      PillButton(
-        parcel.isCod ? 'Continue to Step 3 (Payment)' : 'Mark as Delivered',
-        loading: _otpVerifying || _finishing,
-        onPressed: (otp.length == 6 && !locked && !_otpVerified)
-            ? _verifyOtp
-            : null,
-      ),
-    ];
-  }
 
   // ── Step 3 widget ─────────────────────────────────────────────────────────
 

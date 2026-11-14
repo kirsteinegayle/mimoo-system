@@ -43,6 +43,7 @@ class FortifyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureActions();
+        $this->configureAuthentication();
         $this->configureViews();
         $this->configureRateLimiting();
     }
@@ -54,6 +55,30 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+    }
+
+    /**
+     * Role gate per login page. Each login form posts a hidden `portal` value
+     * (buyer|seller|logistics|courier|rider). When the credentials are valid but
+     * the account role does not belong to that portal, throw BEFORE Fortify logs
+     * the user in, so no session is created. No `portal` = no gate (API/legacy).
+     */
+    private function configureAuthentication(): void
+    {
+        Fortify::authenticateUsing(function (Request $request) {
+            $user = \App\Models\User::where(Fortify::username(), $request->input(Fortify::username()))->first();
+
+            if (! $user || ! \Illuminate\Support\Facades\Hash::check((string) $request->input('password'), $user->password)) {
+                return null;
+            }
+
+            $reason = \App\Support\PortalRole::denyReason($request->input('portal'), $user);
+            if ($reason !== null) {
+                throw \Illuminate\Validation\ValidationException::withMessages([Fortify::username() => $reason]);
+            }
+
+            return $user;
+        });
     }
 
     /**

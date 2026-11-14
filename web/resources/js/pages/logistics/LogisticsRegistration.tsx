@@ -514,6 +514,7 @@ export default function LogisticsRegistration() {
             formData.append('contact_number', data.contact_number.trim());
             formData.append('birthday', data.birthday);
             formData.append('account_type', 'logistics');
+            formData.append('applicant_type', 'logistics');
             
             // Company fields
             formData.append('company_name', data.company_name.trim());

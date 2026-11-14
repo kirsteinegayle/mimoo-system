@@ -48,7 +48,11 @@ class BuyerReturnController extends Controller
             'description'     => $r->description,
             'images'          => collect($r->images ?? [])->map(fn ($p) => $this->imageUrlFor($p, 'return-photo'))->values(),
             'status'          => $r->status,
-            'seller_response' => $r->seller_response,
+            // Admin notes live in admin_response now; shown after the seller note so the text is what buyers always saw.
+            'seller_response' => trim(($r->seller_response ? $r->seller_response : '')
+                . ($r->admin_response ? "
+
+Admin review: " . $r->admin_response : '')) ?: null,
             'responded_at'    => $r->responded_at?->toISOString(),
             'escalated_at'    => $r->escalated_at?->toISOString(),
             'can_escalate'    => $r->canEscalate(),
@@ -71,7 +75,7 @@ class BuyerReturnController extends Controller
         if (! in_array($order->status, ['shipped', 'completed'], true)) {
             return $this->validationError('order', 'Returns can only be requested for shipped or completed orders.');
         }
-        if ($order->updated_at->copy()->addDays(ReturnRequest::REQUEST_WINDOW_DAYS)->isPast()) {
+        if (! \App\Services\ReturnReviewRules::returnWindowOpen($order)) {
             return $this->validationError('order', 'The 7-day return period for this order has ended.');
         }
 

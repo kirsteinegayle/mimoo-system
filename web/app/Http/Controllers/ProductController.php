@@ -1113,12 +1113,12 @@ class ProductController extends Controller
                 ->where('status', '!=', 'failed');
         })->sum('quantity');
 
-        // TODO: Replace with actual follower count when follower system is implemented
-        $followers = 0;
+        $followers = \App\Models\SellerFollow::where('seller_id', $id)->count();
 
-        // TODO: Replace with actual rating when review system is implemented
-        $rating = 4.5;
-        $totalReviews = 0;
+        // Real rating of this seller's items (reviews of order items sold by the seller).
+        $reviewRows = \App\Models\Review::whereHas('orderItem', fn ($q) => $q->where('seller_id', $id));
+        $totalReviews = (clone $reviewRows)->count();
+        $rating = $totalReviews > 0 ? round((float) (clone $reviewRows)->avg('rating'), 1) : 0.0;
 
         // Calculate account age in years
         $accountAge = $seller->created_at->diffInYears(now());

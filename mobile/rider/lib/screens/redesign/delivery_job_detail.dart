@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -18,11 +16,10 @@ import 'job_actions.dart';
 
 /// Delivery detail: Attempt x/3, map to the buyer (when the address has
 /// coordinates), buyer card, big COD card, and the animated
-/// stepper Out for Delivery → POD photo → Buyer OTP → COD collected.
-/// API mode: POD photo is taken with the camera and uploaded; the OTP the
-/// buyer gives is sent with the final "deliver" call (server checks it).
-/// MOCK mode: POD photo is a placeholder and OTP validation is mock.
-/// The code is never saved or printed.
+/// stepper Out for Delivery → POD photo → COD collected / Confirm delivered.
+/// API mode: the POD photo is taken with the camera and uploaded; the server
+/// requires it for the final "deliver" call. There is no delivery code.
+/// MOCK mode: the POD photo is a placeholder.
 class DeliveryJobDetailScreen extends StatefulWidget {
   const DeliveryJobDetailScreen({super.key, required this.job});
   final MockJob job;
@@ -32,42 +29,14 @@ class DeliveryJobDetailScreen extends StatefulWidget {
 }
 
 class _DeliveryJobDetailScreenState extends State<DeliveryJobDetailScreen> {
-  final _otp = TextEditingController();
-  final _otpFocus = FocusNode();
-  String? _otpError;
-  int _otpShake = 0;
-
   /// True while an API call for this screen is running (disables buttons).
   bool _busy = false;
-
-  /// API mode: a code was issued for the buyer at least once.
-  bool _otpSent = false;
-
-  /// DEBUG builds only: the debug_otp returned by the server (demo hint).
-  String? _debugOtp;
 
   MockJob get job => widget.job;
   RiderMock get mock => RiderMock.instance;
 
-  @override
-  void dispose() {
-    _otp.dispose();
-    _otpFocus.dispose();
-    super.dispose();
-  }
-
   void _snack(String text) => ScaffoldMessenger.of(context)
       .showSnackBar(SnackBar(content: Text(text)));
-
-  void _verifyOtp() {
-    final ok = mock.verifyOtp(job, _otp.text);
-    _otp.clear();
-    setState(() {
-      _otpError = ok ? null : 'Wrong code. Ask the buyer to check their SMS.';
-      if (!ok) _otpShake++;
-    });
-    if (ok) _otpFocus.unfocus();
-  }
 
   /// Runs an API-backed action with the busy flag set.
   Future<bool> _run(Future<void> Function() action) async {
@@ -82,16 +51,7 @@ class _DeliveryJobDetailScreenState extends State<DeliveryJobDetailScreen> {
     var earned = kDeliveryRate;
     final ok =
         await _run(() async => earned = await mock.completeDelivery(job));
-    if (!ok || !mounted) {
-      // A wrong code puts the rider back on the OTP step.
-      if (mounted && !job.otpVerified) {
-        setState(() {
-          _otpError = 'Wrong or expired code. Ask the buyer again.';
-          _otpShake++;
-        });
-      }
-      return;
-    }
+    if (!ok || !mounted) return;
     if (job.stage != MockStage.delivered) return;
     await showSuccess(context,
         title: 'Delivered!',
@@ -140,19 +100,6 @@ class _DeliveryJobDetailScreenState extends State<DeliveryJobDetailScreen> {
     }
   }
 
-  /// API mode: issue a new code for the buyer.
-  Future<void> _sendOtp() async {
-    String? debugCode;
-    final ok = await _run(() async => debugCode = await mock.requestOtp(job));
-    if (!ok || !mounted) return;
-    setState(() {
-      _otpSent = true;
-      _otpError = null;
-      _debugOtp = kDebugMode ? debugCode : null;
-    });
-    _snack('A new code was issued. Ask the buyer for it.');
-  }
-
   Future<void> _deliveryFailed() async {
     final reason = await showModalBottomSheet<String>(
       context: context,
@@ -189,10 +136,6 @@ class _DeliveryJobDetailScreenState extends State<DeliveryJobDetailScreen> {
       },
     );
     if (reason == null || !mounted) return;
-    _otp.clear();
-    _otpError = null;
-    _debugOtp = null;
-    _otpSent = false;
     if (!await _run(() => mock.failAttempt(job, reason)) || !mounted) return;
     _snack(job.isFinalAttempt
         ? 'Third failed attempt. Return the parcel to the hub.'
@@ -206,11 +149,10 @@ class _DeliveryJobDetailScreenState extends State<DeliveryJobDetailScreen> {
         _ => Icons.more_horiz,
       };
 
-  /// 0..4 = how many stepper steps are complete.
+  /// 0..3 = how many stepper steps are complete.
   int get _progress {
-    if (job.stage == MockStage.delivered) return 4;
+    if (job.stage == MockStage.delivered) return 3;
     if (job.stage != MockStage.outForDelivery) return 0;
-    if (job.otpVerified) return 3;
     if (job.podTaken) return 2;
     return 1;
   }
@@ -413,49 +355,6 @@ class _DeliveryJobDetailScreenState extends State<DeliveryJobDetailScreen> {
         _Step(
           index: 2,
           progress: p,
-          title: 'Buyer OTP',
-          doneText: useMock ? 'Code verified' : 'Code entered',
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (!useMock) ...[
-              PillButton(_otpSent ? 'Send a new code' : 'Send code to buyer',
-                  icon: Icons.sms_outlined,
-                  style: BtnStyle.tonal,
-                  onPressed: _busy ? null : _sendOtp),
-              const SizedBox(height: 10),
-            ],
-            Text('Ask the buyer for the $kOtpLength-digit code.',
-                style: MT.bodySm.copyWith(color: c.muted)),
-            // DEBUG ONLY demo hint. Never shown in release builds.
-            if (kDebugMode && _debugOtp != null) ...[
-              const SizedBox(height: 4),
-              Text('DEBUG code: $_debugOtp',
-                  style: MT.bodySm.copyWith(color: c.coral)),
-            ],
-            const SizedBox(height: 10),
-            Shake(
-              trigger: _otpShake,
-              child: OtpBoxes(
-                controller: _otp,
-                focusNode: _otpFocus,
-                hasError: _otpError != null,
-                onChanged: (_) => setState(() => _otpError = null),
-                onCompleted: (_) => _verifyOtp(),
-              ),
-            ),
-            if (_otpError != null) ...[
-              const SizedBox(height: 6),
-              Text(_otpError!, style: MT.bodySm.copyWith(color: c.coral)),
-            ],
-            const SizedBox(height: 10),
-            PillButton(useMock ? 'Verify code' : 'Use this code',
-                icon: Icons.verified_outlined,
-                onPressed:
-                    _otp.text.length == kOtpLength ? _verifyOtp : null),
-          ]),
-        ),
-        _Step(
-          index: 3,
-          progress: p,
           last: true,
           title: job.cod > 0 ? 'COD collected' : 'Confirm delivered',
           doneText: job.cod > 0
@@ -635,98 +534,3 @@ class _Step extends StatelessWidget {
 
 /// Six masked boxes backed by one hidden text field. The code is never
 /// shown, stored or printed.
-class OtpBoxes extends StatelessWidget {
-  const OtpBoxes({
-    super.key,
-    required this.controller,
-    required this.focusNode,
-    this.hasError = false,
-    this.onChanged,
-    this.onCompleted,
-  });
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final bool hasError;
-  final ValueChanged<String>? onChanged;
-  final ValueChanged<String>? onCompleted;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = MC.of(context);
-    return Semantics(
-      label: 'One-time code, $kOtpLength digits',
-      textField: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: focusNode.requestFocus,
-        child: Stack(children: [
-          // Hidden input that actually receives the digits.
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0,
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                keyboardType: TextInputType.number,
-                autofillHints: const [AutofillHints.oneTimeCode],
-                enableSuggestions: false,
-                autocorrect: false,
-                showCursor: false,
-                maxLength: kOtpLength,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(counterText: ''),
-                onChanged: (v) {
-                  onChanged?.call(v);
-                  if (v.length == kOtpLength) onCompleted?.call(v);
-                },
-              ),
-            ),
-          ),
-          ListenableBuilder(
-            listenable: Listenable.merge([controller, focusNode]),
-            builder: (context, _) {
-              final len = controller.text.length;
-              return Row(children: [
-                for (var i = 0; i < kOtpLength; i++) ...[
-                  if (i > 0) const SizedBox(width: 6),
-                  Expanded(
-                    child: AnimatedContainer(
-                      duration: motion(context, const Duration(milliseconds: 150)),
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: c.low,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: hasError
-                              ? c.coral
-                              : focusNode.hasFocus && i == len
-                                  ? c.primary
-                                  : i < len
-                                      ? c.primaryContainer
-                                      : c.outlineVariant,
-                          width: focusNode.hasFocus && i == len ? 2 : 1.2,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: AnimatedScale(
-                        scale: i < len ? 1 : 0,
-                        duration:
-                            motion(context, const Duration(milliseconds: 150)),
-                        child: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                              color: c.text, shape: BoxShape.circle),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ]);
-            },
-          ),
-        ]),
-      ),
-    );
-  }
-}

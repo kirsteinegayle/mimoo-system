@@ -14,7 +14,16 @@ class ShipmentAssignment extends Model
     /** Seller "Parcel picked up" notification when pickup_status becomes picked_up (never throws). */
     protected static function booted(): void
     {
-        static::updated(fn (ShipmentAssignment $sa) => \App\Services\SellerNotificationService::shipmentUpdated($sa));
+        static::updated(function (ShipmentAssignment $sa) {
+            \App\Services\SellerNotificationService::shipmentUpdated($sa);
+            \App\Services\CourierNotificationService::assignmentUpdated($sa);
+            // Rejected / cancelled with no delivery job: do not leave the order stuck in_transit.
+            if (($sa->wasChanged('assignment_status') && $sa->assignment_status === 'rejected')
+                || ($sa->wasChanged('pickup_status') && $sa->pickup_status === 'cancelled')) {
+                \App\Services\StuckOrderGuard::reopen((int) $sa->order_id);
+            }
+        });
+        static::created(fn (ShipmentAssignment $sa) => \App\Services\CourierNotificationService::assignmentCreated($sa));
     }
 
     protected $fillable = [
@@ -151,6 +160,17 @@ class ShipmentAssignment extends Model
      */
     public function addHistory(string $action, int $userId, ?string $notes = null): void
     {
+        // shipment_assignment_history.action is an enum (assigned, accepted, rejected, re-assigned).
+        // Any other word used by a caller would be a 500 from the database, so map it to the closest
+        // valid value and keep the real wording in the notes.
+        $valid = ['assigned', 'accepted', 'rejected', 're-assigned'];
+        if (! in_array($action, $valid, true)) {
+            $map = ['scheduled' => 're-assigned', 're-scheduled' => 're-assigned', 'rescheduled' => 're-assigned',
+                'picked_up' => 'accepted', 'cancelled' => 'rejected', 'failed_attempt' => 'rejected', 'failed' => 'rejected'];
+            $notes  = trim(str_replace('_', ' ', $action) . ($notes ? ': ' . $notes : ''));
+            $action = $map[$action] ?? 're-assigned';
+        }
+
         $this->history()->create([
             'action' => $action,
             'performed_by' => $userId,

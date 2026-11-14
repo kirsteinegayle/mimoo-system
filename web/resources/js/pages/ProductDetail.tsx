@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import { Star, ChevronRight, Minus, Plus, Package, ShoppingCart, Flag, Heart, MessageCircle } from "lucide-react";
 import { BuyerHeader } from "@/components/buyer-header";
+import { FollowButton } from "@/components/buyer/follow-button";
 import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
@@ -603,8 +604,8 @@ function SellerInfo({
             <p className="text-sm text-neutral-500 mb-2">
               Seller
             </p>
-            {/* Rating */}
-            <div className="flex items-center gap-2">
+            {/* Rating: shown only once real reviews exist (the constant above is a placeholder, not data) */}
+            <div className={`items-center gap-2 ${totalReviews > 0 ? 'flex' : 'hidden'}`}>
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
                   <Star
@@ -632,6 +633,7 @@ function SellerInfo({
         </div>
         
         <div className="flex flex-col gap-2 sm:flex-row">
+          <FollowButton sellerId={sellerId} user={user} className="!px-4" />
           {canChat && (
             <Link
               href={chatHref}

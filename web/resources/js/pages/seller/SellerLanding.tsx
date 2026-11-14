@@ -91,6 +91,7 @@ export default function SellerLanding() {
         email: '',
         password: '',
         remember: false,
+        portal: 'seller',
     });
 
     // Auto-scroll down on page load

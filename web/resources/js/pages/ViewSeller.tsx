@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { BuyerHeader } from '@/components/buyer-header';
+import { FollowButton } from "@/components/buyer/follow-button";
 import { Package, Users, Star, MessageCircle, Truck, CheckCircle, Share2 } from 'lucide-react';
 
 interface Product {
@@ -186,16 +187,17 @@ export default function ViewSeller({ auth, seller }: ViewSellerProps) {
                       VERIFIED STUDIO
                     </span>
                   )}
-                  <span>Top Rated Merchant 2024</span>
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 pb-4">
-              <button className="rounded-lg bg-violet-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 transition">
-                + Follow
-              </button>
+              <FollowButton
+                sellerId={seller.id}
+                user={user}
+                onCountChange={(n) => setStats((prev) => (prev ? { ...prev, followers: n } : prev))}
+              />
               {canChat && (
                 <Link
                   href={`/messages?seller_id=${seller.id}`}
@@ -229,7 +231,7 @@ export default function ViewSeller({ auth, seller }: ViewSellerProps) {
               <p className="text-xl font-bold text-neutral-900">
                 {formatCount(stats?.followers || 0)}
               </p>
-              <p className="text-xs text-neutral-500">Coming Soon</p>
+              <p className="text-xs text-neutral-500">Store followers</p>
             </div>
 
             {/* Rating */}

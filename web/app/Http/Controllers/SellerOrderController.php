@@ -134,6 +134,15 @@ class SellerOrderController extends Controller
                 default => null,
             };
 
+            // The seller's part of the flow is accept (pending -> paid) and pack (pending|paid -> packed).
+            // "pickup" (-> shipped) is the old hand-over shortcut (the page no longer sends it; the hub confirm
+            // normally sets shipped): it is only accepted for a PACKED order. A step is refused when the order
+            // is already past it, so the seller can never move an order backwards or skip packing.
+            $allowedFrom = ['accept' => ['pending'], 'pack' => ['pending', 'paid'], 'pickup' => ['packed']];
+            if (isset($allowedFrom[$action]) && ! in_array($order->status, $allowedFrom[$action], true)) {
+                return response()->json(['error' => "This order is already {$order->status}; it cannot be moved to {$newStatus}."], 422);
+            }
+
             if ($newStatus) {
                 // Auto-generate waybill when packing
                 if ($action === 'pack' && !$order->hasWaybill()) {
@@ -183,6 +192,19 @@ class SellerOrderController extends Controller
         $validated = $request->validate([
             'status' => ['required', 'in:paid,packed,shipped,completed'],
         ]);
+
+        // Old status-based call: only the seller's own steps (same rules as the actions above).
+        // shipped is set by the logistics hub and completed by the buyer ("Received") or the auto-complete job.
+        if ($validated['status'] === 'completed') {
+            return response()->json(['error' => 'Completed is set by the buyer (Received) or the auto-complete job, not by the seller.'], 422);
+        }
+        $allowed = ['paid' => ['pending'], 'packed' => ['pending', 'paid'], 'shipped' => ['packed']][$validated['status']];
+        if (! in_array($order->status, $allowed, true)) {
+            return response()->json(['error' => "This order is already {$order->status}; it cannot be moved to {$validated['status']}."], 422);
+        }
+        if ($validated['status'] === 'packed' && ! $order->hasWaybill()) {
+            $order->generateWaybillNumber();
+        }
 
         $order->update(['status' => $validated['status']]);
 

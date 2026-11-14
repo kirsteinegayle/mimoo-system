@@ -25,9 +25,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   static const _categories = [
     ('all', 'All'),
-    ('trips', 'Trips'),
     ('pickups', 'Pickups'),
-    ('system', 'System'),
+    ('deliveries', 'Deliveries'),
+    ('messages', 'Messages'),
   ];
 
   @override
@@ -299,7 +299,8 @@ class _NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final icon = switch (item.category) {
-      'shipments' => Icons.local_shipping_outlined,
+      'shipments' || 'deliveries' => Icons.local_shipping_outlined,
+      'messages' => Icons.chat_bubble_outline,
       'pickups' => Icons.inventory_2_outlined,
       'payments' => Icons.payments_outlined,
       _ => Icons.info_outline,

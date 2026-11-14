@@ -10,11 +10,11 @@ class CourierFeatures {
   CourierFeatures._();
 
   // ── No backend route yet (hidden) ─────────────────────────────────────────
-  /// GET /notifications, /notifications/unread-count, POST .../read
-  static const bool notifications = false;
+  /// GET /notifications, /notifications/unread-count, POST .../read (now served by CourierAppNotificationController)
+  static const bool notifications = true;
 
-  /// GET /messages/conversations, /messages/{id}/messages, /messages/unread-count
-  static const bool messages = false;
+  /// /messaging/contacts, threads, start, threads/{id}/messages, read (MessagingController)
+  static const bool messages = true;
 
   /// GET/POST /trips/* (linehaul trips: accept, load, depart, arrive)
   static const bool trips = false;

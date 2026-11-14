@@ -40,6 +40,10 @@ class BuyerDeliveryCodeController extends Controller
             return response()->json(['message' => 'Order not found.'], 404);
         }
 
+        // The delivery code was removed (proof-of-delivery photo only). Same answer shape as before,
+        // so old buyer apps and the web page simply hide the code card.
+        return $this->none('not_required', 'No delivery code is needed. Your rider takes a photo as proof of delivery.');
+
         $job = DeliveryJob::where('order_id', $order->id)->latest('id')->first();
         if (! $job) {
             return $this->none('no_delivery', 'No rider is assigned yet.');

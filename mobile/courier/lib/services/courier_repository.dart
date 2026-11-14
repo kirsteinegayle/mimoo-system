@@ -215,34 +215,68 @@ class CourierRepository {
 
   // ── Messages ─────────────────────────────────────────────────────────────
 
+  // Role messaging: GET/POST /courier-app/messaging/* (admin, sellers with a shipment of ours, own riders).
+
   Future<List<ConversationSummary>> conversations() async {
-    final res = await ApiService.get('$_prefix/messages/conversations')
+    final res = await ApiService.get('$_prefix/messaging/threads')
         as Map<String, dynamic>;
     return (res['data'] as List<dynamic>)
-        .map((j) => ConversationSummary.fromJson(j as Map<String, dynamic>))
+        .map((j) => ConversationSummary.fromThreadJson(j as Map<String, dynamic>))
         .toList();
   }
 
-  Future<ChatThread> thread(int conversationId) async {
+  /// Messages of one conversation. [afterId] > 0 returns only newer ones (polling).
+  /// The server marks the conversation read when it is fetched.
+  Future<ChatThread> thread(int conversationId, {int afterId = 0}) async {
     final res = await ApiService.get(
-      '$_prefix/messages/$conversationId/messages',
+      '$_prefix/messaging/threads/$conversationId/messages',
+      queryParameters: afterId > 0 ? {'after_id': '$afterId'} : null,
     ) as Map<String, dynamic>;
-    return ChatThread.fromJson(res['data'] as Map<String, dynamic>);
+    final t = (res['thread'] as Map?)?.cast<String, dynamic>() ?? const {};
+    return ChatThread(
+      conversation: ConversationSummary.fromThreadJson({
+        'id': conversationId,
+        'counterpart_name': t['name'],
+      }),
+      messages: (res['data'] as List<dynamic>)
+          .whereType<Map>()
+          .map((m) => ChatMessage.fromMessagingJson(Map<String, dynamic>.from(m)))
+          .toList(),
+    );
   }
 
   Future<ChatMessage> sendMessage(int conversationId, String body) async {
     final res = await ApiService.post(
-      '$_prefix/messages/$conversationId/messages',
+      '$_prefix/messaging/threads/$conversationId/messages',
       body: {'body': body},
     ) as Map<String, dynamic>;
-    return ChatMessage.fromJson(res['data'] as Map<String, dynamic>);
+    return ChatMessage.fromMessagingJson(res['data'] as Map<String, dynamic>);
   }
 
   Future<int> unreadMessageCount() async {
-    final res = await ApiService.get('$_prefix/messages/unread-count')
+    final res = await ApiService.get('$_prefix/messaging/threads')
         as Map<String, dynamic>;
-    return ((res['data'] as Map<String, dynamic>)['unread'] as num?)?.toInt() ??
+    return ((res['meta'] as Map<String, dynamic>?)?['unread_total'] as num?)
+            ?.toInt() ??
         0;
+  }
+
+  /// People the server allows this courier to message.
+  Future<List<MessageContact>> messageContacts() async {
+    final res = await ApiService.get('$_prefix/messaging/contacts')
+        as Map<String, dynamic>;
+    return (res['data'] as List<dynamic>)
+        .map((j) => MessageContact.fromJson(j as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Get-or-create the conversation with [contact].
+  Future<ConversationSummary> startConversation(MessageContact contact) async {
+    final res = await ApiService.post(
+      '$_prefix/messaging/start',
+      body: {'role': contact.role, 'id': contact.id},
+    ) as Map<String, dynamic>;
+    return ConversationSummary.fromThreadJson(res['data'] as Map<String, dynamic>);
   }
 
   // ── Timeline ─────────────────────────────────────────────────────────────

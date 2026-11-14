@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\BuyerNotification;
 use App\Models\CourierPersonnel;
 use App\Models\DeliveryJob;
-use App\Models\DeliveryOtp;
 use App\Models\Order;
 use App\Models\RiderEarning;
 use App\Models\RiderNotification;
@@ -144,11 +143,9 @@ class RiderDeliveryController extends Controller
     }
 
     /**
-     * POST /deliveries/{id}/otp — issue a new buyer OTP (replaces older ones).
-     *
-     * The buyer reads the code via GET /api/buyer/orders/{id}/delivery-code
-     * (encrypted copy, owner only, while active). In APP_DEBUG the code is also
-     * returned as debug_otp for testing only (same pattern the app already reads).
+     * POST /deliveries/{id}/otp: kept ONLY so an old app build does not get a 404.
+     * The delivery code was removed: proof of delivery (photo) is what confirms a delivery now.
+     * Nothing is issued or stored, and no code is returned.
      */
     public function requestOtp(Request $request, int $id): JsonResponse
     {
@@ -157,25 +154,10 @@ class RiderDeliveryController extends Controller
                 return response()->json(['message' => 'Start the delivery first.'], 422);
             }
 
-            $code = str_pad((string) random_int(0, 10 ** DeliveryOtp::LENGTH - 1), DeliveryOtp::LENGTH, '0', STR_PAD_LEFT);
-            $job->otps()->whereNull('verified_at')->delete();
-            // Hash = verification. Encrypted copy = buyer can read it while active
-            // (forceFill: column is not in the model's $fillable). Replaced codes
-            // were deleted above, so their encrypted copy is gone too.
-            $job->otps()->make([
-                'code_hash'  => Hash::make($code),
-                'expires_at' => now()->addMinutes(DeliveryOtp::TTL_MINUTES),
-            ])->forceFill(['code_encrypted' => Crypt::encryptString($code)])->save();
-
-            $body = [
-                'message'    => 'A one-time code was issued for the buyer.',
-                'expires_in' => DeliveryOtp::TTL_MINUTES * 60,
-            ];
-            if (config('app.debug')) {
-                $body['debug_otp'] = $code; // DEBUG ONLY, never in production.
-            }
-
-            return response()->json($body);
+            return response()->json([
+                'message'    => 'No delivery code is needed any more. Take the proof-of-delivery photo to finish.',
+                'expires_in' => 0,
+            ]);
         });
     }
 
@@ -211,17 +193,14 @@ class RiderDeliveryController extends Controller
     }
 
     /**
-     * POST /deliveries/{id}/deliver { otp, cod_collected? }
-     * Requires: out_for_delivery + POD photo + valid OTP + exact COD amount.
+     * POST /deliveries/{id}/deliver { cod_collected? }
+     * Requires: out_for_delivery + POD photo + exact COD amount. An `otp` field sent by an old
+     * app build is ignored (it is neither required nor checked).
      */
     public function deliver(Request $request, int $id): JsonResponse
     {
         $data = $request->validate([
-            'otp'           => ['required', 'digits:' . DeliveryOtp::LENGTH],
             'cod_collected' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
-        ], [
-            'otp.required' => 'Enter the buyer\'s one-time code.',
-            'otp.digits'   => 'The code must be ' . DeliveryOtp::LENGTH . ' digits.',
         ]);
 
         return $this->locked($request, $id, function (DeliveryJob $job) use ($data, $request) {
@@ -232,24 +211,7 @@ class RiderDeliveryController extends Controller
                 return response()->json(['message' => 'Start the delivery first.'], 422);
             }
             if (! $job->pod_photo_path) {
-                return $this->validationError('photo', 'Take the proof-of-delivery photo first.');
-            }
-
-            // OTP check (latest unverified code only).
-            $otp = $job->otps()->whereNull('verified_at')->latest('id')->lockForUpdate()->first();
-            if (! $otp || ! $otp->isUsable()) {
-                $otp?->forceFill(['code_encrypted' => null])->save(); // expired / exhausted
-                return $this->validationError('otp', 'The code expired or was not requested. Request a new code.');
-            }
-            if (! Hash::check($data['otp'], $otp->code_hash)) {
-                $otp->increment('attempts');
-                $left = max(0, DeliveryOtp::MAX_ATTEMPTS - $otp->attempts);
-                if ($left === 0) {
-                    $otp->forceFill(['code_encrypted' => null])->save(); // no tries left
-                }
-                return $this->validationError('otp', $left > 0
-                    ? "Wrong code. {$left} tries left."
-                    : 'Too many wrong tries. Request a new code.');
+                return $this->validationError('photo', 'Proof of delivery is required. Take the delivery photo before marking this parcel as delivered.');
             }
 
             // COD must match the snapshot exactly.
@@ -262,12 +224,11 @@ class RiderDeliveryController extends Controller
             }
 
             $now = now();
-            $otp->forceFill(['verified_at' => $now, 'code_encrypted' => null])->save(); // used
             $job->update([
                 'status'           => DeliveryJob::STATUS_DELIVERED,
                 'attempt_count'    => $job->attempt_count + 1,
                 'last_attempt_at'  => $now,
-                'otp_verified_at'  => $now,
+                'otp_verified_at'  => $now, // column kept: it is the "proof accepted" time, so old payloads keep otp_verified = true
                 'cod_collected'    => $job->hasCod() ? $job->cod_amount : 0,
                 'cod_collected_at' => $job->hasCod() ? $now : null,
                 'delivered_at'     => $now,

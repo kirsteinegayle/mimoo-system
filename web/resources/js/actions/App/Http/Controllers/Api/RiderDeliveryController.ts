@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::index
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:63
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:62
  * @route '/api/rider-app/deliveries'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::index
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:63
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:62
  * @route '/api/rider-app/deliveries'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::index
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:63
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:62
  * @route '/api/rider-app/deliveries'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::index
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:63
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:62
  * @route '/api/rider-app/deliveries'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::index
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:63
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:62
  * @route '/api/rider-app/deliveries'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::index
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:63
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:62
  * @route '/api/rider-app/deliveries'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::index
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:63
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:62
  * @route '/api/rider-app/deliveries'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::show
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:99
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:98
  * @route '/api/rider-app/deliveries/{id}'
  */
 export const show = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::show
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:99
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:98
  * @route '/api/rider-app/deliveries/{id}'
  */
 show.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -122,7 +122,7 @@ show.url = (args: { id: string | number } | [id: string | number ] | string | nu
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::show
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:99
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:98
  * @route '/api/rider-app/deliveries/{id}'
  */
 show.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -131,7 +131,7 @@ show.get = (args: { id: string | number } | [id: string | number ] | string | nu
 })
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::show
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:99
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:98
  * @route '/api/rider-app/deliveries/{id}'
  */
 show.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -141,7 +141,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
 
     /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::show
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:99
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:98
  * @route '/api/rider-app/deliveries/{id}'
  */
     const showForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -151,7 +151,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
 
             /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::show
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:99
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:98
  * @route '/api/rider-app/deliveries/{id}'
  */
         showForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -160,7 +160,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
         })
             /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::show
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:99
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:98
  * @route '/api/rider-app/deliveries/{id}'
  */
         showForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -176,7 +176,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
     show.form = showForm
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::outForDelivery
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:110
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:109
  * @route '/api/rider-app/deliveries/{id}/out-for-delivery'
  */
 export const outForDelivery = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ outForDelivery.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::outForDelivery
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:110
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:109
  * @route '/api/rider-app/deliveries/{id}/out-for-delivery'
  */
 outForDelivery.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -219,7 +219,7 @@ outForDelivery.url = (args: { id: string | number } | [id: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::outForDelivery
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:110
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:109
  * @route '/api/rider-app/deliveries/{id}/out-for-delivery'
  */
 outForDelivery.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -229,7 +229,7 @@ outForDelivery.post = (args: { id: string | number } | [id: string | number ] | 
 
     /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::outForDelivery
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:110
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:109
  * @route '/api/rider-app/deliveries/{id}/out-for-delivery'
  */
     const outForDeliveryForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -239,7 +239,7 @@ outForDelivery.post = (args: { id: string | number } | [id: string | number ] | 
 
             /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::outForDelivery
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:110
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:109
  * @route '/api/rider-app/deliveries/{id}/out-for-delivery'
  */
         outForDeliveryForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -250,7 +250,7 @@ outForDelivery.post = (args: { id: string | number } | [id: string | number ] | 
     outForDelivery.form = outForDeliveryForm
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::requestOtp
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:153
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:150
  * @route '/api/rider-app/deliveries/{id}/otp'
  */
 export const requestOtp = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -265,7 +265,7 @@ requestOtp.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::requestOtp
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:153
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:150
  * @route '/api/rider-app/deliveries/{id}/otp'
  */
 requestOtp.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -293,7 +293,7 @@ requestOtp.url = (args: { id: string | number } | [id: string | number ] | strin
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::requestOtp
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:153
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:150
  * @route '/api/rider-app/deliveries/{id}/otp'
  */
 requestOtp.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -303,7 +303,7 @@ requestOtp.post = (args: { id: string | number } | [id: string | number ] | stri
 
     /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::requestOtp
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:153
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:150
  * @route '/api/rider-app/deliveries/{id}/otp'
  */
     const requestOtpForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -313,7 +313,7 @@ requestOtp.post = (args: { id: string | number } | [id: string | number ] | stri
 
             /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::requestOtp
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:153
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:150
  * @route '/api/rider-app/deliveries/{id}/otp'
  */
         requestOtpForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -324,7 +324,7 @@ requestOtp.post = (args: { id: string | number } | [id: string | number ] | stri
     requestOtp.form = requestOtpForm
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::uploadPod
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:183
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:165
  * @route '/api/rider-app/deliveries/{id}/pod'
  */
 export const uploadPod = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -339,7 +339,7 @@ uploadPod.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::uploadPod
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:183
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:165
  * @route '/api/rider-app/deliveries/{id}/pod'
  */
 uploadPod.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -367,7 +367,7 @@ uploadPod.url = (args: { id: string | number } | [id: string | number ] | string
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::uploadPod
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:183
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:165
  * @route '/api/rider-app/deliveries/{id}/pod'
  */
 uploadPod.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -377,7 +377,7 @@ uploadPod.post = (args: { id: string | number } | [id: string | number ] | strin
 
     /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::uploadPod
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:183
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:165
  * @route '/api/rider-app/deliveries/{id}/pod'
  */
     const uploadPodForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -387,7 +387,7 @@ uploadPod.post = (args: { id: string | number } | [id: string | number ] | strin
 
             /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::uploadPod
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:183
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:165
  * @route '/api/rider-app/deliveries/{id}/pod'
  */
         uploadPodForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -398,7 +398,7 @@ uploadPod.post = (args: { id: string | number } | [id: string | number ] | strin
     uploadPod.form = uploadPodForm
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::deliver
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:217
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:200
  * @route '/api/rider-app/deliveries/{id}/deliver'
  */
 export const deliver = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -413,7 +413,7 @@ deliver.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::deliver
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:217
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:200
  * @route '/api/rider-app/deliveries/{id}/deliver'
  */
 deliver.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -441,7 +441,7 @@ deliver.url = (args: { id: string | number } | [id: string | number ] | string |
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::deliver
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:217
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:200
  * @route '/api/rider-app/deliveries/{id}/deliver'
  */
 deliver.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -451,7 +451,7 @@ deliver.post = (args: { id: string | number } | [id: string | number ] | string 
 
     /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::deliver
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:217
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:200
  * @route '/api/rider-app/deliveries/{id}/deliver'
  */
     const deliverForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -461,7 +461,7 @@ deliver.post = (args: { id: string | number } | [id: string | number ] | string 
 
             /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::deliver
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:217
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:200
  * @route '/api/rider-app/deliveries/{id}/deliver'
  */
         deliverForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -472,7 +472,7 @@ deliver.post = (args: { id: string | number } | [id: string | number ] | string 
     deliver.form = deliverForm
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::fail
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:299
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:260
  * @route '/api/rider-app/deliveries/{id}/fail'
  */
 export const fail = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -487,7 +487,7 @@ fail.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::fail
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:299
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:260
  * @route '/api/rider-app/deliveries/{id}/fail'
  */
 fail.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -515,7 +515,7 @@ fail.url = (args: { id: string | number } | [id: string | number ] | string | nu
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::fail
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:299
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:260
  * @route '/api/rider-app/deliveries/{id}/fail'
  */
 fail.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -525,7 +525,7 @@ fail.post = (args: { id: string | number } | [id: string | number ] | string | n
 
     /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::fail
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:299
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:260
  * @route '/api/rider-app/deliveries/{id}/fail'
  */
     const failForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -535,7 +535,7 @@ fail.post = (args: { id: string | number } | [id: string | number ] | string | n
 
             /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::fail
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:299
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:260
  * @route '/api/rider-app/deliveries/{id}/fail'
  */
         failForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -546,7 +546,7 @@ fail.post = (args: { id: string | number } | [id: string | number ] | string | n
     fail.form = failForm
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::returnToSender
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:351
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:312
  * @route '/api/rider-app/deliveries/{id}/return'
  */
 export const returnToSender = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -561,7 +561,7 @@ returnToSender.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::returnToSender
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:351
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:312
  * @route '/api/rider-app/deliveries/{id}/return'
  */
 returnToSender.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -589,7 +589,7 @@ returnToSender.url = (args: { id: string | number } | [id: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::returnToSender
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:351
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:312
  * @route '/api/rider-app/deliveries/{id}/return'
  */
 returnToSender.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -599,7 +599,7 @@ returnToSender.post = (args: { id: string | number } | [id: string | number ] | 
 
     /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::returnToSender
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:351
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:312
  * @route '/api/rider-app/deliveries/{id}/return'
  */
     const returnToSenderForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -609,7 +609,7 @@ returnToSender.post = (args: { id: string | number } | [id: string | number ] | 
 
             /**
 * @see \App\Http\Controllers\Api\RiderDeliveryController::returnToSender
- * @see app/Http/Controllers/Api/RiderDeliveryController.php:351
+ * @see app/Http/Controllers/Api/RiderDeliveryController.php:312
  * @route '/api/rider-app/deliveries/{id}/return'
  */
         returnToSenderForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

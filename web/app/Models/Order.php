@@ -43,6 +43,8 @@ class Order extends Model
         'tracking_updated_at' => 'datetime',
         'courier_assigned_at' => 'datetime',
         'courier_accepted_at' => 'datetime',
+        'shipped_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     /**
@@ -59,8 +61,36 @@ class Order extends Model
         static::updated(function (Order $order) {
             if ($order->wasChanged('status')) {
                 \App\Services\BuyerNotificationService::orderStatusChanged($order);
+                $order->stampStatusTimestamp();
             }
         });
+    }
+
+    /**
+     * Stamps orders.shipped_at / completed_at the FIRST time the status becomes
+     * shipped / completed (every code path goes through the model event, so no
+     * status logic is touched). Written with a plain query so updated_at (which
+     * the old windows and auto-complete use) does not move.
+     */
+    public function stampStatusTimestamp(): void
+    {
+        $column = match ($this->status) {
+            'shipped'   => 'shipped_at',
+            'completed' => 'completed_at',
+            default     => null,
+        };
+        if ($column === null || $this->getAttribute($column) !== null) {
+            return;
+        }
+        try {
+            $now = now();
+            \Illuminate\Support\Facades\DB::table($this->getTable())
+                ->where('id', $this->getKey())->whereNull($column)->update([$column => $now]);
+            $this->setAttribute($column, $now);
+            $this->syncOriginalAttribute($column);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Order status timestamp failed: ' . $e->getMessage());
+        }
     }
 
     /**

@@ -1,4 +1,5 @@
-﻿import { Head, Link, router } from '@inertiajs/react';
+﻿import { RoleInbox } from '@/components/chat/role-inbox';
+import { Head, Link, router } from '@inertiajs/react';
 import { ReactNode, useState } from 'react';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
@@ -210,21 +211,9 @@ export default function Messages({ auth, company }: Props) {
 
                     {/* Content Area */}
                     <main className="flex-1 overflow-auto p-6 bg-gray-50">
-                        <div className="max-w-7xl mx-auto">
+                        <div className="max-w-6xl mx-auto">
                             <h1 className="text-2xl font-bold text-gray-900 mb-6">Messages</h1>
-                            
-                            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#E8E3F0] text-[#5B4B6E] mb-4">
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <circle cx="5.5" cy="17.5" r="3.5"/>
-                                        <circle cx="18.5" cy="17.5" r="3.5"/>
-                                        <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                                        <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-2">Messaging Center</h3>
-                                <p className="text-gray-600">Communicate with sellers, riders, and customers.</p>
-                            </div>
+                            <RoleInbox base="/messaging" emptyHint="Messages from the admin team appear here" />
                         </div>
                     </main>
                 </div>

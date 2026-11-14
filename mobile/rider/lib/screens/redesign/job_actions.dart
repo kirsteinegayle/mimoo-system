@@ -1,3 +1,4 @@
+import 'team_messages_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api_config.dart';
@@ -92,10 +93,15 @@ Future<void> runJobAction(
   }
 }
 
-/// Opens the existing chat route and clears the MOCK unread count.
+/// Opens the rider <-> courier company messages (real server data in API mode).
+/// The buyer chat of a delivery (DeliveryChatScreen) is separate and untouched.
 void openMessages(BuildContext context) {
-  RiderMock.instance.markMessagesRead();
-  Navigator.pushNamed(context, '/chat');
+  if (useMock) {
+    RiderMock.instance.markMessagesRead();
+    Navigator.pushNamed(context, '/chat');
+    return;
+  }
+  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TeamMessagesScreen()));
 }
 
 /// Scan waybill using the existing scanner screen, validated against MOCK jobs.

@@ -17,6 +17,7 @@ Route::get('/seller', function () {
 
 // TEST ROUTE - NO AUTH REQUIRED (REMOVE LATER!)
 Route::get('/test-seller-dashboard', function () {
+    abort_unless(config('app.debug'), 404); // dev-only test page, never in production
     return Inertia::render('seller/SellerDashboard');
 });
 
@@ -53,43 +54,30 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     
     // Buyer Settings/Account Page
     Route::get('/settings', function () {
-        return Inertia::render('BuyerAcc');
+        return Inertia::render('BuyerAccountSettings');
     });
     
     // Seller Dashboard - for approved sellers only
     Route::get('/seller/dashboard', [\App\Http\Controllers\SellerDashboardController::class, 'index'])->name('seller.dashboard');
     
-    // Logistics Dashboard - for approved logistics users only
-    Route::get('/logistics/dashboard', function () {
-        $user = auth()->user();
-        
-        return Inertia::render('logistics/LogisticsDashboard', [
-            'auth' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'account_type' => $user->account_type,
-                ],
-            ],
-            'company' => [
-                'name' => $user->company_name ?? $user->business_name,
-                'contact_person' => trim($user->contact_first_name . ' ' . $user->contact_last_name),
-            ],
-        ]);
-    })->name('logistics.dashboard')->middleware('role:logistics_staff');
+    // Logistics Dashboard - for approved logistics users only (real stats)
+    Route::get('/logistics/dashboard', [\App\Http\Controllers\Logistics\DashboardController::class, 'index'])->name('logistics.dashboard')->middleware('role:logistics_staff');
     
     // Courier Dashboard - for approved courier companies ONLY
     Route::get('/courier/dashboard', function () {
         $user = auth()->user();
         
-        // Mock stats for now - replace with real data later
+        // Real numbers for this courier company (also for its logistics_staff).
+        $cid = \App\Support\CourierCompanyResolver::resolveId($user) ?? 0;
+        $held = fn () => \App\Models\ShipmentAssignment::where('courier_id', $cid);
+        $jobs = fn () => \App\Models\DeliveryJob::where('courier_id', $cid);
         $stats = [
-            'incoming_shipments' => 15,
-            'pending_pickups' => 8,
-            'in_transit' => 42,
-            'deliveries_today' => 23,
-            'exceptions' => 3,
+            'incoming_shipments' => $held()->where('assignment_status', 'pending')->count(),
+            'pending_pickups' => $held()->where('assignment_status', 'accepted')->whereIn('pickup_status', ['pending_pickup', 'scheduled'])->count(),
+            'in_transit' => $jobs()->whereIn('status', ['assigned', 'out_for_delivery'])->count(),
+            'deliveries_today' => $jobs()->where('status', 'delivered')->whereDate('delivered_at', today())->count(),
+            'exceptions' => $held()->where('assignment_status', 'accepted')->where('pickup_status', 'failed')->count()
+                + $jobs()->whereIn('status', ['failed', 'return_to_sender'])->count(),
         ];
         
         return Inertia::render('courier/CourierDashboard', [
@@ -125,6 +113,12 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::post('/api/courier/pickups/{id}/record-failed', [\App\Http\Controllers\Courier\PickupManagementController::class, 'recordFailed'])->middleware('role:courier,logistics_staff');
     Route::post('/api/courier/pickups/{id}/confirm', [\App\Http\Controllers\Courier\PickupManagementController::class, 'confirmPickup'])->middleware('role:courier,logistics_staff');
     
+    // Courier company notifications (bell + page); courier and linked logistics_staff.
+    Route::get('/courier/notifications', [\App\Http\Controllers\Courier\NotificationController::class, 'page'])->name('courier.notifications')->middleware('role:courier,logistics_staff');
+    Route::get('/courier/notifications/feed', [\App\Http\Controllers\Courier\NotificationController::class, 'feed'])->middleware('role:courier,logistics_staff');
+    Route::post('/courier/notifications/read-all', [\App\Http\Controllers\Courier\NotificationController::class, 'markAllRead'])->middleware(['role:courier,logistics_staff', 'throttle:30,1,courier-notification-markallread']);
+    Route::post('/courier/notifications/{id}/read', [\App\Http\Controllers\Courier\NotificationController::class, 'markRead'])->middleware(['role:courier,logistics_staff', 'throttle:60,1,courier-notification-markread'])->whereNumber('id');
+
     // Courier - Parcel Scanning
     Route::get('/courier/parcel-scanning', function () {
         $user = auth()->user();
@@ -152,7 +146,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     
     // Courier - Parcel Scanning
     Route::get('/courier/parcel-scanning', function () {
-        $courier = auth()->user();
+        $courier = \App\Support\CourierCompanyResolver::scope(auth()->user()); // company, also for its logistics_staff
         
         $facilities = \App\Models\CourierFacility::where('courier_id', $courier->id)
             ->where('status', 'Active')
@@ -196,6 +190,16 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             ->with(['buyer', 'items.product'])
             ->first();
         
+        // Only a parcel that belongs to this company (accepted assignment, or one being returned to the
+        // sender by its rider) is shown: buyer name, phone and address are not for other companies.
+        $companyId = \App\Support\CourierCompanyResolver::resolveId(auth()->user());
+        $mine = $companyId && ($order && (
+            \App\Models\ShipmentAssignment::where('order_id', $order->id)->where('courier_id', $companyId)->where('assignment_status', 'accepted')->where('pickup_status', '<>', 'cancelled')->exists()
+            || \App\Models\DeliveryJob::where('order_id', $order->id)->where('courier_id', $companyId)->where('status', \App\Models\DeliveryJob::STATUS_RETURN_TO_SENDER)->exists()));
+        if ($order && ! $mine) {
+            $order = null; // same answer as "not found"
+        }
+
         if (!$order) {
             return response()->json([
                 'error' => 'Parcel not found',
@@ -232,11 +236,12 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'facility_id' => 'required|exists:courier_facilities,id',
         ]);
         
-        $courier = auth()->user();
+        $actor = auth()->user();
+        $courier = \App\Support\CourierCompanyResolver::scope($actor); // company (courier or its logistics_staff)
         $facility = \App\Models\CourierFacility::findOrFail($validated['facility_id']);
         
         // Verify facility belongs to this courier
-        if ($facility->courier_id !== $courier->id) {
+        if ((int) $facility->courier_id !== (int) $courier->id) {
             return response()->json([
                 'error' => 'Unauthorized',
                 'message' => 'This facility does not belong to your company.'
@@ -260,21 +265,42 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         }
         
         // Verify order is assigned to this courier
-        if ($order->assigned_courier_id && $order->assigned_courier_id !== $courier->id) {
+        if ($order->assigned_courier_id && (int) $order->assigned_courier_id !== (int) $courier->id) {
             return response()->json([
                 'error' => 'Unauthorized',
                 'message' => 'This parcel is assigned to a different courier company.'
             ], 403);
         }
         
+        // The parcel must really be this company's: an accepted assignment (picked up or waiting for pickup),
+        // or a delivery job of the company that is being returned to the sender. Unassigned parcels are refused.
+        $returning = \App\Models\DeliveryJob::where('order_id', $order->id)->where('courier_id', $courier->id)
+            ->where('status', \App\Models\DeliveryJob::STATUS_RETURN_TO_SENDER)->exists();
+        $assigned = \App\Models\ShipmentAssignment::where('order_id', $order->id)->where('courier_id', $courier->id)
+            ->where('assignment_status', 'accepted')->where('pickup_status', '<>', 'cancelled')->exists();
+        if (! $assigned && ! $returning) {
+            return response()->json([
+                'error' => 'Not assigned',
+                'message' => 'This parcel is not assigned to your company (or the assignment was not accepted yet), so it cannot be scanned in.'
+            ], 422);
+        }
+        $scanType = $returning ? 'return_received' : 'received';
+        if ($returning && \App\Models\ShipmentScan::where('order_id', $order->id)->where('scan_type', 'return_received')->exists()) {
+            return response()->json([
+                'error' => 'Already received',
+                'message' => 'This returned parcel was already received at a hub.'
+            ], 422);
+        }
+
         // Create scan record
         \App\Models\ShipmentScan::create([
             'order_id' => $order->id,
             'waybill_number' => $validated['waybill_number'],
             'courier_id' => $courier->id,
             'facility_id' => $validated['facility_id'],
-            'scan_type' => 'received',
-            'scanned_by' => $courier->first_name . ' ' . $courier->last_name,
+            'scan_type' => $scanType,
+            'scanned_by' => trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? '')) ?: $actor->name,
+            'notes' => $returning ? 'Returned parcel (return to sender) received at the hub.' : null,
         ]);
         
         // Update order tracking status and current location
@@ -295,7 +321,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'current_facility_id' => $validated['facility_id'],
         ]);
         
-        $order->updateTracking('scanned_at_facility', $trackingMessage);
+        $order->updateTracking($returning ? 'returned_to_hub' : 'scanned_at_facility', $returning ? "Returned parcel received at {$facility->facility_name}" : $trackingMessage);
         
         return response()->json([
             'success' => true,
@@ -307,7 +333,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     
     // API: Get received parcels for a facility
     Route::get('/api/courier/facility/{facilityId}/received-parcels', function ($facilityId) {
-        $courier = auth()->user();
+        $courier = \App\Support\CourierCompanyResolver::scope(auth()->user()); // company, also for its logistics_staff
         $facility = \App\Models\CourierFacility::findOrFail($facilityId);
         
         // Verify facility belongs to this courier
@@ -363,7 +389,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     
     // API: Get archived parcels for a facility
     Route::get('/api/courier/facility/{facilityId}/archived-parcels', function ($facilityId) {
-        $courier = auth()->user();
+        $courier = \App\Support\CourierCompanyResolver::scope(auth()->user()); // company, also for its logistics_staff
         $facility = \App\Models\CourierFacility::findOrFail($facilityId);
         
         // Verify facility belongs to this courier
@@ -435,6 +461,10 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         ]);
     })->name('courier.cod-remittance')->middleware('role:courier,logistics_staff');
     
+    // Courier COD: confirm the cash riders handed in (once; company-scoped).
+    Route::get('/courier/cod-remittances', [\App\Http\Controllers\Courier\CodRemittanceController::class, 'index'])->middleware('role:courier,logistics_staff');
+    Route::post('/courier/cod-remittances/{id}/confirm', [\App\Http\Controllers\Courier\CodRemittanceController::class, 'confirm'])->middleware(['role:courier,logistics_staff', 'throttle:30,1,courier-cod-confirm'])->whereNumber('id');
+
     // Courier - Reports
     Route::get('/courier/reports', function () {
         $user = auth()->user();
@@ -622,6 +652,8 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     
     // DEBUG ROUTE: Check waybill numbers in database
     Route::get('/api/debug/waybills', function () {
+        // Lists every waybill: dev only, and only logistics staff.
+        abort_unless(config('app.debug') && \App\Support\PortalRole::roleOf(auth()->user()) === 'logistics_staff', 404);
         $orders = \App\Models\Order::whereNotNull('waybill_number')
             ->select('id', 'waybill_number', 'status', 'waybill_generated_at', 'waybill_printed_at')
             ->get()
@@ -864,7 +896,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         $courier = \App\Models\User::findOrFail($id);
         
         // Validate that this is a logistics account
-        if ($courier->account_type !== 'logistics') {
+        if ($courier->account_type !== 'logistics' || $courier->role !== 'courier') {
             return response()->json([
                 'error' => 'This account is not a courier/logistics account',
             ], 400);
@@ -909,7 +941,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         $courier = \App\Models\User::findOrFail($id);
         
         // Validate that this is a logistics account
-        if ($courier->account_type !== 'logistics') {
+        if ($courier->account_type !== 'logistics' || $courier->role !== 'courier') {
             return response()->json([
                 'error' => 'This account is not a courier/logistics account',
             ], 400);
@@ -955,7 +987,9 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         $user = auth()->user();
         
         // Fetch orders with status "shipped" (confirmed at logistics hub, ready for sorting)
-        $transitOrders = \App\Models\Order::where('status', 'shipped')
+        $transitOrders = \App\Models\Order::where(fn ($w) => $w->where('status', 'shipped')
+                ->orWhere(fn ($o) => \App\Services\StuckOrderGuard::orphanScope($o))) // + orders left in_transit with nobody holding them
+            ->whereDoesntHave('shipmentAssignments', fn ($q) => $q->active()) // already dispatched (rider sync sets shipped again)
             ->with(['items.product'])
             ->orderBy('updated_at', 'desc')
             ->get()
@@ -1108,7 +1142,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             $errors = [];
             
             foreach ($parcelIds as $orderId) {
-                $order = \App\Models\Order::find($orderId);
+                $order = \App\Models\Order::lockForUpdate()->find($orderId); // two staff assigning at once: one waits
                 
                 if (!$order) {
                     $errors[] = "Order #$orderId not found";
@@ -1117,7 +1151,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                 }
                 
                 // Check if order is in correct status (shipped = confirmed at logistics hub)
-                if ($order->status !== 'shipped') {
+                if ($order->status !== 'shipped' && ! \App\Services\StuckOrderGuard::isOrphan($order)) {
                     $errors[] = "Order {$order->waybill_number} is not ready for assignment (status: {$order->status})";
                     $skippedCount++;
                     continue;
@@ -1468,10 +1502,16 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                 'city' => $user->municipality_city ?? '',
                 'province' => $user->province ?? '',
                 'postal_code' => '',
+                'registered_at' => $user->created_at?->toDateString(),
             ],
         ]);
     })->name('seller.settings');
     
+    // Persist the store (brand) name. Stored in users.business_name, the same column
+    // the registration form fills, so the admin seller list/detail shows the current name.
+    Route::put('/seller/store-name', [\App\Http\Controllers\SellerDashboardController::class, 'updateStoreName'])
+        ->name('seller.store-name')->middleware('role:seller');
+
     // Seller Account Management page
     Route::get('/seller/account', function () {
         $user = auth()->user();
@@ -1790,7 +1830,7 @@ Route::get('/seller/{id}', function (string $id) {
     return Inertia::render('ViewSeller', [
         'seller' => $sellerData,
     ]);
-})->name('seller.view');
+})->name('seller.view')->whereNumber('id');
 
 Route::get('/category/{category}', function (string $category) {
     $products = \App\Models\Product::with('seller:id,business_name,name')
@@ -1886,6 +1926,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/buyer/chat/{id}/messages', [\App\Http\Controllers\Api\BuyerChatController::class, 'messages'])->middleware('throttle:120,1,web-chat-messages')->whereNumber('id');
     Route::post('/buyer/chat/{id}/messages', [\App\Http\Controllers\Api\BuyerChatController::class, 'send'])->middleware('throttle:30,1,web-chat-send')->whereNumber('id');
 
+    // Follow stores + following list for the web (session auth). Same controller,
+    // rules and JSON as /api/buyer/* used by the mobile app; buyer accounts only.
+    Route::post('/buyer/sellers/{id}/follow', [\App\Http\Controllers\Api\BuyerFollowController::class, 'follow'])->middleware('throttle:30,1,web-follow-follow')->whereNumber('id');
+    Route::delete('/buyer/sellers/{id}/follow', [\App\Http\Controllers\Api\BuyerFollowController::class, 'unfollow'])->middleware('throttle:30,1,web-follow-unfollow')->whereNumber('id');
+    Route::get('/buyer/following', [\App\Http\Controllers\Api\BuyerFollowController::class, 'index']);
+    Route::get('/following', fn () => Inertia::render('BuyerFollowing'))->name('buyer.following');
+
+    // Account settings for the web (session auth): profile, change email / phone (OTP) and password.
+    // Same controllers, validation, OTP rules and rate limits as the mobile app; buyer accounts only.
+    Route::get('/buyer/profile', [\App\Http\Controllers\Api\BuyerProfileController::class, 'show']);
+    Route::put('/buyer/profile', [\App\Http\Controllers\Api\BuyerProfileController::class, 'update'])->middleware('throttle:30,1,web-buyer-profile');
+    Route::post('/buyer/change-password', [\App\Http\Controllers\Api\BuyerAccountController::class, 'changePassword'])->middleware('throttle:10,1,web-buyer-change-password');
+    Route::post('/buyer/change-email/request', [\App\Http\Controllers\Api\BuyerAccountController::class, 'changeEmailRequest'])->middleware('throttle:5,1,web-buyer-change-email-request');
+    Route::post('/buyer/change-email/verify', [\App\Http\Controllers\Api\BuyerAccountController::class, 'changeEmailVerify'])->middleware('throttle:10,1,web-buyer-change-email-verify');
+    Route::post('/buyer/change-phone/request', [\App\Http\Controllers\Api\BuyerAccountController::class, 'changePhoneRequest'])->middleware('throttle:5,1,web-buyer-change-phone-request');
+    Route::post('/buyer/change-phone/verify', [\App\Http\Controllers\Api\BuyerAccountController::class, 'changePhoneVerify'])->middleware('throttle:10,1,web-buyer-change-phone-verify');
+
     // Returns / refunds for the web (session auth). Same controller, rules and
     // JSON shape as /api/buyer/* used by the mobile app; buyer only.
     Route::post('/buyer/orders/{id}/return', [\App\Http\Controllers\Api\BuyerReturnController::class, 'store'])->middleware('throttle:10,1,web-return-store')->whereNumber('id');
@@ -1893,6 +1950,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/buyer/returns/{id}', [\App\Http\Controllers\Api\BuyerReturnController::class, 'show'])->whereNumber('id');
     Route::post('/buyer/returns/{id}/escalate', [\App\Http\Controllers\Api\BuyerReturnController::class, 'escalate'])->middleware('throttle:5,1,web-return-escalate')->whereNumber('id');
     Route::get('/returns', fn () => Inertia::render('BuyerReturns'))->name('buyer.returns');
+    // Refund status per return request (web only; the mobile /api/buyer/returns payload is unchanged).
+    Route::get('/buyer/refunds', [\App\Http\Controllers\Buyer\RefundStatusController::class, 'index']);
 
     // Reviews for the web (session auth). Same controller as the mobile app.
     Route::post('/buyer/orders/{orderId}/items/{itemId}/review', [\App\Http\Controllers\Api\BuyerReviewController::class, 'store'])->middleware('throttle:10,1,web-review-store')->whereNumber(['orderId', 'itemId']);
@@ -1910,6 +1969,25 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::get('/seller/notifications/feed', [\App\Http\Controllers\Seller\NotificationController::class, 'feed']);
     Route::post('/seller/notifications/read-all', [\App\Http\Controllers\Seller\NotificationController::class, 'markAllRead'])->middleware('throttle:30,1,seller-notification-markallread');
     Route::post('/seller/notifications/{id}/read', [\App\Http\Controllers\Seller\NotificationController::class, 'markRead'])->middleware('throttle:60,1,seller-notification-markread')->whereNumber('id');
+
+    // Role messaging (seller, courier, logistics, buyer<->admin): same controller as the admin and app routes.
+    Route::prefix('messaging')->group(function () {
+        Route::get('/contacts', [\App\Http\Controllers\MessagingController::class, 'contacts'])->middleware('throttle:60,1,web-msg-contacts');
+        Route::get('/threads', [\App\Http\Controllers\MessagingController::class, 'threads'])->middleware('throttle:120,1,web-msg-threads');
+        Route::post('/start', [\App\Http\Controllers\MessagingController::class, 'start'])->middleware('throttle:20,1,web-msg-start');
+        Route::get('/threads/{id}/messages', [\App\Http\Controllers\MessagingController::class, 'messages'])->middleware('throttle:120,1,web-msg-messages')->whereNumber('id');
+        Route::post('/threads/{id}/messages', [\App\Http\Controllers\MessagingController::class, 'send'])->middleware('throttle:30,1,web-msg-send')->whereNumber('id');
+        Route::post('/threads/{id}/read', [\App\Http\Controllers\MessagingController::class, 'read'])->middleware('throttle:60,1,web-msg-read')->whereNumber('id');
+        Route::get('/messages/{id}/image', [\App\Http\Controllers\MessagingController::class, 'image'])->middleware('throttle:120,1,web-msg-image')->whereNumber('id');
+    });
+
+    // Seller returns (own items only; approve/reject pending) and replies to reviews of own products.
+    Route::get('/seller/returns', [\App\Http\Controllers\Seller\ReturnsController::class, 'page'])->name('seller.returns');
+    Route::get('/seller/returns/feed', [\App\Http\Controllers\Seller\ReturnsController::class, 'feed']);
+    Route::post('/seller/returns/{id}/decision', [\App\Http\Controllers\Seller\ReturnsController::class, 'decision'])->middleware('throttle:30,1,seller-return-decision')->whereNumber('id');
+    Route::get('/seller/returns/{id}/photo/{filename}', [\App\Http\Controllers\Seller\ReturnsController::class, 'photo'])->whereNumber('id');
+    Route::get('/seller/reviews/feed', [\App\Http\Controllers\Seller\ReviewsController::class, 'feed']);
+    Route::post('/seller/reviews/{id}/reply', [\App\Http\Controllers\Seller\ReviewsController::class, 'reply'])->middleware('throttle:30,1,seller-review-reply')->whereNumber('id');
 
     // Seller side of buyer <-> seller chat (seller accounts only; own threads only, 404 otherwise).
     Route::get('/seller/chat/threads', [\App\Http\Controllers\Api\SellerChatController::class, 'index'])->middleware('throttle:120,1,seller-chat-threads');
@@ -2002,6 +2080,26 @@ Route::prefix('admin')->name('admin.')->group(function () {
         
         // Product reports routes
         Route::get('/reports', [AdminController::class, 'productReports'])->name('reports');
+        
+        // Admin inbox (master-code session = admin team identity).
+        Route::prefix('messaging')->group(function () {
+            Route::get('/contacts', [\App\Http\Controllers\MessagingController::class, 'contacts'])->middleware('throttle:60,1,admin-msg-contacts');
+            Route::get('/threads', [\App\Http\Controllers\MessagingController::class, 'threads'])->middleware('throttle:120,1,admin-msg-threads');
+            Route::post('/start', [\App\Http\Controllers\MessagingController::class, 'start'])->middleware('throttle:20,1,admin-msg-start');
+            Route::get('/threads/{id}/messages', [\App\Http\Controllers\MessagingController::class, 'messages'])->middleware('throttle:120,1,admin-msg-messages')->whereNumber('id');
+            Route::post('/threads/{id}/messages', [\App\Http\Controllers\MessagingController::class, 'send'])->middleware('throttle:30,1,admin-msg-send')->whereNumber('id');
+            Route::post('/threads/{id}/read', [\App\Http\Controllers\MessagingController::class, 'read'])->middleware('throttle:60,1,admin-msg-read')->whereNumber('id');
+            Route::get('/messages/{id}/image', [\App\Http\Controllers\MessagingController::class, 'image'])->middleware('throttle:120,1,admin-msg-image')->whereNumber('id');
+        });
+
+        Route::get('/messages', fn () => Inertia::render('admin/Messages'))->name('messages');
+
+        // Escalated returns (admin decides)
+        Route::get('/returns', [\App\Http\Controllers\Admin\ReturnsController::class, 'page'])->name('returns');
+        Route::get('/returns/feed', [\App\Http\Controllers\Admin\ReturnsController::class, 'feed'])->name('returns.feed');
+        Route::post('/returns/{id}/decision', [\App\Http\Controllers\Admin\ReturnsController::class, 'decision'])->name('returns.decision')->whereNumber('id');
+        Route::post('/returns/{id}/refund', [\App\Http\Controllers\Admin\ReturnsController::class, 'refund'])->name('returns.refund')->whereNumber('id');
+        Route::get('/returns/{id}/photo/{filename}', [\App\Http\Controllers\Admin\ReturnsController::class, 'photo'])->name('returns.photo')->whereNumber('id');
         
         Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
     });

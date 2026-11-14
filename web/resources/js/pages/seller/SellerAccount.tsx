@@ -199,7 +199,7 @@ function Card({ icon: Icon, title, desc, right, children, footer }: {
     );
 }
 
-function useEdit<T extends object>(initial: T, validate: (d: T) => Errs) {
+function useEdit<T extends object>(initial: T, validate: (d: T) => Errs, onCommit?: (next: T, prev: T) => void) {
     const [saved, setSaved] = useState<T>(initial);
     const [draft, setDraft] = useState<T>(initial);
     const [editing, setEditing] = useState(false);
@@ -222,7 +222,7 @@ function useEdit<T extends object>(initial: T, validate: (d: T) => Errs) {
         setConfirm('save');
         return true;
     };
-    const commit = () => { setSaved(draft); setEditing(false); setConfirm(null); setJustSaved(true); };
+    const commit = () => { onCommit?.(draft, saved); setSaved(draft); setEditing(false); setConfirm(null); setJustSaved(true); };
     const v = editing ? draft : saved;
     return { saved, draft, v, editing, errors, confirm, setConfirm, dirty, justSaved, set, start, cancel, requestCancel, requestSave, commit };
 }
@@ -1218,7 +1218,13 @@ export default function SellerAccountManagementPage({ auth, seller }: SellerAcco
         logo: seller?.store_logo || '',
     };
     
-    const profile = useEdit<ProfileData>(profileInitial, validateProfile);
+    // The store (brand) name is the only profile field with a server column; save it
+    // to users.business_name so the admin seller list shows the current name.
+    const profile = useEdit<ProfileData>(profileInitial, validateProfile, (next, prev) => {
+        if (next.storeName.trim() !== prev.storeName.trim()) {
+            router.put('/seller/store-name', { store_name: next.storeName.trim() }, { preserveScroll: true, preserveState: true });
+        }
+    });
     const savedProfile = profile.saved;
 
     const showToast: Toaster = (msg, bad) => {

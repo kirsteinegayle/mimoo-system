@@ -342,6 +342,41 @@ class ParcelInfo {
 
 // ── Pagination meta ───────────────────────────────────────────────────────────
 
+String _roleLabel(String? role) => switch (role) {
+      'admin' => 'Admin',
+      'seller' => 'Seller',
+      'rider' => 'Rider',
+      'courier' => 'Courier',
+      'logistics' => 'Logistics',
+      'buyer' => 'Buyer',
+      _ => 'Conversation',
+    };
+
+/// ISO date -> "Nov 14, 3:05 PM" (device time). Null / unparsable -> the input.
+String? _shortTime(String? iso) {
+  final d = iso == null ? null : DateTime.tryParse(iso)?.toLocal();
+  if (d == null) return iso;
+  const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
+  return '${m[d.month - 1]} ${d.day}, $h:${d.minute.toString().padLeft(2, '0')} ${d.hour >= 12 ? 'PM' : 'AM'}';
+}
+
+/// A person the courier may start a conversation with (GET /messaging/contacts).
+class MessageContact {
+  const MessageContact({required this.role, required this.id, required this.name});
+  final String role;
+  final int id;
+  final String name;
+
+  String get roleLabel => _roleLabel(role);
+
+  factory MessageContact.fromJson(Map<String, dynamic> j) => MessageContact(
+        role: _readString(j['role']),
+        id: _readInt(j['id']),
+        name: _readString(j['name'], fallback: 'Unknown'),
+      );
+}
+
 class PageMeta {
   const PageMeta({
     required this.currentPage,
@@ -424,6 +459,20 @@ class ConversationSummary {
   final String? lastMessageAt;
   final int unread;
 
+  /// One row of GET /courier-app/messaging/threads (or the POST /messaging/start result).
+  factory ConversationSummary.fromThreadJson(Map<String, dynamic> j) {
+    final last = _readMap(j['last_message']);
+    return ConversationSummary(
+      id: _readInt(j['id']),
+      subject: _roleLabel(j['counterpart_role']?.toString()),
+      otherName: _readString(j['counterpart_name'], fallback: 'Conversation'),
+      otherCompany: _roleLabel(j['counterpart_role']?.toString()),
+      lastMessage: last?['body']?.toString(),
+      lastMessageAt: _shortTime(j['last_message_at']?.toString()),
+      unread: _readInt(j['unread_count']),
+    );
+  }
+
   factory ConversationSummary.fromJson(Map<String, dynamic> j) {
     final other = _readMap(j['other_party']) ?? const {};
     return ConversationSummary(
@@ -452,6 +501,15 @@ class ChatMessage {
   final bool mine;
   final String senderName;
   final String createdAt;
+
+  /// One message of GET /courier-app/messaging/threads/{id}/messages.
+  factory ChatMessage.fromMessagingJson(Map<String, dynamic> j) => ChatMessage(
+        id: _readInt(j['id']),
+        body: _readString(j['body'], fallback: j['image_url'] != null ? '[Photo]' : ''),
+        mine: j['is_mine'] as bool? ?? false,
+        senderName: '',
+        createdAt: _shortTime(j['created_at']?.toString()) ?? '',
+      );
 
   factory ChatMessage.fromJson(Map<String, dynamic> j) => ChatMessage(
         id: _readInt(j['id']),

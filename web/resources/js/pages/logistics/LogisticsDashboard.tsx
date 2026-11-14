@@ -17,38 +17,34 @@ interface Props {
         name: string;
         contact_person: string;
     };
+    stats: {
+        parcelsToday: number;
+        pendingSort: number;
+        outForDelivery: number;
+        ridersActive: number;
+        delivered: number;
+        deliveredTotal: number;
+    };
+    recentShipments: {
+        id: string;
+        destination: string;
+        address: string;
+        rider: string;
+        lastScan: string;
+        date: string;
+        status: string;
+    }[];
+    activityTimeline: { type: string; message: string; time: string }[];
+    now: string;
 }
 
-export default function LogisticsDashboard({ auth, company }: Props) {
+export default function LogisticsDashboard({ auth, company, stats, recentShipments, activityTimeline, now }: Props) {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [showUserMenu, setShowUserMenu] = useState(false);
 
     const handleLogout = () => {
         router.post('/logout');
     };
-
-    // Mock data for now - replace with real data later
-    const stats = {
-        parcelsToday: 0,
-        pendingSort: 10,
-        outForDelivery: 13,
-        delivered: 0,
-    };
-
-    const recentShipments = [
-        { id: '#1097', destination: 'Oatid', address: 'Purok 4, Brgy. Oatid', rider: 'F. Dela Cruz', lastScan: '07:25 AM', date: 'Oct 28', status: 'undelivered' },
-        { id: '#1058', destination: 'Nanhaya', address: '7 Son Recto St., Brgy. Nanh...', rider: 'T. Lim', lastScan: '07:43 AM', date: 'Oct 28', status: 'delivered' },
-        { id: '#1008', destination: 'Palasan', address: 'Purok 1, Brgy. Palasan', rider: 'A. Santos', lastScan: '07:42 AM', date: 'Oct 28', status: 'delivered' },
-        { id: '#1059', destination: 'Buenavista', address: 'Purok 2, Brgy. Buenavista', rider: 'B. Flores', lastScan: '07:41 AM', date: 'Oct 28', status: 'delivered' },
-        { id: '#1054', destination: 'Bubukal', address: '18 Quezon Ave., Brgy. Bubu...', rider: 'M. Cruz', lastScan: '07:39 AM', date: 'Oct 28', status: 'delivered' },
-    ];
-
-    const activityTimeline = [
-        { type: 'success', message: 'Shift checklist submitted - Inbound 3 of 3 steps completed', time: '1 day ago' },
-        { type: 'success', message: 'Palasan "” 1 parcels dispatched to A. Santos', time: '1 day ago' },
-        { type: 'info', message: '#1037 status updated to awaiting_sort', time: '1 day ago' },
-        { type: 'info', message: '#1037 status updated to awaiting_sort', time: '2 days ago' },
-    ];
 
     const navItems = [
         { id: 'dashboard', label: 'Dashboard', icon: 'grid', href: '/logistics/dashboard' },
@@ -238,15 +234,15 @@ export default function LogisticsDashboard({ auth, company }: Props) {
                             <div className="flex items-center gap-2 bg-[#E8E3F0] text-blue-700 px-3 py-1.5 rounded-lg border border-[#D4CEE0]">
                                 <span className="w-2 h-2 bg-[#E8E3F0] rounded-full animate-pulse"></span>
                                 <span className="text-xs font-semibold">STREAM LIVE</span>
-                                <span className="text-xs text-[#5B4B6E]">Wednesday, Oct 28, 2026 "¢ 05:05 AM</span>
+                                <span className="text-xs text-[#5B4B6E]">{now}</span>
                             </div>
-                            <button className="bg-[#2B2249] hover:bg-[#3B1F6B] text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition">
+                            <Link href="/logistics/incoming-parcels" className="bg-[#2B2249] hover:bg-[#3B1F6B] text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <rect x="3" y="3" width="18" height="18" rx="2"/>
                                     <path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
                                 </svg>
                                 Scan QR Code
-                            </button>
+                            </Link>
                         </div>
 
                         {/* Stats Grid */}
@@ -275,7 +271,7 @@ export default function LogisticsDashboard({ auth, company }: Props) {
                                 </div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Pending Sort</div>
                                 <div className="text-3xl font-bold text-gray-900 mb-1">{stats.pendingSort}</div>
-                                <div className="text-xs text-gray-500">10 flagged by SLA</div>
+                                <div className="text-xs text-gray-500">Confirmed at hub, not yet dispatched</div>
                             </div>
 
                             {/* Out for Delivery */}
@@ -292,7 +288,7 @@ export default function LogisticsDashboard({ auth, company }: Props) {
                                 </div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Out for Delivery</div>
                                 <div className="text-3xl font-bold text-gray-900 mb-1">{stats.outForDelivery}</div>
-                                <div className="text-xs text-gray-500">8 riders active</div>
+                                <div className="text-xs text-gray-500">{stats.ridersActive} rider{stats.ridersActive === 1 ? '' : 's'} active</div>
                             </div>
 
                             {/* Delivered */}
@@ -306,7 +302,7 @@ export default function LogisticsDashboard({ auth, company }: Props) {
                                 </div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Delivered</div>
                                 <div className="text-3xl font-bold text-gray-900 mb-1">{stats.delivered}</div>
-                                <div className="text-xs text-gray-500">20% on time</div>
+                                <div className="text-xs text-gray-500">{stats.deliveredTotal} delivered all time</div>
                             </div>
                         </div>
 
@@ -355,6 +351,7 @@ export default function LogisticsDashboard({ auth, company }: Props) {
                                     </Link>
                                 </div>
                                 <div className="p-5 space-y-4">
+                                    {activityTimeline.length === 0 && <p className="text-xs text-gray-500">No activity yet.</p>}
                                     {activityTimeline.map((activity, index) => (
                                         <div key={index} className="flex gap-3">
                                             <div className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${activity.type === 'success' ? 'bg-green-500' : 'bg-[#E8E3F0]'}`}></div>
@@ -373,23 +370,7 @@ export default function LogisticsDashboard({ auth, company }: Props) {
                             <div className="border-b border-gray-200 px-5 py-4 flex items-center justify-between">
                                 <div>
                                     <h2 className="text-sm font-bold text-gray-900">Recent Shipments</h2>
-                                    <p className="text-xs text-gray-500 mt-0.5">Sorted by urgency</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-gray-600">Sort:</span>
-                                        <select className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#3B1F6B]">
-                                            <option>Urgency</option>
-                                            <option>Time</option>
-                                            <option>Destination</option>
-                                        </select>
-                                    </div>
-                                    <button className="text-xs text-gray-600 flex items-center gap-1">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                                        </svg>
-                                        Auto-refresh: 10s
-                                    </button>
+                                    <p className="text-xs text-gray-500 mt-0.5">Latest courier dispatches</p>
                                 </div>
                             </div>
                             <div className="overflow-x-auto">
@@ -400,10 +381,13 @@ export default function LogisticsDashboard({ auth, company }: Props) {
                                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Destination</th>
                                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Rider</th>
                                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Last Scan</th>
-                                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600">Action</th>
+                                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
+                                        {recentShipments.length === 0 && (
+                                            <tr><td colSpan={5} className="px-5 py-8 text-center text-sm text-gray-500">No shipments yet.</td></tr>
+                                        )}
                                         {recentShipments.map((shipment) => (
                                             <tr key={shipment.id} className="hover:bg-gray-50/50">
                                                 <td className="px-5 py-4">
@@ -431,15 +415,13 @@ export default function LogisticsDashboard({ auth, company }: Props) {
                                                     <div className="text-xs text-gray-500">{shipment.date}</div>
                                                 </td>
                                                 <td className="px-4 py-4 text-right">
-                                                    {shipment.status === 'undelivered' ? (
-                                                        <button className="text-xs font-semibold text-red-600 hover:underline">
-                                                            Scan undelivered
-                                                        </button>
-                                                    ) : (
-                                                        <button className="text-xs font-semibold text-[#3B1F6B] hover:underline">
-                                                            Mark delivered
-                                                        </button>
-                                                    )}
+                                                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                                                        shipment.status === 'delivered' ? 'bg-green-50 text-green-700'
+                                                        : shipment.status === 'failed' || shipment.status === 'return_to_sender' ? 'bg-red-50 text-red-700'
+                                                        : 'bg-[#E8E3F0] text-[#3B1F6B]'
+                                                    }`}>
+                                                        {shipment.status.replace(/_/g, ' ')}
+                                                    </span>
                                                 </td>
                                             </tr>
                                         ))}
@@ -448,7 +430,7 @@ export default function LogisticsDashboard({ auth, company }: Props) {
                             </div>
                             <div className="border-t border-gray-200 px-5 py-3 bg-gray-50/50">
                                 <p className="text-xs text-gray-500">
-                                    50 parcels "¢ Sorted by urgency "¢ 05:05 AM
+                                    {recentShipments.length} latest shipment{recentShipments.length === 1 ? '' : 's'}
                                 </p>
                             </div>
                         </div>

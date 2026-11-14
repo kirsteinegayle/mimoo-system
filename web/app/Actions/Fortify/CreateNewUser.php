@@ -118,6 +118,8 @@ class CreateNewUser implements CreatesNewUsers
             'tin'             => ['nullable', 'string', 'max:50'], // For sellers
             'birthday'        => [($input['account_type'] ?? '') === 'logistics' ? 'nullable' : 'required', 'date', 'before:-18 years'],
             'account_type'    => ['required', 'in:buyer,seller,logistics'],
+            // Which logistics form was used: /register/logistics (company) or /register/courier (hub branch).
+            'applicant_type'  => ['nullable', 'in:logistics,courier'],
             'terms_accepted'  => ['sometimes', 'required_if:account_type,buyer', 'accepted'],
             'privacy_policy_accepted' => ['sometimes', 'required_if:account_type,seller,logistics', 'accepted'],
 
@@ -305,7 +307,9 @@ class CreateNewUser implements CreatesNewUsers
                 'role'              => match($input['account_type']) {
                     'buyer' => 'buyer',
                     'seller' => 'seller',
-                    'logistics' => 'courier', // Logistics registrations are courier companies
+                    // /register/logistics -> logistics company (hub); /register/courier -> courier hub.
+                    // Missing applicant_type keeps the legacy value 'courier' (lowest privilege).
+                    'logistics' => ($input['applicant_type'] ?? 'courier') === 'logistics' ? 'logistics_staff' : 'courier',
                     default => $input['account_type'],
                 },
                 'region'            => $input['region'] ?? null,

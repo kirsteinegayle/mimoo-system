@@ -66,6 +66,7 @@ export default function BuyerReturns() {
   });
 
   const [items, setItems] = useState<ReturnItem[]>([]);
+  const [refunds, setRefunds] = useState<Record<string, { status: string; amount: number; method: string; reference: string | null; refunded_at: string | null }>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -81,6 +82,11 @@ export default function BuyerReturns() {
       if (!res.ok) throw new Error(errorText(res.status, json, "Could not load your return requests."));
       setItems(json.data ?? []);
       setError(null);
+      // Refund status (separate web endpoint; the mobile returns payload is unchanged). Best effort.
+      fetch("/buyer/refunds", { headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" }, credentials: "same-origin" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => j?.data && setRefunds(j.data))
+        .catch(() => undefined);
     } catch (e: any) {
       setError(e?.message || "Could not load your return requests.");
     } finally {
@@ -200,6 +206,16 @@ export default function BuyerReturns() {
                   </ol>
                 </div>
 
+                {refunds[String(r.id)] && (
+                  <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
+                    <span className="font-semibold">
+                      {{ pending: "Refund pending", processing: "Refund processing", refunded: "Refund completed", failed: "Refund delayed" }[refunds[String(r.id)].status] ?? "Refund"}
+                    </span>
+                    {" · ₱"}{refunds[String(r.id)].amount.toFixed(2)}
+                    {refunds[String(r.id)].status === "refunded" && refunds[String(r.id)].reference ? ` · Ref ${refunds[String(r.id)].reference}` : ""}
+                    {refunds[String(r.id)].status === "failed" ? <span className="block text-xs text-green-800">We could not complete it yet. We will try again.</span> : null}
+                  </div>
+                )}
                 {r.seller_response && (
                   <div className="mt-4 rounded-lg bg-[#F9F7FC] border-l-4 border-[#4B2E7E] p-3">
                     <p className="text-xs font-semibold text-[#4B2E7E]">Seller response</p>

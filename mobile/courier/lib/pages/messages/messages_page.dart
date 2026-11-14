@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../models/courier_models.dart';
 import '../../services/api_service.dart';
@@ -52,6 +54,49 @@ class _MessagesPageState extends State<MessagesPage> {
     if (mounted) _load();
   }
 
+  /// Contact picker (admin, sellers we ship for, our riders), then opens the conversation.
+  Future<void> _newConversation() async {
+    List<MessageContact> contacts;
+    try {
+      contacts = await CourierRepository.instance.messageContacts();
+    } catch (e) {
+      if (mounted) courierSnack(context, ApiService.friendlyError(e), kFlash);
+      return;
+    }
+    if (!mounted) return;
+    final picked = await showModalBottomSheet<MessageContact>(
+      context: context,
+      backgroundColor: kCard,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: contacts.isEmpty
+            ? const Padding(
+                padding: EdgeInsets.all(24),
+                child: Text('No one is available to message yet.'))
+            : ListView(shrinkWrap: true, children: [
+                for (final c in contacts)
+                  ListTile(
+                    leading: const CircleAvatar(
+                        backgroundColor: kChip,
+                        child: Icon(Icons.person_outline, color: kPrimary)),
+                    title: Text(c.name,
+                        style: pjs(size: 14, weight: FontWeight.w700)),
+                    subtitle: Text(c.roleLabel,
+                        style: pjs(size: 11, color: kSubtext)),
+                    onTap: () => Navigator.pop(ctx, c),
+                  ),
+              ]),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    try {
+      final conv = await CourierRepository.instance.startConversation(picked);
+      if (mounted) await _open(conv);
+    } catch (e) {
+      if (mounted) courierSnack(context, ApiService.friendlyError(e), kFlash);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,6 +106,13 @@ class _MessagesPageState extends State<MessagesPage> {
         title: Text('Messages',
             style: pjs(size: 17, weight: FontWeight.w800)),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _newConversation,
+        backgroundColor: kPrimary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.edit_outlined),
+        label: const Text('New message'),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: kPrimary))
           : _error != null
@@ -68,7 +120,7 @@ class _MessagesPageState extends State<MessagesPage> {
               : _items.isEmpty
                   ? const CourierEmptyState(
                       icon: Icons.chat_bubble_outline,
-                      message: 'No conversations yet.')
+                      message: 'No conversations yet. Tap "New message" to start one.')
                   : RefreshIndicator(
                       color: kPrimary,
                       onRefresh: _load,
@@ -91,7 +143,7 @@ class _MessagesPageState extends State<MessagesPage> {
                                 const CircleAvatar(
                                   backgroundColor: kChip,
                                   radius: 22,
-                                  child: Icon(Icons.support_agent,
+                                  child: Icon(Icons.chat_bubble_outline,
                                       color: kPrimary, size: 22),
                                 ),
                                 const SizedBox(width: 12),
@@ -172,16 +224,46 @@ class _ChatPageState extends State<ChatPage> {
   ChatThread? _thread;
   bool _loading = true;
   bool _sending = false;
+  bool _polling = false;
   String? _error;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _load();
+    // New messages every 5 s while this screen is open.
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) => _poll());
+  }
+
+  Future<void> _poll() async {
+    if (_polling || _loading || _sending || _thread == null) return;
+    _polling = true;
+    try {
+      final last = _thread!.messages.isEmpty ? 0 : _thread!.messages.last.id;
+      final fresh =
+          await CourierRepository.instance.thread(widget.conversation.id, afterId: last);
+      if (!mounted || fresh.messages.isEmpty) return;
+      final known = _thread!.messages.map((m) => m.id).toSet();
+      final added = fresh.messages.where((m) => !known.contains(m.id)).toList();
+      if (added.isEmpty) return;
+      setState(() {
+        _thread = ChatThread(
+          conversation: _thread!.conversation,
+          messages: [..._thread!.messages, ...added],
+        );
+      });
+      _scrollToBottom();
+    } catch (_) {
+      // Keep the current messages; the next tick retries.
+    } finally {
+      _polling = false;
+    }
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -219,9 +301,13 @@ class _ChatPageState extends State<ChatPage> {
           .sendMessage(widget.conversation.id, body);
       if (!mounted) return;
       setState(() {
+        final known = _thread!.messages.map((m) => m.id).toSet();
         _thread = ChatThread(
           conversation: _thread!.conversation,
-          messages: [..._thread!.messages, message],
+          messages: [
+            ..._thread!.messages,
+            if (!known.contains(message.id)) message,
+          ],
         );
         _controller.clear();
         _sending = false;
@@ -255,7 +341,7 @@ class _ChatPageState extends State<ChatPage> {
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(widget.conversation.otherName,
               style: pjs(size: 15, weight: FontWeight.w800)),
-          Text(widget.conversation.otherCompany ?? 'Logistics support',
+          Text(widget.conversation.otherCompany ?? 'Conversation',
               style: pjs(size: 11, color: kSubtext)),
         ]),
         actions: [
@@ -275,7 +361,7 @@ class _ChatPageState extends State<ChatPage> {
                   : messages.isEmpty
                       ? const CourierEmptyState(
                           icon: Icons.chat_bubble_outline,
-                          message: 'Start the conversation with Logistics.')
+                          message: 'No messages yet. Say hello.')
                       : ListView.builder(
                           controller: _scrollController,
                           padding: const EdgeInsets.all(14),
@@ -350,8 +436,9 @@ class _ChatPageState extends State<ChatPage> {
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => _send(),
                   style: pjs(size: 13),
+                  maxLength: 500,
                   decoration: mimooInput(
-                      hint: 'Message Logistics', icon: Icons.chat_outlined),
+                      hint: 'Type a message', icon: Icons.chat_outlined),
                 ),
               ),
               const SizedBox(width: 8),

@@ -16,7 +16,8 @@ class IncomingShipmentsController extends Controller
      */
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         // Build query
         $query = ShipmentAssignment::with([
@@ -209,7 +210,8 @@ class IncomingShipmentsController extends Controller
      */
     public function show($id)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         $assignment = ShipmentAssignment::with([
             'order.items.product',
@@ -337,7 +339,8 @@ class IncomingShipmentsController extends Controller
      */
     public function accept(Request $request, $id)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         $assignment = ShipmentAssignment::with('order')
             ->where('courier_id', $user->id)
@@ -350,7 +353,7 @@ class IncomingShipmentsController extends Controller
             ], 400);
         }
 
-        $success = $assignment->accept($user->id);
+        $success = $assignment->accept($actor->id);
 
         if (!$success) {
             return response()->json([
@@ -380,7 +383,8 @@ class IncomingShipmentsController extends Controller
      */
     public function reject(Request $request, $id)
     {
-        $user = auth()->user();
+        $actor = auth()->user();
+        $user = \App\Support\CourierCompanyResolver::scope($actor);
 
         $request->validate([
             'reason' => 'required|string|min:10|max:500',
@@ -408,7 +412,7 @@ class IncomingShipmentsController extends Controller
             ], 400);
         }
 
-        $success = $assignment->reject($user->id, $reason);
+        $success = $assignment->reject($actor->id, $reason);
 
         if (!$success) {
             return response()->json([

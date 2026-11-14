@@ -78,7 +78,78 @@ notifications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     
     notifications.form = notificationsForm
 /**
- * @see routes/web.php:1895
+ * @see routes/web.php:1934
+ * @route '/following'
+ */
+export const following = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: following.url(options),
+    method: 'get',
+})
+
+following.definition = {
+    methods: ["get","head"],
+    url: '/following',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+ * @see routes/web.php:1934
+ * @route '/following'
+ */
+following.url = (options?: RouteQueryOptions) => {
+    return following.definition.url + queryParams(options)
+}
+
+/**
+ * @see routes/web.php:1934
+ * @route '/following'
+ */
+following.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: following.url(options),
+    method: 'get',
+})
+/**
+ * @see routes/web.php:1934
+ * @route '/following'
+ */
+following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: following.url(options),
+    method: 'head',
+})
+
+    /**
+ * @see routes/web.php:1934
+ * @route '/following'
+ */
+    const followingForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: following.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/web.php:1934
+ * @route '/following'
+ */
+        followingForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: following.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/web.php:1934
+ * @route '/following'
+ */
+        followingForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: following.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    following.form = followingForm
+/**
+ * @see routes/web.php:1952
  * @route '/returns'
  */
 export const returns = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -92,7 +163,7 @@ returns.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1895
+ * @see routes/web.php:1952
  * @route '/returns'
  */
 returns.url = (options?: RouteQueryOptions) => {
@@ -100,7 +171,7 @@ returns.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1895
+ * @see routes/web.php:1952
  * @route '/returns'
  */
 returns.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -108,7 +179,7 @@ returns.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1895
+ * @see routes/web.php:1952
  * @route '/returns'
  */
 returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -117,7 +188,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1895
+ * @see routes/web.php:1952
  * @route '/returns'
  */
     const returnsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -126,7 +197,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1895
+ * @see routes/web.php:1952
  * @route '/returns'
  */
         returnsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -134,7 +205,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1895
+ * @see routes/web.php:1952
  * @route '/returns'
  */
         returnsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -228,6 +299,7 @@ reviews.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     reviews.form = reviewsForm
 const buyer = {
     notifications: Object.assign(notifications, notifications),
+following: Object.assign(following, following),
 returns: Object.assign(returns, returns),
 reviews: Object.assign(reviews, reviews),
 }

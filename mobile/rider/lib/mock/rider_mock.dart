@@ -50,8 +50,6 @@ const int kMaxActiveJobs = 5;
 /// MOCK: Delivery attempts before the parcel goes back to the hub.
 const int kMaxDeliveryAttempts = 3;
 
-/// MOCK: Number of digits in the buyer OTP.
-const int kOtpLength = 6;
 
 /// MOCK: Reasons a delivery attempt can fail.
 const List<String> kFailReasons = [
@@ -181,11 +179,6 @@ class MockJob {
 
   // Delivery stepper progress (MOCK, in-memory only).
   bool podTaken = false;
-  bool otpVerified = false;
-
-  /// API mode: the code the rider typed. Kept in memory only until the
-  /// deliver call, then cleared. Never saved or printed.
-  String? enteredOtp;
 
   bool get isPickup => type == MockJobType.pickup;
   bool get isDone =>
@@ -619,62 +612,22 @@ class RiderMock extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// API mode: asks the server to issue a new buyer OTP. Returns the
-  /// debug_otp ONLY in debug builds (for the demo hint), otherwise null.
-  Future<String?> requestOtp(MockJob job) async {
-    if (useMock || job.serverId == null) return null;
-    final body = await _api.post('/deliveries/${job.serverId}/otp');
-    return kDebugMode ? body['debug_otp'] as String? : null;
-  }
-
-  /// MOCK: any 6 digits are accepted except all-same digits.
-  /// API mode: only checks the format here and keeps the code in memory;
-  /// the server checks it when the delivery is completed.
-  bool verifyOtp(MockJob job, String otp) {
-    if (!useMock && job.serverId != null) {
-      final ok = RegExp('^\\d{$kOtpLength}\$').hasMatch(otp);
-      if (ok) {
-        job.enteredOtp = otp;
-        job.otpVerified = true;
-        notifyListeners();
-      }
-      return ok;
-    }
-    final ok = RegExp('^\\d{$kOtpLength}\$').hasMatch(otp) &&
-        !RegExp('^(\\d)\\1+\$').hasMatch(otp);
-    if (ok) {
-      job.otpVerified = true;
-      notifyListeners();
-    }
-    return ok;
-  }
-
   /// 5 → 6: COD collected (or prepaid confirmed). Returns the payout earned.
-  /// API mode: POST deliver {otp, cod_collected}. A wrong/expired code sends
-  /// the rider back to the OTP step.
+  /// API mode: POST deliver {cod_collected}. The proof-of-delivery photo is required (no code).
   Future<double> completeDelivery(MockJob job) async {
-    if (job.stage != MockStage.outForDelivery ||
-        !job.podTaken ||
-        !job.otpVerified) {
+    if (job.stage != MockStage.outForDelivery || !job.podTaken) {
       return 0;
     }
     if (!useMock && job.serverId != null) {
-      final otp = job.enteredOtp;
       try {
         final body = await _api.post('/deliveries/${job.serverId}/deliver', {
-          'otp': otp,
           if (job.cod > 0) 'cod_collected': job.cod,
         });
-        job.enteredOtp = null;
         _applyDeliveryBody(job, body);
         unawaitedSafe(_reloadWallet());
         return (body['earned'] as num?)?.toDouble() ?? kDeliveryRate;
       } on ApiException catch (e) {
-        if (e.field == 'otp') {
-          job.enteredOtp = null;
-          job.otpVerified = false;
-          notifyListeners();
-        } else if (e.field == 'photo') {
+        if (e.field == 'photo') {
           job.podTaken = false;
           notifyListeners();
         }
@@ -705,13 +658,10 @@ class RiderMock extends ChangeNotifier {
         // The API requires a note for "other".
         if (key == 'other') 'note': 'Other (reported in the rider app)',
       });
-      job.enteredOtp = null;
-      job.otpVerified = false;
       return;
     }
     job.failReasons.add(reason);
     job.podTaken = false;
-    job.otpVerified = false;
     job.stage = MockStage.failedAttempt;
     notifyListeners();
   }
@@ -1003,10 +953,6 @@ class RiderMock extends ChangeNotifier {
         .map((i) => '${_str(i['name'])} (x${_str(i['quantity'])})')
         .toList();
 
-    if (stage != MockStage.outForDelivery) {
-      job.otpVerified = false;
-      job.enteredOtp = null;
-    }
     job
       ..tracking = _str(d['waybill_number']).isNotEmpty
           ? _str(d['waybill_number'])

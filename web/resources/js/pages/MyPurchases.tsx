@@ -101,7 +101,7 @@ function tabOf(o: Order): Exclude<TabKey, "all"> {
   if (o.status === "paid") return "to_ship";
   // pending: online payments still need paying, COD goes straight to "To Ship"
   const online = o.payment_method ? o.payment_method !== "cod" : true;
-  return online && o.payment_status !== "paid" ? "to_pay" : "to_ship";
+  return online && o.payment_status !== "paid" && o.payment_status !== "refunded" ? "to_pay" : "to_ship";
 }
 
 const STATUS_LABEL: Record<string, { text: string; cls: string }> = {

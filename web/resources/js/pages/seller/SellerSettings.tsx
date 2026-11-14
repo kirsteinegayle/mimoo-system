@@ -20,6 +20,7 @@ interface SellerSettingsProps {
         city?: string;
         province?: string;
         postal_code?: string;
+        registered_at?: string | null;
     };
 }
 
@@ -38,7 +39,17 @@ export default function SellerSettings({ auth, seller }: SellerSettingsProps) {
         seller?.postal_code
     ].filter(Boolean).join(', ') || 'Address not set';
     
-    const memberSince = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    // registered_at is the account's created_at (YYYY-MM-DD). Parse the parts so the
+    // date does not shift with the browser time zone.
+    const registrationDate = (() => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(seller?.registered_at ?? '');
+        if (!m) return 'Not available';
+        return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        });
+    })();
     return (
         <SellerShell active="settings">
             <Head title="Account Settings" />
@@ -197,10 +208,10 @@ export default function SellerSettings({ auth, seller }: SellerSettingsProps) {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 mt-6 pt-6 border-t border-[color-mix(in_srgb,#B9A6DE_24%,white)]">
-                    <Package className="w-4 h-4 text-[#6E6570]" />
-                    <span className="text-xs text-[#6E6570]">
-                        Member since: <span className="font-bold">{memberSince}</span>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-6 pt-6 border-t border-[color-mix(in_srgb,#B9A6DE_24%,white)]">
+                    <Package className="w-4 h-4 shrink-0 text-[#6E6570]" />
+                    <span className="min-w-0 break-words text-xs text-[#6E6570]">
+                        Registration Date: <span className="font-bold">{registrationDate}</span>
                     </span>
                 </div>
             </div>

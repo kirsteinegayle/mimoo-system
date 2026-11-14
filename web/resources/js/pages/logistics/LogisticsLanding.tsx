@@ -98,7 +98,7 @@ export default function LogisticsLanding() {
     const [openFaq, setOpenFaq] = useState<number | null>(0);
     const [showPassword, setShowPassword] = useState(false);
     const [activeLoginCard, setActiveLoginCard] = useState(0);
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, transform } = useForm({
         email: '',
         password: '',
         remember: false,
@@ -106,6 +106,8 @@ export default function LogisticsLanding() {
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
+        // The active card decides which login portal this attempt is for.
+        transform((d) => ({ ...d, portal: loginCards[activeLoginCard].role }));
         post('/login', { onFinish: () => reset('password') });
     };
 

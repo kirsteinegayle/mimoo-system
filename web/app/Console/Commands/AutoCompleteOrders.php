@@ -29,16 +29,17 @@ class AutoCompleteOrders extends Command
         $cutoff = now()->subDays($days);
         $done   = 0;
 
-        Order::where('status', 'shipped')
+        self::deliverableScope(Order::where('status', 'shipped')
             ->where('updated_at', '<=', $cutoff)
-            ->withoutOpenReturn()
+            ->withoutOpenReturn())
             ->orderBy('id')
             ->chunkById(100, function ($orders) use (&$done) {
                 foreach ($orders as $order) {
                     // Re-check under the current state to avoid racing a buyer
                     // who just received the order or opened a return.
                     $fresh = Order::find($order->id);
-                    if (! $fresh || $fresh->status !== 'shipped' || $fresh->hasOpenReturn()) {
+                    if (! $fresh || $fresh->status !== 'shipped' || $fresh->hasOpenReturn()
+                        || ! self::deliverableScope(Order::whereKey($fresh->id))->exists()) {
                         continue;
                     }
                     $fresh->update(['status' => 'completed']);
@@ -50,5 +51,21 @@ class AutoCompleteOrders extends Command
         $this->info("Auto-completed {$done} order(s).");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Only orders the buyer can really have received: never an order whose delivery job is not
+     * delivered (assigned, out for delivery, failed, return to sender), and never one that is still
+     * held by a courier company (active assignment) without a delivered job. Orders from the old
+     * flow (no job, no assignment) keep completing as before.
+     */
+    public static function deliverableScope($query)
+    {
+        return $query
+            ->whereNotExists(fn ($s) => $s->select(\Illuminate\Support\Facades\DB::raw(1))->from('delivery_jobs')
+                ->whereColumn('delivery_jobs.order_id', 'orders.id')->where('delivery_jobs.status', '<>', 'delivered'))
+            ->where(fn ($w) => $w->whereDoesntHave('shipmentAssignments', fn ($a) => $a->active())
+                ->orWhereExists(fn ($s) => $s->select(\Illuminate\Support\Facades\DB::raw(1))->from('delivery_jobs')
+                    ->whereColumn('delivery_jobs.order_id', 'orders.id')->where('delivery_jobs.status', 'delivered')));
     }
 }

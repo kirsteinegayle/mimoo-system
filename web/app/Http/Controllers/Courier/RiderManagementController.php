@@ -18,7 +18,7 @@ class RiderManagementController extends Controller
      */
     public function index()
     {
-        $courier = auth()->user();
+        $courier = \App\Support\CourierCompanyResolver::scope(auth()->user());
 
         // Get ALL pending applications (not filtered by courier - they can see all)
         $pendingApplications = Rider::where('verification_status', 'pending')
@@ -130,7 +130,7 @@ class RiderManagementController extends Controller
      */
     public function approve(Request $request, $id)
     {
-        $courier = auth()->user();
+        $courier = \App\Support\CourierCompanyResolver::scope(auth()->user());
 
         $response = DB::transaction(function () use ($request, $id, $courier) {
             // Lock the application row so two concurrent approvals cannot both pass.
@@ -312,7 +312,7 @@ class RiderManagementController extends Controller
 
     private function rejectApplication(Request $request, $id): JsonResponse
     {
-        $courier = auth()->user();
+        $courier = \App\Support\CourierCompanyResolver::scope(auth()->user());
 
         // Find rider by ID (not restricted to courier_company_id)
         $rider = Rider::findOrFail($id);

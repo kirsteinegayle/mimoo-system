@@ -81,7 +81,7 @@ const LABEL: Record<Stage, string> = {
   cancelled: "Cancelled",
 };
 const PILL: Record<Stage, string> = { new: "gold", to_prepare: "gold", awaiting_pickup: "logi", in_transit: "accent", delivered: "ok", cancelled: "bad" };
-const NEXT: Record<string, Stage | undefined> = { accept: "to_prepare", pack: "in_transit" };
+const NEXT: Record<string, Stage | undefined> = { accept: "to_prepare", pack: "awaiting_pickup" };
 const DONE_MSG: Record<string, string> = {
   accept: "Order accepted. Now preparing.",
   pack: "Order packed and shipped. Now in transit to buyer.",
@@ -465,6 +465,7 @@ export default function SellerOrders({ orders: initial }: PageProps) {
       case 'packed':
         return 'awaiting_pickup';
       case 'shipped':
+      case 'in_transit': // assigned to a courier company
         return 'in_transit';
       case 'completed':
         return 'delivered';

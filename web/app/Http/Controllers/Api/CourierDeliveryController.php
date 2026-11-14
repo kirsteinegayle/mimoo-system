@@ -37,7 +37,7 @@ class CourierDeliveryController extends CourierBaseController
     /** GET /api/courier-app/delivery-riders */
     public function riders(Request $request): JsonResponse
     {
-        $courier = $request->user();
+        $courier = \App\Support\CourierCompanyResolver::scope($request->user());
 
         $personnel = $this->readyRiders($courier->id)
             ->with('user:id,first_name,last_name,name,email')
@@ -85,7 +85,7 @@ class CourierDeliveryController extends CourierBaseController
      */
     public function orders(Request $request): JsonResponse
     {
-        $courier = $request->user();
+        $courier = \App\Support\CourierCompanyResolver::scope($request->user());
 
         $pickupStatus = ShipmentAssignment::where('courier_id', $courier->id)
             ->where('assignment_status', 'accepted')
@@ -120,7 +120,7 @@ class CourierDeliveryController extends CourierBaseController
                 'shipping_name'    => $o->shipping_name,
                 'shipping_address' => $o->shipping_address,
                 'payment_method'   => $o->payment_method,
-                'cod_amount'       => strtolower((string) $o->payment_method) === 'cod' && strtolower((string) $o->payment_status) !== 'paid'
+                'cod_amount'       => strtolower((string) $o->payment_method) === 'cod' && ! in_array(strtolower((string) $o->payment_status), ['paid', 'refunded'], true)
                     ? (float) $o->total : 0.0,
                 'pickup_status'    => $pickupStatus[$o->id] ?? null,
                 'picked_up'        => $pickedUp,
@@ -152,9 +152,11 @@ class CourierDeliveryController extends CourierBaseController
             'personnel_id' => ['required', 'integer'],
         ]);
 
-        $courier = $request->user();
+        $courier = \App\Support\CourierCompanyResolver::scope($request->user());
 
-        return DB::transaction(function () use ($data, $courier) {
+        $actorId = (int) $request->user()->id;
+
+        return DB::transaction(function () use ($data, $courier, $actorId) {
             $order = Order::whereKey($data['order_id'])->lockForUpdate()->first();
             if (! $order) {
                 return response()->json(['message' => 'Order not found.'], 404);
@@ -207,7 +209,7 @@ class CourierDeliveryController extends CourierBaseController
             }
 
             $isCodUnpaid = strtolower((string) $order->payment_method) === 'cod'
-                && strtolower((string) $order->payment_status) !== 'paid';
+                && ! in_array(strtolower((string) $order->payment_status), ['paid', 'refunded'], true);
 
             $job = DeliveryJob::create([
                 'order_id'      => $order->id,
@@ -215,7 +217,7 @@ class CourierDeliveryController extends CourierBaseController
                 'personnel_id'  => $personnel->id,
                 'courier_id'    => $courier->id,
                 'facility_id'   => $order->current_facility_id, // may be null
-                'assigned_by'   => $courier->id,
+                'assigned_by'   => $actorId,
                 'status'        => DeliveryJob::STATUS_ASSIGNED,
                 'cod_amount'    => $isCodUnpaid ? (float) $order->total : 0.0,
                 'assigned_at'   => now(),

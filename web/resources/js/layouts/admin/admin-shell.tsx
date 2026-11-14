@@ -10,6 +10,7 @@ import {
     LayoutDashboard,
     LogOut,
     MessageSquare,
+    RotateCcw,
     Truck,
     UserCheck,
 } from 'lucide-react';
@@ -22,6 +23,8 @@ export type AdminNavKey =
     | 'vouchers'
     | 'banners'
     | 'reports'
+    | 'returns'
+    | 'messages'
     | 'seller-approval'
     | 'logistics-approval'
     | 'product-approval'
@@ -36,6 +39,8 @@ const navItems: { key: AdminNavKey; label: string; icon: React.ElementType; href
     { key: 'logistics-approval', label: 'Logistics Approval', icon: Truck,            href: '/admin/logistics-approval' },
     { key: 'product-approval',   label: 'Product Approval',   icon: CheckSquare,      href: '/admin/product-approval'   },
     { key: 'reports',            label: 'Product Reports',    icon: AlertTriangle,    href: '/admin/reports'            },
+    { key: 'returns',            label: 'Escalated Returns',  icon: RotateCcw,        href: '/admin/returns'            },
+    { key: 'messages',           label: 'Messages',           icon: MessageSquare,    href: '/admin/messages'           },
     { key: 'monitoring',         label: 'Monitoring',         icon: Eye,              href: '/admin/monitoring'         },
 ];
 

@@ -2,6 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 import registrations from './registrations'
 import sellerApprovalDe7003 from './seller-approval'
 import logisticsApproval9dc57a from './logistics-approval'
+import returns4b8e07 from './returns'
 /**
 * @see \App\Http\Controllers\Admin\AdminController::login
  * @see app/Http/Controllers/Admin/AdminController.php:18
@@ -292,7 +293,7 @@ vouchers.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     vouchers.form = vouchersForm
 /**
- * @see routes/web.php:1979
+ * @see routes/web.php:2057
  * @route '/admin/banners'
  */
 export const banners = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -306,7 +307,7 @@ banners.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1979
+ * @see routes/web.php:2057
  * @route '/admin/banners'
  */
 banners.url = (options?: RouteQueryOptions) => {
@@ -314,7 +315,7 @@ banners.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1979
+ * @see routes/web.php:2057
  * @route '/admin/banners'
  */
 banners.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -322,7 +323,7 @@ banners.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1979
+ * @see routes/web.php:2057
  * @route '/admin/banners'
  */
 banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -331,7 +332,7 @@ banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1979
+ * @see routes/web.php:2057
  * @route '/admin/banners'
  */
     const bannersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -340,7 +341,7 @@ banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1979
+ * @see routes/web.php:2057
  * @route '/admin/banners'
  */
         bannersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -348,7 +349,7 @@ banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1979
+ * @see routes/web.php:2057
  * @route '/admin/banners'
  */
         bannersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -364,7 +365,7 @@ banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     banners.form = bannersForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:120
+ * @see app/Http/Controllers/Admin/AdminController.php:119
  * @route '/admin/manage-registrations'
  */
 export const manageRegistrations = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -379,7 +380,7 @@ manageRegistrations.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:120
+ * @see app/Http/Controllers/Admin/AdminController.php:119
  * @route '/admin/manage-registrations'
  */
 manageRegistrations.url = (options?: RouteQueryOptions) => {
@@ -388,7 +389,7 @@ manageRegistrations.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:120
+ * @see app/Http/Controllers/Admin/AdminController.php:119
  * @route '/admin/manage-registrations'
  */
 manageRegistrations.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -397,7 +398,7 @@ manageRegistrations.get = (options?: RouteQueryOptions): RouteDefinition<'get'> 
 })
 /**
 * @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:120
+ * @see app/Http/Controllers/Admin/AdminController.php:119
  * @route '/admin/manage-registrations'
  */
 manageRegistrations.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -407,7 +408,7 @@ manageRegistrations.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:120
+ * @see app/Http/Controllers/Admin/AdminController.php:119
  * @route '/admin/manage-registrations'
  */
     const manageRegistrationsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -417,7 +418,7 @@ manageRegistrations.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:120
+ * @see app/Http/Controllers/Admin/AdminController.php:119
  * @route '/admin/manage-registrations'
  */
         manageRegistrationsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -426,7 +427,7 @@ manageRegistrations.head = (options?: RouteQueryOptions): RouteDefinition<'head'
         })
             /**
 * @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:120
+ * @see app/Http/Controllers/Admin/AdminController.php:119
  * @route '/admin/manage-registrations'
  */
         manageRegistrationsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -442,7 +443,7 @@ manageRegistrations.head = (options?: RouteQueryOptions): RouteDefinition<'head'
     manageRegistrations.form = manageRegistrationsForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:154
+ * @see app/Http/Controllers/Admin/AdminController.php:238
  * @route '/admin/seller-approval'
  */
 export const sellerApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -457,7 +458,7 @@ sellerApproval.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:154
+ * @see app/Http/Controllers/Admin/AdminController.php:238
  * @route '/admin/seller-approval'
  */
 sellerApproval.url = (options?: RouteQueryOptions) => {
@@ -466,7 +467,7 @@ sellerApproval.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:154
+ * @see app/Http/Controllers/Admin/AdminController.php:238
  * @route '/admin/seller-approval'
  */
 sellerApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -475,7 +476,7 @@ sellerApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:154
+ * @see app/Http/Controllers/Admin/AdminController.php:238
  * @route '/admin/seller-approval'
  */
 sellerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -485,7 +486,7 @@ sellerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:154
+ * @see app/Http/Controllers/Admin/AdminController.php:238
  * @route '/admin/seller-approval'
  */
     const sellerApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -495,7 +496,7 @@ sellerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:154
+ * @see app/Http/Controllers/Admin/AdminController.php:238
  * @route '/admin/seller-approval'
  */
         sellerApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -504,7 +505,7 @@ sellerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
         })
             /**
 * @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:154
+ * @see app/Http/Controllers/Admin/AdminController.php:238
  * @route '/admin/seller-approval'
  */
         sellerApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -520,7 +521,7 @@ sellerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     sellerApproval.form = sellerApprovalForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:441
+ * @see app/Http/Controllers/Admin/AdminController.php:510
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
 export const downloadDocument = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -535,7 +536,7 @@ downloadDocument.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:441
+ * @see app/Http/Controllers/Admin/AdminController.php:510
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
 downloadDocument.url = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions) => {
@@ -561,7 +562,7 @@ downloadDocument.url = (args: { userId: string | number, type: string | number }
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:441
+ * @see app/Http/Controllers/Admin/AdminController.php:510
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
 downloadDocument.get = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -570,7 +571,7 @@ downloadDocument.get = (args: { userId: string | number, type: string | number }
 })
 /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:441
+ * @see app/Http/Controllers/Admin/AdminController.php:510
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
 downloadDocument.head = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -580,7 +581,7 @@ downloadDocument.head = (args: { userId: string | number, type: string | number 
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:441
+ * @see app/Http/Controllers/Admin/AdminController.php:510
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
     const downloadDocumentForm = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -590,7 +591,7 @@ downloadDocument.head = (args: { userId: string | number, type: string | number 
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:441
+ * @see app/Http/Controllers/Admin/AdminController.php:510
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
         downloadDocumentForm.get = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -599,7 +600,7 @@ downloadDocument.head = (args: { userId: string | number, type: string | number 
         })
             /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:441
+ * @see app/Http/Controllers/Admin/AdminController.php:510
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
         downloadDocumentForm.head = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -615,7 +616,7 @@ downloadDocument.head = (args: { userId: string | number, type: string | number 
     downloadDocument.form = downloadDocumentForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:190
+ * @see app/Http/Controllers/Admin/AdminController.php:267
  * @route '/admin/logistics-approval'
  */
 export const logisticsApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -630,7 +631,7 @@ logisticsApproval.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:190
+ * @see app/Http/Controllers/Admin/AdminController.php:267
  * @route '/admin/logistics-approval'
  */
 logisticsApproval.url = (options?: RouteQueryOptions) => {
@@ -639,7 +640,7 @@ logisticsApproval.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:190
+ * @see app/Http/Controllers/Admin/AdminController.php:267
  * @route '/admin/logistics-approval'
  */
 logisticsApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -648,7 +649,7 @@ logisticsApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =>
 })
 /**
 * @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:190
+ * @see app/Http/Controllers/Admin/AdminController.php:267
  * @route '/admin/logistics-approval'
  */
 logisticsApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -658,7 +659,7 @@ logisticsApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:190
+ * @see app/Http/Controllers/Admin/AdminController.php:267
  * @route '/admin/logistics-approval'
  */
     const logisticsApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -668,7 +669,7 @@ logisticsApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:190
+ * @see app/Http/Controllers/Admin/AdminController.php:267
  * @route '/admin/logistics-approval'
  */
         logisticsApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -677,7 +678,7 @@ logisticsApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
         })
             /**
 * @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:190
+ * @see app/Http/Controllers/Admin/AdminController.php:267
  * @route '/admin/logistics-approval'
  */
         logisticsApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -693,7 +694,7 @@ logisticsApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
     logisticsApproval.form = logisticsApprovalForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:225
+ * @see app/Http/Controllers/Admin/AdminController.php:294
  * @route '/admin/product-approval'
  */
 export const productApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -708,7 +709,7 @@ productApproval.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:225
+ * @see app/Http/Controllers/Admin/AdminController.php:294
  * @route '/admin/product-approval'
  */
 productApproval.url = (options?: RouteQueryOptions) => {
@@ -717,7 +718,7 @@ productApproval.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:225
+ * @see app/Http/Controllers/Admin/AdminController.php:294
  * @route '/admin/product-approval'
  */
 productApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -726,7 +727,7 @@ productApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 })
 /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:225
+ * @see app/Http/Controllers/Admin/AdminController.php:294
  * @route '/admin/product-approval'
  */
 productApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -736,7 +737,7 @@ productApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:225
+ * @see app/Http/Controllers/Admin/AdminController.php:294
  * @route '/admin/product-approval'
  */
     const productApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -746,7 +747,7 @@ productApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:225
+ * @see app/Http/Controllers/Admin/AdminController.php:294
  * @route '/admin/product-approval'
  */
         productApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -755,7 +756,7 @@ productApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
         })
             /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:225
+ * @see app/Http/Controllers/Admin/AdminController.php:294
  * @route '/admin/product-approval'
  */
         productApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -771,7 +772,7 @@ productApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     productApproval.form = productApprovalForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:233
+ * @see app/Http/Controllers/Admin/AdminController.php:302
  * @route '/admin/reports'
  */
 export const reports = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -786,7 +787,7 @@ reports.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:233
+ * @see app/Http/Controllers/Admin/AdminController.php:302
  * @route '/admin/reports'
  */
 reports.url = (options?: RouteQueryOptions) => {
@@ -795,7 +796,7 @@ reports.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:233
+ * @see app/Http/Controllers/Admin/AdminController.php:302
  * @route '/admin/reports'
  */
 reports.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -804,7 +805,7 @@ reports.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:233
+ * @see app/Http/Controllers/Admin/AdminController.php:302
  * @route '/admin/reports'
  */
 reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -814,7 +815,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:233
+ * @see app/Http/Controllers/Admin/AdminController.php:302
  * @route '/admin/reports'
  */
     const reportsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -824,7 +825,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:233
+ * @see app/Http/Controllers/Admin/AdminController.php:302
  * @route '/admin/reports'
  */
         reportsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -833,7 +834,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:233
+ * @see app/Http/Controllers/Admin/AdminController.php:302
  * @route '/admin/reports'
  */
         reportsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -848,8 +849,157 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     reports.form = reportsForm
 /**
+ * @see routes/web.php:2095
+ * @route '/admin/messages'
+ */
+export const messages = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: messages.url(options),
+    method: 'get',
+})
+
+messages.definition = {
+    methods: ["get","head"],
+    url: '/admin/messages',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+ * @see routes/web.php:2095
+ * @route '/admin/messages'
+ */
+messages.url = (options?: RouteQueryOptions) => {
+    return messages.definition.url + queryParams(options)
+}
+
+/**
+ * @see routes/web.php:2095
+ * @route '/admin/messages'
+ */
+messages.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: messages.url(options),
+    method: 'get',
+})
+/**
+ * @see routes/web.php:2095
+ * @route '/admin/messages'
+ */
+messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: messages.url(options),
+    method: 'head',
+})
+
+    /**
+ * @see routes/web.php:2095
+ * @route '/admin/messages'
+ */
+    const messagesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: messages.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/web.php:2095
+ * @route '/admin/messages'
+ */
+        messagesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: messages.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/web.php:2095
+ * @route '/admin/messages'
+ */
+        messagesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: messages.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    messages.form = messagesForm
+/**
+* @see \App\Http\Controllers\Admin\ReturnsController::returns
+ * @see app/Http/Controllers/Admin/ReturnsController.php:29
+ * @route '/admin/returns'
+ */
+export const returns = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: returns.url(options),
+    method: 'get',
+})
+
+returns.definition = {
+    methods: ["get","head"],
+    url: '/admin/returns',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Admin\ReturnsController::returns
+ * @see app/Http/Controllers/Admin/ReturnsController.php:29
+ * @route '/admin/returns'
+ */
+returns.url = (options?: RouteQueryOptions) => {
+    return returns.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Admin\ReturnsController::returns
+ * @see app/Http/Controllers/Admin/ReturnsController.php:29
+ * @route '/admin/returns'
+ */
+returns.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: returns.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Admin\ReturnsController::returns
+ * @see app/Http/Controllers/Admin/ReturnsController.php:29
+ * @route '/admin/returns'
+ */
+returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: returns.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Admin\ReturnsController::returns
+ * @see app/Http/Controllers/Admin/ReturnsController.php:29
+ * @route '/admin/returns'
+ */
+    const returnsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: returns.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\ReturnsController::returns
+ * @see app/Http/Controllers/Admin/ReturnsController.php:29
+ * @route '/admin/returns'
+ */
+        returnsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: returns.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\ReturnsController::returns
+ * @see app/Http/Controllers/Admin/ReturnsController.php:29
+ * @route '/admin/returns'
+ */
+        returnsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: returns.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    returns.form = returnsForm
+/**
 * @see \App\Http\Controllers\Admin\AdminController::logout
- * @see app/Http/Controllers/Admin/AdminController.php:463
+ * @see app/Http/Controllers/Admin/AdminController.php:532
  * @route '/admin/logout'
  */
 export const logout = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -864,7 +1014,7 @@ logout.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::logout
- * @see app/Http/Controllers/Admin/AdminController.php:463
+ * @see app/Http/Controllers/Admin/AdminController.php:532
  * @route '/admin/logout'
  */
 logout.url = (options?: RouteQueryOptions) => {
@@ -873,7 +1023,7 @@ logout.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::logout
- * @see app/Http/Controllers/Admin/AdminController.php:463
+ * @see app/Http/Controllers/Admin/AdminController.php:532
  * @route '/admin/logout'
  */
 logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -883,7 +1033,7 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::logout
- * @see app/Http/Controllers/Admin/AdminController.php:463
+ * @see app/Http/Controllers/Admin/AdminController.php:532
  * @route '/admin/logout'
  */
     const logoutForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -893,7 +1043,7 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::logout
- * @see app/Http/Controllers/Admin/AdminController.php:463
+ * @see app/Http/Controllers/Admin/AdminController.php:532
  * @route '/admin/logout'
  */
         logoutForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -915,6 +1065,8 @@ downloadDocument: Object.assign(downloadDocument, downloadDocument),
 logisticsApproval: Object.assign(logisticsApproval, logisticsApproval9dc57a),
 productApproval: Object.assign(productApproval, productApproval),
 reports: Object.assign(reports, reports),
+messages: Object.assign(messages, messages),
+returns: Object.assign(returns, returns4b8e07),
 logout: Object.assign(logout, logout),
 }
 

@@ -25,6 +25,7 @@ export default function Login({ canResetPassword, status }: LoginProps) {
         email: '',
         password: '',
         remember: false,
+        portal: 'buyer',
     });
 
     const handleSubmit = (e: FormEvent) => {

@@ -177,6 +177,23 @@ Route::prefix('courier-app')->group(function () {
         Route::post('/shipments/{id}/accept', [CourierShipmentController::class, 'accept'])->middleware('throttle:30,1,courier-shipment-accept')->whereNumber('id');
         Route::post('/shipments/{id}/reject', [CourierShipmentController::class, 'reject'])->middleware('throttle:30,1,courier-shipment-reject')->whereNumber('id');
 
+        // Courier company <-> rider / seller / admin messages (additive)
+        Route::prefix('messaging')->group(function () {
+            Route::get('/contacts', [\App\Http\Controllers\MessagingController::class, 'contacts'])->middleware('throttle:60,1,courier-msg-contacts');
+            Route::get('/threads', [\App\Http\Controllers\MessagingController::class, 'threads'])->middleware('throttle:120,1,courier-msg-threads');
+            Route::post('/start', [\App\Http\Controllers\MessagingController::class, 'start'])->middleware('throttle:20,1,courier-msg-start');
+            Route::get('/threads/{id}/messages', [\App\Http\Controllers\MessagingController::class, 'messages'])->middleware('throttle:120,1,courier-msg-messages')->whereNumber('id');
+            Route::post('/threads/{id}/messages', [\App\Http\Controllers\MessagingController::class, 'send'])->middleware('throttle:30,1,courier-msg-send')->whereNumber('id');
+            Route::post('/threads/{id}/read', [\App\Http\Controllers\MessagingController::class, 'read'])->middleware('throttle:60,1,courier-msg-read')->whereNumber('id');
+            Route::get('/messages/{id}/image', [\App\Http\Controllers\MessagingController::class, 'image'])->middleware('throttle:120,1,courier-msg-image')->whereNumber('id');
+        });
+
+        // Notifications (courier_notifications; same rows as the web bell)
+        Route::get('/notifications', [\App\Http\Controllers\Api\CourierAppNotificationController::class, 'index'])->middleware('throttle:120,1,courier-app-notifications');
+        Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\CourierAppNotificationController::class, 'unreadCount'])->middleware('throttle:120,1,courier-app-notifications-count');
+        Route::post('/notifications/read-all', [\App\Http\Controllers\Api\CourierAppNotificationController::class, 'markAllRead'])->middleware('throttle:30,1,courier-app-notifications-all');
+        Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\CourierAppNotificationController::class, 'markRead'])->middleware('throttle:60,1,courier-app-notifications-read')->whereNumber('id');
+
         // Pickup management
         Route::get('/pickups',                          [CourierPickupController::class, 'index']);
         Route::get('/pickups/{id}',                     [CourierPickupController::class, 'show'])->whereNumber('id');
@@ -223,6 +240,17 @@ Route::prefix('rider-app')->group(function () {
         // Shift status (online / offline). Idempotent; own personnel row only.
         Route::post('/check-in',  [\App\Http\Controllers\Api\RiderShiftController::class, 'checkIn'])->middleware('throttle:30,1,rider-shift');
         Route::post('/check-out', [\App\Http\Controllers\Api\RiderShiftController::class, 'checkOut'])->middleware('throttle:30,1,rider-shift');
+
+        // Courier company <-> rider messages (additive; rider app does not use it yet)
+        Route::prefix('messaging')->group(function () {
+            Route::get('/contacts', [\App\Http\Controllers\MessagingController::class, 'contacts'])->middleware('throttle:60,1,rider-msg-contacts');
+            Route::get('/threads', [\App\Http\Controllers\MessagingController::class, 'threads'])->middleware('throttle:120,1,rider-msg-threads');
+            Route::post('/start', [\App\Http\Controllers\MessagingController::class, 'start'])->middleware('throttle:20,1,rider-msg-start');
+            Route::get('/threads/{id}/messages', [\App\Http\Controllers\MessagingController::class, 'messages'])->middleware('throttle:120,1,rider-msg-messages')->whereNumber('id');
+            Route::post('/threads/{id}/messages', [\App\Http\Controllers\MessagingController::class, 'send'])->middleware('throttle:30,1,rider-msg-send')->whereNumber('id');
+            Route::post('/threads/{id}/read', [\App\Http\Controllers\MessagingController::class, 'read'])->middleware('throttle:60,1,rider-msg-read')->whereNumber('id');
+            Route::get('/messages/{id}/image', [\App\Http\Controllers\MessagingController::class, 'image'])->middleware('throttle:120,1,rider-msg-image')->whereNumber('id');
+        });
 
         // Pickup jobs assigned to this rider
         Route::get('/pickups',              [RiderPickupController::class, 'index']);

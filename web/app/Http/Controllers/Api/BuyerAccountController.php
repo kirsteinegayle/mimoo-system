@@ -55,17 +55,29 @@ class BuyerAccountController extends Controller
     /** Revoke all tokens EXCEPT the current one (keep current device logged in). */
     private function revokeOtherTokens(Request $request): void
     {
-        $request->user()->tokens()
-            ->where('id', '!=', $request->user()->currentAccessToken()->id)
-            ->delete();
+        $query   = $request->user()->tokens();
+        $current = $request->user()->currentAccessToken();
+        // Mobile (Bearer): keep the current token. Web (session): there is no
+        // current token, so every app token of this user is revoked.
+        if ($current && isset($current->id)) {
+            $query->where('id', '!=', $current->id);
+        }
+        $query->delete();
+    }
+
+    /** Web only: id of the session making this request, kept logged in. */
+    private function currentSessionId(Request $request): ?string
+    {
+        return $request->hasSession() ? $request->session()->getId() : null;
     }
 
     /** Invalidate web (database) sessions for this user. */
-    private function invalidateWebSessions(User $user): void
+    private function invalidateWebSessions(User $user, ?string $keepSessionId = null): void
     {
         if (config('session.driver') === 'database') {
             DB::table(config('session.table', 'sessions'))
                 ->where('user_id', $user->id)
+                ->when($keepSessionId, fn ($q) => $q->where('id', '!=', $keepSessionId))
                 ->delete();
         }
     }
@@ -114,7 +126,7 @@ class BuyerAccountController extends Controller
         $this->revokeOtherTokens($request);
 
         // Invalidate web sessions
-        $this->invalidateWebSessions($user);
+        $this->invalidateWebSessions($user, $this->currentSessionId($request));
 
         RateLimiter::clear($limiterKey);
 
@@ -274,7 +286,7 @@ class BuyerAccountController extends Controller
 
         // Revoke other tokens (email changed — new logins with new email)
         $this->revokeOtherTokens($request);
-        $this->invalidateWebSessions($user);
+        $this->invalidateWebSessions($user, $this->currentSessionId($request));
 
         return response()->json([
             'message' => 'Email address updated successfully.',

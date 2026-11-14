@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Admin\AdminController::details
- * @see app/Http/Controllers/Admin/AdminController.php:347
+ * @see app/Http/Controllers/Admin/AdminController.php:416
  * @route '/admin/seller-approval/{userId}/details'
  */
 export const details = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ details.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::details
- * @see app/Http/Controllers/Admin/AdminController.php:347
+ * @see app/Http/Controllers/Admin/AdminController.php:416
  * @route '/admin/seller-approval/{userId}/details'
  */
 details.url = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ details.url = (args: { userId: string | number } | [userId: string | number ] | 
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::details
- * @see app/Http/Controllers/Admin/AdminController.php:347
+ * @see app/Http/Controllers/Admin/AdminController.php:416
  * @route '/admin/seller-approval/{userId}/details'
  */
 details.get = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ details.get = (args: { userId: string | number } | [userId: string | number ] | 
 })
 /**
 * @see \App\Http\Controllers\Admin\AdminController::details
- * @see app/Http/Controllers/Admin/AdminController.php:347
+ * @see app/Http/Controllers/Admin/AdminController.php:416
  * @route '/admin/seller-approval/{userId}/details'
  */
 details.head = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ details.head = (args: { userId: string | number } | [userId: string | number ] |
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::details
- * @see app/Http/Controllers/Admin/AdminController.php:347
+ * @see app/Http/Controllers/Admin/AdminController.php:416
  * @route '/admin/seller-approval/{userId}/details'
  */
     const detailsForm = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ details.head = (args: { userId: string | number } | [userId: string | number ] |
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::details
- * @see app/Http/Controllers/Admin/AdminController.php:347
+ * @see app/Http/Controllers/Admin/AdminController.php:416
  * @route '/admin/seller-approval/{userId}/details'
  */
         detailsForm.get = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ details.head = (args: { userId: string | number } | [userId: string | number ] |
         })
             /**
 * @see \App\Http\Controllers\Admin\AdminController::details
- * @see app/Http/Controllers/Admin/AdminController.php:347
+ * @see app/Http/Controllers/Admin/AdminController.php:416
  * @route '/admin/seller-approval/{userId}/details'
  */
         detailsForm.head = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -98,7 +98,7 @@ details.head = (args: { userId: string | number } | [userId: string | number ] |
     details.form = detailsForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::approve
- * @see app/Http/Controllers/Admin/AdminController.php:271
+ * @see app/Http/Controllers/Admin/AdminController.php:340
  * @route '/admin/seller-approval/{userId}/approve'
  */
 export const approve = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +113,7 @@ approve.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::approve
- * @see app/Http/Controllers/Admin/AdminController.php:271
+ * @see app/Http/Controllers/Admin/AdminController.php:340
  * @route '/admin/seller-approval/{userId}/approve'
  */
 approve.url = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -141,7 +141,7 @@ approve.url = (args: { userId: string | number } | [userId: string | number ] | 
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::approve
- * @see app/Http/Controllers/Admin/AdminController.php:271
+ * @see app/Http/Controllers/Admin/AdminController.php:340
  * @route '/admin/seller-approval/{userId}/approve'
  */
 approve.post = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -151,7 +151,7 @@ approve.post = (args: { userId: string | number } | [userId: string | number ] |
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::approve
- * @see app/Http/Controllers/Admin/AdminController.php:271
+ * @see app/Http/Controllers/Admin/AdminController.php:340
  * @route '/admin/seller-approval/{userId}/approve'
  */
     const approveForm = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -161,7 +161,7 @@ approve.post = (args: { userId: string | number } | [userId: string | number ] |
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::approve
- * @see app/Http/Controllers/Admin/AdminController.php:271
+ * @see app/Http/Controllers/Admin/AdminController.php:340
  * @route '/admin/seller-approval/{userId}/approve'
  */
         approveForm.post = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -172,7 +172,7 @@ approve.post = (args: { userId: string | number } | [userId: string | number ] |
     approve.form = approveForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::disapprove
- * @see app/Http/Controllers/Admin/AdminController.php:290
+ * @see app/Http/Controllers/Admin/AdminController.php:359
  * @route '/admin/seller-approval/{userId}/disapprove'
  */
 export const disapprove = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -187,7 +187,7 @@ disapprove.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::disapprove
- * @see app/Http/Controllers/Admin/AdminController.php:290
+ * @see app/Http/Controllers/Admin/AdminController.php:359
  * @route '/admin/seller-approval/{userId}/disapprove'
  */
 disapprove.url = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -215,7 +215,7 @@ disapprove.url = (args: { userId: string | number } | [userId: string | number ]
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::disapprove
- * @see app/Http/Controllers/Admin/AdminController.php:290
+ * @see app/Http/Controllers/Admin/AdminController.php:359
  * @route '/admin/seller-approval/{userId}/disapprove'
  */
 disapprove.post = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -225,7 +225,7 @@ disapprove.post = (args: { userId: string | number } | [userId: string | number 
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::disapprove
- * @see app/Http/Controllers/Admin/AdminController.php:290
+ * @see app/Http/Controllers/Admin/AdminController.php:359
  * @route '/admin/seller-approval/{userId}/disapprove'
  */
     const disapproveForm = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -235,7 +235,7 @@ disapprove.post = (args: { userId: string | number } | [userId: string | number 
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::disapprove
- * @see app/Http/Controllers/Admin/AdminController.php:290
+ * @see app/Http/Controllers/Admin/AdminController.php:359
  * @route '/admin/seller-approval/{userId}/disapprove'
  */
         disapproveForm.post = (args: { userId: string | number } | [userId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -120,7 +120,7 @@ class BuyerReviewController extends Controller
         if ($order->status !== 'completed') {
             return $this->validationError('order', 'You can only review items from completed orders.');
         }
-        if ($order->updated_at->copy()->addDays(Review::REVIEW_WINDOW_DAYS)->isPast()) {
+        if (! \App\Services\ReturnReviewRules::reviewWindowOpen($order)) {
             return $this->validationError('order', 'The 30-day review period for this order has ended.');
         }
         if (Review::where('order_item_id', $item->id)->exists()) {

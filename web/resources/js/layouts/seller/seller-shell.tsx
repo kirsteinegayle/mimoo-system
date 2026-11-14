@@ -7,6 +7,7 @@ import {
     LogOut,
     MessageSquare,
     Package,
+    RotateCcw,
     ShoppingBag,
     TrendingUp,
     User,
@@ -25,6 +26,7 @@ export type SellerNavKey =
     | 'customers'
     | 'analytics'
     | 'messages'
+    | 'returns'
     | 'settings';
 
 const navItems: { key: SellerNavKey; label: string; icon: React.ElementType; href: string }[] = [
@@ -34,6 +36,7 @@ const navItems: { key: SellerNavKey; label: string; icon: React.ElementType; hre
     { key: 'customers',  label: 'Customers',  icon: Users,           href: '/seller/customers'  },
     { key: 'analytics',  label: 'Analytics',  icon: TrendingUp,      href: '/seller/analytics'  },
     { key: 'messages',   label: 'Messages',   icon: MessageSquare,   href: '/seller/messages'   },
+    { key: 'returns',    label: 'Returns & Reviews', icon: RotateCcw, href: '/seller/returns'    },
     { key: 'settings',   label: 'Settings',   icon: Cog,             href: '/seller/settings'   },
 ];
 

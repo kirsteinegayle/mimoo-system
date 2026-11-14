@@ -21,6 +21,16 @@ class CodRemittance extends Model
         'confirmed_at'  => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        // The courier company (and its staff) must know cash is waiting to be confirmed. One per remittance.
+        static::created(function (CodRemittance $r) {
+            \App\Services\CourierNotificationService::create((int) $r->courier_id, 'cod_remitted', 'COD remitted',
+                '₱' . number_format((float) $r->amount, 2) . " from a rider is waiting for your confirmation (ref {$r->reference}).",
+                'cod_remitted:' . $r->id, ['remittance_id' => $r->id], '/courier/cod-remittance');
+        });
+    }
+
     public function rider(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rider_user_id');

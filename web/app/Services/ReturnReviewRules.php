@@ -13,18 +13,34 @@ use App\Models\Review;
  * BuyerReviewController::store) enforce the same rules and are themselves
  * shared by mobile (Sanctum) and web (session routes).
  *
- *   return : order shipped|completed, order.updated_at + 7 days in the future,
+ *   return : order shipped|completed, shipped_at/completed_at (else updated_at) + 7 days in the future,
  *            and no open request (pending/approved/escalated) on the order
- *   review : order completed, order.updated_at + 30 days in the future,
+ *   review : order completed, completed_at (else updated_at) + 30 days in the future,
  *            and the item has no review yet (one review per order item)
  */
 class ReturnReviewRules
 {
+    /** Return window starts when the order shipped (or completed); updated_at only when the stamp is NULL (old orders). */
+    public static function returnBase(Order $order): ?\Carbon\CarbonInterface
+    {
+        $stamp = $order->status === 'completed' ? $order->completed_at : $order->shipped_at;
+
+        return $stamp ?? $order->updated_at;
+    }
+
+    /** Review window starts at completion; updated_at only when completed_at is NULL (old orders). */
+    public static function reviewBase(Order $order): ?\Carbon\CarbonInterface
+    {
+        return $order->completed_at ?? $order->updated_at;
+    }
+
     public static function returnWindowOpen(Order $order): bool
     {
+        $base = self::returnBase($order);
+
         return in_array($order->status, ['shipped', 'completed'], true)
-            && $order->updated_at !== null
-            && $order->updated_at->copy()->addDays(ReturnRequest::REQUEST_WINDOW_DAYS)->isFuture();
+            && $base !== null
+            && $base->copy()->addDays(ReturnRequest::REQUEST_WINDOW_DAYS)->isFuture();
     }
 
     public static function latestReturn(Order $order): ?ReturnRequest
@@ -39,8 +55,10 @@ class ReturnReviewRules
 
     public static function reviewWindowOpen(Order $order): bool
     {
+        $base = self::reviewBase($order);
+
         return $order->status === 'completed'
-            && $order->updated_at !== null
-            && $order->updated_at->copy()->addDays(Review::REVIEW_WINDOW_DAYS)->isFuture();
+            && $base !== null
+            && $base->copy()->addDays(Review::REVIEW_WINDOW_DAYS)->isFuture();
     }
 }

@@ -239,21 +239,23 @@ class RiderTestDelivery extends Command
             return;
         }
 
-        // A3: request OTP
-        $r   = $this->apiCall('POST', "/deliveries/{$this->jobId}/otp");
-        $otp = null;
-        if ($r->getStatusCode() === 200) {
-            $body = $r->getData(true);
-            if (isset($body['debug_otp'])) {
-                $otp = $body['debug_otp'];
-                $this->recordPass('A3', 'OTP request → 200, debug_otp returned (APP_DEBUG=true)');
-            } else {
-                $this->recordPass('A3', 'OTP request → 200');
-                $this->recordSkip('A3-otp', 'debug_otp not returned (APP_DEBUG=false); OTP steps skipped');
-            }
+        // A3: an old app still asks for a code: 200, nothing is issued (the delivery code was removed)
+        $r = $this->apiCall('POST', "/deliveries/{$this->jobId}/otp");
+        if ($r->getStatusCode() === 200 && ! isset($r->getData(true)['debug_otp'])) {
+            $this->recordPass('A3', 'Old code request → 200, no code issued');
         } else {
             $this->recordFail('A3', "HTTP {$r->getStatusCode()}: " . $this->msg($r));
         }
+
+        // A5: deliver WITHOUT the POD photo -> 422 with a clear message
+        $n = $this->notifMark();
+        $r = $this->apiCall('POST', "/deliveries/{$this->jobId}/deliver", ['cod_collected' => $this->codAmount]);
+        if ($r->getStatusCode() === 422 && str_contains($this->msg($r), 'Proof of delivery is required')) {
+            $this->recordPass('A5', 'No POD → 422 with a clear message ✓');
+        } else {
+            $this->recordFail('A5', "Expected 422 (POD required), got {$r->getStatusCode()}: " . $this->msg($r));
+        }
+        $this->assertNoNewNotif('N-A5', $n);
 
         // A4: upload POD photo
         $upload = UploadedFile::fake()->createWithContent('pod.png', $this->tinyPng());
@@ -264,77 +266,46 @@ class RiderTestDelivery extends Command
             $this->recordFail('A4', "HTTP {$r->getStatusCode()}: " . $this->msg($r));
         }
 
-        if ($otp === null) {
-            $this->recordSkip('A5',  'Skipped: no debug_otp');
-            $this->recordSkip('A5b', 'Skipped: no debug_otp');
-            $this->recordSkip('A6',  'Skipped: no debug_otp');
+        // A5b: POD + wrong COD -> 422
+        $n = $this->notifMark();
+        $r = $this->apiCall('POST', "/deliveries/{$this->jobId}/deliver", ['cod_collected' => round($this->codAmount + 1, 2)]);
+        if ($r->getStatusCode() === 422) {
+            $this->recordPass('A5b', 'POD + wrong COD → 422 ✓');
         } else {
-            // A5: wrong OTP
-            $wrong = str_pad((string) (((int) $otp + 1) % 1000000), 6, '0', STR_PAD_LEFT);
-            $n = $this->notifMark();
-            $r = $this->apiCall('POST', "/deliveries/{$this->jobId}/deliver", [
-                'otp'           => $wrong,
-                'cod_collected' => $this->codAmount,
-            ]);
-            if ($r->getStatusCode() === 422) {
-                $this->recordPass('A5', 'Wrong OTP → 422 ✓');
-            } else {
-                $this->recordFail('A5', "Expected 422, got {$r->getStatusCode()}: " . $this->msg($r));
-            }
-            $this->assertNoNewNotif('N-A5', $n);
-
-            // Refresh OTP
-            $r2 = $this->apiCall('POST', "/deliveries/{$this->jobId}/otp");
-            $otp = $r2->getData(true)['debug_otp'] ?? $otp;
-
-            // A5b: correct OTP + wrong COD
-            $n = $this->notifMark();
-            $r = $this->apiCall('POST', "/deliveries/{$this->jobId}/deliver", [
-                'otp'           => $otp,
-                'cod_collected' => round($this->codAmount + 1, 2),
-            ]);
-            if ($r->getStatusCode() === 422) {
-                $this->recordPass('A5b', 'Correct OTP + wrong COD → 422 ✓');
-            } else {
-                $this->recordFail('A5b', "Expected 422, got {$r->getStatusCode()}: " . $this->msg($r));
-            }
-            $this->assertNoNewNotif('N-A5b', $n);
-
-            // A6: correct OTP + correct COD
-            $n = $this->notifMark();
-            $r = $this->apiCall('POST', "/deliveries/{$this->jobId}/deliver", [
-                'otp'           => $otp,
-                'cod_collected' => $this->codAmount,
-            ]);
-            if ($r->getStatusCode() === 200 && ($r->getData(true)['data']['status'] ?? '') === DeliveryJob::STATUS_DELIVERED) {
-                $this->recordPass('A6', 'Deliver → 200, status=delivered ✓');
-                $this->assertTracking('T-A6', $this->jobId, RDC::TRACK_DELIVERED, 'Parcel delivered.');
-                $this->assertBuyerNotified('N-A6', $this->jobId, $n, 'Parcel delivered', 'Your parcel was delivered.');
-            } else {
-                $this->recordFail('A6', "HTTP {$r->getStatusCode()}: " . $this->msg($r));
-            }
-
-            // A6-repeat: second deliver -> idempotent, no new notification
-            $n = $this->notifMark();
-            $r = $this->apiCall('POST', "/deliveries/{$this->jobId}/deliver", [
-                'otp'           => $otp,
-                'cod_collected' => $this->codAmount,
-            ]);
-            if ($r->getStatusCode() === 200 && ($r->getData(true)['idempotent'] ?? false)) {
-                $this->recordPass('A6-repeat', 'Repeat deliver → 200 idempotent ✓');
-            } else {
-                $this->recordFail('A6-repeat', "Expected 200+idempotent, got {$r->getStatusCode()}: " . $this->msg($r));
-            }
-            $this->assertNoNewNotif('N-A6-repeat', $n);
+            $this->recordFail('A5b', "Expected 422, got {$r->getStatusCode()}: " . $this->msg($r));
         }
+        $this->assertNoNewNotif('N-A5b', $n);
+
+        // A6: POD + correct COD (a stray otp field from an old app is ignored)
+        $n = $this->notifMark();
+        $r = $this->apiCall('POST', "/deliveries/{$this->jobId}/deliver", ['otp' => '000000', 'cod_collected' => $this->codAmount]);
+        $delivered = false;
+        if ($r->getStatusCode() === 200 && ($r->getData(true)['data']['status'] ?? '') === DeliveryJob::STATUS_DELIVERED) {
+            $delivered = true;
+            $this->recordPass('A6', 'Deliver → 200, status=delivered ✓');
+            $this->assertTracking('T-A6', $this->jobId, RDC::TRACK_DELIVERED, 'Parcel delivered.');
+            $this->assertBuyerNotified('N-A6', $this->jobId, $n, 'Parcel delivered', 'Your parcel was delivered.');
+        } else {
+            $this->recordFail('A6', "HTTP {$r->getStatusCode()}: " . $this->msg($r));
+        }
+
+        // A6-repeat: second deliver -> idempotent, no new notification
+        $n = $this->notifMark();
+        $r = $this->apiCall('POST', "/deliveries/{$this->jobId}/deliver", ['cod_collected' => $this->codAmount]);
+        if ($r->getStatusCode() === 200 && ($r->getData(true)['idempotent'] ?? false)) {
+            $this->recordPass('A6-repeat', 'Repeat deliver → 200 idempotent ✓');
+        } else {
+            $this->recordFail('A6-repeat', "Expected 200+idempotent, got {$r->getStatusCode()}: " . $this->msg($r));
+        }
+        $this->assertNoNewNotif('N-A6-repeat', $n);
 
         // A7: COD summary
         $r    = $this->apiCall('GET', '/cod');
         $held = (float) ($r->getData(true)['data']['held_amount'] ?? -1);
         if ($r->getStatusCode() === 200) {
-            if ($otp !== null && $held === $this->codAmount) {
+            if ($delivered && $held === $this->codAmount) {
                 $this->recordPass('A7', "COD held=₱" . number_format($held, 2) . ' ✓');
-            } elseif ($otp === null) {
+            } elseif (! $delivered) {
                 $this->recordSkip('A7', 'Skipped: delivery not completed');
             } else {
                 $this->recordFail('A7', "Held=₱{$held}, expected=₱{$this->codAmount}");
@@ -344,7 +315,7 @@ class RiderTestDelivery extends Command
         }
 
         // A8: remit COD
-        if ($otp !== null) {
+        if ($delivered) {
             $r = $this->apiCall('POST', '/cod/remit');
             if ($r->getStatusCode() === 201) {
                 $this->recordPass('A8', 'Remit COD → 201, ref=' . ($r->getData(true)['data']['reference'] ?? '?'));
@@ -359,9 +330,9 @@ class RiderTestDelivery extends Command
         $r = $this->apiCall('GET', '/earnings');
         if ($r->getStatusCode() === 200) {
             $today = (float) ($r->getData(true)['data']['today'] ?? 0);
-            if ($otp !== null && $today >= 50) {
+            if ($delivered && $today >= 50) {
                 $this->recordPass('A9a', "Earnings today=₱{$today} ≥ ₱50 ✓");
-            } elseif ($otp === null) {
+            } elseif (! $delivered) {
                 $this->recordSkip('A9a', 'Skipped: delivery not completed');
             } else {
                 $this->recordFail('A9a', "Earnings=₱{$today}, expected ≥ ₱50");

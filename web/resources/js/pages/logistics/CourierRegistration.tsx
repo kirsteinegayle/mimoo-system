@@ -624,6 +624,7 @@ export default function CourierRegistration() {
         formData.append('password', data.password);
         formData.append('password_confirmation', data.password_confirmation);
         formData.append('account_type', 'logistics');
+        formData.append('applicant_type', 'courier');
 
         // Normalized contact_number for system use (backend will normalize)
         formData.append('contact_number', data.rep_contact_number.trim());

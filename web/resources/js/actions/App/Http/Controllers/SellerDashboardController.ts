@@ -77,6 +77,71 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     index.form = indexForm
-const SellerDashboardController = { index }
+/**
+* @see \App\Http\Controllers\SellerDashboardController::updateStoreName
+ * @see app/Http/Controllers/SellerDashboardController.php:273
+ * @route '/seller/store-name'
+ */
+export const updateStoreName = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: updateStoreName.url(options),
+    method: 'put',
+})
+
+updateStoreName.definition = {
+    methods: ["put"],
+    url: '/seller/store-name',
+} satisfies RouteDefinition<["put"]>
+
+/**
+* @see \App\Http\Controllers\SellerDashboardController::updateStoreName
+ * @see app/Http/Controllers/SellerDashboardController.php:273
+ * @route '/seller/store-name'
+ */
+updateStoreName.url = (options?: RouteQueryOptions) => {
+    return updateStoreName.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\SellerDashboardController::updateStoreName
+ * @see app/Http/Controllers/SellerDashboardController.php:273
+ * @route '/seller/store-name'
+ */
+updateStoreName.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: updateStoreName.url(options),
+    method: 'put',
+})
+
+    /**
+* @see \App\Http\Controllers\SellerDashboardController::updateStoreName
+ * @see app/Http/Controllers/SellerDashboardController.php:273
+ * @route '/seller/store-name'
+ */
+    const updateStoreNameForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: updateStoreName.url({
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\SellerDashboardController::updateStoreName
+ * @see app/Http/Controllers/SellerDashboardController.php:273
+ * @route '/seller/store-name'
+ */
+        updateStoreNameForm.put = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: updateStoreName.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    updateStoreName.form = updateStoreNameForm
+const SellerDashboardController = { index, updateStoreName }
 
 export default SellerDashboardController
