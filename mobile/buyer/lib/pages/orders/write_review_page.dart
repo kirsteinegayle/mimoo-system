@@ -13,7 +13,8 @@ const _kSecondary = AppColors.accent;
 const _kBorder = AppColors.border;
 const _kSubtext = AppColors.textMuted;
 
-/// Lists the items of a completed order with Rate / Edit buttons.
+/// Lists the items of a completed order: Write a Review (not reviewed yet),
+/// Edit Review (within the edit window) or the read-only review (View).
 class ReviewItemsPage extends StatelessWidget {
   const ReviewItemsPage({super.key, required this.order});
   final api_order.Order order;
@@ -22,7 +23,7 @@ class ReviewItemsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rate Products'),
+        title: const Text('Order Reviews'),
         backgroundColor: Colors.white,
         foregroundColor: _kPrimary,
         elevation: 0.5,
@@ -73,9 +74,18 @@ class ReviewItemsPage extends StatelessWidget {
                         const SizedBox(width: 4),
                         const Text('Reviewed',
                             style: TextStyle(fontSize: 11, color: _kSubtext)),
-                      ])
-                    else if (!it.canReview)
-                      const Text('Review period has ended',
+                      ]),
+                    // View: the buyer's own comment (read-only once editing is closed).
+                    if (reviewed && (it.reviewComment ?? '').trim().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(it.reviewComment!.trim(),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12, color: AppColors.onSurface)),
+                      ),
+                    if (!reviewed && !it.canReview)
+                      const Text('This item can no longer be reviewed',
                           style: TextStyle(fontSize: 11, color: _kSubtext)),
                   ],
                 ),
@@ -92,7 +102,7 @@ class ReviewItemsPage extends StatelessWidget {
                     );
                     if (ok == true && ctx.mounted) Navigator.pop(ctx, true);
                   },
-                  child: const Text('Rate'),
+                  child: const Text('Write a Review'),
                 )
               else if (reviewed && it.reviewCanEdit)
                 OutlinedButton(
@@ -105,7 +115,7 @@ class ReviewItemsPage extends StatelessWidget {
                     );
                     if (ok == true && ctx.mounted) Navigator.pop(ctx, true);
                   },
-                  child: const Text('Edit'),
+                  child: const Text('Edit Review'),
                 ),
             ]),
           );
@@ -212,7 +222,7 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
     const labels = ['', 'Terrible', 'Poor', 'Fair', 'Good', 'Amazing'];
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? 'Edit Review' : 'Rate Product'),
+        title: Text(_isEdit ? 'Edit Review' : 'Write a Review'),
         backgroundColor: Colors.white,
         foregroundColor: _kPrimary,
         elevation: 0.5,

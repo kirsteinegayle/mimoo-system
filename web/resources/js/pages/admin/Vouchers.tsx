@@ -19,6 +19,9 @@ interface Voucher {
     usages_count: number;
     valid_from: string;
     valid_until: string;
+    /** Same dates as "YYYY-MM-DDTHH:mm" in Philippine time, for the edit form. */
+    valid_from_input?: string | null;
+    valid_until_input?: string | null;
     status: 'active' | 'inactive' | 'expired';
     terms_conditions: string[] | null;
     implemented_by: string | null;
@@ -50,7 +53,7 @@ export default function Vouchers({ vouchers = [] }: Props) {
         usage_per_user: '1',
         valid_from: '',
         valid_until: '',
-        status: 'active' as 'active' | 'inactive',
+        status: 'active' as 'active' | 'inactive' | 'expired',
         implemented_by: '',
     });
     
@@ -121,8 +124,9 @@ export default function Vouchers({ vouchers = [] }: Props) {
             max_discount: voucher.max_discount?.toString() || '',
             usage_limit: voucher.usage_limit?.toString() || '',
             usage_per_user: voucher.usage_per_user.toString(),
-            valid_from: voucher.valid_from,
-            valid_until: voucher.valid_until,
+            // datetime-local needs "YYYY-MM-DDTHH:mm" (the display string left these empty).
+            valid_from: voucher.valid_from_input ?? '',
+            valid_until: voucher.valid_until_input ?? '',
             status: voucher.status,
             implemented_by: voucher.implemented_by || '',
         });
@@ -162,8 +166,8 @@ export default function Vouchers({ vouchers = [] }: Props) {
             onSuccess: () => {
                 toast.success('Voucher deleted successfully!');
             },
-            onError: (error) => {
-                toast.error(error.message || 'Failed to delete voucher');
+            onError: (errors) => {
+                toast.error(Object.values(errors)[0] || 'Failed to delete voucher');
             },
         });
     };
@@ -600,7 +604,7 @@ export default function Vouchers({ vouchers = [] }: Props) {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="mb-2 block text-sm font-semibold text-gray-700">
-                                        Valid From *
+                                        Valid From * <span className="font-normal text-gray-500">(Philippine time)</span>
                                     </label>
                                     <input
                                         type="datetime-local"
@@ -612,7 +616,7 @@ export default function Vouchers({ vouchers = [] }: Props) {
 
                                 <div>
                                     <label className="mb-2 block text-sm font-semibold text-gray-700">
-                                        Valid Until *
+                                        Valid Until * <span className="font-normal text-gray-500">(Philippine time)</span>
                                     </label>
                                     <input
                                         type="datetime-local"
@@ -832,7 +836,7 @@ export default function Vouchers({ vouchers = [] }: Props) {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="mb-2 block text-sm font-semibold text-gray-700">Valid From *</label>
+                                    <label className="mb-2 block text-sm font-semibold text-gray-700">Valid From * <span className="font-normal text-gray-500">(Philippine time)</span></label>
                                     <input
                                         type="datetime-local"
                                         value={formData.valid_from}
@@ -842,7 +846,7 @@ export default function Vouchers({ vouchers = [] }: Props) {
                                 </div>
 
                                 <div>
-                                    <label className="mb-2 block text-sm font-semibold text-gray-700">Valid Until *</label>
+                                    <label className="mb-2 block text-sm font-semibold text-gray-700">Valid Until * <span className="font-normal text-gray-500">(Philippine time)</span></label>
                                     <input
                                         type="datetime-local"
                                         value={formData.valid_until}

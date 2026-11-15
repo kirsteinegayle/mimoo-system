@@ -56,7 +56,7 @@ checkout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     checkout.form = checkoutForm
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::checkoutPreview
- * @see app/Http/Controllers/Api/BuyerOrderController.php:419
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:394
  * @route '/api/buyer/checkout/preview'
  */
 export const checkoutPreview = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -71,7 +71,7 @@ checkoutPreview.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::checkoutPreview
- * @see app/Http/Controllers/Api/BuyerOrderController.php:419
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:394
  * @route '/api/buyer/checkout/preview'
  */
 checkoutPreview.url = (options?: RouteQueryOptions) => {
@@ -80,7 +80,7 @@ checkoutPreview.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::checkoutPreview
- * @see app/Http/Controllers/Api/BuyerOrderController.php:419
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:394
  * @route '/api/buyer/checkout/preview'
  */
 checkoutPreview.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -90,7 +90,7 @@ checkoutPreview.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
 
     /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::checkoutPreview
- * @see app/Http/Controllers/Api/BuyerOrderController.php:419
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:394
  * @route '/api/buyer/checkout/preview'
  */
     const checkoutPreviewForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -100,7 +100,7 @@ checkoutPreview.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
 
             /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::checkoutPreview
- * @see app/Http/Controllers/Api/BuyerOrderController.php:419
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:394
  * @route '/api/buyer/checkout/preview'
  */
         checkoutPreviewForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -111,7 +111,7 @@ checkoutPreview.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
     checkoutPreview.form = checkoutPreviewForm
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::index
- * @see app/Http/Controllers/Api/BuyerOrderController.php:497
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:467
  * @route '/api/buyer/orders'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -126,7 +126,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::index
- * @see app/Http/Controllers/Api/BuyerOrderController.php:497
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:467
  * @route '/api/buyer/orders'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -135,7 +135,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::index
- * @see app/Http/Controllers/Api/BuyerOrderController.php:497
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:467
  * @route '/api/buyer/orders'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -144,7 +144,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::index
- * @see app/Http/Controllers/Api/BuyerOrderController.php:497
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:467
  * @route '/api/buyer/orders'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -154,7 +154,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::index
- * @see app/Http/Controllers/Api/BuyerOrderController.php:497
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:467
  * @route '/api/buyer/orders'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -164,7 +164,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::index
- * @see app/Http/Controllers/Api/BuyerOrderController.php:497
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:467
  * @route '/api/buyer/orders'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -173,7 +173,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::index
- * @see app/Http/Controllers/Api/BuyerOrderController.php:497
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:467
  * @route '/api/buyer/orders'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -189,7 +189,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::show
- * @see app/Http/Controllers/Api/BuyerOrderController.php:527
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:497
  * @route '/api/buyer/orders/{id}'
  */
 export const show = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -204,7 +204,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::show
- * @see app/Http/Controllers/Api/BuyerOrderController.php:527
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:497
  * @route '/api/buyer/orders/{id}'
  */
 show.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -232,7 +232,7 @@ show.url = (args: { id: string | number } | [id: string | number ] | string | nu
 
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::show
- * @see app/Http/Controllers/Api/BuyerOrderController.php:527
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:497
  * @route '/api/buyer/orders/{id}'
  */
 show.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -241,7 +241,7 @@ show.get = (args: { id: string | number } | [id: string | number ] | string | nu
 })
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::show
- * @see app/Http/Controllers/Api/BuyerOrderController.php:527
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:497
  * @route '/api/buyer/orders/{id}'
  */
 show.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -251,7 +251,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
 
     /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::show
- * @see app/Http/Controllers/Api/BuyerOrderController.php:527
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:497
  * @route '/api/buyer/orders/{id}'
  */
     const showForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -261,7 +261,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
 
             /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::show
- * @see app/Http/Controllers/Api/BuyerOrderController.php:527
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:497
  * @route '/api/buyer/orders/{id}'
  */
         showForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -270,7 +270,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
         })
             /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::show
- * @see app/Http/Controllers/Api/BuyerOrderController.php:527
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:497
  * @route '/api/buyer/orders/{id}'
  */
         showForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -286,7 +286,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
     show.form = showForm
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::cancel
- * @see app/Http/Controllers/Api/BuyerOrderController.php:596
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:566
  * @route '/api/buyer/orders/{id}/cancel'
  */
 export const cancel = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -301,7 +301,7 @@ cancel.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::cancel
- * @see app/Http/Controllers/Api/BuyerOrderController.php:596
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:566
  * @route '/api/buyer/orders/{id}/cancel'
  */
 cancel.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -329,7 +329,7 @@ cancel.url = (args: { id: string | number } | [id: string | number ] | string | 
 
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::cancel
- * @see app/Http/Controllers/Api/BuyerOrderController.php:596
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:566
  * @route '/api/buyer/orders/{id}/cancel'
  */
 cancel.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -339,7 +339,7 @@ cancel.post = (args: { id: string | number } | [id: string | number ] | string |
 
     /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::cancel
- * @see app/Http/Controllers/Api/BuyerOrderController.php:596
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:566
  * @route '/api/buyer/orders/{id}/cancel'
  */
     const cancelForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -349,7 +349,7 @@ cancel.post = (args: { id: string | number } | [id: string | number ] | string |
 
             /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::cancel
- * @see app/Http/Controllers/Api/BuyerOrderController.php:596
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:566
  * @route '/api/buyer/orders/{id}/cancel'
  */
         cancelForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -360,25 +360,25 @@ cancel.post = (args: { id: string | number } | [id: string | number ] | string |
     cancel.form = cancelForm
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::receive
- * @see app/Http/Controllers/Api/BuyerOrderController.php:549
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:519
  * @route '/api/buyer/orders/{id}/receive'
  */
-export const receive = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: receive.url(args, options),
+const receive29adb0b53cc199d9c0542073ae85a616 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: receive29adb0b53cc199d9c0542073ae85a616.url(args, options),
     method: 'post',
 })
 
-receive.definition = {
+receive29adb0b53cc199d9c0542073ae85a616.definition = {
     methods: ["post"],
     url: '/api/buyer/orders/{id}/receive',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::receive
- * @see app/Http/Controllers/Api/BuyerOrderController.php:549
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:519
  * @route '/api/buyer/orders/{id}/receive'
  */
-receive.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+receive29adb0b53cc199d9c0542073ae85a616.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { id: args }
     }
@@ -396,42 +396,127 @@ receive.url = (args: { id: string | number } | [id: string | number ] | string |
                         id: args.id,
                 }
 
-    return receive.definition.url
+    return receive29adb0b53cc199d9c0542073ae85a616.definition.url
             .replace('{id}', parsedArgs.id.toString())
             .replace(/\/+$/, '') + queryParams(options)
 }
 
 /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::receive
- * @see app/Http/Controllers/Api/BuyerOrderController.php:549
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:519
  * @route '/api/buyer/orders/{id}/receive'
  */
-receive.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: receive.url(args, options),
+receive29adb0b53cc199d9c0542073ae85a616.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: receive29adb0b53cc199d9c0542073ae85a616.url(args, options),
     method: 'post',
 })
 
     /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::receive
- * @see app/Http/Controllers/Api/BuyerOrderController.php:549
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:519
  * @route '/api/buyer/orders/{id}/receive'
  */
-    const receiveForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: receive.url(args, options),
+    const receive29adb0b53cc199d9c0542073ae85a616Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: receive29adb0b53cc199d9c0542073ae85a616.url(args, options),
         method: 'post',
     })
 
             /**
 * @see \App\Http\Controllers\Api\BuyerOrderController::receive
- * @see app/Http/Controllers/Api/BuyerOrderController.php:549
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:519
  * @route '/api/buyer/orders/{id}/receive'
  */
-        receiveForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: receive.url(args, options),
+        receive29adb0b53cc199d9c0542073ae85a616Form.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: receive29adb0b53cc199d9c0542073ae85a616.url(args, options),
             method: 'post',
         })
     
-    receive.form = receiveForm
+    receive29adb0b53cc199d9c0542073ae85a616.form = receive29adb0b53cc199d9c0542073ae85a616Form
+    /**
+* @see \App\Http\Controllers\Api\BuyerOrderController::receive
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:519
+ * @route '/api/orders/{id}/receive'
+ */
+const receive34ac6f91aa8a28e0254ae54bd5004eae = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: receive34ac6f91aa8a28e0254ae54bd5004eae.url(args, options),
+    method: 'post',
+})
+
+receive34ac6f91aa8a28e0254ae54bd5004eae.definition = {
+    methods: ["post"],
+    url: '/api/orders/{id}/receive',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\Api\BuyerOrderController::receive
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:519
+ * @route '/api/orders/{id}/receive'
+ */
+receive34ac6f91aa8a28e0254ae54bd5004eae.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { id: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    id: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        id: args.id,
+                }
+
+    return receive34ac6f91aa8a28e0254ae54bd5004eae.definition.url
+            .replace('{id}', parsedArgs.id.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Api\BuyerOrderController::receive
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:519
+ * @route '/api/orders/{id}/receive'
+ */
+receive34ac6f91aa8a28e0254ae54bd5004eae.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: receive34ac6f91aa8a28e0254ae54bd5004eae.url(args, options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\Api\BuyerOrderController::receive
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:519
+ * @route '/api/orders/{id}/receive'
+ */
+    const receive34ac6f91aa8a28e0254ae54bd5004eaeForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: receive34ac6f91aa8a28e0254ae54bd5004eae.url(args, options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\BuyerOrderController::receive
+ * @see app/Http/Controllers/Api/BuyerOrderController.php:519
+ * @route '/api/orders/{id}/receive'
+ */
+        receive34ac6f91aa8a28e0254ae54bd5004eaeForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: receive34ac6f91aa8a28e0254ae54bd5004eae.url(args, options),
+            method: 'post',
+        })
+    
+    receive34ac6f91aa8a28e0254ae54bd5004eae.form = receive34ac6f91aa8a28e0254ae54bd5004eaeForm
+
+/**
+* Multiple routes resolve to \App\Http\Controllers\Api\BuyerOrderController::receive, so this export is a
+* dictionary keyed by URI rather than a callable. Call a specific route with `receive['<uri>'](...)`,
+* or import the route by name from your generated `routes/` directory.
+*/
+export const receive = {
+    '/api/buyer/orders/{id}/receive': receive29adb0b53cc199d9c0542073ae85a616,
+    '/api/orders/{id}/receive': receive34ac6f91aa8a28e0254ae54bd5004eae,
+}
+
 const BuyerOrderController = { checkout, checkoutPreview, index, show, cancel, receive }
 
 export default BuyerOrderController

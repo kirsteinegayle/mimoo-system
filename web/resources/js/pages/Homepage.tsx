@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { SignupModal } from "@/components/signup-modal";
 import { NotificationBell } from "@/components/notification-bell";
+import { MessagesIcon } from "@/components/messages-icon";
 import { Footer } from "@/components/footer";
 import { toast } from "sonner";
 
@@ -531,7 +532,7 @@ function ProductCard({
         {/* Hover overlay with "Find Similar" */}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <Link
-            href={`/category/${encodeURIComponent(product.category)}`}
+            href={`/category/${encodeURIComponent(product.category ?? "")}`}
             onClick={(e) => e.stopPropagation()}
             className="bg-white text-violet-700 px-4 py-2 rounded-lg font-semibold text-sm hover:bg-violet-50 transition-colors shadow-lg"
           >
@@ -796,6 +797,21 @@ function Header({
                     >
                       My Purchases
                     </Link>
+                    <Link href="/messages" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      Messages
+                    </Link>
+                    <Link href="/vouchers" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      My Vouchers
+                    </Link>
+                    <Link href="/addresses" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      Addresses
+                    </Link>
+                    <Link href="/my-reviews" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      My Reviews
+                    </Link>
+                    <Link href="/returns" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      Returns
+                    </Link>
                     <Link
                       href="/settings"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -971,6 +987,8 @@ function Header({
           {/* Bell + Wishlist + Cart, side by side on the same row as the search bar */}
           <div className="flex shrink-0 items-center gap-4 sm:gap-5">
             <NotificationBell isLoggedIn={isLoggedIn} />
+
+            <MessagesIcon isLoggedIn={isLoggedIn} onGuestClick={() => router.visit("/login")} />
 
             <Link
               href="/wishlist"
@@ -1453,7 +1471,7 @@ export default function Homepage({ auth, initialProducts = [], filters = {}, vou
 
       {/* Chat Button */}
       <button
-        onClick={() => {}}
+        onClick={() => (user ? router.visit("/messages") : setShowSignupModal(true))}
         className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-all hover:scale-110"
         style={{ backgroundColor: '#1c1430' }}
         aria-label="Open chat"

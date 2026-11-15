@@ -63,34 +63,16 @@ class BuyerVoucherController extends Controller
     {
         if ($err = $this->buyerGuard($request)) return $err;
 
-        $user = $request->user();
-
-        $vouchers = Voucher::where('status', 'active')
-            ->where('valid_from', '<=', now())
-            ->where('valid_until', '>=', now())
-            ->where(function ($q) {
-                // usage_limit null = unlimited; otherwise must have remaining uses
-                $q->whereNull('usage_limit')
-                  ->orWhereRaw('usage_count < usage_limit');
-            })
-            ->orderBy('valid_until') // soonest expiry first
-            ->get();
-
-        // Fetch all claim rows for this user in one query (no N+1)
-        $voucherIds = $vouchers->pluck('id');
-        $claims = VoucherUsage::where('user_id', $user->id)
-            ->whereIn('voucher_id', $voucherIds)
-            ->get()
-            ->keyBy('voucher_id');
-
+        // Same list and rules as the web homepage (App\Services\VoucherService).
         return response()->json([
-            'data' => $vouchers->map(fn ($v) => $this->voucherRow($v, $claims->get($v->id)))->values(),
-        ]);
+            'data' => \App\Services\VoucherService::available($request->user()),
+        ])->header('Cache-Control', 'no-store, private');
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // POST /api/buyer/vouchers/claim
-    // Accept { id: int } or { code: string }. Idempotent.
+    // Accept { id: int } or { code: string }. Idempotent while an unused claim exists.
+    // Claiming never counts as a use (usage_count is incremented at checkout).
     // ─────────────────────────────────────────────────────────────────────────
     public function claim(Request $request): JsonResponse
     {
@@ -108,75 +90,18 @@ class BuyerVoucherController extends Controller
             ], 422);
         }
 
-        $user = $request->user();
+        $voucher = $request->filled('id')
+            ? Voucher::find((int) $request->input('id'))
+            : Voucher::where('code', strtoupper(trim((string) $request->input('code'))))->first();
 
-        // Look up by id or code (case-insensitive, trimmed)
-        $query = Voucher::query();
-        if ($request->filled('id')) {
-            $query->where('id', (int) $request->input('id'));
-        } else {
-            $query->where('code', strtoupper(trim($request->input('code'))));
+        $result = \App\Services\VoucherService::claim($request->user(), $voucher);
+        if (! $result['ok']) {
+            return response()->json(['message' => $result['message']], $result['status']);
         }
-        $voucher = $query->first();
-
-        // Voucher not found
-        if (! $voucher) {
-            return response()->json(['message' => 'Voucher not found.'], 404);
-        }
-
-        // Not active (inactive or expired status)
-        if ($voucher->status !== 'active') {
-            $msg = $voucher->status === 'expired'
-                ? 'This voucher has expired.'
-                : 'This voucher is no longer active.';
-            return response()->json(['message' => $msg], 422);
-        }
-
-        // Not yet started
-        if (now()->lt($voucher->valid_from)) {
-            return response()->json([
-                'message' => 'This voucher is not yet available. It starts on ' . $voucher->valid_from->format('M d, Y') . '.',
-            ], 422);
-        }
-
-        // Expired
-        if (now()->gt($voucher->valid_until)) {
-            return response()->json(['message' => 'This voucher has expired.'], 422);
-        }
-
-        // Global usage limit exceeded
-        if ($voucher->usage_limit !== null && $voucher->usage_count >= $voucher->usage_limit) {
-            return response()->json(['message' => 'This voucher has been fully claimed.'], 422);
-        }
-
-        // Idempotent: already claimed
-        $existing = VoucherUsage::where('voucher_id', $voucher->id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($existing) {
-            return response()->json([
-                'message' => 'You have already claimed this voucher.',
-                'data'    => $this->voucherRow($voucher, $existing),
-            ]);
-        }
-
-        // Create claim record
-        // NOTE: VoucherUsage::$fillable is missing claimed_at (bug in web model).
-        // Use DB::table or updateOrCreate with unguarded to avoid mass-assignment issues.
-        $claim = new VoucherUsage();
-        $claim->voucher_id  = $voucher->id;
-        $claim->user_id     = $user->id;
-        $claim->claimed_at  = now();
-        // order_id, discount_amount, used_at remain null until checkout
-        $claim->save();
-
-        // Increment usage_count
-        $voucher->increment('usage_count');
 
         return response()->json([
-            'message' => 'Voucher claimed successfully!',
-            'data'    => $this->voucherRow($voucher->fresh(), $claim),
+            'message' => $result['message'],
+            'data'    => \App\Services\VoucherService::row($result['voucher']->fresh(), $request->user()),
         ]);
     }
 

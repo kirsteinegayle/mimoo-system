@@ -14,7 +14,7 @@ import {
     Truck,
     UserCheck,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 // ─── Nav definition ───────────────────────────────────────────────────────────
 
@@ -29,6 +29,7 @@ export type AdminNavKey =
     | 'logistics-approval'
     | 'product-approval'
     | 'notifications'
+    | 'settings'
     | 'monitoring';
 
 const navItems: { key: AdminNavKey; label: string; icon: React.ElementType; href: string }[] = [
@@ -51,7 +52,31 @@ interface AdminShellProps {
     children: ReactNode;
 }
 
+/** Unread admin notifications for the header bell (refreshes every 60 s while visible). */
+function useAdminUnread() {
+    const [unread, setUnread] = useState(0);
+    useEffect(() => {
+        let alive = true;
+        const load = () =>
+            fetch('/admin/notifications/unread-count', { credentials: 'same-origin', headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                .then((r) => (r.ok ? r.json() : null))
+                .then((j) => alive && j && setUnread(Number(j?.data?.unread ?? 0)))
+                .catch(() => {});
+        load();
+        const onFocus = () => document.visibilityState === 'visible' && load();
+        const t = window.setInterval(onFocus, 60000);
+        window.addEventListener('admin-notifications-changed', load);
+        return () => {
+            alive = false;
+            window.clearInterval(t);
+            window.removeEventListener('admin-notifications-changed', load);
+        };
+    }, []);
+    return unread;
+}
+
 export default function AdminShell({ active, children }: AdminShellProps) {
+    const unread = useAdminUnread();
     function handleLogout(e: React.FormEvent) {
         e.preventDefault();
         router.post('/admin/logout');
@@ -109,7 +134,7 @@ export default function AdminShell({ active, children }: AdminShellProps) {
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#9B5DE5] text-[10px] font-bold">
                             A
                         </span>
-                        <span className="truncate text-xs text-white/40">MIMOO ADMIN</span>
+                        <span className="truncate text-xs text-white/65">MIMOO ADMIN</span>
                     </div>
                 </div>
             </aside>
@@ -126,15 +151,30 @@ export default function AdminShell({ active, children }: AdminShellProps) {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50">
+                        <Link href="/admin/messages" aria-label="Messages" title="Messages" className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50">
                             <MessageSquare className="h-4 w-4" strokeWidth={1.5} />
-                        </button>
-                        <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50">
+                        </Link>
+                        <Link
+                            href="/admin/notifications"
+                            aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
+                            title="Notifications"
+                            className={`relative ${active === 'notifications' ? 'border-[#3B1F6B] text-[#3B1F6B] ' : ''}flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50`}
+                        >
                             <Bell className="h-4 w-4" strokeWidth={1.5} />
-                        </button>
-                        <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50">
+                            {unread > 0 && (
+                                <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
+                                    {unread > 99 ? '99+' : unread}
+                                </span>
+                            )}
+                        </Link>
+                        <Link
+                            href="/admin/settings"
+                            aria-label="Settings"
+                            title="Settings"
+                            className={`${active === 'settings' ? 'border-[#3B1F6B] text-[#3B1F6B] ' : ''}flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50`}
+                        >
                             <Cog className="h-4 w-4" strokeWidth={1.5} />
-                        </button>
+                        </Link>
                         <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1">
                             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#3B1F6B] text-[10px] font-bold text-white">
                                 KF

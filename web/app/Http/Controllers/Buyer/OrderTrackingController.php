@@ -41,6 +41,27 @@ class OrderTrackingController extends Controller
 
         return Inertia::render('TrackOrder', [
             'tracking' => OrderTrackingService::forOrder($order),
+            // Assigned rider for "Message Rider" (null until a rider is assigned).
+            'rider'    => \App\Http\Controllers\OrderController::riderInfo($order),
+            // Review entry point: completed orders only, same rules as My Orders.
+            'review'   => $this->reviewSummary($order),
         ]);
+    }
+
+    /** @return array{can_write: bool, reviewed: bool, can_edit: bool}|null */
+    private function reviewSummary(Order $order): ?array
+    {
+        if ($order->status !== 'completed') {
+            return null;
+        }
+        $items   = $order->items()->get();
+        $reviews = \App\Models\Review::whereIn('order_item_id', $items->pluck('id'))->get()->keyBy('order_item_id');
+        $open    = \App\Services\ReturnReviewRules::reviewWindowOpen($order);
+
+        return [
+            'can_write' => $open && $items->contains(fn ($i) => ! $reviews->has($i->id) && \App\Services\ReturnReviewRules::itemReviewable($i)),
+            'reviewed'  => $reviews->isNotEmpty(),
+            'can_edit'  => $reviews->contains(fn ($r) => $r->canBeEdited()),
+        ];
     }
 }

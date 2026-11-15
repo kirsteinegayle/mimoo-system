@@ -79,7 +79,7 @@ feed.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     feed.form = feedForm
 /**
 * @see \App\Http\Controllers\Seller\ReviewsController::reply
- * @see app/Http/Controllers/Seller/ReviewsController.php:64
+ * @see app/Http/Controllers/Seller/ReviewsController.php:83
  * @route '/seller/reviews/{id}/reply'
  */
 export const reply = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ reply.definition = {
 
 /**
 * @see \App\Http\Controllers\Seller\ReviewsController::reply
- * @see app/Http/Controllers/Seller/ReviewsController.php:64
+ * @see app/Http/Controllers/Seller/ReviewsController.php:83
  * @route '/seller/reviews/{id}/reply'
  */
 reply.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -122,7 +122,7 @@ reply.url = (args: { id: string | number } | [id: string | number ] | string | n
 
 /**
 * @see \App\Http\Controllers\Seller\ReviewsController::reply
- * @see app/Http/Controllers/Seller/ReviewsController.php:64
+ * @see app/Http/Controllers/Seller/ReviewsController.php:83
  * @route '/seller/reviews/{id}/reply'
  */
 reply.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -132,7 +132,7 @@ reply.post = (args: { id: string | number } | [id: string | number ] | string | 
 
     /**
 * @see \App\Http\Controllers\Seller\ReviewsController::reply
- * @see app/Http/Controllers/Seller/ReviewsController.php:64
+ * @see app/Http/Controllers/Seller/ReviewsController.php:83
  * @route '/seller/reviews/{id}/reply'
  */
     const replyForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -142,7 +142,7 @@ reply.post = (args: { id: string | number } | [id: string | number ] | string | 
 
             /**
 * @see \App\Http\Controllers\Seller\ReviewsController::reply
- * @see app/Http/Controllers/Seller/ReviewsController.php:64
+ * @see app/Http/Controllers/Seller/ReviewsController.php:83
  * @route '/seller/reviews/{id}/reply'
  */
         replyForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

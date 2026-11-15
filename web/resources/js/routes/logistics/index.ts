@@ -149,7 +149,7 @@ dashboard.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     dashboard.form = dashboardForm
 /**
- * @see routes/web.php:666
+ * @see routes/web.php:683
  * @route '/logistics/incoming-parcels'
  */
 export const incomingParcels = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -163,7 +163,7 @@ incomingParcels.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:666
+ * @see routes/web.php:683
  * @route '/logistics/incoming-parcels'
  */
 incomingParcels.url = (options?: RouteQueryOptions) => {
@@ -171,7 +171,7 @@ incomingParcels.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:666
+ * @see routes/web.php:683
  * @route '/logistics/incoming-parcels'
  */
 incomingParcels.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -179,7 +179,7 @@ incomingParcels.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
     method: 'get',
 })
 /**
- * @see routes/web.php:666
+ * @see routes/web.php:683
  * @route '/logistics/incoming-parcels'
  */
 incomingParcels.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -188,7 +188,7 @@ incomingParcels.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 })
 
     /**
- * @see routes/web.php:666
+ * @see routes/web.php:683
  * @route '/logistics/incoming-parcels'
  */
     const incomingParcelsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -197,7 +197,7 @@ incomingParcels.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     })
 
             /**
- * @see routes/web.php:666
+ * @see routes/web.php:683
  * @route '/logistics/incoming-parcels'
  */
         incomingParcelsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -205,7 +205,7 @@ incomingParcels.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
             method: 'get',
         })
             /**
- * @see routes/web.php:666
+ * @see routes/web.php:683
  * @route '/logistics/incoming-parcels'
  */
         incomingParcelsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -220,7 +220,7 @@ incomingParcels.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     
     incomingParcels.form = incomingParcelsForm
 /**
- * @see routes/web.php:906
+ * @see routes/web.php:923
  * @route '/logistics/courier-applications'
  */
 export const courierApplications = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -234,7 +234,7 @@ courierApplications.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:906
+ * @see routes/web.php:923
  * @route '/logistics/courier-applications'
  */
 courierApplications.url = (options?: RouteQueryOptions) => {
@@ -242,7 +242,7 @@ courierApplications.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:906
+ * @see routes/web.php:923
  * @route '/logistics/courier-applications'
  */
 courierApplications.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -250,7 +250,7 @@ courierApplications.get = (options?: RouteQueryOptions): RouteDefinition<'get'> 
     method: 'get',
 })
 /**
- * @see routes/web.php:906
+ * @see routes/web.php:923
  * @route '/logistics/courier-applications'
  */
 courierApplications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -259,7 +259,7 @@ courierApplications.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 })
 
     /**
- * @see routes/web.php:906
+ * @see routes/web.php:923
  * @route '/logistics/courier-applications'
  */
     const courierApplicationsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -268,7 +268,7 @@ courierApplications.head = (options?: RouteQueryOptions): RouteDefinition<'head'
     })
 
             /**
- * @see routes/web.php:906
+ * @see routes/web.php:923
  * @route '/logistics/courier-applications'
  */
         courierApplicationsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -276,7 +276,7 @@ courierApplications.head = (options?: RouteQueryOptions): RouteDefinition<'head'
             method: 'get',
         })
             /**
- * @see routes/web.php:906
+ * @see routes/web.php:923
  * @route '/logistics/courier-applications'
  */
         courierApplicationsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -291,7 +291,7 @@ courierApplications.head = (options?: RouteQueryOptions): RouteDefinition<'head'
     
     courierApplications.form = courierApplicationsForm
 /**
- * @see routes/web.php:954
+ * @see routes/web.php:971
  * @route '/logistics/courier-applications/{id}'
  */
 export const courierApplicationDetail = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -305,7 +305,7 @@ courierApplicationDetail.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:954
+ * @see routes/web.php:971
  * @route '/logistics/courier-applications/{id}'
  */
 courierApplicationDetail.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -332,7 +332,7 @@ courierApplicationDetail.url = (args: { id: string | number } | [id: string | nu
 }
 
 /**
- * @see routes/web.php:954
+ * @see routes/web.php:971
  * @route '/logistics/courier-applications/{id}'
  */
 courierApplicationDetail.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -340,7 +340,7 @@ courierApplicationDetail.get = (args: { id: string | number } | [id: string | nu
     method: 'get',
 })
 /**
- * @see routes/web.php:954
+ * @see routes/web.php:971
  * @route '/logistics/courier-applications/{id}'
  */
 courierApplicationDetail.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -349,7 +349,7 @@ courierApplicationDetail.head = (args: { id: string | number } | [id: string | n
 })
 
     /**
- * @see routes/web.php:954
+ * @see routes/web.php:971
  * @route '/logistics/courier-applications/{id}'
  */
     const courierApplicationDetailForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -358,7 +358,7 @@ courierApplicationDetail.head = (args: { id: string | number } | [id: string | n
     })
 
             /**
- * @see routes/web.php:954
+ * @see routes/web.php:971
  * @route '/logistics/courier-applications/{id}'
  */
         courierApplicationDetailForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -366,7 +366,7 @@ courierApplicationDetail.head = (args: { id: string | number } | [id: string | n
             method: 'get',
         })
             /**
- * @see routes/web.php:954
+ * @see routes/web.php:971
  * @route '/logistics/courier-applications/{id}'
  */
         courierApplicationDetailForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -381,7 +381,7 @@ courierApplicationDetail.head = (args: { id: string | number } | [id: string | n
     
     courierApplicationDetail.form = courierApplicationDetailForm
 /**
- * @see routes/web.php:1139
+ * @see routes/web.php:1156
  * @route '/logistics/sort-assign'
  */
 export const sortAssign = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -395,7 +395,7 @@ sortAssign.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1139
+ * @see routes/web.php:1156
  * @route '/logistics/sort-assign'
  */
 sortAssign.url = (options?: RouteQueryOptions) => {
@@ -403,7 +403,7 @@ sortAssign.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1139
+ * @see routes/web.php:1156
  * @route '/logistics/sort-assign'
  */
 sortAssign.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -411,7 +411,7 @@ sortAssign.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1139
+ * @see routes/web.php:1156
  * @route '/logistics/sort-assign'
  */
 sortAssign.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -420,7 +420,7 @@ sortAssign.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1139
+ * @see routes/web.php:1156
  * @route '/logistics/sort-assign'
  */
     const sortAssignForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -429,7 +429,7 @@ sortAssign.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1139
+ * @see routes/web.php:1156
  * @route '/logistics/sort-assign'
  */
         sortAssignForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -437,7 +437,7 @@ sortAssign.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1139
+ * @see routes/web.php:1156
  * @route '/logistics/sort-assign'
  */
         sortAssignForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -452,7 +452,7 @@ sortAssign.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     sortAssign.form = sortAssignForm
 /**
- * @see routes/web.php:1371
+ * @see routes/web.php:1388
  * @route '/logistics/delivery-monitoring'
  */
 export const deliveryMonitoring = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -466,7 +466,7 @@ deliveryMonitoring.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1371
+ * @see routes/web.php:1388
  * @route '/logistics/delivery-monitoring'
  */
 deliveryMonitoring.url = (options?: RouteQueryOptions) => {
@@ -474,7 +474,7 @@ deliveryMonitoring.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1371
+ * @see routes/web.php:1388
  * @route '/logistics/delivery-monitoring'
  */
 deliveryMonitoring.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -482,7 +482,7 @@ deliveryMonitoring.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =
     method: 'get',
 })
 /**
- * @see routes/web.php:1371
+ * @see routes/web.php:1388
  * @route '/logistics/delivery-monitoring'
  */
 deliveryMonitoring.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -491,7 +491,7 @@ deliveryMonitoring.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
 })
 
     /**
- * @see routes/web.php:1371
+ * @see routes/web.php:1388
  * @route '/logistics/delivery-monitoring'
  */
     const deliveryMonitoringForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -500,7 +500,7 @@ deliveryMonitoring.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     })
 
             /**
- * @see routes/web.php:1371
+ * @see routes/web.php:1388
  * @route '/logistics/delivery-monitoring'
  */
         deliveryMonitoringForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -508,7 +508,7 @@ deliveryMonitoring.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
             method: 'get',
         })
             /**
- * @see routes/web.php:1371
+ * @see routes/web.php:1388
  * @route '/logistics/delivery-monitoring'
  */
         deliveryMonitoringForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -523,7 +523,7 @@ deliveryMonitoring.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     
     deliveryMonitoring.form = deliveryMonitoringForm
 /**
- * @see routes/web.php:1391
+ * @see routes/web.php:1408
  * @route '/logistics/riders'
  */
 export const riders = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -537,7 +537,7 @@ riders.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1391
+ * @see routes/web.php:1408
  * @route '/logistics/riders'
  */
 riders.url = (options?: RouteQueryOptions) => {
@@ -545,7 +545,7 @@ riders.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1391
+ * @see routes/web.php:1408
  * @route '/logistics/riders'
  */
 riders.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -553,7 +553,7 @@ riders.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1391
+ * @see routes/web.php:1408
  * @route '/logistics/riders'
  */
 riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -562,7 +562,7 @@ riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1391
+ * @see routes/web.php:1408
  * @route '/logistics/riders'
  */
     const ridersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -571,7 +571,7 @@ riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1391
+ * @see routes/web.php:1408
  * @route '/logistics/riders'
  */
         ridersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -579,7 +579,7 @@ riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1391
+ * @see routes/web.php:1408
  * @route '/logistics/riders'
  */
         ridersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -594,7 +594,7 @@ riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     riders.form = ridersForm
 /**
- * @see routes/web.php:1411
+ * @see routes/web.php:1428
  * @route '/logistics/branches-checklists'
  */
 export const branchesChecklists = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -608,7 +608,7 @@ branchesChecklists.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1411
+ * @see routes/web.php:1428
  * @route '/logistics/branches-checklists'
  */
 branchesChecklists.url = (options?: RouteQueryOptions) => {
@@ -616,7 +616,7 @@ branchesChecklists.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1411
+ * @see routes/web.php:1428
  * @route '/logistics/branches-checklists'
  */
 branchesChecklists.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -624,7 +624,7 @@ branchesChecklists.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =
     method: 'get',
 })
 /**
- * @see routes/web.php:1411
+ * @see routes/web.php:1428
  * @route '/logistics/branches-checklists'
  */
 branchesChecklists.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -633,7 +633,7 @@ branchesChecklists.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
 })
 
     /**
- * @see routes/web.php:1411
+ * @see routes/web.php:1428
  * @route '/logistics/branches-checklists'
  */
     const branchesChecklistsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -642,7 +642,7 @@ branchesChecklists.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     })
 
             /**
- * @see routes/web.php:1411
+ * @see routes/web.php:1428
  * @route '/logistics/branches-checklists'
  */
         branchesChecklistsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -650,7 +650,7 @@ branchesChecklists.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
             method: 'get',
         })
             /**
- * @see routes/web.php:1411
+ * @see routes/web.php:1428
  * @route '/logistics/branches-checklists'
  */
         branchesChecklistsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -665,7 +665,7 @@ branchesChecklists.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     
     branchesChecklists.form = branchesChecklistsForm
 /**
- * @see routes/web.php:1431
+ * @see routes/web.php:1448
  * @route '/logistics/zones-rates'
  */
 export const zonesRates = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -679,7 +679,7 @@ zonesRates.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1431
+ * @see routes/web.php:1448
  * @route '/logistics/zones-rates'
  */
 zonesRates.url = (options?: RouteQueryOptions) => {
@@ -687,7 +687,7 @@ zonesRates.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1431
+ * @see routes/web.php:1448
  * @route '/logistics/zones-rates'
  */
 zonesRates.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -695,7 +695,7 @@ zonesRates.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1431
+ * @see routes/web.php:1448
  * @route '/logistics/zones-rates'
  */
 zonesRates.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -704,7 +704,7 @@ zonesRates.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1431
+ * @see routes/web.php:1448
  * @route '/logistics/zones-rates'
  */
     const zonesRatesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -713,7 +713,7 @@ zonesRates.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1431
+ * @see routes/web.php:1448
  * @route '/logistics/zones-rates'
  */
         zonesRatesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -721,7 +721,7 @@ zonesRates.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1431
+ * @see routes/web.php:1448
  * @route '/logistics/zones-rates'
  */
         zonesRatesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -736,7 +736,7 @@ zonesRates.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     zonesRates.form = zonesRatesForm
 /**
- * @see routes/web.php:1451
+ * @see routes/web.php:1468
  * @route '/logistics/cod-remittance'
  */
 export const codRemittance = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -750,7 +750,7 @@ codRemittance.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1451
+ * @see routes/web.php:1468
  * @route '/logistics/cod-remittance'
  */
 codRemittance.url = (options?: RouteQueryOptions) => {
@@ -758,7 +758,7 @@ codRemittance.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1451
+ * @see routes/web.php:1468
  * @route '/logistics/cod-remittance'
  */
 codRemittance.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -766,7 +766,7 @@ codRemittance.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1451
+ * @see routes/web.php:1468
  * @route '/logistics/cod-remittance'
  */
 codRemittance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -775,7 +775,7 @@ codRemittance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
 })
 
     /**
- * @see routes/web.php:1451
+ * @see routes/web.php:1468
  * @route '/logistics/cod-remittance'
  */
     const codRemittanceForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -784,7 +784,7 @@ codRemittance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     })
 
             /**
- * @see routes/web.php:1451
+ * @see routes/web.php:1468
  * @route '/logistics/cod-remittance'
  */
         codRemittanceForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -792,7 +792,7 @@ codRemittance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
             method: 'get',
         })
             /**
- * @see routes/web.php:1451
+ * @see routes/web.php:1468
  * @route '/logistics/cod-remittance'
  */
         codRemittanceForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -807,7 +807,7 @@ codRemittance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     
     codRemittance.form = codRemittanceForm
 /**
- * @see routes/web.php:1471
+ * @see routes/web.php:1488
  * @route '/logistics/reports'
  */
 export const reports = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -821,7 +821,7 @@ reports.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1471
+ * @see routes/web.php:1488
  * @route '/logistics/reports'
  */
 reports.url = (options?: RouteQueryOptions) => {
@@ -829,7 +829,7 @@ reports.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1471
+ * @see routes/web.php:1488
  * @route '/logistics/reports'
  */
 reports.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -837,7 +837,7 @@ reports.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1471
+ * @see routes/web.php:1488
  * @route '/logistics/reports'
  */
 reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -846,7 +846,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1471
+ * @see routes/web.php:1488
  * @route '/logistics/reports'
  */
     const reportsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -855,7 +855,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1471
+ * @see routes/web.php:1488
  * @route '/logistics/reports'
  */
         reportsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -863,7 +863,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1471
+ * @see routes/web.php:1488
  * @route '/logistics/reports'
  */
         reportsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -878,7 +878,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     reports.form = reportsForm
 /**
- * @see routes/web.php:1491
+ * @see routes/web.php:1508
  * @route '/logistics/support'
  */
 export const support = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -892,7 +892,7 @@ support.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1491
+ * @see routes/web.php:1508
  * @route '/logistics/support'
  */
 support.url = (options?: RouteQueryOptions) => {
@@ -900,7 +900,7 @@ support.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1491
+ * @see routes/web.php:1508
  * @route '/logistics/support'
  */
 support.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -908,7 +908,7 @@ support.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1491
+ * @see routes/web.php:1508
  * @route '/logistics/support'
  */
 support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -917,7 +917,7 @@ support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1491
+ * @see routes/web.php:1508
  * @route '/logistics/support'
  */
     const supportForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -926,7 +926,7 @@ support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1491
+ * @see routes/web.php:1508
  * @route '/logistics/support'
  */
         supportForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -934,7 +934,7 @@ support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1491
+ * @see routes/web.php:1508
  * @route '/logistics/support'
  */
         supportForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -949,7 +949,7 @@ support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     support.form = supportForm
 /**
- * @see routes/web.php:1511
+ * @see routes/web.php:1528
  * @route '/logistics/messages'
  */
 export const messages = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -963,7 +963,7 @@ messages.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1511
+ * @see routes/web.php:1528
  * @route '/logistics/messages'
  */
 messages.url = (options?: RouteQueryOptions) => {
@@ -971,7 +971,7 @@ messages.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1511
+ * @see routes/web.php:1528
  * @route '/logistics/messages'
  */
 messages.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -979,7 +979,7 @@ messages.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1511
+ * @see routes/web.php:1528
  * @route '/logistics/messages'
  */
 messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -988,7 +988,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1511
+ * @see routes/web.php:1528
  * @route '/logistics/messages'
  */
     const messagesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -997,7 +997,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1511
+ * @see routes/web.php:1528
  * @route '/logistics/messages'
  */
         messagesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1005,7 +1005,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1511
+ * @see routes/web.php:1528
  * @route '/logistics/messages'
  */
         messagesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1020,7 +1020,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     messages.form = messagesForm
 /**
- * @see routes/web.php:1531
+ * @see routes/web.php:1548
  * @route '/logistics/account'
  */
 export const account = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1034,7 +1034,7 @@ account.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1531
+ * @see routes/web.php:1548
  * @route '/logistics/account'
  */
 account.url = (options?: RouteQueryOptions) => {
@@ -1042,7 +1042,7 @@ account.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1531
+ * @see routes/web.php:1548
  * @route '/logistics/account'
  */
 account.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1050,7 +1050,7 @@ account.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1531
+ * @see routes/web.php:1548
  * @route '/logistics/account'
  */
 account.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1059,7 +1059,7 @@ account.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1531
+ * @see routes/web.php:1548
  * @route '/logistics/account'
  */
     const accountForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1068,7 +1068,7 @@ account.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1531
+ * @see routes/web.php:1548
  * @route '/logistics/account'
  */
         accountForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1076,7 +1076,7 @@ account.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1531
+ * @see routes/web.php:1548
  * @route '/logistics/account'
  */
         accountForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1091,7 +1091,7 @@ account.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     account.form = accountForm
 /**
- * @see routes/web.php:1746
+ * @see routes/web.php:1796
  * @route '/logistics/pending-approval'
  */
 export const pendingApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1105,7 +1105,7 @@ pendingApproval.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1746
+ * @see routes/web.php:1796
  * @route '/logistics/pending-approval'
  */
 pendingApproval.url = (options?: RouteQueryOptions) => {
@@ -1113,7 +1113,7 @@ pendingApproval.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1746
+ * @see routes/web.php:1796
  * @route '/logistics/pending-approval'
  */
 pendingApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1121,7 +1121,7 @@ pendingApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
     method: 'get',
 })
 /**
- * @see routes/web.php:1746
+ * @see routes/web.php:1796
  * @route '/logistics/pending-approval'
  */
 pendingApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1130,7 +1130,7 @@ pendingApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 })
 
     /**
- * @see routes/web.php:1746
+ * @see routes/web.php:1796
  * @route '/logistics/pending-approval'
  */
     const pendingApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1139,7 +1139,7 @@ pendingApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     })
 
             /**
- * @see routes/web.php:1746
+ * @see routes/web.php:1796
  * @route '/logistics/pending-approval'
  */
         pendingApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1147,7 +1147,7 @@ pendingApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
             method: 'get',
         })
             /**
- * @see routes/web.php:1746
+ * @see routes/web.php:1796
  * @route '/logistics/pending-approval'
  */
         pendingApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

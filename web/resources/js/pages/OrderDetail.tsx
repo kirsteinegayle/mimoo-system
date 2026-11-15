@@ -2,7 +2,9 @@ import { Head, Link, router } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { BuyerHeader } from "@/components/buyer-header";
 import { trackingLabel } from "@/components/tracking-line";
-import { Package, MapPin, Truck, Clock, CheckCircle2, XCircle, MessageCircle, RotateCcw, Star, CheckCircle } from "lucide-react";
+import { Package, MapPin, Truck, Clock, CheckCircle2, XCircle, MessageCircle, RotateCcw, Star, CheckCircle, Bike, Camera, Loader2 } from "lucide-react";
+import { RiderChatModal } from "@/components/buyer/rider-chat";
+import { csrfHeaders } from "@/components/notification-bell";
 import { ReturnRequestModal, ReturnStatusBadge, ReviewModal, Stars, type ReviewTarget } from "@/components/buyer/returns-reviews";
 
 interface OrderItem {
@@ -47,6 +49,9 @@ interface Order {
   can_return?: boolean;
   return_status?: string | null;
   return_id?: number | null;
+  /** Assigned rider (latest delivery job); null until the courier assigns one. */
+  rider?: { name: string; job_status: string; can_chat: boolean; unread: number; has_pod_photo: boolean } | null;
+  can_receive?: boolean;
 }
 
 interface PageProps {
@@ -169,6 +174,34 @@ export default function OrderDetail({ order, auth, returnReasons = [] }: PagePro
   const [returnOpen, setReturnOpen] = useState(false);
   const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [riderChatOpen, setRiderChatOpen] = useState(false);
+  const [viewingReview, setViewingReview] = useState<number | null>(null);
+  // Reviews are only for delivered (completed) orders; other statuses show no review button.
+  const reviewsOpen = order.status === "completed";
+  const [podOpen, setPodOpen] = useState(false);
+  const [receiving, setReceiving] = useState(false);
+  const [receiveError, setReceiveError] = useState<string | null>(null);
+
+  // "Order received": same endpoint/rules as the buyer app (shipped -> completed).
+  async function markReceived() {
+    if (receiving || !window.confirm("Confirm you have received this order? This cannot be undone.")) return;
+    setReceiving(true);
+    setReceiveError(null);
+    try {
+      const res = await fetch(`/api/orders/${order.id}/receive`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest", ...csrfHeaders() },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message || "Could not mark the order as received.");
+      done(json?.message || "Order received. Thank you!");
+    } catch (e: any) {
+      setReceiveError(e?.message || "Could not mark the order as received.");
+    } finally {
+      setReceiving(false);
+    }
+  }
 
   // After a return/review is saved, reload the order so every flag stays server-driven.
   function done(message: string) {
@@ -245,6 +278,65 @@ export default function OrderDetail({ order, auth, returnReasons = [] }: PagePro
         {/* In-transit timeline (same steps as the buyer app); other statuses unchanged */}
         {(order.status === "in_transit" || order.status === "shipped") && (
           <InTransitTimeline trackingStatus={order.tracking_status} />
+        )}
+
+        {/* Delivery rider: Message Rider (only once a rider is assigned), proof of delivery, Order received */}
+        {(order.rider || order.can_receive) && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            {order.rider && (
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#2A1B4D] to-[#6a5a8a] text-white">
+                    <Bike className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-gray-500">Your rider</p>
+                    <p className="font-semibold text-gray-900">{order.rider.name}</p>
+                    <p className="text-xs text-gray-500">{trackingLabel(order.rider.job_status) || order.rider.job_status.replace(/_/g, " ")}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {order.rider.has_pod_photo && (
+                    <button
+                      type="button"
+                      onClick={() => setPodOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      <Camera className="h-4 w-4" /> Proof of delivery
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setRiderChatOpen(true)}
+                    className="relative inline-flex items-center gap-2 rounded-lg bg-[#4B2E7E] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3B1F6B]"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {order.rider.can_chat ? "Message Rider" : "View rider chat"}
+                    {order.rider.unread > 0 && (
+                      <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold">
+                        {order.rider.unread}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+            {order.can_receive && (
+              <div className={`flex flex-wrap items-center justify-between gap-3 ${order.rider ? "mt-4 border-t border-gray-100 pt-4" : ""}`}>
+                <p className="text-sm text-gray-600">Got your parcel? Confirm it so the seller gets paid and you can leave a review.</p>
+                <button
+                  type="button"
+                  onClick={markReceived}
+                  disabled={receiving}
+                  className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+                >
+                  {receiving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                  Order received
+                </button>
+                {receiveError && <p className="w-full text-sm text-red-600">{receiveError}</p>}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Tracking information */}
@@ -349,28 +441,43 @@ export default function OrderDetail({ order, auth, returnReasons = [] }: PagePro
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-gray-900 truncate">{item.product_name}</h3>
                   <p className="text-sm text-gray-500 mt-1">Quantity: {item.quantity}</p>
-                  {item.review ? (
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                      <Stars value={item.review.rating} />
-                      <span className="text-gray-500">Your review</span>
-                      {item.review.can_edit && (
-                        <button
-                          type="button"
-                          onClick={() => setReviewTarget({ mode: "edit", reviewId: item.review!.id, productName: item.product_name, rating: item.review!.rating, comment: item.review!.comment })}
-                          className="font-medium text-purple-700 hover:underline"
-                        >
-                          Edit
-                        </button>
+                  {reviewsOpen && item.review ? (
+                    <div className="mt-2 text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Stars value={item.review.rating} />
+                        <span className="text-gray-600">Your review</span>
+                        {item.review.can_edit ? (
+                          <button
+                            type="button"
+                            onClick={() => setReviewTarget({ mode: "edit", reviewId: item.review!.id, productName: item.product_name, rating: item.review!.rating, comment: item.review!.comment })}
+                            className="font-medium text-purple-700 hover:underline"
+                          >
+                            Edit Review
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setViewingReview(viewingReview === item.id ? null : item.id)}
+                            className="font-medium text-purple-700 hover:underline"
+                          >
+                            {viewingReview === item.id ? "Hide Review" : "View Review"}
+                          </button>
+                        )}
+                      </div>
+                      {viewingReview === item.id && (
+                        <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-gray-50 px-3 py-2 text-gray-800">
+                          {item.review.comment?.trim() || "No written comment."}
+                        </p>
                       )}
                     </div>
-                  ) : item.can_review ? (
+                  ) : reviewsOpen && item.can_review ? (
                     <button
                       type="button"
                       onClick={() => setReviewTarget({ mode: "create", orderId: order.id, itemId: item.id, productName: item.product_name })}
                       className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-purple-300 px-3 py-1 text-sm font-medium text-purple-700 hover:bg-purple-50 transition-colors"
                     >
                       <Star className="h-4 w-4" />
-                      Write a review
+                      Write a Review
                     </button>
                   ) : null}
                 </div>
@@ -478,6 +585,26 @@ export default function OrderDetail({ order, auth, returnReasons = [] }: PagePro
           onClose={() => setReturnOpen(false)}
           onDone={done}
         />
+      )}
+      {riderChatOpen && order.rider && (
+        <RiderChatModal
+          orderId={order.id}
+          onClose={() => {
+            setRiderChatOpen(false);
+            router.reload({ only: ["order"] });
+          }}
+        />
+      )}
+      {podOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={() => setPodOpen(false)}>
+          <div className="max-h-full max-w-lg overflow-hidden rounded-xl bg-white" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b px-4 py-2">
+              <p className="text-sm font-semibold text-gray-900">Proof of delivery</p>
+              <button type="button" onClick={() => setPodOpen(false)} className="text-sm text-gray-500 hover:text-gray-800">Close</button>
+            </div>
+            <img src={`/api/orders/${order.id}/pod-photo`} alt="Proof of delivery" className="max-h-[75vh] w-full object-contain" />
+          </div>
+        </div>
       )}
       {reviewTarget && <ReviewModal target={reviewTarget} onClose={() => setReviewTarget(null)} onDone={done} />}
     </div>

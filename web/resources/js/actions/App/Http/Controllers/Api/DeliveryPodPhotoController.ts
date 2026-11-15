@@ -4,12 +4,12 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
  * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
  * @route '/api/buyer/orders/{id}/pod-photo'
  */
-export const buyerOrderPhoto = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: buyerOrderPhoto.url(args, options),
+const buyerOrderPhotoa8ed74781f17350d93149ca8254ff778 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.url(args, options),
     method: 'get',
 })
 
-buyerOrderPhoto.definition = {
+buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.definition = {
     methods: ["get","head"],
     url: '/api/buyer/orders/{id}/pod-photo',
 } satisfies RouteDefinition<["get","head"]>
@@ -19,7 +19,7 @@ buyerOrderPhoto.definition = {
  * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
  * @route '/api/buyer/orders/{id}/pod-photo'
  */
-buyerOrderPhoto.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { id: args }
     }
@@ -37,7 +37,7 @@ buyerOrderPhoto.url = (args: { id: string | number } | [id: string | number ] | 
                         id: args.id,
                 }
 
-    return buyerOrderPhoto.definition.url
+    return buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.definition.url
             .replace('{id}', parsedArgs.id.toString())
             .replace(/\/+$/, '') + queryParams(options)
 }
@@ -47,8 +47,8 @@ buyerOrderPhoto.url = (args: { id: string | number } | [id: string | number ] | 
  * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
  * @route '/api/buyer/orders/{id}/pod-photo'
  */
-buyerOrderPhoto.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: buyerOrderPhoto.url(args, options),
+buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.url(args, options),
     method: 'get',
 })
 /**
@@ -56,8 +56,8 @@ buyerOrderPhoto.get = (args: { id: string | number } | [id: string | number ] | 
  * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
  * @route '/api/buyer/orders/{id}/pod-photo'
  */
-buyerOrderPhoto.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: buyerOrderPhoto.url(args, options),
+buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.url(args, options),
     method: 'head',
 })
 
@@ -66,8 +66,8 @@ buyerOrderPhoto.head = (args: { id: string | number } | [id: string | number ] |
  * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
  * @route '/api/buyer/orders/{id}/pod-photo'
  */
-    const buyerOrderPhotoForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: buyerOrderPhoto.url(args, options),
+    const buyerOrderPhotoa8ed74781f17350d93149ca8254ff778Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.url(args, options),
         method: 'get',
     })
 
@@ -76,8 +76,8 @@ buyerOrderPhoto.head = (args: { id: string | number } | [id: string | number ] |
  * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
  * @route '/api/buyer/orders/{id}/pod-photo'
  */
-        buyerOrderPhotoForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: buyerOrderPhoto.url(args, options),
+        buyerOrderPhotoa8ed74781f17350d93149ca8254ff778Form.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.url(args, options),
             method: 'get',
         })
             /**
@@ -85,8 +85,8 @@ buyerOrderPhoto.head = (args: { id: string | number } | [id: string | number ] |
  * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
  * @route '/api/buyer/orders/{id}/pod-photo'
  */
-        buyerOrderPhotoForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: buyerOrderPhoto.url(args, {
+        buyerOrderPhotoa8ed74781f17350d93149ca8254ff778Form.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
                             ...(options?.query ?? options?.mergeQuery ?? {}),
@@ -95,7 +95,115 @@ buyerOrderPhoto.head = (args: { id: string | number } | [id: string | number ] |
             method: 'get',
         })
     
-    buyerOrderPhoto.form = buyerOrderPhotoForm
+    buyerOrderPhotoa8ed74781f17350d93149ca8254ff778.form = buyerOrderPhotoa8ed74781f17350d93149ca8254ff778Form
+    /**
+* @see \App\Http\Controllers\Api\DeliveryPodPhotoController::buyerOrderPhoto
+ * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
+ * @route '/api/orders/{id}/pod-photo'
+ */
+const buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.url(args, options),
+    method: 'get',
+})
+
+buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.definition = {
+    methods: ["get","head"],
+    url: '/api/orders/{id}/pod-photo',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Api\DeliveryPodPhotoController::buyerOrderPhoto
+ * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
+ * @route '/api/orders/{id}/pod-photo'
+ */
+buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { id: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    id: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        id: args.id,
+                }
+
+    return buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.definition.url
+            .replace('{id}', parsedArgs.id.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Api\DeliveryPodPhotoController::buyerOrderPhoto
+ * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
+ * @route '/api/orders/{id}/pod-photo'
+ */
+buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.url(args, options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Api\DeliveryPodPhotoController::buyerOrderPhoto
+ * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
+ * @route '/api/orders/{id}/pod-photo'
+ */
+buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.url(args, options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Api\DeliveryPodPhotoController::buyerOrderPhoto
+ * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
+ * @route '/api/orders/{id}/pod-photo'
+ */
+    const buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5aForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\DeliveryPodPhotoController::buyerOrderPhoto
+ * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
+ * @route '/api/orders/{id}/pod-photo'
+ */
+        buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5aForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\DeliveryPodPhotoController::buyerOrderPhoto
+ * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:66
+ * @route '/api/orders/{id}/pod-photo'
+ */
+        buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5aForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a.form = buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5aForm
+
+/**
+* Multiple routes resolve to \App\Http\Controllers\Api\DeliveryPodPhotoController::buyerOrderPhoto, so this export is a
+* dictionary keyed by URI rather than a callable. Call a specific route with `buyerOrderPhoto['<uri>'](...)`,
+* or import the route by name from your generated `routes/` directory.
+*/
+export const buyerOrderPhoto = {
+    '/api/buyer/orders/{id}/pod-photo': buyerOrderPhotoa8ed74781f17350d93149ca8254ff778,
+    '/api/orders/{id}/pod-photo': buyerOrderPhoto581a8f42a012a1fb6f9efd2f9ad6aa5a,
+}
+
 /**
 * @see \App\Http\Controllers\Api\DeliveryPodPhotoController::show
  * @see app/Http/Controllers/Api/DeliveryPodPhotoController.php:45

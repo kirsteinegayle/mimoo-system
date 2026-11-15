@@ -40,12 +40,52 @@ class DeliveryChatPage {
   final String? riderName;
 }
 
+/// One rider conversation in the inbox (GET /api/buyer/rider-chats).
+class RiderThreadItem {
+  const RiderThreadItem({
+    required this.orderId,
+    required this.orderNumber,
+    required this.riderName,
+    required this.canSend,
+    this.lastMessage,
+    this.lastMessageAt,
+    required this.unreadCount,
+  });
+
+  final int orderId;
+  final String orderNumber;
+  final String riderName;
+  final bool canSend;
+  final String? lastMessage;
+  final DateTime? lastMessageAt;
+  final int unreadCount;
+
+  factory RiderThreadItem.fromJson(Map<String, dynamic> j) => RiderThreadItem(
+        orderId: (j['order_id'] as num).toInt(),
+        orderNumber: j['order_number'] as String? ?? '',
+        riderName: j['rider_name'] as String? ?? 'Your rider',
+        canSend: j['can_send'] == true,
+        lastMessage: j['last_message'] as String?,
+        lastMessageAt: DateTime.tryParse(j['last_message_at'] as String? ?? ''),
+        unreadCount: (j['unread_count'] as num?)?.toInt() ?? 0,
+      );
+}
+
 /// Rider chat for one order: /api/buyer/orders/{id}/chat (polling).
 class DeliveryChatRepository {
   DeliveryChatRepository._();
   static final DeliveryChatRepository instance = DeliveryChatRepository._();
 
   static const int maxLength = 500;
+
+  /// My rider conversations (open chats or chats with messages), newest first.
+  Future<List<RiderThreadItem>> threads() async {
+    final res = await ApiService.get('/buyer/rider-chats');
+    final data = res is Map ? res['data'] : null;
+    return data is List
+        ? data.whereType<Map>().map((e) => RiderThreadItem.fromJson(e.cast<String, dynamic>())).toList()
+        : <RiderThreadItem>[];
+  }
 
   /// New messages after [afterId] (0 = latest page). A 404 with
   /// "No rider is assigned..." is thrown as ApiException.

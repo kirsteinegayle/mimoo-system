@@ -50,7 +50,7 @@ export default function AdminLogin() {
                         <h1 className="mb-1 text-center text-lg font-semibold tracking-tight text-white">
                             Restricted access
                         </h1>
-                        <p className="mb-7 text-center text-sm text-white/40">
+                        <p className="mb-7 text-center text-sm text-white/65">
                             Enter the access code to continue.
                         </p>
 
@@ -59,7 +59,7 @@ export default function AdminLogin() {
                                 <div>
                                     <label
                                         htmlFor="code"
-                                        className="mb-1.5 block text-xs font-medium tracking-wide text-white/50 uppercase"
+                                        className="mb-1.5 block text-xs font-medium tracking-wide text-white/70 uppercase"
                                     >
                                         Access code
                                     </label>

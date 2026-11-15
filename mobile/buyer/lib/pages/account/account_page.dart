@@ -14,6 +14,7 @@ import '../../widgets/header_actions.dart';
 import '../../widgets/motion.dart';
 import '../chat/chat_page.dart';
 import '../notifications/notifications_page.dart';
+import '../orders/my_reviews_page.dart';
 import '../orders/orders_page.dart';
 import '../orders/return_request_pages.dart';
 import '../voucher/voucher_wallet_page.dart';
@@ -160,6 +161,8 @@ class _AccountPageState extends State<AccountPage> {
                             AppColors.flash, _openWishlist),
                         _Service(Icons.storefront_outlined, 'Following Stores',
                             AppColors.success, () => _push(const FollowingPage())),
+                        _Service(Icons.rate_review_outlined, 'My Reviews',
+                            AppColors.accent, () => _push(const MyReviewsPage())),
                         // Single Returns entry → same ReturnsListPage as My Purchases.
                         _Service(Icons.assignment_return_outlined, 'Returns & Refunds',
                             AppColors.orange, () => _push(const ReturnsListPage())),

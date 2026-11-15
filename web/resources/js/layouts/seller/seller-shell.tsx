@@ -146,7 +146,7 @@ export default function SellerShell({ active, children }: SellerShellProps) {
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#9B5DE5] text-[10px] font-bold">
                             S
                         </span>
-                        <span className="truncate text-xs text-white/40">SELLER</span>
+                        <span className="truncate text-xs text-white/65">SELLER</span>
                     </div>
                 </div>
             </aside>
@@ -163,9 +163,9 @@ export default function SellerShell({ active, children }: SellerShellProps) {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50">
+                        <Link href="/seller/messages" aria-label="Messages" title="Messages" className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50">
                             <MessageSquare className="h-4 w-4" strokeWidth={1.5} />
-                        </button>
+                        </Link>
                         {/* Seller notifications (shared bell, seller routes) */}
                         <NotificationBell
                             isLoggedIn

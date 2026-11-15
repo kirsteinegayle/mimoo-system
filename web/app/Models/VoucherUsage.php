@@ -20,6 +20,7 @@ class VoucherUsage extends Model
     protected $casts = [
         'discount_amount' => 'decimal:2',
         'used_at' => 'datetime',
+        'claimed_at' => 'datetime',
     ];
 
     public function voucher(): BelongsTo

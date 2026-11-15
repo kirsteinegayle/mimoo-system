@@ -65,6 +65,8 @@
 }
 
 :root {
+    /* Light-only: native inputs, selects, date pickers and scrollbars stay light. */
+    color-scheme: light;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -142,5 +144,17 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+
+    /*
+     * Readability safety net (base layer, so any explicit text-* utility still
+     * wins). Dropdown options are drawn by the OS on a white popup: a select
+     * styled text-white for a dark header used to render white-on-white
+     * options.
+     */
+    option,
+    optgroup {
+        color: #111827;
+        background-color: #ffffff;
     }
 }

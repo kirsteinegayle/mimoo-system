@@ -108,23 +108,31 @@ class BuyerReviewController extends Controller
         if ($err = $this->buyerGuard($request)) return $err;
         $user = $request->user();
 
+        // Purchase rule (same for web and mobile, both routes use this method):
+        // the buyer must own a COMPLETED (delivered) order that contains this
+        // item, the item must be a real product sold by the seller on the
+        // order line, and each order item can be reviewed only once.
         $order = Order::where('buyer_id', $user->id)->find($orderId);
         if (! $order) {
-            return response()->json(['message' => 'Order not found.'], 404);
+            return response()->json(['message' => 'You can only review products from your own orders.'], 404);
         }
         $item = $order->items()->find($itemId);
         if (! $item) {
-            return response()->json(['message' => 'Order item not found.'], 404);
+            return response()->json(['message' => 'This product is not part of that order.'], 404);
         }
 
         if ($order->status !== 'completed') {
-            return $this->validationError('order', 'You can only review items from completed orders.');
+            return $this->validationError('order', 'You can review this product once your order has been delivered and marked as received.');
+        }
+
+        if (! \App\Services\ReturnReviewRules::itemReviewable($item)) {
+            return $this->validationError('order_item', 'You can only review a product you bought from this seller.');
         }
         if (! \App\Services\ReturnReviewRules::reviewWindowOpen($order)) {
             return $this->validationError('order', 'The 30-day review period for this order has ended.');
         }
         if (Review::where('order_item_id', $item->id)->exists()) {
-            return $this->validationError('order_item', 'You have already reviewed this item.');
+            return $this->validationError('order_item', 'You already reviewed this item. You can edit your review from My Orders.');
         }
 
         if ($err = $this->validatePayload($request)) return $err;
@@ -142,7 +150,7 @@ class BuyerReviewController extends Controller
             ]);
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
             foreach ($paths as $p) Storage::disk('public')->delete($p);
-            return $this->validationError('order_item', 'You have already reviewed this item.');
+            return $this->validationError('order_item', 'You already reviewed this item. You can edit your review from My Orders.');
         }
 
         return response()->json([

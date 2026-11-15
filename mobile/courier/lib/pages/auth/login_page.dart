@@ -9,7 +9,8 @@ import '../../state/auth_service.dart';
 import '../home/home_page.dart';
 
 const _loginText = Color(0xFF000000);
-const _loginMuted = Color(0xFF969494);
+// Labels and captions on the white login card. Was 0xFF969494 (3.0:1); now 5.5:1.
+const _loginMuted = Color(0xFF6B6969);
 const _loginBodyMuted = Color(0xFF787575);
 const _loginFieldFill = Color(0xFFF5F4FC);
 const _loginFieldBorder = Color(0xFF8D72B2);

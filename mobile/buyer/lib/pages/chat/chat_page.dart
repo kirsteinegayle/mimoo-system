@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../services/api_service.dart';
 import '../../services/chat_repository.dart';
+import '../../services/delivery_chat_repository.dart' show DeliveryChatRepository, RiderThreadItem;
+import '../orders/delivery_chat_page.dart';
 import '../../state/auth_service.dart';
 import 'chat_screen.dart';
 import '../../theme/app_theme.dart';
@@ -24,8 +26,9 @@ const _kSubtext = AppColors.textMuted;
 TextStyle _pjs({double size = 14, FontWeight weight = FontWeight.w400, Color color = _kText}) =>
     GoogleFonts.plusJakartaSans(fontSize: size, fontWeight: weight, color: color);
 
-/// Messages tab — real buyer ↔ seller threads (GET /api/buyer/chat) with the
-/// last message and unread count. Refreshes every 15 s while visible.
+/// Messages tab — real buyer ↔ seller threads (GET /api/buyer/chat) plus
+/// rider conversations (GET /api/buyer/rider-chats), with the last message and
+/// unread count. Refreshes every 15 s while visible.
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
 
@@ -35,6 +38,7 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   List<ChatThreadItem> _threads = [];
+  List<RiderThreadItem> _riders = [];
   bool _loading = true;
   String? _error;
   Timer? _timer;
@@ -60,6 +64,7 @@ class _ChatPageState extends State<ChatPage> {
         setState(() {
           _loading = false;
           _threads = [];
+          _riders = [];
           _error = null;
         });
       }
@@ -73,9 +78,15 @@ class _ChatPageState extends State<ChatPage> {
     }
     try {
       final list = await ChatRepository.instance.threads();
+      // Rider chats are a bonus section: never let them break the seller list.
+      List<RiderThreadItem> riders = _riders;
+      try {
+        riders = await DeliveryChatRepository.instance.threads();
+      } catch (_) {}
       if (!mounted) return;
       setState(() {
         _threads = list;
+        _riders = riders;
         _error = null;
       });
     } catch (e) {
@@ -127,7 +138,7 @@ class _ChatPageState extends State<ChatPage> {
                   ? Center(child: ErrorStateView(message: _error!, onRetry: _load))
                   : RefreshIndicator(
                       onRefresh: _load,
-                      child: _threads.isEmpty
+                      child: _threads.isEmpty && _riders.isEmpty
                           ? ListView(children: const [
                               SizedBox(height: 80),
                               EmptyStateView(
@@ -136,13 +147,77 @@ class _ChatPageState extends State<ChatPage> {
                                 message: 'Tap "Chat" on a product or store to start.',
                               ),
                             ])
-                          : ListView.separated(
-                              itemCount: _threads.length,
-                              separatorBuilder: (_, __) =>
+                          : ListView(
+                              children: [
+                                if (_riders.isNotEmpty) ...[
+                                  _header('Delivery riders'),
+                                  for (final r in _riders) ...[
+                                    _riderTile(r),
+                                    const Divider(height: 1, color: _kBorder),
+                                  ],
+                                  if (_threads.isNotEmpty) _header('Sellers'),
+                                ],
+                                for (final t in _threads) ...[
+                                  _tile(t),
                                   const Divider(height: 1, color: _kBorder),
-                              itemBuilder: (_, i) => _tile(_threads[i]),
+                                ],
+                              ],
                             ),
                     ),
+    );
+  }
+
+  Widget _header(String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+        child: Text(text.toUpperCase(),
+            style: _pjs(size: 11, weight: FontWeight.w800, color: _kSubtext)),
+      );
+
+  Widget _riderTile(RiderThreadItem r) {
+    final unread = r.unreadCount > 0;
+    return ListTile(
+      tileColor: _kCard,
+      leading: const CircleAvatar(
+        backgroundColor: _kPrimary,
+        child: Icon(Icons.two_wheeler, color: Colors.white),
+      ),
+      title: Text('${r.riderName} · ${r.orderNumber}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: _pjs(size: 14, weight: unread ? FontWeight.w800 : FontWeight.w600)),
+      subtitle: Text(
+        r.lastMessage ?? (r.canSend ? 'Message your rider' : 'Chat closed'),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: _pjs(
+            size: 12,
+            color: unread ? _kText : _kSubtext,
+            weight: unread ? FontWeight.w700 : FontWeight.w400),
+      ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(_ago(r.lastMessageAt), style: _pjs(size: 10, color: _kSubtext)),
+          const SizedBox(height: 4),
+          if (unread)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                  color: _kFlash, borderRadius: BorderRadius.circular(9999)),
+              child: Text('${r.unreadCount}',
+                  style: _pjs(size: 10, weight: FontWeight.w800, color: Colors.white)),
+            ),
+        ],
+      ),
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => DeliveryChatPage(orderId: r.orderId, orderNumber: r.orderNumber)),
+        );
+        _load(silent: true);
+      },
     );
   }
 

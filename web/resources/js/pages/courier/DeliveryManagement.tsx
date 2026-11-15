@@ -1,6 +1,8 @@
 import { Head, router } from '@inertiajs/react';
-import { ReactNode, useState } from 'react';
+import { Bike, CheckCircle2, Clock, MapPin, Search, Truck, Users, Wallet, X } from 'lucide-react';
+import { ReactNode, useMemo, useState } from 'react';
 import CourierLayout from './CourierLayout';
+import { Card, PageHeader, StatCard, StatusBadge, prettyStatus } from '@/components/courier/ui';
 
 interface DeliveryRider {
     personnel_id: number;
@@ -46,24 +48,29 @@ interface Props {
     riders?: DeliveryRider[];
 }
 
-const JOB_STATUS_LABEL: Record<string, string> = {
-    assigned: 'Assigned',
-    out_for_delivery: 'Out for delivery',
-    delivered: 'Delivered',
-    failed: 'Failed attempt',
-    return_to_sender: 'Returned to sender',
-};
-
-const JOB_STATUS_CLASS: Record<string, string> = {
-    assigned: 'bg-blue-50 text-blue-700',
-    out_for_delivery: 'bg-amber-50 text-amber-700',
-    delivered: 'bg-green-50 text-green-700',
-    failed: 'bg-red-50 text-red-700',
-    return_to_sender: 'bg-gray-100 text-gray-700',
-};
+type Filter = 'all' | 'waiting' | 'active' | 'done';
 
 const peso = (n: number) => `₱${n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const label = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const ACTIVE = ['assigned', 'out_for_delivery'];
+
+function stage(o: DeliveryOrder): Exclude<Filter, 'all'> | 'other' {
+    if (o.assignable) return 'waiting';
+    if (o.job && ACTIVE.includes(o.job.status)) return 'active';
+    if (o.job) return 'done';
+    return 'other';
+}
+
+function PaymentPill({ o }: { o: DeliveryOrder }) {
+    return o.cod_amount > 0 ? (
+        <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
+            <Wallet className="h-3.5 w-3.5" /> COD {peso(o.cod_amount)}
+        </span>
+    ) : (
+        <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> {prettyStatus(o.payment_method || 'paid')}
+        </span>
+    );
+}
 
 export default function DeliveryManagement({ auth, company, orders = [], riders = [] }: Props) {
     const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
@@ -71,6 +78,8 @@ export default function DeliveryManagement({ auth, company, orders = [], riders 
     const [modalError, setModalError] = useState<string | null>(null);
     const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [processing, setProcessing] = useState(false);
+    const [filter, setFilter] = useState<Filter>('all');
+    const [search, setSearch] = useState('');
 
     // Server flashes { success } or { error } and redirects back (Inertia).
     const readFlash = (flash: unknown): { success?: string; error?: string } =>
@@ -119,204 +128,291 @@ export default function DeliveryManagement({ auth, company, orders = [], riders 
         );
     };
 
-    const waitingCount = orders.filter((o) => o.assignable).length;
+    const counts = useMemo(() => {
+        const c = { all: orders.length, waiting: 0, active: 0, done: 0 };
+        orders.forEach((o) => {
+            const s = stage(o);
+            if (s !== 'other') c[s] += 1;
+        });
+        return c;
+    }, [orders]);
+
+    const rows = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return orders.filter(
+            (o) =>
+                (filter === 'all' || stage(o) === filter) &&
+                (!q ||
+                    o.order_number.toLowerCase().includes(q) ||
+                    (o.waybill_number ?? '').toLowerCase().includes(q) ||
+                    (o.shipping_name ?? '').toLowerCase().includes(q) ||
+                    (o.job?.rider_name ?? '').toLowerCase().includes(q)),
+        );
+    }, [orders, filter, search]);
+
+    const action = (order: DeliveryOrder, full = false) =>
+        order.assignable ? (
+            <button
+                type="button"
+                onClick={() => openAssign(order)}
+                disabled={processing || riders.length === 0}
+                className={`inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#4B2E7E] px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#3B1F6B] disabled:cursor-not-allowed disabled:opacity-50 ${full ? 'w-full' : ''}`}
+            >
+                <Bike className="h-4 w-4" /> Assign rider
+            </button>
+        ) : order.job ? (
+            <span className="text-xs text-gray-400" title="Reassigning a rider is not available yet.">
+                Rider assigned
+            </span>
+        ) : !order.picked_up ? (
+            <StatusBadge status="awaiting_pickup" />
+        ) : (
+            <span className="text-xs text-gray-400">Not assignable</span>
+        );
+
+    const delivery = (order: DeliveryOrder) =>
+        order.job ? (
+            <div className="space-y-1">
+                <StatusBadge status={order.job.status} />
+                <p className="flex items-center gap-1 text-xs text-gray-600">
+                    <Bike className="h-3.5 w-3.5 text-gray-400" />
+                    {order.job.rider_name || 'Unknown rider'}
+                </p>
+            </div>
+        ) : order.assignable ? (
+            <StatusBadge status="waiting" />
+        ) : (
+            <span className="text-xs text-gray-400">No rider yet</span>
+        );
 
     return (
         <CourierLayout auth={auth} company={company} activeTab="delivery-management" pageTitle="Delivery Management">
             <Head title="Delivery Management" />
 
-            <div className="max-w-7xl mx-auto space-y-4">
+            <div className="mx-auto max-w-7xl space-y-5">
+                <PageHeader icon={Truck} title="Deliveries" subtitle="Assign riders to parcels that are ready for last-mile delivery." />
+
                 {notice && (
                     <div
                         role={notice.type === 'error' ? 'alert' : 'status'}
-                        className={`flex items-start justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
-                            notice.type === 'success'
-                                ? 'border-green-200 bg-green-50 text-green-800'
-                                : 'border-red-200 bg-red-50 text-red-800'
+                        className={`flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${
+                            notice.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-rose-200 bg-rose-50 text-rose-800'
                         }`}
                     >
                         <span>{notice.text}</span>
-                        <button
-                            type="button"
-                            onClick={() => setNotice(null)}
-                            className="shrink-0 font-medium opacity-70 hover:opacity-100"
-                            aria-label="Dismiss message"
-                        >
-                            ✕
+                        <button type="button" onClick={() => setNotice(null)} className="shrink-0 opacity-70 hover:opacity-100" aria-label="Dismiss message">
+                            <X className="h-4 w-4" />
                         </button>
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                        <p className="text-xs text-gray-500">Waiting for a rider</p>
-                        <p className="mt-1 text-2xl font-bold text-gray-900">{waitingCount}</p>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                        <p className="text-xs text-gray-500">With a delivery job</p>
-                        <p className="mt-1 text-2xl font-bold text-gray-900">{orders.filter((o) => o.job).length}</p>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                        <p className="text-xs text-gray-500">Available riders</p>
-                        <p className="mt-1 text-2xl font-bold text-gray-900">{riders.length}</p>
-                    </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                    <StatCard label="Waiting for a rider" value={counts.waiting} icon={Clock} tone="violet" />
+                    <StatCard label="Active deliveries" value={counts.active} icon={Truck} tone="amber" />
+                    <StatCard label="Available riders" hint="Online and approved" value={riders.length} icon={Users} tone={riders.length ? 'green' : 'red'} />
                 </div>
 
                 {riders.length === 0 && (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                        No available riders. Approve rider applications in Rider Management first. A rider must be active, approved
-                        and verified to take deliveries.
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        No available riders. Approve rider applications in Rider Management first. A rider must be active, approved, verified and
+                        online to take deliveries.
                     </div>
                 )}
 
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                    <div className="border-b border-gray-200 px-5 py-4">
-                        <h2 className="text-base font-semibold text-gray-900">Deliveries</h2>
-                        <p className="text-xs text-gray-500">
-                            Orders accepted by your company that are in transit or shipped. Assign a rider to create a delivery job in the
-                            rider app.
-                        </p>
+                <Card>
+                    <div className="flex flex-col gap-3 border-b border-gray-100 p-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="scrollbar-hide -mx-1 flex gap-1.5 overflow-x-auto px-1">
+                            {(
+                                [
+                                    ['all', 'All'],
+                                    ['waiting', 'Waiting'],
+                                    ['active', 'Active'],
+                                    ['done', 'Finished'],
+                                ] as const
+                            ).map(([key, text]) => (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => setFilter(key)}
+                                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+                                        filter === key ? 'bg-[#2B2249] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    {text}
+                                    <span className={`rounded-full px-1.5 text-[11px] ${filter === key ? 'bg-white/20' : 'bg-white text-gray-500'}`}>{counts[key]}</span>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="relative lg:w-72">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <input
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Search order, waybill, recipient, rider"
+                                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#4B2E7E] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4B2E7E]/20"
+                            />
+                        </div>
                     </div>
 
-                    {orders.length === 0 ? (
-                        <div className="px-5 py-12 text-center text-sm text-gray-500">
-                            No orders are ready for delivery yet.
+                    {rows.length === 0 ? (
+                        <div className="px-5 py-14 text-center text-gray-400">
+                            <Truck className="mx-auto mb-3 h-10 w-10" />
+                            <p className="text-sm font-medium text-gray-500">{orders.length === 0 ? 'No orders are ready for delivery yet.' : 'No orders match this filter.'}</p>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full text-sm">
-                                <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                                    <tr>
-                                        <th className="px-5 py-3">Order</th>
-                                        <th className="px-5 py-3">Recipient</th>
-                                        <th className="px-5 py-3">Payment</th>
-                                        <th className="px-5 py-3">Order status</th>
-                                        <th className="px-5 py-3">Delivery</th>
-                                        <th className="px-5 py-3 text-right">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {orders.map((order) => (
-                                        <tr key={order.id} className="align-top">
-                                            <td className="px-5 py-3">
-                                                <p className="font-medium text-gray-900">{order.order_number}</p>
-                                                <p className="text-xs text-gray-500">{order.waybill_number || 'No waybill'}</p>
-                                            </td>
-                                            <td className="px-5 py-3">
-                                                <p className="text-gray-900">{order.shipping_name || '—'}</p>
-                                                <p className="max-w-xs text-xs text-gray-500">{order.shipping_address || ''}</p>
-                                            </td>
-                                            <td className="px-5 py-3 text-gray-700">
-                                                {order.cod_amount > 0 ? `COD ${peso(order.cod_amount)}` : label(order.payment_method || 'paid')}
-                                            </td>
-                                            <td className="px-5 py-3 text-gray-700">{label(order.status)}</td>
-                                            <td className="px-5 py-3">
-                                                {order.job ? (
-                                                    <div>
-                                                        <span
-                                                            className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                                JOB_STATUS_CLASS[order.job.status] || 'bg-gray-100 text-gray-700'
-                                                            }`}
-                                                        >
-                                                            {JOB_STATUS_LABEL[order.job.status] || label(order.job.status)}
-                                                        </span>
-                                                        <p className="mt-1 text-xs text-gray-600">{order.job.rider_name || 'Unknown rider'}</p>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-gray-400">No rider yet</span>
-                                                )}
-                                            </td>
-                                            <td className="px-5 py-3 text-right">
-                                                {order.assignable ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openAssign(order)}
-                                                        disabled={processing || riders.length === 0}
-                                                        className="rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                                    >
-                                                        Assign Rider
-                                                    </button>
-                                                ) : order.job ? (
-                                                    <span className="text-xs text-gray-400" title="Reassigning a rider is not available yet.">
-                                                        Assigned
-                                                    </span>
-                                                ) : !order.picked_up ? (
-                                                    <span className="text-xs text-amber-600" title="The parcel has not been picked up from the seller yet.">
-                                                        Awaiting pickup
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-xs text-gray-400">Not assignable</span>
-                                                )}
-                                            </td>
+                        <>
+                            {/* Phones: cards */}
+                            <ul className="divide-y divide-gray-100 md:hidden">
+                                {rows.map((order) => (
+                                    <li key={order.id} className="space-y-3 p-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="font-semibold text-gray-900">{order.order_number}</p>
+                                                <p className="font-mono text-xs text-gray-500">{order.waybill_number || 'No waybill'}</p>
+                                            </div>
+                                            <StatusBadge status={order.status} />
+                                        </div>
+                                        <div className="flex items-start gap-2 text-sm">
+                                            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                                            <div>
+                                                <p className="font-medium text-gray-900">{order.shipping_name || '—'}</p>
+                                                <p className="text-xs text-gray-500">{order.shipping_address || ''}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <PaymentPill o={order} />
+                                            {delivery(order)}
+                                        </div>
+                                        {order.assignable && action(order, true)}
+                                    </li>
+                                ))}
+                            </ul>
+
+                            {/* Tablet / desktop: table */}
+                            <div className="hidden overflow-x-auto md:block">
+                                <table className="min-w-full text-sm">
+                                    <thead className="bg-[#FAF8FD] text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                        <tr>
+                                            <th className="px-5 py-3">Order</th>
+                                            <th className="px-5 py-3">Recipient</th>
+                                            <th className="px-5 py-3">Payment</th>
+                                            <th className="px-5 py-3">Order status</th>
+                                            <th className="px-5 py-3">Delivery</th>
+                                            <th className="px-5 py-3 text-right">Action</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {rows.map((order) => (
+                                            <tr key={order.id} className="align-top transition hover:bg-[#FAF8FD]">
+                                                <td className="px-5 py-4">
+                                                    <p className="font-semibold text-gray-900">{order.order_number}</p>
+                                                    <p className="font-mono text-xs text-gray-500">{order.waybill_number || 'No waybill'}</p>
+                                                </td>
+                                                <td className="px-5 py-4">
+                                                    <p className="font-medium text-gray-900">{order.shipping_name || '—'}</p>
+                                                    <p className="max-w-xs text-xs text-gray-500">{order.shipping_address || ''}</p>
+                                                </td>
+                                                <td className="px-5 py-4">
+                                                    <PaymentPill o={order} />
+                                                </td>
+                                                <td className="px-5 py-4">
+                                                    <StatusBadge status={order.status} />
+                                                </td>
+                                                <td className="px-5 py-4">{delivery(order)}</td>
+                                                <td className="px-5 py-4 text-right">{action(order)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
                     )}
-                </div>
+                </Card>
             </div>
 
             {selectedOrder && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-                    <div className="w-full max-w-md rounded-xl bg-white shadow-xl" role="dialog" aria-modal="true" aria-labelledby="assign-title">
-                        <div className="border-b border-gray-200 px-6 py-4">
-                            <h3 id="assign-title" className="text-lg font-semibold text-gray-900">Assign Delivery Rider</h3>
-                            <p className="text-xs text-gray-500">
+                <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:px-4" onClick={closeAssign}>
+                    <div
+                        className="w-full max-w-md overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-2xl"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="assign-title"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="bg-gradient-to-r from-[#1c1430] to-[#3a2d5c] px-6 py-4 text-white">
+                            <h3 id="assign-title" className="text-lg font-bold">
+                                Assign delivery rider
+                            </h3>
+                            <p className="text-xs text-violet-200">
                                 {selectedOrder.order_number}
                                 {selectedOrder.waybill_number ? ` · ${selectedOrder.waybill_number}` : ''}
                             </p>
                         </div>
 
-                        <div className="space-y-4 px-6 py-4">
-                            <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
-                                <p className="font-medium text-gray-900">{selectedOrder.shipping_name || '—'}</p>
+                        <div className="space-y-4 px-6 py-5">
+                            <div className="rounded-xl bg-[#F6F3FB] p-3 text-sm text-gray-700">
+                                <p className="font-semibold text-gray-900">{selectedOrder.shipping_name || '—'}</p>
                                 <p className="text-xs">{selectedOrder.shipping_address}</p>
-                                {selectedOrder.cod_amount > 0 && (
-                                    <p className="mt-1 text-xs font-medium">Collect COD: {peso(selectedOrder.cod_amount)}</p>
-                                )}
+                                {selectedOrder.cod_amount > 0 && <p className="mt-1.5 text-xs font-semibold text-amber-800">Collect COD: {peso(selectedOrder.cod_amount)}</p>}
                             </div>
 
                             {riders.length === 0 ? (
                                 <p className="text-sm text-amber-700">No available riders. Approve rider applications in Rider Management first.</p>
                             ) : (
                                 <div>
-                                    <label htmlFor="assign-rider" className="mb-1.5 block text-sm font-medium text-gray-800">
-                                        Rider <span className="text-red-600">*</span>
-                                    </label>
-                                    <select
-                                        id="assign-rider"
-                                        value={selectedRider}
-                                        onChange={(e) => setSelectedRider(e.target.value)}
-                                        disabled={processing}
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600/30"
-                                    >
-                                        <option value="">Select rider</option>
-                                        {riders.map((r) => (
-                                            <option key={r.personnel_id} value={r.personnel_id}>
-                                                {r.name}
-                                                {r.vehicle_type ? ` · ${label(r.vehicle_type)}` : ''}
-                                                {` · ${r.active_delivery_jobs} active`}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <p className="mt-1 text-xs text-gray-500">Only active, approved riders of your company are listed.</p>
+                                    <p className="mb-2 text-sm font-semibold text-gray-800">
+                                        Choose a rider <span className="text-rose-600">*</span>
+                                    </p>
+                                    <div className="max-h-64 space-y-2 overflow-y-auto">
+                                        {riders.map((r) => {
+                                            const on = selectedRider === String(r.personnel_id);
+                                            return (
+                                                <label
+                                                    key={r.personnel_id}
+                                                    className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${
+                                                        on ? 'border-[#4B2E7E] bg-violet-50 ring-2 ring-[#4B2E7E]/20' : 'border-gray-200 hover:bg-gray-50'
+                                                    }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="assign-rider"
+                                                        value={r.personnel_id}
+                                                        checked={on}
+                                                        disabled={processing}
+                                                        onChange={(e) => setSelectedRider(e.target.value)}
+                                                        className="sr-only"
+                                                    />
+                                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2B2249] to-[#6a5a8a] text-xs font-bold text-white">
+                                                        {r.name.charAt(0).toUpperCase()}
+                                                    </span>
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="block truncate text-sm font-semibold text-gray-900">{r.name}</span>
+                                                        <span className="block text-xs text-gray-500">
+                                                            {r.vehicle_type ? prettyStatus(r.vehicle_type) : 'Vehicle not set'} · {r.active_delivery_jobs} active
+                                                        </span>
+                                                    </span>
+                                                    {on && <CheckCircle2 className="h-5 w-5 text-[#4B2E7E]" />}
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                    <p className="mt-2 text-xs text-gray-500">Only active, approved riders of your company who are online are listed.</p>
                                 </div>
                             )}
 
                             {modalError && (
-                                <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                                <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
                                     {modalError}
                                 </div>
                             )}
                         </div>
 
-                        <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+                        <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
                             <button
                                 type="button"
                                 onClick={closeAssign}
                                 disabled={processing}
-                                className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                             >
                                 Cancel
                             </button>
@@ -324,9 +420,9 @@ export default function DeliveryManagement({ auth, company, orders = [], riders 
                                 type="button"
                                 onClick={confirmAssign}
                                 disabled={!selectedRider || processing || riders.length === 0}
-                                className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="rounded-xl bg-[#4B2E7E] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3B1F6B] disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                {processing ? 'Assigning…' : 'Assign Rider'}
+                                {processing ? 'Assigning…' : 'Assign rider'}
                             </button>
                         </div>
                     </div>

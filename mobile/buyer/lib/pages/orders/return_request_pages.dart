@@ -242,6 +242,7 @@ class ReturnStatusPage extends StatefulWidget {
 
 class _ReturnStatusPageState extends State<ReturnStatusPage> {
   ReturnRequestInfo? _rr;
+  RefundInfo? _refund;
   bool _loading = true;
   bool _escalating = false;
   String? _error;
@@ -259,8 +260,16 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
     });
     try {
       final rr = await ReturnRepository.instance.show(widget.returnId);
+      // Refund details are optional: a failure here must not hide the request.
+      RefundInfo? refund;
+      try {
+        refund = await ReturnRepository.instance.refundFor(widget.returnId);
+      } catch (_) {}
       if (!mounted) return;
-      setState(() => _rr = rr);
+      setState(() {
+        _rr = rr;
+        _refund = refund;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.message);
@@ -418,6 +427,35 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
                           child: Text('Escalated ${_fmt(rr.escalatedAt)}',
                               style: const TextStyle(fontSize: 12, color: _kSubtext)),
                         ),
+                      if (_refund != null) ...[
+                        const Divider(height: 32),
+                        const Text('Refund', style: TextStyle(fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.chip,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _refund!.status == 'refunded' ? 'Refunded' : 'Refund ${_refund!.status.replaceAll('_', ' ')}',
+                                style: const TextStyle(fontWeight: FontWeight.w800),
+                              ),
+                              Text('Amount: ₱${_refund!.amount.toStringAsFixed(2)}'),
+                              if ((_refund!.method ?? '').isNotEmpty)
+                                Text('Method: ${_refund!.method!.replaceAll('_', ' ')}'),
+                              if ((_refund!.reference ?? '').isNotEmpty)
+                                Text('Reference: ${_refund!.reference}'),
+                              if (_refund!.refundedAt != null)
+                                Text('Refunded ${_fmt(_refund!.refundedAt)}',
+                                    style: const TextStyle(fontSize: 11, color: _kSubtext)),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 20),
                       if (rr.canEscalate)
                         FilledButton.icon(

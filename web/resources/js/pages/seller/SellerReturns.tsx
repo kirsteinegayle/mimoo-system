@@ -1,5 +1,5 @@
 import { Head } from "@inertiajs/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { RotateCcw, Star, X } from "lucide-react";
 import SellerShell from "@/layouts/seller/seller-shell";
@@ -372,16 +372,26 @@ function ReturnsTab() {
 // Reviews tab
 // ---------------------------------------------------------------------------
 
-function ReviewsTab() {
+export interface ReviewSummary {
+  rating_count: number;
+  rating_avg: number | null;
+  breakdown: Record<string, number>;
+  unreplied: number;
+}
+
+/** Reviews of my products with reply box. Also used by Customers > Customer Feedback. */
+export function ReviewsTab({ onSummary, initialFilter = "unreplied" }: { onSummary?: (s: ReviewSummary) => void; initialFilter?: "unreplied" | "replied" | "all" } = {}) {
   const [rows, setRows] = useState<ReviewRow[]>([]);
   const [meta, setMeta] = useState<Meta>({ current_page: 1, last_page: 1, total: 0 });
-  const [filter, setFilter] = useState("unreplied");
+  const [filter, setFilter] = useState<string>(initialFilter);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [drafts, setDrafts] = useState<Record<number, string>>({});
   const [editing, setEditing] = useState<number | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<number, string>>({});
+  const onSummaryRef = useRef(onSummary);
+  onSummaryRef.current = onSummary;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -391,6 +401,7 @@ function ReviewsTab() {
       const json = await res.json();
       setRows(json.data ?? []);
       setMeta(json.meta ?? { current_page: 1, last_page: 1, total: 0 });
+      if (json.summary) onSummaryRef.current?.(json.summary);
     } catch {
       setRows([]);
       toast.error("Could not load reviews.");

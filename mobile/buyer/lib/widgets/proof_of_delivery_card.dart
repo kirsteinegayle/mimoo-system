@@ -81,9 +81,12 @@ class _ProofOfDeliveryCardState extends State<ProofOfDeliveryCard> {
             Positioned(
               top: 4,
               right: 4,
+              // Dark backing so the close icon stays visible on bright photos.
               child: IconButton(
                 tooltip: 'Close',
                 onPressed: () => Navigator.of(ctx).pop(),
+                style: IconButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.55)),
                 icon: const Icon(Icons.close, color: Colors.white),
               ),
             ),

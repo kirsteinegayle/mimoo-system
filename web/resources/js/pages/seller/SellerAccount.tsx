@@ -1,4 +1,5 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { NotificationBell } from '@/components/notification-bell';
 import {
     AlertTriangle, BadgeCheck, Bell, Eye, EyeOff, FileText, HelpCircle, Lock, Mail,
     MessageSquare, Pencil, Plus, Search, ShieldCheck, Smartphone, Store, Trash2, Upload, UserCog,
@@ -1278,12 +1279,14 @@ export default function SellerAccountManagementPage({ auth, seller }: SellerAcco
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <button type="button" aria-label="Messages" className="text-white/70 hover:text-white transition">
+                        <Link href="/seller/messages" aria-label="Messages" title="Messages" className="text-white/70 hover:text-white transition">
                             <MessageSquare className="w-5 h-5" />
-                        </button>
-                        <button type="button" aria-label="Notifications" className="text-white/70 hover:text-white transition">
-                            <Bell className="w-5 h-5" />
-                        </button>
+                        </Link>
+                        <NotificationBell
+                            isLoggedIn
+                            baseUrl="/seller/notifications"
+                            buttonClassName="relative flex items-center text-white/70 hover:text-white transition"
+                        />
 
                         <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 py-1.5">
                             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#9B5DE5] text-[10px] font-bold">

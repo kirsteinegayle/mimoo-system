@@ -36,10 +36,8 @@ class AdminController extends Controller
             'code' => ['required', 'string'],
         ]);
 
-        $masterCode = config('app.admin_master_code');
-        $inputCode = $request->input('code');
-
-        if (! hash_equals((string) $masterCode, (string) $inputCode)) {
+        // ADMIN_MASTER_CODE, or the code set in Admin > Settings (stored hashed).
+        if (! AdminAccountController::codeMatches((string) $request->input('code'))) {
             return back()->withErrors(['code' => 'Invalid code.']);
         }
 

@@ -168,7 +168,7 @@ export default function VerifyEmail({ email: initialEmail, status }: VerifyEmail
                                 onChange={(e) => handleCodeInput(e.target.value)}
                                 maxLength={6}
                                 autoComplete="off"
-                                className={`w-full rounded-xl border bg-white px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] text-gray-900 placeholder:text-gray-300 placeholder:tracking-[0.5em] outline-none focus:ring-2 transition ${
+                                className={`w-full rounded-xl border bg-white px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] text-gray-900 placeholder:text-gray-400 placeholder:tracking-[0.5em] outline-none focus:ring-2 transition ${
                                     errors.code
                                         ? 'border-red-300 focus:ring-red-100'
                                         : 'border-gray-200 focus:ring-[#E4DBF7] focus:border-[#8B72C4]'

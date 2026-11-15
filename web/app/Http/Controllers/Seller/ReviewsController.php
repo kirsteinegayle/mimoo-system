@@ -50,6 +50,17 @@ class ReviewsController extends Controller
             ->orderByDesc('id')
             ->paginate(self::PER_PAGE, ['*'], 'page', max(1, (int) $request->query('page', 1)));
 
+        // Rating summary over ALL my reviews (independent of the filter).
+        $counts = $this->mine($sellerId)
+            ->selectRaw('rating, COUNT(*) AS c')
+            ->groupBy('rating')
+            ->pluck('c', 'rating');
+        $ratingCount = (int) $counts->sum();
+        $breakdown   = [];
+        foreach ([5, 4, 3, 2, 1] as $stars) {
+            $breakdown[(string) $stars] = (int) ($counts[$stars] ?? 0);
+        }
+
         return response()->json([
             'data' => collect($page->items())->map(fn (Review $r) => $this->format($r))->values(),
             'meta' => [
@@ -57,6 +68,14 @@ class ReviewsController extends Controller
                 'last_page'    => $page->lastPage(),
                 'per_page'     => $page->perPage(),
                 'total'        => $page->total(),
+            ],
+            'summary' => [
+                'rating_count' => $ratingCount,
+                'rating_avg'   => $ratingCount > 0
+                    ? round($counts->map(fn ($c, $r) => $c * (int) $r)->sum() / $ratingCount, 1)
+                    : null,
+                'breakdown'    => $breakdown,
+                'unreplied'    => $this->mine($sellerId)->where(fn ($w) => $w->whereNull('seller_reply')->orWhere('seller_reply', ''))->count(),
             ],
         ]);
     }

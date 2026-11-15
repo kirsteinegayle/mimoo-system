@@ -21,8 +21,24 @@ class MyReviewsController extends Controller
         $user = $request->user();
         abort_unless($user && $user->account_type === 'buyer', 403);
 
-        $reviews = Review::with('product:id,name,images,main_image_index', 'orderItem:id,order_id,product_name,variant_snapshot')
-            ->where('buyer_id', $user->id)
+        return Inertia::render('BuyerReviews', ['reviews' => $this->rows((int) $user->id)]);
+    }
+
+    /** GET /api/buyer/reviews/mine (Sanctum, mobile app): same rows as the web page. */
+    public function mine(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $user = $request->user();
+        if (! $user || $user->account_type !== 'buyer') {
+            return response()->json(['message' => 'Only buyer accounts can access this endpoint.'], 403);
+        }
+
+        return response()->json(['data' => $this->rows((int) $user->id)]);
+    }
+
+    private function rows(int $buyerId)
+    {
+        return Review::with('product:id,name,images,main_image_index', 'orderItem:id,order_id,product_name,variant_snapshot')
+            ->where('buyer_id', $buyerId)
             ->orderByDesc('created_at')
             ->get()
             ->map(fn (Review $r) => [
@@ -40,7 +56,5 @@ class MyReviewsController extends Controller
                 'created_at'   => $r->created_at?->toISOString(),
             ])
             ->values();
-
-        return Inertia::render('BuyerReviews', ['reviews' => $reviews]);
     }
 }

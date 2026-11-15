@@ -46,7 +46,7 @@ export default function BuyerReviews() {
             <h1 className="text-[1.3rem] font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>My Reviews</h1>
             <p className="text-[0.83rem] text-[#6E6570] mt-1">{reviews.length} review{reviews.length === 1 ? "" : "s"}</p>
           </div>
-          <Link href="/orders?status=to_review" className="text-sm font-semibold text-[#4B2E7E] hover:underline">Items to review</Link>
+          <Link href="/orders?status=to_review" className="text-sm font-semibold text-[#4B2E7E] hover:underline">Go to My Orders</Link>
         </div>
 
         {notice && (
@@ -59,9 +59,9 @@ export default function BuyerReviews() {
         {reviews.length === 0 ? (
           <div className="rounded-[14px] bg-white p-12 text-center border border-[rgba(185,166,222,0.18)]">
             <Star className="w-14 h-14 text-neutral-300 mx-auto mb-3" />
-            <p className="text-[0.88rem] text-[#6E6570] mb-4">You haven't written any reviews yet.</p>
+            <p className="text-[0.88rem] text-[#6E6570] mb-4">You haven't written any reviews yet. Delivered orders in My Orders show a “Write a Review” button.</p>
             <Link href="/orders?status=to_review" className="inline-flex items-center gap-2 bg-[#4B2E7E] text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#3a2360] transition">
-              Review your purchases
+              Go to My Orders
             </Link>
           </div>
         ) : (

@@ -19,6 +19,7 @@ interface Profile {
   contact_number: string | null;
   birthday: string | null;
   sex: string | null;
+  profile_photo_url?: string | null;
 }
 
 type Msg = { text: string; ok: boolean } | null;
@@ -295,6 +296,65 @@ function PasswordCard() {
   );
 }
 
+// ── Profile photo (same POST /buyer/profile/photo rules as the app: JPG/PNG, max 5 MB) ──
+
+function PhotoCard({ url, name, onSaved }: { url: string | null; name: string; onSaved: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<Msg>(null);
+  const [preview, setPreview] = useState<string | null>(url);
+
+  async function upload(file: File) {
+    if (!["image/jpeg", "image/png"].includes(file.type)) return setMsg({ ok: false, text: "Only JPG and PNG images are accepted." });
+    if (file.size > 5 * 1024 * 1024) return setMsg({ ok: false, text: "Photo must not be larger than 5 MB." });
+    setBusy(true);
+    setMsg(null);
+    try {
+      const body = new FormData();
+      body.append("photo", file);
+      const res = await fetch("/buyer/profile/photo", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest", ...csrfHeaders() },
+        body,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(errorText(res.status, json, "Could not upload the photo."));
+      setPreview(json?.data?.profile_photo_url ?? null);
+      setMsg({ ok: true, text: json?.message || "Profile photo updated." });
+      onSaved();
+    } catch (e: any) {
+      setMsg({ ok: false, text: e?.message || "Could not upload the photo." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card title="Profile photo" desc="JPG or PNG, up to 5 MB. Shown to sellers in chats.">
+      <div className="flex items-center gap-4">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-violet-100 text-2xl font-bold text-violet-700">
+          {preview ? <img src={preview} alt="" className="h-full w-full object-cover" /> : (name || "?").charAt(0).toUpperCase()}
+        </div>
+        <label className={`${btnCls} cursor-pointer ${busy ? "pointer-events-none opacity-60" : ""}`}>
+          {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+          {preview ? "Change photo" : "Upload photo"}
+          <input
+            type="file"
+            accept="image/jpeg,image/png"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) upload(file);
+            }}
+          />
+        </label>
+      </div>
+      <Note msg={msg} />
+    </Card>
+  );
+}
+
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function BuyerAccountSettings() {
@@ -345,7 +405,24 @@ export default function BuyerAccountSettings() {
           </div>
         ) : (
           <>
+            <PhotoCard
+              url={profile.profile_photo_url ?? null}
+              name={profile.first_name || auth?.user?.name || ""}
+              onSaved={() => router.reload({ only: ["auth"] })}
+            />
             <ProfileCard profile={profile} onSaved={load} />
+            <section className="grid gap-3 sm:grid-cols-3">
+              {[
+                ["/addresses", "My Addresses", "Saved delivery addresses"],
+                ["/vouchers", "My Vouchers", "Claim and view vouchers"],
+                ["/my-reviews", "My Reviews", "Ratings you have written"],
+              ].map(([href, title, desc]) => (
+                <a key={href} href={href} className="rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-violet-300 hover:shadow-sm">
+                  <p className="font-semibold text-neutral-900">{title}</p>
+                  <p className="text-xs text-neutral-500">{desc}</p>
+                </a>
+              ))}
+            </section>
             <OtpChangeCard
               title="Email address"
               desc="We send a 6-digit code to the new email to confirm it is yours."

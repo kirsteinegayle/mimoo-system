@@ -105,6 +105,7 @@ Route::prefix('buyer')->group(function () {
         Route::get('/orders/{id}/chat',          [DeliveryChatController::class, 'buyerIndex'])->middleware('throttle:120,1,buyer-delivery-chat')->whereNumber('id');
         Route::post('/orders/{id}/chat',         [DeliveryChatController::class, 'buyerSend'])->middleware('throttle:30,1,buyer-delivery-chat-send')->whereNumber('id');
         Route::post('/orders/{id}/chat/read',    [DeliveryChatController::class, 'buyerRead'])->middleware('throttle:60,1,buyer-delivery-chat-read')->whereNumber('id');
+        Route::get('/rider-chats',               [DeliveryChatController::class, 'buyerThreads'])->middleware('throttle:120,1,buyer-rider-chats');
 
         // Vouchers
         Route::get('/vouchers',            [BuyerVoucherController::class, 'index']);
@@ -126,12 +127,15 @@ Route::prefix('buyer')->group(function () {
         // Reviews
         Route::post('/orders/{orderId}/items/{itemId}/review', [BuyerReviewController::class, 'store'])->middleware('throttle:10,1,review-store')->whereNumber(['orderId', 'itemId']);
         Route::put('/reviews/{id}',              [BuyerReviewController::class, 'update'])->middleware('throttle:10,1,review-update')->whereNumber(['id']);
+        Route::get('/reviews/mine',              [\App\Http\Controllers\Buyer\MyReviewsController::class, 'mine']);
 
         // Returns
         Route::post('/orders/{id}/return',       [BuyerReturnController::class, 'store'])->middleware('throttle:10,1,return-store')->whereNumber(['id']);
         Route::get('/returns',                   [BuyerReturnController::class, 'index']);
         Route::get('/returns/{id}',              [BuyerReturnController::class, 'show'])->whereNumber(['id']);
         Route::post('/returns/{id}/escalate',    [BuyerReturnController::class, 'escalate'])->middleware('throttle:5,1,return-escalate')->whereNumber(['id']);
+        // Refund status of my returns, keyed by return id (same controller as the web /buyer/refunds)
+        Route::get('/refunds',                   [\App\Http\Controllers\Buyer\RefundStatusController::class, 'index']);
 
         // Notifications (in-app only)
         Route::get('/notifications',             [BuyerNotificationController::class, 'index']);

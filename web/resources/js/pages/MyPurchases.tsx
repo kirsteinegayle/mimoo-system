@@ -42,6 +42,8 @@ interface OrderItem {
     price: number;
     stock: number;
   } | null;
+  review?: { id: number; rating: number; comment: string | null; can_edit: boolean } | null;
+  can_review?: boolean;
 }
 
 interface Order {
@@ -479,13 +481,19 @@ export default function MyPurchases() {
                         Pay now
                       </Link>
                     )}
-                    {key === "to_review" && (order.can_review || order.reviewed) && (
+                    {/* Reviews: completed (delivered) orders only. Write while an item is still
+                        unreviewed, otherwise Edit (within the edit window) or View. */}
+                    {order.status === "completed" && (order.can_review || order.reviewed) && (
                       <Link
                         href={`/orders/${order.id}#reviews`}
                         className="inline-flex items-center gap-2 bg-[#4B2E7E] text-white font-bold text-[0.82rem] px-4 py-2 rounded-lg hover:bg-[#3a2360] transition"
                       >
                         <Star className="w-4 h-4" />
-                        {order.can_review ? "Rate order" : "My review"}
+                        {order.can_review
+                          ? "Write a Review"
+                          : order.items.some((i) => i.review?.can_edit)
+                            ? "Edit Review"
+                            : "View Review"}
                       </Link>
                     )}
 

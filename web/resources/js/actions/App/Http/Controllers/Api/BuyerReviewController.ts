@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::productReviews
- * @see app/Http/Controllers/Api/BuyerReviewController.php:193
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:201
  * @route '/api/buyer/products/{id}/reviews'
  */
 export const productReviews = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ productReviews.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::productReviews
- * @see app/Http/Controllers/Api/BuyerReviewController.php:193
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:201
  * @route '/api/buyer/products/{id}/reviews'
  */
 productReviews.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ productReviews.url = (args: { id: string | number } | [id: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::productReviews
- * @see app/Http/Controllers/Api/BuyerReviewController.php:193
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:201
  * @route '/api/buyer/products/{id}/reviews'
  */
 productReviews.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ productReviews.get = (args: { id: string | number } | [id: string | number ] | s
 })
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::productReviews
- * @see app/Http/Controllers/Api/BuyerReviewController.php:193
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:201
  * @route '/api/buyer/products/{id}/reviews'
  */
 productReviews.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ productReviews.head = (args: { id: string | number } | [id: string | number ] | 
 
     /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::productReviews
- * @see app/Http/Controllers/Api/BuyerReviewController.php:193
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:201
  * @route '/api/buyer/products/{id}/reviews'
  */
     const productReviewsForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ productReviews.head = (args: { id: string | number } | [id: string | number ] | 
 
             /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::productReviews
- * @see app/Http/Controllers/Api/BuyerReviewController.php:193
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:201
  * @route '/api/buyer/products/{id}/reviews'
  */
         productReviewsForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ productReviews.head = (args: { id: string | number } | [id: string | number ] | 
         })
             /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::productReviews
- * @see app/Http/Controllers/Api/BuyerReviewController.php:193
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:201
  * @route '/api/buyer/products/{id}/reviews'
  */
         productReviewsForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -98,7 +98,7 @@ productReviews.head = (args: { id: string | number } | [id: string | number ] | 
     productReviews.form = productReviewsForm
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::servePhoto
- * @see app/Http/Controllers/Api/BuyerReviewController.php:228
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:236
  * @route '/api/buyer/review-photo/{filename}'
  */
 export const servePhoto = (args: { filename: string | number } | [filename: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -113,7 +113,7 @@ servePhoto.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::servePhoto
- * @see app/Http/Controllers/Api/BuyerReviewController.php:228
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:236
  * @route '/api/buyer/review-photo/{filename}'
  */
 servePhoto.url = (args: { filename: string | number } | [filename: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -141,7 +141,7 @@ servePhoto.url = (args: { filename: string | number } | [filename: string | numb
 
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::servePhoto
- * @see app/Http/Controllers/Api/BuyerReviewController.php:228
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:236
  * @route '/api/buyer/review-photo/{filename}'
  */
 servePhoto.get = (args: { filename: string | number } | [filename: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -150,7 +150,7 @@ servePhoto.get = (args: { filename: string | number } | [filename: string | numb
 })
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::servePhoto
- * @see app/Http/Controllers/Api/BuyerReviewController.php:228
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:236
  * @route '/api/buyer/review-photo/{filename}'
  */
 servePhoto.head = (args: { filename: string | number } | [filename: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -160,7 +160,7 @@ servePhoto.head = (args: { filename: string | number } | [filename: string | num
 
     /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::servePhoto
- * @see app/Http/Controllers/Api/BuyerReviewController.php:228
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:236
  * @route '/api/buyer/review-photo/{filename}'
  */
     const servePhotoForm = (args: { filename: string | number } | [filename: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -170,7 +170,7 @@ servePhoto.head = (args: { filename: string | number } | [filename: string | num
 
             /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::servePhoto
- * @see app/Http/Controllers/Api/BuyerReviewController.php:228
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:236
  * @route '/api/buyer/review-photo/{filename}'
  */
         servePhotoForm.get = (args: { filename: string | number } | [filename: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -179,7 +179,7 @@ servePhoto.head = (args: { filename: string | number } | [filename: string | num
         })
             /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::servePhoto
- * @see app/Http/Controllers/Api/BuyerReviewController.php:228
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:236
  * @route '/api/buyer/review-photo/{filename}'
  */
         servePhotoForm.head = (args: { filename: string | number } | [filename: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -350,7 +350,7 @@ export const store = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::update
- * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:163
  * @route '/api/buyer/reviews/{id}'
  */
 const updateda7a4af9c09529bfc715df7a59d1ec84 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -365,7 +365,7 @@ updateda7a4af9c09529bfc715df7a59d1ec84.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::update
- * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:163
  * @route '/api/buyer/reviews/{id}'
  */
 updateda7a4af9c09529bfc715df7a59d1ec84.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -393,7 +393,7 @@ updateda7a4af9c09529bfc715df7a59d1ec84.url = (args: { id: string | number } | [i
 
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::update
- * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:163
  * @route '/api/buyer/reviews/{id}'
  */
 updateda7a4af9c09529bfc715df7a59d1ec84.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -403,7 +403,7 @@ updateda7a4af9c09529bfc715df7a59d1ec84.put = (args: { id: string | number } | [i
 
     /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::update
- * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:163
  * @route '/api/buyer/reviews/{id}'
  */
     const updateda7a4af9c09529bfc715df7a59d1ec84Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -418,7 +418,7 @@ updateda7a4af9c09529bfc715df7a59d1ec84.put = (args: { id: string | number } | [i
 
             /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::update
- * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:163
  * @route '/api/buyer/reviews/{id}'
  */
         updateda7a4af9c09529bfc715df7a59d1ec84Form.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -434,7 +434,7 @@ updateda7a4af9c09529bfc715df7a59d1ec84.put = (args: { id: string | number } | [i
     updateda7a4af9c09529bfc715df7a59d1ec84.form = updateda7a4af9c09529bfc715df7a59d1ec84Form
     /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::update
- * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:163
  * @route '/buyer/reviews/{id}'
  */
 const updatef078704e6a349b5990fe8179723e8e08 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -449,7 +449,7 @@ updatef078704e6a349b5990fe8179723e8e08.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::update
- * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:163
  * @route '/buyer/reviews/{id}'
  */
 updatef078704e6a349b5990fe8179723e8e08.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -477,7 +477,7 @@ updatef078704e6a349b5990fe8179723e8e08.url = (args: { id: string | number } | [i
 
 /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::update
- * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:163
  * @route '/buyer/reviews/{id}'
  */
 updatef078704e6a349b5990fe8179723e8e08.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -487,7 +487,7 @@ updatef078704e6a349b5990fe8179723e8e08.put = (args: { id: string | number } | [i
 
     /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::update
- * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:163
  * @route '/buyer/reviews/{id}'
  */
     const updatef078704e6a349b5990fe8179723e8e08Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -502,7 +502,7 @@ updatef078704e6a349b5990fe8179723e8e08.put = (args: { id: string | number } | [i
 
             /**
 * @see \App\Http\Controllers\Api\BuyerReviewController::update
- * @see app/Http/Controllers/Api/BuyerReviewController.php:155
+ * @see app/Http/Controllers/Api/BuyerReviewController.php:163
  * @route '/buyer/reviews/{id}'
  */
         updatef078704e6a349b5990fe8179723e8e08Form.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

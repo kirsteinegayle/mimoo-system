@@ -65,11 +65,15 @@ class RealOrderActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Reviews: completed (delivered) orders only, same rule as the web.
+    // Write while an item can still be reviewed, otherwise Edit (within the
+    // edit window) or View. Any other status shows no review button.
     final isCompleted = order.status == api_order.OrderStatus.completed;
-    final canRate = isCompleted &&
-        order.items.any((i) => i.canReview || (i.reviewId != null && i.reviewCanEdit));
-    final allReviewed =
-        isCompleted && order.items.isNotEmpty && order.items.every((i) => i.reviewId != null);
+    final canWrite = isCompleted && order.items.any((i) => i.reviewId == null && i.canReview);
+    final anyReviewed = isCompleted && order.items.any((i) => i.reviewId != null);
+    final canEdit = anyReviewed && order.items.any((i) => i.reviewId != null && i.reviewCanEdit);
+    final showReview = canWrite || anyReviewed;
+    final reviewLabel = canWrite ? 'Write a Review' : (canEdit ? 'Edit Review' : 'View Review');
 
     final isShipped = order.status == api_order.OrderStatus.shipped;
     final hasOpenReturn = const ['pending', 'approved', 'escalated']
@@ -113,7 +117,7 @@ class RealOrderActions extends StatelessWidget {
           icon: const Icon(Icons.inventory_outlined, size: 16),
           label: const Text('Order Received'),
         ),
-      if (canRate)
+      if (showReview)
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: _kPrimary,
@@ -130,7 +134,7 @@ class RealOrderActions extends StatelessWidget {
             if (changed == true) onChanged();
           },
           icon: const Icon(Icons.star_outline_rounded, size: 16),
-          label: Text(allReviewed ? 'Edit Review' : 'Rate'),
+          label: Text(reviewLabel),
         ),
       if (order.returnId != null)
         OutlinedButton.icon(

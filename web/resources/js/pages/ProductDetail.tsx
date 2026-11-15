@@ -60,6 +60,7 @@ interface ProductDetailProps {
     stock_status: string;
     is_in_stock: boolean;
     is_low_stock: boolean;
+    seller_rating?: { avg: number | null; count: number };
     images: string[];
     main_image_index: number;
     weight: number | null;
@@ -270,8 +271,12 @@ function ProductInfo({
   inWishlist,
   wishlistLoading,
   toggleWishlist,
-}: { 
-  product: ProductDetailProps['product']; 
+  ratingAvg = null,
+  ratingCount = 0,
+}: {
+  product: ProductDetailProps['product'];
+  ratingAvg?: number | null;
+  ratingCount?: number;
   role: UserRole;
   onAddToCart: (quantity: number, variantId?: string, replaceQuantity?: boolean) => Promise<any>;
   onReportProduct: () => void;
@@ -326,7 +331,20 @@ function ProductInfo({
         <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">
           {product.name}
         </h1>
-        <div className="mt-2 flex items-center gap-3">
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          {ratingCount > 0 ? (
+            <a href="#reviews" className="flex items-center gap-1.5 text-sm text-neutral-700 hover:text-violet-800">
+              <span className="flex">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star key={i} className={`h-4 w-4 ${i <= Math.round(ratingAvg ?? 0) ? "fill-amber-400 text-amber-400" : "fill-neutral-200 text-neutral-200"}`} />
+                ))}
+              </span>
+              <span className="font-semibold">{(ratingAvg ?? 0).toFixed(1)}</span>
+              <span className="text-neutral-500">({ratingCount} review{ratingCount === 1 ? "" : "s"})</span>
+            </a>
+          ) : (
+            <span className="text-sm text-neutral-500">No ratings yet</span>
+          )}
           {product.brand && (
             <span className="text-sm text-neutral-600">Brand: {product.brand}</span>
           )}
@@ -560,7 +578,9 @@ function SellerInfo({
   profilePhoto,
   productId,
   user,
+  sellerRating,
 }: {
+  sellerRating?: { avg: number | null; count: number };
   sellerName: string;
   sellerId: number;
   profilePhoto?: string | null;
@@ -578,9 +598,9 @@ function SellerInfo({
     .toUpperCase()
     .slice(0, 2);
 
-  // TODO: Replace with actual rating from reviews/orders
-  const rating = 4.5;
-  const totalReviews = 0; // Placeholder
+  // Real seller rating (all reviews of this seller's products).
+  const rating = sellerRating?.avg ?? 0;
+  const totalReviews = sellerRating?.count ?? 0;
 
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-6">
@@ -952,6 +972,8 @@ export default function ProductDetail({ auth, product, reviews: initialReviews }
             inWishlist={inWishlist}
             wishlistLoading={wishlistLoading}
             toggleWishlist={toggleWishlist}
+            ratingAvg={reviewMeta?.rating_avg ?? null}
+            ratingCount={reviewMeta?.rating_count ?? 0}
           />
         </div>
 
@@ -963,6 +985,7 @@ export default function ProductDetail({ auth, product, reviews: initialReviews }
             profilePhoto={product.seller_profile_photo}
             productId={product.id}
             user={user}
+            sellerRating={product.seller_rating}
           />
         </div>
 
@@ -970,14 +993,7 @@ export default function ProductDetail({ auth, product, reviews: initialReviews }
         <div id="reviews" className="mt-8 rounded-xl border border-neutral-200 bg-white p-6">
           <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
             <h2 className="text-xl font-bold text-neutral-900">Customer Reviews</h2>
-            {user?.account_type === "buyer" && (
-              <Link
-                href="/orders?status=to_review"
-                className="rounded-lg border-2 border-violet-900 bg-white px-4 py-2 text-sm font-semibold text-violet-900 transition-colors hover:bg-violet-50"
-              >
-                Write a Review
-              </Link>
-            )}
+            {/* Display only: reviews are written from My Orders once an order is delivered. */}
           </div>
 
           {!reviewMeta || reviewMeta.rating_count === 0 ? (

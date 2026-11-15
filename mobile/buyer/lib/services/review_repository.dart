@@ -51,6 +51,49 @@ class ProductReview {
   }
 }
 
+/// One of the buyer's own reviews (GET /api/buyer/reviews/mine).
+class MyReview {
+  const MyReview({
+    required this.id,
+    required this.productId,
+    required this.productName,
+    required this.orderId,
+    required this.rating,
+    this.comment,
+    required this.images,
+    required this.isEdited,
+    required this.canEdit,
+    this.sellerReply,
+    this.createdAt,
+  });
+
+  final int id;
+  final int? productId;
+  final String productName;
+  final int? orderId;
+  final int rating;
+  final String? comment;
+  final List<String> images;
+  final bool isEdited;
+  final bool canEdit;
+  final String? sellerReply;
+  final DateTime? createdAt;
+
+  factory MyReview.fromJson(Map<String, dynamic> j) => MyReview(
+        id: (j['id'] as num).toInt(),
+        productId: (j['product_id'] as num?)?.toInt(),
+        productName: j['product_name'] as String? ?? 'Product',
+        orderId: (j['order_id'] as num?)?.toInt(),
+        rating: (j['rating'] as num?)?.toInt() ?? 0,
+        comment: j['comment'] as String?,
+        images: (j['images'] as List<dynamic>? ?? []).map((e) => '$e').toList(),
+        isEdited: j['is_edited'] == true,
+        canEdit: j['can_edit'] == true,
+        sellerReply: j['seller_reply'] as String?,
+        createdAt: DateTime.tryParse(j['created_at'] as String? ?? ''),
+      );
+}
+
 class ProductReviewPage {
   const ProductReviewPage({
     required this.reviews,
@@ -111,6 +154,15 @@ class ReviewRepository {
       },
       files: _files(images),
     );
+  }
+
+  /// The buyer's own reviews (GET /api/buyer/reviews/mine) — same rows as the
+  /// web "My Reviews" page.
+  Future<List<MyReview>> mine() async {
+    final res = await ApiService.get('/buyer/reviews/mine') as Map<String, dynamic>;
+    return (res['data'] as List<dynamic>? ?? [])
+        .map((e) => MyReview.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// Edit (allowed once within 30 days). Photos are replaced only when

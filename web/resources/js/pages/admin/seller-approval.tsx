@@ -97,7 +97,7 @@ function StatCards({ stats }: { stats: Stats }) {
                         </span>
                     </div>
                     <p className={`text-3xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>{value}</p>
-                    <p className={`text-xs ${dark ? 'text-white/50' : 'text-gray-400'}`}>{sub}</p>
+                    <p className={`text-xs ${dark ? 'text-white/70' : 'text-gray-500'}`}>{sub}</p>
                 </div>
             ))}
         </div>
@@ -267,12 +267,12 @@ export default function SellerApproval({ registrations, stats, filters, paginati
                                         <td colSpan={columns.length} className="px-5 py-16 text-center">
                                             <div className="flex flex-col items-center gap-3 text-gray-300">
                                                 <ThumbsDown className="h-8 w-8" strokeWidth={1} />
-                                                <p className="text-sm font-medium text-gray-400">
+                                                <p className="text-sm font-medium text-gray-600">
                                                     {search || statusFilter !== 'All'
                                                         ? 'No matching seller registrations'
                                                         : 'No seller registrations yet'}
                                                 </p>
-                                                <p className="text-xs text-gray-300">
+                                                <p className="text-xs text-gray-500">
                                                     {search || statusFilter !== 'All'
                                                         ? 'Try adjusting your filters or search query.'
                                                         : 'Seller applications will appear here once they start signing up.'}
@@ -417,9 +417,9 @@ export default function SellerApproval({ registrations, stats, filters, paginati
                             <StatusBadge status={s} />
                         </div>
                     ))}
-                    <span className="ml-1 text-xs text-gray-300">— status indicators</span>
+                    <span className="ml-1 text-xs text-gray-500">— status indicators</span>
                     <Eye className="ml-auto h-3.5 w-3.5 text-gray-300" strokeWidth={1.5} />
-                    <span className="text-xs text-gray-300">review icon</span>
+                    <span className="text-xs text-gray-500">review icon</span>
                 </div>
 
                 {/* Details Modal */}

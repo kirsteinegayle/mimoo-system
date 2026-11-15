@@ -83,6 +83,67 @@ class DeliveryChatController extends Controller
         return $error ?? $this->markRead($job, DeliveryMessage::ROLE_BUYER);
     }
 
+    /**
+     * GET /buyer/rider-chats (web) · GET /api/buyer/rider-chats (app)
+     * The buyer's rider conversations: one row per order (latest delivery job),
+     * listed when the chat is still open or already has messages.
+     */
+    public function buyerThreads(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if ($user->account_type !== 'buyer') {
+            return response()->json(['message' => 'Only buyers can access rider chats.'], 403);
+        }
+
+        $jobs = DeliveryJob::whereIn('order_id', Order::where('buyer_id', $user->id)->select('id'))
+            ->orderByDesc('id')
+            ->limit(200)
+            ->get(['id', 'order_id', 'rider_user_id', 'status', 'updated_at'])
+            ->unique('order_id')
+            ->values();
+
+        $ids    = $jobs->pluck('id');
+        $lastId = DeliveryMessage::whereIn('delivery_job_id', $ids)
+            ->selectRaw('delivery_job_id, MAX(id) AS last_id')
+            ->groupBy('delivery_job_id')
+            ->pluck('last_id', 'delivery_job_id');
+        $last   = DeliveryMessage::whereIn('id', $lastId->values())->get()->keyBy('delivery_job_id');
+        $unread = DeliveryMessage::whereIn('delivery_job_id', $ids)
+            ->where('sender_role', DeliveryMessage::ROLE_RIDER)
+            ->whereNull('read_at')
+            ->selectRaw('delivery_job_id, COUNT(*) AS c')
+            ->groupBy('delivery_job_id')
+            ->pluck('c', 'delivery_job_id');
+        $riders = User::whereIn('id', $jobs->pluck('rider_user_id')->filter())->get(['id', 'first_name', 'name'])->keyBy('id');
+
+        $rows = $jobs
+            ->filter(fn (DeliveryJob $j) => $this->isOpen($j) || $last->has($j->id))
+            ->map(function (DeliveryJob $j) use ($last, $unread, $riders) {
+                $rider = $riders->get($j->rider_user_id);
+                $first = trim((string) ($rider->first_name ?? ''));
+                if ($first === '') {
+                    $first = trim((string) strtok(trim((string) ($rider->name ?? '')), ' '));
+                }
+                $msg = $last->get($j->id);
+
+                return [
+                    'order_id'        => $j->order_id,
+                    'order_number'    => 'MIM-' . str_pad((string) $j->order_id, 8, '0', STR_PAD_LEFT),
+                    'delivery_job_id' => $j->id,
+                    'rider_name'      => $first !== '' ? $first : 'Your rider',
+                    'job_status'      => $j->status,
+                    'can_send'        => $this->isOpen($j),
+                    'last_message'    => $msg ? Str::limit($msg->body, 80) : null,
+                    'last_message_at' => ($msg?->created_at ?? $j->updated_at)?->toIso8601String(),
+                    'unread_count'    => (int) ($unread[$j->id] ?? 0),
+                ];
+            })
+            ->sortByDesc('last_message_at')
+            ->values();
+
+        return $this->noStore(['data' => $rows]);
+    }
+
     // ── Shared ───────────────────────────────────────────────────────────────
 
     private function list(Request $request, DeliveryJob $job, string $me): JsonResponse

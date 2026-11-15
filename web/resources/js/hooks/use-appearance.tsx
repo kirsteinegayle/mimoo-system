@@ -37,7 +37,15 @@ const getStoredAppearance = (): Appearance => {
     return (localStorage.getItem('appearance') as Appearance) || 'system';
 };
 
+// Every Mimoo page (buyer, seller, courier, logistics, admin) is a light-only
+// design. Following the OS dark mode flipped the shared --foreground / --card
+// tokens and color-scheme to dark, which rendered white text and white native
+// inputs on white cards. The site is therefore always light; the hook API is
+// kept so existing callers keep working.
+const FORCE_LIGHT = true;
+
 const isDarkMode = (appearance: Appearance): boolean => {
+    if (FORCE_LIGHT) return false;
     return appearance === 'dark' || (appearance === 'system' && prefersDark());
 };
 

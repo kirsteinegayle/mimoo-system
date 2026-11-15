@@ -80,6 +80,11 @@ return [
 
     'timezone' => 'UTC',
 
+    // Local time of the shop (Philippines). Dates typed by staff (e.g. voucher
+    // start / end in Admin > Vouchers) are entered in this zone and converted
+    // to UTC for storage; see App\Services\VoucherService.
+    'display_timezone' => 'Asia/Manila',
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

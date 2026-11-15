@@ -688,7 +688,7 @@ export default function LogisticsRegistration() {
                                         {isDone && <span className="w-1.5 h-1.5 rounded-full bg-[#201A33]" />}
                                         {isCurrent && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                                     </span>
-                                    <span className={isDone || isCurrent ? 'text-white' : 'text-white/40'}>{label}</span>
+                                    <span className={isDone || isCurrent ? 'text-white' : 'text-white/60'}>{label}</span>
                                 </li>
                             );
                         })}

@@ -248,36 +248,19 @@ class OrderController extends Controller
             $voucherUsage = null;
             
             if (!empty($validated['voucher_code'])) {
-                $voucher = \App\Models\Voucher::where('code', strtoupper($validated['voucher_code']))->first();
-                
-                if (!$voucher || !$voucher->isValid()) {
+                // Same rules as the mobile checkout (VoucherService): live voucher
+                // (dates, status, uses left), an unused claim in the wallet, min spend.
+                // The voucher row is locked so two orders cannot take the last use.
+                $check = \App\Services\VoucherService::prepareUse($user, (string) $validated['voucher_code'], (float) $total);
+                if (! $check['ok']) {
                     DB::rollBack();
-                    return response()->json(['error' => 'Invalid or expired voucher code.'], 400);
+                    return response()->json(['error' => $check['message']], 400);
                 }
-                
-                // Check if user has CLAIMED this voucher
-                $voucherUsage = \App\Models\VoucherUsage::where('voucher_id', $voucher->id)
-                    ->where('user_id', $user->id)
-                    ->first();
-                
-                if (!$voucherUsage) {
-                    DB::rollBack();
-                    return response()->json(['error' => 'You need to claim this voucher first before using it.'], 400);
-                }
-                
-                // Check if already used
-                if ($voucherUsage->used_at !== null) {
-                    DB::rollBack();
-                    return response()->json(['error' => 'You have already used this voucher.'], 400);
-                }
-                
-                if ($total < $voucher->min_purchase) {
-                    DB::rollBack();
-                    return response()->json(['error' => "Minimum purchase of ₱" . number_format($voucher->min_purchase, 2) . " required for this voucher."], 400);
-                }
-                
+                $voucher = $check['voucher'];
+                $voucherUsage = $check['usage'];
+
                 // Calculate discount
-                $voucherDiscount = $voucher->calculateDiscount($total);
+                $voucherDiscount = $check['discount'];
                 
                 // Apply discount to total
                 $total = max(0, $total - $voucherDiscount);
@@ -304,12 +287,8 @@ class OrderController extends Controller
 
             // Record voucher usage (if voucher was applied)
             if ($voucher && $voucherUsage) {
-                // Update the existing claim record to mark as used
-                $voucherUsage->update([
-                    'order_id' => $order->id,
-                    'discount_amount' => $voucherDiscount,
-                    'used_at' => now(),
-                ]);
+                // Mark the wallet claim used and count one use on the voucher.
+                \App\Services\VoucherService::markUsed($voucher, $voucherUsage, $order, (float) $voucherDiscount);
             }
 
             // Update StockLog reference_id with order ID
@@ -422,6 +401,36 @@ class OrderController extends Controller
     }
 
     /**
+     * The rider on the order's latest delivery job (first name only), whether
+     * the delivery chat is open, unread rider messages and whether a proof of
+     * delivery photo exists. Null when no rider was ever assigned.
+     */
+    public static function riderInfo(Order $order): ?array
+    {
+        $job = \App\Models\DeliveryJob::where('order_id', $order->id)->latest('id')->first();
+        if (! $job || ! $job->rider_user_id) {
+            return null;
+        }
+
+        $rider = \App\Models\User::find($job->rider_user_id, ['id', 'first_name', 'name']);
+        $first = trim((string) ($rider->first_name ?? ''));
+        if ($first === '') {
+            $first = trim((string) strtok(trim((string) ($rider->name ?? '')), ' '));
+        }
+
+        return [
+            'name'          => $first !== '' ? $first : 'Your rider',
+            'job_status'    => $job->status,
+            'can_chat'      => in_array($job->status, \App\Http\Controllers\Api\DeliveryChatController::OPEN_STATUSES, true),
+            'unread'        => \App\Models\DeliveryMessage::where('delivery_job_id', $job->id)
+                ->where('sender_role', \App\Models\DeliveryMessage::ROLE_RIDER)
+                ->whereNull('read_at')
+                ->count(),
+            'has_pod_photo' => \App\Models\DeliveryJob::where('order_id', $order->id)->whereNotNull('pod_photo_path')->exists(),
+        ];
+    }
+
+    /**
      * Return + review state of an order for the buyer web (same rules as the
      * mobile API via ReturnReviewRules). Additive fields only.
      *
@@ -443,7 +452,7 @@ class OrderController extends Controller
                     'comment'  => $review->comment,
                     'can_edit' => $review->canBeEdited(),
                 ] : null,
-                'can_review' => ! $review && $open,
+                'can_review' => ! $review && $open && \App\Services\ReturnReviewRules::itemReviewable($item),
             ];
         }
 
@@ -551,6 +560,10 @@ class OrderController extends Controller
                     'seller_name' => $item->seller ? ($item->seller->business_name ?: $item->seller->name) : null,
                 ] + ($rr['items'][$item->id] ?? [])),
                 'sellers' => $this->orderSellers($order),
+                // Assigned rider (latest delivery job) for "Message Rider"; null until a rider is assigned.
+                'rider' => self::riderInfo($order),
+                // "Order received" button: same rule as POST /api/buyer/orders/{id}/receive.
+                'can_receive' => $order->status === 'shipped' && ! $order->hasOpenReturn(),
             ] + $rr['order'],
             // Same list as the mobile API validates against.
             'returnReasons' => \App\Models\ReturnRequest::REASONS,
@@ -613,6 +626,9 @@ class OrderController extends Controller
 
             // Update order status
             $order->update(['status' => 'cancelled']);
+
+            // Give a used voucher back to the buyer's wallet (same as mobile cancel).
+            \App\Services\VoucherService::release($order);
 
             DB::commit();
 

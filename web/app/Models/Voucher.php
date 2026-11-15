@@ -44,25 +44,22 @@ class Voucher extends Model
     // Check if voucher is valid
     public function isValid(): bool
     {
-        $now = Carbon::now();
-        
-        return $this->status === 'active' 
-            && $now->between($this->valid_from, $this->valid_until)
-            && ($this->usage_limit === null || $this->usage_count < $this->usage_limit);
+        // Active, started, not ended, uses left (usage_count = orders that used it).
+        return \App\Services\VoucherService::isLive($this);
     }
 
-    // Check if user can use this voucher
+    // Check if user can use this voucher: has an unused claim in the wallet.
+    // (Claim rows are not uses; only rows with used_at count.)
     public function canBeUsedBy(User $user): bool
     {
         if (!$this->isValid()) {
             return false;
         }
 
-        $userUsageCount = $this->usages()
+        return $this->usages()
             ->where('user_id', $user->id)
-            ->count();
-
-        return $userUsageCount < $this->usage_per_user;
+            ->whereNull('used_at')
+            ->exists();
     }
 
     // Calculate discount amount

@@ -108,8 +108,33 @@ export default function Checkout() {
   // Check if selected region is NCR
   const isNCR = region === "National Capital Region (NCR)";
   
-  // Check if user has saved address
-  const hasSavedAddress = user?.region && user?.municipality_city && user?.barangay && user?.street_address;
+  // Has a complete shipping address (profile, address book or typed in the modal)
+  const hasSavedAddress = !!(region && city && barangay && street);
+
+  // Address book (same /buyer/addresses as the buyer app). The default entry is
+  // pre-selected like the app's checkout; the buyer can switch in the modal.
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const applySaved = (a: any) => {
+    if (!a) return;
+    setShippingName(a.recipient_name || "");
+    setShippingPhone(a.phone || "");
+    setRegion(a.region || "");
+    setProvince(a.province || "");
+    setCity(a.municipality_city || "");
+    setBarangay(a.barangay || "");
+    setStreet(a.street_address || "");
+  };
+  useEffect(() => {
+    fetch("/buyer/addresses", { credentials: "same-origin", headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" } })
+      .then((r) => (r.ok ? r.json() : { data: [] }))
+      .then((j) => {
+        const rows = Array.isArray(j?.data) ? j.data : [];
+        setSavedAddresses(rows);
+        applySaved(rows.find((a: any) => a.is_default));
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Created ONCE per checkout page, so double-clicks/retries reuse the same key
   const idempotencyKeyRef = useRef(
@@ -661,6 +686,24 @@ export default function Checkout() {
               </button>
             </div>
             <div className="p-6 space-y-4">
+              {savedAddresses.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold text-[#2A1B4D] mb-1">Use a saved address</label>
+                  <select
+                    defaultValue=""
+                    onChange={(e) => applySaved(savedAddresses.find((a) => String(a.id) === e.target.value))}
+                    className={inputClass}
+                  >
+                    <option value="">Choose from your address book…</option>
+                    {savedAddresses.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.label}{a.is_default ? " (default)" : ""} · {a.recipient_name} · {a.municipality_city}
+                      </option>
+                    ))}
+                  </select>
+                  <a href="/addresses" className="mt-1 inline-block text-xs font-semibold text-[#4B2E7E] hover:underline">Manage addresses</a>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-semibold text-[#2A1B4D] mb-1">Full Name</label>
                 <input type="text" value={shippingName} onChange={(e) => setShippingName(e.target.value)} className={inputClass} />

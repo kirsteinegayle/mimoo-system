@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mimoo_rider/widgets/mimoo_logo.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mimoo_rider/core/auth_controller.dart';
@@ -81,7 +81,7 @@ void main() {
     expect(find.byType(LoginScreen), findsOneWidget);
 
     // Required UI elements.
-    expect(find.byType(SvgPicture), findsWidgets);
+    expect(find.byType(MimooLogo), findsWidgets);
     expect(find.text('Log In'), findsWidgets);
     expect(find.text('Welcome back, Rider'), findsOneWidget);
     expect(find.text('Email'), findsOneWidget);

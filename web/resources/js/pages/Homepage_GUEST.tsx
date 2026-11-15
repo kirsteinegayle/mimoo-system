@@ -407,7 +407,6 @@ export default function Homepage() {
   const { auth } = usePage<{ auth: { user: any } }>().props;
   const user = auth?.user;
   const role: UserRole = user ? (user.account_type as UserRole) : "guest";
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
 
   function handleLogout() {
@@ -513,7 +512,7 @@ export default function Homepage() {
 
       {/* Chat Button */}
       <button
-        onClick={() => setIsChatOpen(!isChatOpen)}
+        onClick={() => (user ? router.visit("/messages") : setShowSignupModal(true))}
         className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-all hover:scale-110"
         style={{ backgroundColor: '#1c1430' }}
         aria-label="Open chat"

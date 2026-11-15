@@ -1,9 +1,10 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { AlertTriangle, Check, CheckCircle2, ClipboardList, Clock, Eye, History, Inbox, Loader2, MapPin, Package, PackageSearch, Search, Store, X, XCircle } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import CourierLayout from './CourierLayout';
 import TrackingLine from '@/components/tracking-line';
+import { Card, HERO_GRADIENT, PageHeader, StatusBadge, prettyStatus } from '@/components/courier/ui';
 
-const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
 const fontSyne = { fontFamily: 'Syne, sans-serif' };
 
 interface Shipment {
@@ -148,18 +149,11 @@ export default function IncomingShipments({ auth, company, shipments: initialShi
 
     const getStatusBadge = (status: string, isOverdue: boolean, isExpiring: boolean) => {
         if (status === 'pending') {
-            if (isOverdue) {
-                return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">Overdue</span>;
-            }
-            if (isExpiring) {
-                return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">Expiring Soon</span>;
-            }
-            return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">Pending</span>;
+            if (isOverdue) return <StatusBadge status="rejected" label="Overdue" />;
+            if (isExpiring) return <StatusBadge status="out_for_delivery" label="Expiring soon" />;
+            return <StatusBadge status="pending" />;
         }
-        if (status === 'accepted') {
-            return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Accepted</span>;
-        }
-        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Rejected</span>;
+        return <StatusBadge status={status} />;
     };
 
     const handleFilterChange = (key: string, value: any) => {
@@ -312,250 +306,237 @@ export default function IncomingShipments({ auth, company, shipments: initialShi
             });
     };
 
+    const field =
+        'w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#4B2E7E] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4B2E7E]/20';
+
+    const statTiles: { key: string; label: string; hint: string; value: number; icon: typeof Inbox; tone: string }[] = [
+        { key: 'all', label: 'Total', hint: 'All assignments', value: stats.total, icon: Inbox, tone: 'bg-violet-100 text-violet-700' },
+        { key: 'pending', label: 'Pending', hint: 'Awaiting response', value: stats.pending, icon: Clock, tone: 'bg-amber-100 text-amber-700' },
+        { key: 'accepted', label: 'Accepted', hint: 'Confirmed', value: stats.accepted, icon: CheckCircle2, tone: 'bg-emerald-100 text-emerald-700' },
+        { key: 'rejected', label: 'Rejected', hint: 'Declined', value: stats.rejected, icon: XCircle, tone: 'bg-gray-100 text-gray-600' },
+    ];
+
+    const rowActions = (shipment: Shipment, full = false) => (
+        <div className={`flex items-center gap-2 ${full ? 'w-full' : ''}`}>
+            <button
+                type="button"
+                onClick={() => fetchShipmentDetails(shipment.id)}
+                className={`inline-flex items-center justify-center gap-1 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-[#4B2E7E] hover:bg-violet-50 ${full ? 'flex-1' : ''}`}
+            >
+                <Eye className="h-3.5 w-3.5" /> View
+            </button>
+            {shipment.assignment_status === 'pending' && (
+                <>
+                    <button
+                        type="button"
+                        onClick={() => handleAccept(shipment.id)}
+                        disabled={actionLoading}
+                        className={`inline-flex items-center justify-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 ${full ? 'flex-1' : ''}`}
+                    >
+                        <Check className="h-3.5 w-3.5" /> Accept
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            fetchShipmentDetails(shipment.id);
+                            setShowRejectModal(true);
+                        }}
+                        disabled={actionLoading}
+                        className={`inline-flex items-center justify-center gap-1 rounded-xl bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50 ${full ? 'flex-1' : ''}`}
+                    >
+                        <X className="h-3.5 w-3.5" /> Reject
+                    </button>
+                </>
+            )}
+        </div>
+    );
+
+    const Info = ({ label, children }: { label: string; children: ReactNode }) => (
+        <div>
+            <dt className="text-xs font-medium uppercase tracking-wide text-gray-400">{label}</dt>
+            <dd className="mt-0.5 break-words text-sm font-semibold text-gray-900">{children}</dd>
+        </div>
+    );
+
+    const Section = ({ icon: Icon, title, children }: { icon: typeof Inbox; title: string; children: ReactNode }) => (
+        <section className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-[#1c1430]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#F1ECFA] text-[#4B2E7E]">
+                    <Icon className="h-4 w-4" />
+                </span>
+                {title}
+            </h3>
+            {children}
+        </section>
+    );
+
     return (
         <CourierLayout auth={auth} company={company} activeTab="incoming-shipments" pageTitle="Incoming Shipments">
             <Head title="Incoming Shipments" />
-            
-            <div className="max-w-7xl mx-auto space-y-6" style={fontSyne}>
-                {/* Success Message */}
+
+            <div className="mx-auto max-w-7xl space-y-5" style={fontSyne}>
+                <PageHeader icon={Inbox} title="Incoming shipments" subtitle="Parcels assigned to your company. Accept to schedule pickup, or reject with a reason." />
+
                 {success && (
-                    <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-                        {success}
+                    <div role="status" className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        <CheckCircle2 className="h-4 w-4" /> {success}
+                    </div>
+                )}
+                {error && !showRejectModal && (
+                    <div role="alert" className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                        <AlertTriangle className="h-4 w-4" /> {error}
                     </div>
                 )}
 
-                {/* Error Message */}
-                {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                        {error}
-                    </div>
-                )}
-
-                {/* Summary Cards */}
-                <div className="grid grid-cols-5 gap-6">
-                    <button
-                        onClick={() => handleCardFilter('all')}
-                        className={`bg-white rounded-xl border p-6 hover:shadow-lg transition text-left ${filters.status === 'all' ? 'border-[#3B1F6B] shadow-md' : 'border-gray-200'}`}
-                    >
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-600">
-                                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
-                                    <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
-                                </svg>
-                            </div>
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide" style={fontSyncopate}>Total</div>
-                        </div>
-                        <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
-                        <div className="text-sm text-gray-600 mt-1">All assignments</div>
-                    </button>
-
-                    <button
-                        onClick={() => handleCardFilter('pending')}
-                        className={`bg-white rounded-xl border p-6 hover:shadow-lg transition text-left ${filters.status === 'pending' ? 'border-[#3B1F6B] shadow-md' : 'border-gray-200'}`}
-                    >
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-yellow-600">
-                                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                                </svg>
-                            </div>
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide" style={fontSyncopate}>Pending</div>
-                        </div>
-                        <div className="text-3xl font-bold text-gray-900">{stats.pending}</div>
-                        <div className="text-sm text-gray-600 mt-1">Awaiting response</div>
-                    </button>
-
-                    <button
-                        onClick={() => handleCardFilter('accepted')}
-                        className={`bg-white rounded-xl border p-6 hover:shadow-lg transition text-left ${filters.status === 'accepted' ? 'border-[#3B1F6B] shadow-md' : 'border-gray-200'}`}
-                    >
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600">
-                                    <polyline points="20 6 9 17 4 12"/>
-                                </svg>
-                            </div>
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide" style={fontSyncopate}>Accepted</div>
-                        </div>
-                        <div className="text-3xl font-bold text-gray-900">{stats.accepted}</div>
-                        <div className="text-sm text-gray-600 mt-1">Confirmed</div>
-                    </button>
-
-                    <button
-                        onClick={() => handleCardFilter('rejected')}
-                        className={`bg-white rounded-xl border p-6 hover:shadow-lg transition text-left ${filters.status === 'rejected' ? 'border-[#3B1F6B] shadow-md' : 'border-gray-200'}`}
-                    >
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
-                                    <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                                </svg>
-                            </div>
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide" style={fontSyncopate}>Rejected</div>
-                        </div>
-                        <div className="text-3xl font-bold text-gray-900">{stats.rejected}</div>
-                        <div className="text-sm text-gray-600 mt-1">Declined</div>
-                    </button>
-
-                    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-600">
-                                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                                </svg>
-                            </div>
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide" style={fontSyncopate}>Urgent</div>
-                        </div>
-                        <div className="text-3xl font-bold text-gray-900">{stats.expiring}</div>
-                        <div className="text-sm text-gray-600 mt-1">Expiring/Overdue</div>
+                {/* Summary (click to filter) */}
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+                    {statTiles.map(({ key, label, hint, value, icon: Icon, tone }) => {
+                        const on = filters.status === key;
+                        return (
+                            <button
+                                key={key}
+                                type="button"
+                                onClick={() => handleCardFilter(key)}
+                                className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-5 ${
+                                    on ? 'border-[#4B2E7E] ring-2 ring-[#4B2E7E]/15' : 'border-gray-100'
+                                }`}
+                            >
+                                <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${tone}`}>
+                                    <Icon className="h-5 w-5" />
+                                </span>
+                                <p className="mt-3 text-3xl font-bold tabular-nums text-[#1c1430]">{value}</p>
+                                <p className="text-sm font-semibold text-gray-700">{label}</p>
+                                <p className="text-xs text-gray-500">{hint}</p>
+                            </button>
+                        );
+                    })}
+                    <div className={`col-span-2 rounded-2xl border p-4 shadow-sm sm:p-5 lg:col-span-1 ${stats.expiring > 0 ? 'border-rose-200 bg-rose-50' : 'border-gray-100 bg-white'}`}>
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-700">
+                            <AlertTriangle className="h-5 w-5" />
+                        </span>
+                        <p className="mt-3 text-3xl font-bold tabular-nums text-[#1c1430]">{stats.expiring}</p>
+                        <p className="text-sm font-semibold text-gray-700">Urgent</p>
+                        <p className="text-xs text-gray-500">Expiring or overdue</p>
                     </div>
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
-                    <div className="grid grid-cols-6 gap-4">
-                        <div className="col-span-2">
+                <Card>
+                    <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6">
+                        <div className="relative sm:col-span-2">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Search by Waybill or Order #"
+                                placeholder="Search by waybill or order #"
                                 value={filters.search || ''}
                                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3B1F6B] focus:border-transparent"
+                                className={`${field} pl-9`}
                             />
                         </div>
-
-                        <div>
-                            <select
-                                value={filters.seller || ''}
-                                onChange={(e) => handleFilterChange('seller', e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3B1F6B] focus:border-transparent"
-                            >
-                                <option value="">All Sellers</option>
-                                {sellers.map((seller) => (
-                                    <option key={seller.id} value={seller.id}>{seller.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <input
-                                type="text"
-                                placeholder="Destination"
-                                value={filters.destination || ''}
-                                onChange={(e) => handleFilterChange('destination', e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3B1F6B] focus:border-transparent"
-                            />
-                        </div>
-
-                        <div>
-                            <input
-                                type="date"
-                                placeholder="From Date"
-                                value={filters.date_from || ''}
-                                onChange={(e) => handleFilterChange('date_from', e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3B1F6B] focus:border-transparent"
-                            />
-                        </div>
-
-                        <div>
-                            <input
-                                type="date"
-                                placeholder="To Date"
-                                value={filters.date_to || ''}
-                                onChange={(e) => handleFilterChange('date_to', e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3B1F6B] focus:border-transparent"
-                            />
-                        </div>
+                        <select value={filters.seller || ''} onChange={(e) => handleFilterChange('seller', e.target.value)} className={field} aria-label="Seller">
+                            <option value="">All sellers</option>
+                            {sellers.map((seller) => (
+                                <option key={seller.id} value={seller.id}>
+                                    {seller.name}
+                                </option>
+                            ))}
+                        </select>
+                        <input type="text" placeholder="Destination" value={filters.destination || ''} onChange={(e) => handleFilterChange('destination', e.target.value)} className={field} />
+                        <input type="date" aria-label="From date" value={filters.date_from || ''} onChange={(e) => handleFilterChange('date_from', e.target.value)} className={field} />
+                        <input type="date" aria-label="To date" value={filters.date_to || ''} onChange={(e) => handleFilterChange('date_to', e.target.value)} className={field} />
                     </div>
-                    <div className="mt-4 flex justify-end">
-                        <button
-                            onClick={handleClearFilters}
-                            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition"
-                        >
+                    <div className="flex justify-end border-t border-gray-100 px-4 py-2">
+                        <button type="button" onClick={handleClearFilters} className="text-sm font-semibold text-gray-500 hover:text-[#4B2E7E]">
                             Clear filters
                         </button>
                     </div>
-                </div>
+                </Card>
 
-                {/* Shipments Table */}
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                {/* Shipments */}
+                <Card>
                     {shipments.length === 0 ? (
-                        <div className="text-center py-12 text-gray-400">
-                            <svg className="w-12 h-12 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
-                                <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
-                            </svg>
-                            <p className="text-sm">
-                                {Object.values(filters).some(v => v && v !== 'all') 
-                                    ? 'No results. Try clearing filters.' 
-                                    : 'No incoming shipments yet'}
+                        <div className="py-14 text-center text-gray-400">
+                            <PackageSearch className="mx-auto mb-3 h-10 w-10" />
+                            <p className="text-sm font-medium text-gray-500">
+                                {Object.values(filters).some((v) => v && v !== 'all') ? 'No results. Try clearing filters.' : 'No incoming shipments yet'}
                             </p>
                         </div>
                     ) : (
                         <>
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50 border-b border-gray-200">
+                            {/* Phones: cards */}
+                            <ul className="divide-y divide-gray-100 lg:hidden">
+                                {shipments.map((shipment) => (
+                                    <li key={shipment.id} className="space-y-3 p-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="truncate font-mono text-sm font-semibold text-gray-900">{shipment.waybill_number}</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {shipment.order_number} · {shipment.assigned_date}
+                                                </p>
+                                            </div>
+                                            {getStatusBadge(shipment.assignment_status, shipment.is_overdue, shipment.is_expiring_soon)}
+                                        </div>
+                                        <div className="space-y-1.5 text-sm">
+                                            <p className="flex items-start gap-2 text-gray-700">
+                                                <Store className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                                                <span>
+                                                    <span className="font-semibold text-gray-900">{shipment.seller_name}</span>
+                                                    <span className="block text-xs text-gray-500">{shipment.pickup_address}</span>
+                                                </span>
+                                            </p>
+                                            <p className="flex items-center gap-2 text-gray-700">
+                                                <MapPin className="h-4 w-4 shrink-0 text-gray-400" /> {shipment.destination}
+                                            </p>
+                                            <p className="flex items-center gap-2 text-xs text-gray-500">
+                                                <Package className="h-4 w-4 shrink-0 text-gray-400" />
+                                                {typeof shipment.weight === 'number' ? `${shipment.weight} kg` : shipment.weight} · {shipment.dimensions}
+                                            </p>
+                                        </div>
+                                        <TrackingLine tracking={shipment} />
+                                        {rowActions(shipment, true)}
+                                    </li>
+                                ))}
+                            </ul>
+
+                            {/* Desktop: table */}
+                            <div className="hidden overflow-x-auto lg:block">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-[#FAF8FD] text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Waybill No.</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Order No.</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Seller</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Pickup Address</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Destination</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Details</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assigned</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                                            <th className="px-5 py-3">Waybill / Order</th>
+                                            <th className="px-5 py-3">Seller &amp; pickup</th>
+                                            <th className="px-5 py-3">Destination</th>
+                                            <th className="px-5 py-3">Parcel</th>
+                                            <th className="px-5 py-3">Assigned</th>
+                                            <th className="px-5 py-3">Status</th>
+                                            <th className="px-5 py-3 text-right">Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-200">
+                                    <tbody className="divide-y divide-gray-100">
                                         {shipments.map((shipment) => (
-                                            <tr key={shipment.id} className="hover:bg-gray-50 transition">
-                                                <td className="px-6 py-4 text-sm text-gray-900 font-medium">{shipment.waybill_number}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-900">{shipment.order_number}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-900">{shipment.seller_name}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{shipment.pickup_address}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">{shipment.destination}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">
-                                                    <div>{typeof shipment.weight === 'number' ? `${shipment.weight} kg` : <span className="text-gray-400">{shipment.weight}</span>}</div>
-                                                    <div className="text-xs text-gray-400">{shipment.dimensions}</div>
+                                            <tr key={shipment.id} className="align-top transition hover:bg-[#FAF8FD]">
+                                                <td className="px-5 py-4">
+                                                    <p className="font-mono font-semibold text-gray-900">{shipment.waybill_number}</p>
+                                                    <p className="text-xs text-gray-500">{shipment.order_number}</p>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">{shipment.assigned_date}</td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-5 py-4">
+                                                    <p className="font-semibold text-gray-900">{shipment.seller_name}</p>
+                                                    <p className="max-w-[220px] truncate text-xs text-gray-500" title={shipment.pickup_address}>
+                                                        {shipment.pickup_address}
+                                                    </p>
+                                                </td>
+                                                <td className="px-5 py-4 text-gray-700">{shipment.destination}</td>
+                                                <td className="px-5 py-4 text-gray-700">
+                                                    <p>{typeof shipment.weight === 'number' ? `${shipment.weight} kg` : <span className="text-gray-400">{shipment.weight}</span>}</p>
+                                                    <p className="text-xs text-gray-400">{shipment.dimensions}</p>
+                                                </td>
+                                                <td className="whitespace-nowrap px-5 py-4 text-gray-600">{shipment.assigned_date}</td>
+                                                <td className="px-5 py-4">
                                                     {getStatusBadge(shipment.assignment_status, shipment.is_overdue, shipment.is_expiring_soon)}
                                                     <TrackingLine tracking={shipment} className="mt-2 min-w-[200px]" />
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => fetchShipmentDetails(shipment.id)}
-                                                            className="text-sm text-[#3B1F6B] hover:underline"
-                                                        >
-                                                            View
-                                                        </button>
-                                                        {shipment.assignment_status === 'pending' && (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => handleAccept(shipment.id)}
-                                                                    disabled={actionLoading}
-                                                                    className="text-sm text-green-600 hover:underline disabled:opacity-50"
-                                                                >
-                                                                    Accept
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        fetchShipmentDetails(shipment.id);
-                                                                        setShowRejectModal(true);
-                                                                    }}
-                                                                    disabled={actionLoading}
-                                                                    className="text-sm text-red-600 hover:underline disabled:opacity-50"
-                                                                >
-                                                                    Reject
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
+                                                <td className="px-5 py-4">
+                                                    <div className="flex justify-end">{rowActions(shipment)}</div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -563,19 +544,20 @@ export default function IncomingShipments({ auth, company, shipments: initialShi
                                 </table>
                             </div>
 
-                            {/* Pagination */}
                             {pagination.last_page > 1 && (
-                                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                                    <div className="text-sm text-gray-600">
-                                        Showing {((pagination.current_page - 1) * pagination.per_page) + 1} to {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total} results
+                                <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-100 px-5 py-4 sm:flex-row">
+                                    <div className="text-sm text-gray-500">
+                                        Showing {(pagination.current_page - 1) * pagination.per_page + 1}–{Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total}
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-wrap gap-1.5">
                                         {pagination.links.map((link, index) => (
                                             <button
                                                 key={index}
                                                 onClick={() => link.url && router.get(link.url)}
                                                 disabled={!link.url}
-                                                className={`px-3 py-1 text-sm rounded ${link.active ? 'bg-[#3B1F6B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                className={`min-w-8 rounded-lg px-3 py-1 text-sm font-semibold ${
+                                                    link.active ? 'bg-[#2B2249] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                } disabled:cursor-not-allowed disabled:opacity-40`}
                                                 dangerouslySetInnerHTML={{ __html: link.label }}
                                             />
                                         ))}
@@ -584,249 +566,185 @@ export default function IncomingShipments({ auth, company, shipments: initialShi
                             )}
                         </>
                     )}
-                </div>
+                </Card>
 
-                {/* Details Modal */}
+                {loading && (
+                    <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/40">
+                        <Loader2 className="h-8 w-8 animate-spin text-[#4B2E7E]" />
+                    </div>
+                )}
+
+                {/* Details drawer / modal */}
                 {showDetailsModal && selectedShipment && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                            <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
-                                <h2 className="text-xl font-bold text-gray-900" style={fontSyncopate}>Shipment Details</h2>
+                    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setShowDetailsModal(false)}>
+                        <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-t-3xl bg-[#F6F4FA] shadow-2xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+                            <div className="relative shrink-0 px-5 py-5 text-white sm:px-6" style={{ background: HERO_GRADIENT }}>
                                 <button
+                                    type="button"
                                     onClick={() => setShowDetailsModal(false)}
-                                    className="text-gray-400 hover:text-gray-600"
+                                    aria-label="Close"
+                                    className="absolute right-3 top-3 rounded-lg p-2 text-white/80 hover:bg-white/10"
                                 >
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                                    </svg>
+                                    <X className="h-5 w-5" />
                                 </button>
+                                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-200">Shipment details</p>
+                                <h2 className="mt-1 font-mono text-xl font-bold">{selectedShipment.waybill_number}</h2>
+                                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-violet-100">
+                                    <span>{selectedShipment.order_number}</span>
+                                    <span className="rounded-full bg-white px-0.5">{getStatusBadge(selectedShipment.assignment_status, false, false)}</span>
+                                </div>
                             </div>
 
-                            <div className="p-6 space-y-6">
-                                {/* Waybill and Order Info */}
-                                <div>
-                                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Order Information</h3>
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                            <span className="text-gray-500">Waybill Number:</span>
-                                            <div className="font-medium text-gray-900">{selectedShipment.waybill_number}</div>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Order Number:</span>
-                                            <div className="font-medium text-gray-900">{selectedShipment.order_number}</div>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Status:</span>
-                                            <div className="mt-1">{getStatusBadge(selectedShipment.assignment_status, false, false)}</div>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Assigned By:</span>
-                                            <div className="font-medium text-gray-900">{selectedShipment.assigned_by}</div>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Assigned At:</span>
-                                            <div className="font-medium text-gray-900">{selectedShipment.assigned_at}</div>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Deadline:</span>
-                                            <div className="font-medium text-gray-900">{selectedShipment.acceptance_deadline}</div>
-                                        </div>
-                                    </div>
+                            <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
+                                <Section icon={ClipboardList} title="Order information">
+                                    <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                                        <Info label="Assigned by">{selectedShipment.assigned_by}</Info>
+                                        <Info label="Assigned at">{selectedShipment.assigned_at}</Info>
+                                        <Info label="Deadline">{selectedShipment.acceptance_deadline}</Info>
+                                        <Info label="Payment">{selectedShipment.payment_method ? prettyStatus(selectedShipment.payment_method) : '—'}</Info>
+                                        <Info label="Items">{selectedShipment.items_count}</Info>
+                                    </dl>
+                                    <TrackingLine tracking={selectedShipment} className="mt-4" />
+                                </Section>
+
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {selectedShipment.seller && (
+                                        <Section icon={Store} title="Seller & pickup">
+                                            <dl className="space-y-3">
+                                                <Info label="Name">{selectedShipment.seller.name}</Info>
+                                                <Info label="Phone">{selectedShipment.seller.phone}</Info>
+                                                <Info label="Email">{selectedShipment.seller.email}</Info>
+                                                <Info label="Pickup address">
+                                                    {selectedShipment.seller.address}, {selectedShipment.seller.city}, {selectedShipment.seller.province}
+                                                </Info>
+                                            </dl>
+                                        </Section>
+                                    )}
+                                    <Section icon={MapPin} title="Destination">
+                                        <dl className="grid grid-cols-2 gap-3">
+                                            <Info label="City">{selectedShipment.buyer_destination.city}</Info>
+                                            <Info label="Barangay">{selectedShipment.buyer_destination.barangay}</Info>
+                                            <Info label="Province">{selectedShipment.buyer_destination.province}</Info>
+                                            <Info label="Region">{selectedShipment.buyer_destination.region}</Info>
+                                        </dl>
+                                        <p className="mt-3 rounded-lg bg-violet-50 px-3 py-2 text-xs text-[#4B2E7E]">Full buyer details become available after acceptance.</p>
+                                    </Section>
                                 </div>
 
-                                {/* Delivery tracking (nothing shown when null) */}
-                                <TrackingLine tracking={selectedShipment} />
-
-                                {/* Seller Details */}
-                                {selectedShipment.seller && (
-                                    <div>
-                                        <h3 className="text-sm font-semibold text-gray-900 mb-3">Seller Contact Details</h3>
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <span className="text-gray-500">Name:</span>
-                                                <div className="font-medium text-gray-900">{selectedShipment.seller.name}</div>
-                                            </div>
-                                            <div>
-                                                <span className="text-gray-500">Email:</span>
-                                                <div className="font-medium text-gray-900">{selectedShipment.seller.email}</div>
-                                            </div>
-                                            <div>
-                                                <span className="text-gray-500">Phone:</span>
-                                                <div className="font-medium text-gray-900">{selectedShipment.seller.phone}</div>
-                                            </div>
-                                            <div className="col-span-2">
-                                                <span className="text-gray-500">Pickup Address:</span>
-                                                <div className="font-medium text-gray-900">{selectedShipment.seller.address}, {selectedShipment.seller.city}, {selectedShipment.seller.province}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Buyer Destination (Limited) */}
-                                <div>
-                                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Destination (Limited Info)</h3>
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                            <span className="text-gray-500">City:</span>
-                                            <div className="font-medium text-gray-900">{selectedShipment.buyer_destination.city}</div>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Barangay:</span>
-                                            <div className="font-medium text-gray-900">{selectedShipment.buyer_destination.barangay}</div>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Province:</span>
-                                            <div className="font-medium text-gray-900">{selectedShipment.buyer_destination.province}</div>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Region:</span>
-                                            <div className="font-medium text-gray-900">{selectedShipment.buyer_destination.region}</div>
-                                        </div>
-                                    </div>
-                                    <p className="text-xs text-gray-400 mt-2">Full buyer details will be available after acceptance.</p>
-                                </div>
-
-                                {/* Parcel Details */}
-                                <div>
-                                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Parcel Details</h3>
-                                    <div className="grid grid-cols-3 gap-4 text-sm">
-                                        <div>
-                                            <span className="text-gray-500">Weight:</span>
-                                            <div className="font-medium text-gray-900">
-                                                {typeof selectedShipment.weight === 'number' ? `${selectedShipment.weight} kg` : <span className="text-gray-400">{selectedShipment.weight}</span>}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Dimensions:</span>
-                                            <div className="font-medium text-gray-900">
-                                                {selectedShipment.dimensions === 'Not provided' ? <span className="text-gray-400">{selectedShipment.dimensions}</span> : selectedShipment.dimensions}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Items Count:</span>
-                                            <div className="font-medium text-gray-900">{selectedShipment.items_count}</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Special Instructions */}
-                                <div>
-                                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Pickup Instructions</h3>
-                                    <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
+                                <Section icon={Package} title="Parcel">
+                                    <dl className="grid grid-cols-3 gap-4">
+                                        <Info label="Weight">
+                                            {typeof selectedShipment.weight === 'number' ? `${selectedShipment.weight} kg` : <span className="text-gray-400">{selectedShipment.weight}</span>}
+                                        </Info>
+                                        <Info label="Dimensions">
+                                            {selectedShipment.dimensions === 'Not provided' ? <span className="text-gray-400">{selectedShipment.dimensions}</span> : selectedShipment.dimensions}
+                                        </Info>
+                                        <Info label="Items">{selectedShipment.items_count}</Info>
+                                    </dl>
+                                    <div className="mt-4 rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
+                                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Pickup instructions</p>
                                         {selectedShipment.pickup_instructions}
                                     </div>
-                                </div>
+                                </Section>
 
-                                {/* Assignment History */}
                                 {shipmentHistory.length > 0 && (
-                                    <div>
-                                        <h3 className="text-sm font-semibold text-gray-900 mb-3">Assignment History</h3>
-                                        <div className="space-y-3">
+                                    <Section icon={History} title="Assignment history">
+                                        <ol className="relative space-y-4 border-l-2 border-violet-100 pl-5">
                                             {shipmentHistory.map((entry, index) => (
-                                                <div key={index} className="flex gap-3 text-sm">
-                                                    <div className="w-2 h-2 bg-[#3B1F6B] rounded-full mt-1.5"></div>
-                                                    <div className="flex-1">
-                                                        <div className="font-medium text-gray-900 capitalize">{entry.action}</div>
-                                                        <div className="text-xs text-gray-500">by {entry.performed_by} • {entry.created_at}</div>
-                                                        {entry.notes && <div className="text-xs text-gray-600 mt-1 italic">"{entry.notes}"</div>}
-                                                    </div>
-                                                </div>
+                                                <li key={index} className="relative">
+                                                    <span className="absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-white bg-[#4B2E7E] ring-2 ring-violet-100" />
+                                                    <p className="text-sm font-semibold capitalize text-gray-900">{entry.action}</p>
+                                                    <p className="text-xs text-gray-500">
+                                                        by {entry.performed_by} · {entry.created_at}
+                                                    </p>
+                                                    {entry.notes && <p className="mt-1 text-xs italic text-gray-600">“{entry.notes}”</p>}
+                                                </li>
                                             ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Action Buttons */}
-                                {selectedShipment.assignment_status === 'pending' && (
-                                    <div className="flex gap-3 pt-4 border-t border-gray-200">
-                                        <button
-                                            onClick={() => handleAccept(selectedShipment.id)}
-                                            disabled={actionLoading}
-                                            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
-                                        >
-                                            {actionLoading ? 'Processing...' : 'Accept Assignment'}
-                                        </button>
-                                        <button
-                                            onClick={() => setShowRejectModal(true)}
-                                            disabled={actionLoading}
-                                            className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition disabled:opacity-50"
-                                        >
-                                            Reject Assignment
-                                        </button>
-                                    </div>
+                                        </ol>
+                                    </Section>
                                 )}
 
                                 {selectedShipment.assignment_status === 'rejected' && selectedShipment.rejection_reason && (
-                                    <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
-                                        <div className="text-sm font-semibold text-red-900 mb-1">Rejection Reason:</div>
-                                        <div className="text-sm text-red-700">{selectedShipment.rejection_reason}</div>
+                                    <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+                                        <p className="mb-1 text-sm font-bold text-rose-900">Rejection reason</p>
+                                        <p className="text-sm text-rose-700">{selectedShipment.rejection_reason}</p>
                                     </div>
                                 )}
                             </div>
+
+                            {selectedShipment.assignment_status === 'pending' && (
+                                <div className="flex shrink-0 gap-3 border-t border-gray-200 bg-white p-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowRejectModal(true)}
+                                        disabled={actionLoading}
+                                        className="flex-1 rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
+                                    >
+                                        Reject
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAccept(selectedShipment.id)}
+                                        disabled={actionLoading}
+                                        className="flex-[2] rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                                    >
+                                        {actionLoading ? 'Processing…' : 'Accept assignment'}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
 
-                {/* Reject Modal */}
+                {/* Reject modal */}
                 {showRejectModal && selectedShipment && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-xl max-w-md w-full">
-                            <div className="p-6 border-b border-gray-200">
-                                <h2 className="text-xl font-bold text-gray-900" style={fontSyncopate}>Reject Assignment</h2>
+                    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center sm:p-4">
+                        <div className="w-full max-w-md overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-2xl">
+                            <div className="border-b border-gray-100 px-6 py-4">
+                                <h2 className="text-lg font-bold text-[#1c1430]">Reject assignment</h2>
+                                <p className="font-mono text-xs text-gray-500">{selectedShipment.waybill_number}</p>
                             </div>
 
-                            <div className="p-6 space-y-4">
+                            <div className="space-y-4 px-6 py-5">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Reason for Rejection *</label>
-                                    <select
-                                        value={rejectionReason}
-                                        onChange={(e) => setRejectionReason(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3B1F6B] focus:border-transparent"
-                                    >
+                                    <label className="mb-2 block text-sm font-semibold text-gray-700">Reason for rejection *</label>
+                                    <select value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} className={field}>
                                         <option value="">Select a reason</option>
                                         {REJECTION_REASONS.map((reason) => (
-                                            <option key={reason} value={reason}>{reason}</option>
+                                            <option key={reason} value={reason}>
+                                                {reason}
+                                            </option>
                                         ))}
                                     </select>
                                 </div>
 
                                 {rejectionReason === 'Other (specify below)' && (
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Please specify (min 10 characters) *</label>
-                                        <textarea
-                                            value={customReason}
-                                            onChange={(e) => setCustomReason(e.target.value)}
-                                            rows={4}
-                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3B1F6B] focus:border-transparent"
-                                            placeholder="Enter your reason..."
-                                        />
+                                        <label className="mb-2 block text-sm font-semibold text-gray-700">Please specify (min 10 characters) *</label>
+                                        <textarea value={customReason} onChange={(e) => setCustomReason(e.target.value)} rows={4} className={field} placeholder="Enter your reason..." />
                                     </div>
                                 )}
 
-                                {error && (
-                                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                                        {error}
-                                    </div>
-                                )}
+                                {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
                             </div>
 
-                            <div className="p-6 border-t border-gray-200 flex gap-3">
+                            <div className="flex gap-3 border-t border-gray-100 px-6 py-4">
                                 <button
                                     onClick={() => {
                                         setShowRejectModal(false);
                                         setError('');
                                     }}
                                     disabled={actionLoading}
-                                    className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition disabled:opacity-50"
+                                    className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-200 disabled:opacity-50"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={() => handleRejectSubmit(selectedShipment.id)}
                                     disabled={actionLoading || !rejectionReason}
-                                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition disabled:opacity-50"
+                                    className="flex-1 rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
                                 >
-                                    {actionLoading ? 'Processing...' : 'Confirm Rejection'}
+                                    {actionLoading ? 'Processing…' : 'Confirm rejection'}
                                 </button>
                             </div>
                         </div>

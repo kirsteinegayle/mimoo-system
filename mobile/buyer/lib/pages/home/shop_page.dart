@@ -16,6 +16,7 @@ import '../search/search_page.dart';
 import '../../utils/animations.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/header_actions.dart';
+import '../../widgets/home_voucher_strip.dart';
 
 // ── Mimoo Color Tokens ────────────────────────────────────────────────────────
 class MimooColors {
@@ -272,6 +273,8 @@ class _ShopPageState extends State<ShopPage> {
               SliverToBoxAdapter(child: _buildHeader()),
               SliverToBoxAdapter(child: _buildBanner()),
               SliverToBoxAdapter(child: _buildCategoryRow()),
+              // Same live vouchers as the web homepage (claim -> My Vouchers -> checkout).
+              const SliverToBoxAdapter(child: HomeVoucherStrip()),
               SliverToBoxAdapter(child: _buildQuickChips()),
               SliverToBoxAdapter(child: _buildFlashSaleSection()),
               // Promo banner hidden — fake "FREE Shipping today only" offer,

@@ -481,7 +481,7 @@ export default function SellerOrders({ orders: initial }: PageProps) {
   const wbOrder = wb ? orders.find((o) => o.id === wb.id) ?? null : null;
 
   const counts = useMemo(() => {
-    const c: Record<TabKey, number> = { all: orders.length, new: 0, to_prepare: 0, awaiting_pickup: 0, in_transit: 0, delivered: 0 };
+    const c: Record<TabKey, number> = { all: orders.length, new: 0, to_prepare: 0, awaiting_pickup: 0, in_transit: 0, delivered: 0, cancelled: 0 };
     orders.forEach((o) => (c[o.stage] += 1));
     return c;
   }, [orders]);

@@ -80,7 +80,7 @@ class BuyerOrderController extends Controller
                     'comment'  => $review->comment,
                     'can_edit' => $review->canBeEdited(),
                 ] : null,
-                'can_review'       => ! $review && $reviewWindowOpen,
+                'can_review'       => ! $review && $reviewWindowOpen && \App\Services\ReturnReviewRules::itemReviewable($item),
                 'id'               => $item->id,
                 'product_id'       => $item->product_id,
                 'product_name'     => $item->product_name,
@@ -316,39 +316,17 @@ class BuyerOrderController extends Controller
             $appliedVoucher  = null;
 
             if (! empty($validated['voucher_code'])) {
-                $code    = strtoupper(trim($validated['voucher_code']));
-                $voucher = Voucher::where('code', $code)->first();
-
-                if (! $voucher || ! $voucher->isValid()) {
+                // Same rules as the web checkout (VoucherService), voucher row locked.
+                $check = \App\Services\VoucherService::prepareUse($user, (string) $validated['voucher_code'], (float) $total);
+                if (! $check['ok']) {
                     DB::rollBack();
-                    return response()->json(['message' => 'Invalid or expired voucher code.'], 422);
+                    return response()->json(['message' => $check['message']], 422);
                 }
 
-                $vu = VoucherUsage::where('voucher_id', $voucher->id)
-                    ->where('user_id', $user->id)
-                    ->first();
-
-                if (! $vu) {
-                    DB::rollBack();
-                    return response()->json(['message' => 'You need to claim this voucher first.'], 422);
-                }
-
-                if ($vu->used_at !== null) {
-                    DB::rollBack();
-                    return response()->json(['message' => 'You have already used this voucher.'], 422);
-                }
-
-                if ($total < $voucher->min_purchase) {
-                    DB::rollBack();
-                    return response()->json([
-                        'message' => 'Minimum spend of ₱' . number_format($voucher->min_purchase, 2) . ' required for this voucher.',
-                    ], 422);
-                }
-
-                $voucherDiscount = (float) $voucher->calculateDiscount($total);
+                $voucherDiscount = (float) $check['discount'];
                 $total           = max(0, round($total - $voucherDiscount, 2));
-                $voucherUsage    = $vu;
-                $appliedVoucher  = $voucher;
+                $voucherUsage    = $check['usage'];
+                $appliedVoucher  = $check['voucher'];
             }
 
             $order = Order::create([
@@ -370,11 +348,8 @@ class BuyerOrderController extends Controller
 
             // Record voucher usage (mirrors web OrderController)
             if ($appliedVoucher && $voucherUsage) {
-                $voucherUsage->update([
-                    'order_id'        => $order->id,
-                    'discount_amount' => $voucherDiscount,
-                    'used_at'         => now(),
-                ]);
+                // Mark the wallet claim used and count one use (same as web).
+                \App\Services\VoucherService::markUsed($appliedVoucher, $voucherUsage, $order, (float) $voucherDiscount);
             }
 
             // 6. Update StockLog reference_id with the new order id — mirrors web
@@ -456,24 +431,19 @@ class BuyerOrderController extends Controller
 
             if (! $voucher) {
                 $voucherStatus = 'Voucher not found.';
-            } elseif ($voucher->status !== 'active' || now()->gt($voucher->valid_until)) {
-                $voucherStatus = 'This voucher has expired.';
             } elseif (now()->lt($voucher->valid_from)) {
                 $voucherStatus = 'This voucher is not yet available.';
+            } elseif ($merchandise < (float) $voucher->min_purchase && \App\Services\VoucherService::isLive($voucher)) {
+                $gap = (float) $voucher->min_purchase - $merchandise;
+                $voucherStatus = 'Spend ₱' . number_format($gap, 2) . ' more to use this voucher.';
             } else {
-                $vu = VoucherUsage::where('voucher_id', $voucher->id)
-                    ->where('user_id', $user->id)
-                    ->first();
-                if (! $vu) {
-                    $voucherStatus = 'You need to claim this voucher first.';
-                } elseif ($vu->used_at !== null) {
-                    $voucherStatus = 'You have already used this voucher.';
-                } elseif ($merchandise < $voucher->min_purchase) {
-                    $gap = $voucher->min_purchase - $merchandise;
-                    $voucherStatus = 'Spend ₱' . number_format($gap, 2) . ' more to use this voucher.';
-                } else {
-                    $discount      = (float) $voucher->calculateDiscount($merchandise);
+                // Same rules as checkout (VoucherService, no lock for a preview).
+                $check = \App\Services\VoucherService::prepareUse($user, $code, (float) $merchandise, false);
+                if ($check['ok']) {
+                    $discount      = (float) $check['discount'];
                     $voucherStatus = 'applied';
+                } else {
+                    $voucherStatus = $check['message'];
                 }
             }
         }
@@ -655,28 +625,8 @@ class BuyerOrderController extends Controller
 
             $order->update(['status' => 'cancelled']);
 
-            // Restore voucher if one was used on this order
-            $voucherUsage = VoucherUsage::where('order_id', $order->id)->first();
-            if ($voucherUsage) {
-                $voucher = Voucher::find($voucherUsage->voucher_id);
-                if ($voucher && $voucher->valid_until->gt(now())) {
-                    // Reset the usage record back to claimed-only (not used)
-                    $voucherUsage->update([
-                        'order_id'        => null,
-                        'discount_amount' => null,
-                        'used_at'         => null,
-                    ]);
-                    // Decrement global usage_count
-                    $voucher->decrement('usage_count');
-                    // If voucher was auto-expired due to usage limit, re-activate
-                    if ($voucher->status === 'expired'
-                        && $voucher->usage_limit !== null
-                        && $voucher->fresh()->usage_count < $voucher->usage_limit)
-                    {
-                        $voucher->update(['status' => 'active']);
-                    }
-                }
-            }
+            // Give a used voucher back to the buyer's wallet (same as web cancel).
+            \App\Services\VoucherService::release($order);
 
             DB::commit();
 

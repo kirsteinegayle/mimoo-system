@@ -46,6 +46,24 @@ class ReturnRequestInfo {
       );
 }
 
+/// Refund of a return request (same fields as the web refund status).
+class RefundInfo {
+  const RefundInfo({required this.status, required this.amount, this.method, this.reference, this.refundedAt});
+  final String status;
+  final double amount;
+  final String? method;
+  final String? reference;
+  final DateTime? refundedAt;
+
+  factory RefundInfo.fromJson(Map<String, dynamic> j) => RefundInfo(
+        status: j['status'] as String? ?? 'pending',
+        amount: (j['amount'] as num?)?.toDouble() ?? 0,
+        method: j['method'] as String?,
+        reference: j['reference'] as String?,
+        refundedAt: DateTime.tryParse(j['refunded_at'] as String? ?? ''),
+      );
+}
+
 class ReturnRepository {
   ReturnRepository._();
   static final ReturnRepository instance = ReturnRepository._();
@@ -85,6 +103,16 @@ class ReturnRepository {
   Future<ReturnRequestInfo> show(int id) async {
     final res = await ApiService.get('/buyer/returns/$id') as Map<String, dynamic>;
     return ReturnRequestInfo.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
+  /// Refund status for one of my returns (GET /api/buyer/refunds, keyed by
+  /// return id). Null while no refund record exists yet.
+  Future<RefundInfo?> refundFor(int returnId) async {
+    final res = await ApiService.get('/buyer/refunds') as Map<String, dynamic>;
+    final data = res['data'];
+    if (data is! Map) return null;
+    final row = data['$returnId'];
+    return row is Map ? RefundInfo.fromJson(Map<String, dynamic>.from(row)) : null;
   }
 
   Future<ReturnRequestInfo> escalate(int id) async {

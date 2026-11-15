@@ -53,6 +53,21 @@ class ReturnReviewRules
         return self::returnWindowOpen($order) && ! ($latest && $latest->isOpen());
     }
 
+    /**
+     * The order line is a real product bought from the seller on that line:
+     * product_id and seller_id are set and the product (even if later
+     * removed) belongs to that seller. Same check as BuyerReviewController::store.
+     */
+    public static function itemReviewable(\App\Models\OrderItem $item): bool
+    {
+        if (! $item->product_id || ! $item->seller_id) {
+            return false;
+        }
+        $sellerId = \App\Models\Product::withTrashed()->whereKey($item->product_id)->value('seller_id');
+
+        return $sellerId !== null && (int) $sellerId === (int) $item->seller_id;
+    }
+
     public static function reviewWindowOpen(Order $order): bool
     {
         $base = self::reviewBase($order);

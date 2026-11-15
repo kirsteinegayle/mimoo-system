@@ -27,7 +27,8 @@ const kBorder = Color(0xFFDDD8F0);
 const kText = Color(0xFF1A1035);
 
 /// Secondary text — muted purple-grey.
-const kSubtext = Color(0xFF8A84A3);
+// Secondary text. Was 0xFF8A84A3 (3.6:1 on white, below WCAG AA); now 5.6:1.
+const kSubtext = Color(0xFF6B6585);
 
 /// Success green.
 const kGreen = Color(0xFF1DB966);

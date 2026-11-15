@@ -274,7 +274,7 @@ export default function RiderManagement({ auth, company, pendingApplications = [
                                                             )}
                                                         </div>
                                                         {rider.assigned_branch && (
-                                                            <div className="text-xs text-gray-500">{rider.assigned_branch.code}</div>
+                                                            <div className="text-xs text-gray-500">{rider.assigned_branch?.code ?? ""}</div>
                                                         )}
                                                     </td>
                                                     <td className="py-4 px-4">
@@ -365,8 +365,8 @@ export default function RiderManagement({ auth, company, pendingApplications = [
                                                         <div className="text-sm text-gray-900">{rider.contact_number}</div>
                                                     </td>
                                                     <td className="py-4 px-4">
-                                                        <div className="text-sm text-gray-900">{rider.assigned_branch.name}</div>
-                                                        <div className="text-xs text-gray-500">{rider.assigned_branch.code}</div>
+                                                        <div className="text-sm text-gray-900">{rider.assigned_branch?.name ?? "No branch assigned"}</div>
+                                                        <div className="text-xs text-gray-500">{rider.assigned_branch?.code ?? ""}</div>
                                                     </td>
                                                     <td className="py-4 px-4">
                                                         <div className="text-sm text-gray-900 capitalize">{rider.vehicle_type}</div>

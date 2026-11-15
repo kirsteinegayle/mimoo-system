@@ -79,7 +79,23 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             'exceptions' => $held()->where('assignment_status', 'accepted')->where('pickup_status', 'failed')->count()
                 + $jobs()->whereIn('status', ['failed', 'return_to_sender'])->count(),
         ];
-        
+
+        // Latest delivery jobs for the "Recent deliveries" list.
+        $recentJobs = $jobs()->with(['order:id,waybill_number,shipping_name', 'rider:id,name,first_name'])
+            ->latest('updated_at')
+            ->limit(8)
+            ->get();
+        $recent = $recentJobs->map(fn ($j) => [
+            'id'           => $j->id,
+            'order_id'     => $j->order_id,
+            'order_number' => 'MIM-' . str_pad((string) $j->order_id, 8, '0', STR_PAD_LEFT),
+            'waybill'      => $j->order?->waybill_number,
+            'recipient'    => $j->order?->shipping_name,
+            'rider'        => trim((string) ($j->rider?->first_name ?: $j->rider?->name)) ?: null,
+            'status'       => $j->status,
+            'updated_at'   => $j->updated_at?->toISOString(),
+        ])->values();
+
         return Inertia::render('courier/CourierDashboard', [
             'auth' => [
                 'user' => [
@@ -94,6 +110,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                 'contact_person' => trim(($user->contact_first_name ?? '') . ' ' . ($user->contact_last_name ?? '')),
             ],
             'stats' => $stats,
+            'recent' => $recent,
         ]);
     })->name('courier.dashboard')->middleware('role:courier,logistics_staff');
     
@@ -1680,8 +1697,41 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     })->name('seller.account');
     
     // Seller Customers page
-    Route::get('/seller/customers', function () {
-        return Inertia::render('seller/SellerCustomers');
+    Route::get('/seller/customers', function (\Illuminate\Http\Request $request) {
+        $sellerId = (int) $request->user()->id;
+
+        // One row per buyer who bought my items (cancelled orders excluded).
+        $rows = \Illuminate\Support\Facades\DB::table('order_items')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->join('users', 'users.id', '=', 'orders.buyer_id')
+            ->where('order_items.seller_id', $sellerId)
+            ->where('orders.status', '!=', 'cancelled')
+            ->groupBy('orders.buyer_id', 'users.name', 'users.email')
+            ->selectRaw('orders.buyer_id AS id, users.name, users.email, COUNT(DISTINCT orders.id) AS orders, SUM(order_items.quantity * order_items.unit_price) AS spent, MIN(orders.created_at) AS first_order, MAX(orders.created_at) AS last_order')
+            ->orderByDesc('last_order')
+            ->limit(500)
+            ->get();
+
+        $monthStart = now()->startOfMonth();
+        $orderCount = (int) $rows->sum('orders');
+
+        return Inertia::render('seller/SellerCustomers', [
+            'customers' => $rows->map(fn ($r) => [
+                'id'         => (int) $r->id,
+                'name'       => $r->name,
+                'email'      => $r->email,
+                'orders'     => (int) $r->orders,
+                'spent'      => round((float) $r->spent, 2),
+                'last_order' => \Illuminate\Support\Carbon::parse($r->last_order)->toISOString(),
+            ])->values(),
+            'stats' => [
+                'total'     => $rows->count(),
+                'new_month' => $rows->filter(fn ($r) => \Illuminate\Support\Carbon::parse($r->first_order)->gte($monthStart))->count(),
+                'repeat'    => $rows->filter(fn ($r) => (int) $r->orders > 1)->count(),
+                'avg_order' => $orderCount > 0 ? round((float) $rows->sum('spent') / $orderCount, 2) : 0,
+            ],
+            'initialTab' => $request->query('tab') === 'feedback' ? 'feedback' : 'customers',
+        ]);
     })->name('seller.customers');
     
     // Seller Analytics page
@@ -1818,36 +1868,9 @@ Route::get('/homepage', function (Illuminate\Http\Request $request) {
             'search' => $request->input('search', ''),
             'category' => $request->input('category', ''),
         ],
-        'vouchers' => \App\Models\Voucher::where('status', 'active')
-            ->where('valid_from', '<=', now())
-            ->where('valid_until', '>=', now())
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get()
-            ->map(function ($voucher) use ($request) {
-                $user = $request->user();
-                
-                // Check if user has already claimed this voucher
-                $userClaim = $user ? \App\Models\VoucherUsage::where('voucher_id', $voucher->id)
-                    ->where('user_id', $user->id)
-                    ->first() : null;
-                
-                return [
-                    'id' => $voucher->id,
-                    'code' => $voucher->code,
-                    'name' => $voucher->name,
-                    'description' => $voucher->description,
-                    'type' => $voucher->type,
-                    'value' => $voucher->value,
-                    'min_purchase' => $voucher->min_purchase,
-                    'max_discount' => $voucher->max_discount,
-                    'valid_until_formatted' => $voucher->valid_until->format('M d, Y'),
-                    'is_claimed' => $userClaim !== null,
-                    'is_used' => $userClaim && $userClaim->used_at !== null,
-                    'claimed_at' => $userClaim?->claimed_at?->format('M d, Y'),
-                    'used_at' => $userClaim?->used_at?->format('M d, Y'),
-                ];
-            }),
+        // Live vouchers (active, started, not ended, uses left) with this buyer's
+        // claim state. Same rules as /api/vouchers/available and the mobile app.
+        'vouchers' => \App\Services\VoucherService::available($request->user(), 12),
     ]);
 })->name('homepage');
 
@@ -1867,6 +1890,9 @@ Route::get('/messages', function (\Illuminate\Http\Request $request) {
         'initialThreadId' => $int('thread'),
         'startSellerId'   => $int('seller_id'),
         'startProductId'  => $int('product_id'),
+        // ?tab=riders&order={id}: open the rider chat of that order.
+        'initialTab'      => $request->query('tab') === 'riders' ? 'riders' : 'sellers',
+        'riderOrderId'    => $int('order'),
     ]);
 })->middleware(['auth', 'approved'])->name('messages');
 
@@ -1900,7 +1926,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/checkout', [\App\Http\Controllers\OrderController::class, 'checkout'])->name('checkout');
     Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/success', [\App\Http\Controllers\OrderController::class, 'success'])->name('orders.success');
-    Route::get('/orders/{id}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
+    Route::get('/orders/{id}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show')->whereNumber('id');
     Route::get('/orders/{id}/tracking', [\App\Http\Controllers\Buyer\OrderTrackingController::class, 'page'])->name('orders.tracking')->whereNumber('id');
 });
 
@@ -1933,6 +1959,13 @@ Route::get('/product/{id}', function (string $id) {
             'has_variants' => $product->has_variants ?? false,
             'variant_options' => $product->variant_options ?? null,
             'variants' => $product->variants ?? null,
+            // Seller rating across all reviews of this seller's products.
+            'seller_rating' => (function () use ($product) {
+                $agg = \App\Models\Review::whereHas('product', fn ($p) => $p->where('seller_id', $product->seller_id))
+                    ->selectRaw('COUNT(*) AS c, AVG(rating) AS a')
+                    ->first();
+                return ['count' => (int) ($agg->c ?? 0), 'avg' => $agg && $agg->c ? round((float) $agg->a, 1) : null];
+            })(),
         ],
         // Real reviews (additive): same data and shape as the mobile
         // GET /api/buyer/products/{id}/reviews (names masked).
@@ -2032,6 +2065,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/api/orders/{id}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel']);
     // Buyer delivery code (read-only; same controller as GET /api/buyer/orders/{id}/delivery-code)
     Route::get('/api/orders/{id}/delivery-code', [\App\Http\Controllers\Api\BuyerDeliveryCodeController::class, 'show'])->middleware('throttle:30,1')->whereNumber('id');
+    // Order received + proof-of-delivery photo (same controllers as /api/buyer/orders/{id}/receive|pod-photo)
+    Route::post('/api/orders/{id}/receive', [\App\Http\Controllers\Api\BuyerOrderController::class, 'receive'])->middleware('throttle:10,1,web-order-receive')->whereNumber('id');
+    Route::get('/api/orders/{id}/pod-photo', [\App\Http\Controllers\Api\DeliveryPodPhotoController::class, 'buyerOrderPhoto'])->middleware('throttle:60,1,web-pod-photo')->whereNumber('id');
+
+    // Buyer <-> rider delivery chat for the web (session). Same controller and JSON as /api/buyer/orders/{id}/chat.
+    Route::get('/buyer/rider-chats', [\App\Http\Controllers\Api\DeliveryChatController::class, 'buyerThreads'])->middleware('throttle:120,1,web-rider-chats');
+    Route::get('/buyer/orders/{id}/rider-chat', [\App\Http\Controllers\Api\DeliveryChatController::class, 'buyerIndex'])->middleware('throttle:120,1,web-rider-chat')->whereNumber('id');
+    Route::post('/buyer/orders/{id}/rider-chat', [\App\Http\Controllers\Api\DeliveryChatController::class, 'buyerSend'])->middleware('throttle:30,1,web-rider-chat-send')->whereNumber('id');
+    Route::post('/buyer/orders/{id}/rider-chat/read', [\App\Http\Controllers\Api\DeliveryChatController::class, 'buyerRead'])->middleware('throttle:60,1,web-rider-chat-read')->whereNumber('id');
+
+    // Address book (same controller/rules as /api/buyer/addresses)
+    Route::get('/addresses', fn () => Inertia::render('BuyerAddresses'))->name('buyer.addresses');
+    Route::get('/buyer/addresses', [\App\Http\Controllers\Api\BuyerAddressController::class, 'index']);
+    Route::post('/buyer/addresses', [\App\Http\Controllers\Api\BuyerAddressController::class, 'store'])->middleware('throttle:30,1,web-address-store');
+    Route::put('/buyer/addresses/{id}', [\App\Http\Controllers\Api\BuyerAddressController::class, 'update'])->middleware('throttle:30,1,web-address-update')->whereNumber('id');
+    Route::delete('/buyer/addresses/{id}', [\App\Http\Controllers\Api\BuyerAddressController::class, 'destroy'])->middleware('throttle:30,1,web-address-destroy')->whereNumber('id');
+    Route::post('/buyer/addresses/{id}/default', [\App\Http\Controllers\Api\BuyerAddressController::class, 'setDefault'])->middleware('throttle:30,1,web-address-default')->whereNumber('id');
+
+    // Voucher wallet (same controller as /api/buyer/vouchers*)
+    Route::get('/vouchers', fn () => Inertia::render('BuyerVouchers'))->name('buyer.vouchers');
+    Route::get('/buyer/vouchers', [\App\Http\Controllers\Api\BuyerVoucherController::class, 'index']);
+    Route::get('/buyer/vouchers/mine', [\App\Http\Controllers\Api\BuyerVoucherController::class, 'mine']);
+    Route::post('/buyer/vouchers/claim', [\App\Http\Controllers\Api\BuyerVoucherController::class, 'claim'])->middleware('throttle:20,1,web-voucher-claim');
+
+    // Profile photo (same controller as POST /api/buyer/profile/photo)
+    Route::post('/buyer/profile/photo', [\App\Http\Controllers\Api\BuyerAccountController::class, 'uploadPhoto'])->middleware('throttle:10,1,web-buyer-profile-photo');
+
     // Track Order transit log (same controller/JSON as GET /api/buyer/orders/{id}/tracking)
     Route::get('/api/orders/{id}/tracking', [\App\Http\Controllers\Buyer\OrderTrackingController::class, 'show'])->middleware('throttle:60,1,web-order-tracking')->whereNumber('id');
     
@@ -2227,6 +2287,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         Route::get('/messages', fn () => Inertia::render('admin/Messages'))->name('messages');
+
+        // Admin notifications (header bell) and settings (header cog).
+        Route::get('/notifications', [\App\Http\Controllers\Admin\AdminAccountController::class, 'notificationsPage'])->name('notifications');
+        Route::get('/notifications/feed', [\App\Http\Controllers\Admin\AdminAccountController::class, 'feed'])->middleware('throttle:120,1,admin-notif-feed');
+        Route::get('/notifications/unread-count', [\App\Http\Controllers\Admin\AdminAccountController::class, 'unreadCount'])->middleware('throttle:120,1,admin-notif-count');
+        Route::post('/notifications/read-all', [\App\Http\Controllers\Admin\AdminAccountController::class, 'markAllRead'])->middleware('throttle:30,1,admin-notif-readall');
+        Route::post('/notifications/{id}/read', [\App\Http\Controllers\Admin\AdminAccountController::class, 'markRead'])->middleware('throttle:120,1,admin-notif-read')->whereNumber('id');
+        Route::get('/settings', [\App\Http\Controllers\Admin\AdminAccountController::class, 'settingsPage'])->name('settings');
+        Route::post('/settings/profile', [\App\Http\Controllers\Admin\AdminAccountController::class, 'updateProfile'])->middleware('throttle:20,1,admin-settings-profile');
+        Route::post('/settings/password', [\App\Http\Controllers\Admin\AdminAccountController::class, 'updatePassword'])->middleware('throttle:5,1,admin-settings-password');
 
         // Escalated returns (admin decides)
         Route::get('/returns', [\App\Http\Controllers\Admin\ReturnsController::class, 'page'])->name('returns');

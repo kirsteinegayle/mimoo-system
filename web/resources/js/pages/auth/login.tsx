@@ -104,7 +104,7 @@ export default function Login({ canResetPassword, status }: LoginProps) {
 
                 {/* Perks list */}
                 <div className="relative z-10">
-                    <p className="text-xs uppercase text-white/50 mb-3 tracking-wide" style={fontSFCompact}>
+                    <p className="text-xs uppercase text-white/75 mb-3 tracking-wide" style={fontSFCompact}>
                         Why buyers stick around
                     </p>
                     <ul className="space-y-3 text-sm">
@@ -118,7 +118,7 @@ export default function Login({ canResetPassword, status }: LoginProps) {
                         ))}
                     </ul>
                     <div className="border-t border-white/10 mt-5 pt-4">
-                        <p className="text-xs text-white/30">
+                        <p className="text-xs text-white/60">
                             We will never share your log-in details with buyers or sellers.
                         </p>
                     </div>

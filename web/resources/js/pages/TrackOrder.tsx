@@ -1,7 +1,8 @@
 import { Head, Link, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { BuyerHeader } from "@/components/buyer-header";
-import { CheckCircle2, Circle, MapPin, Package, RefreshCw, Truck, XCircle } from "lucide-react";
+import { Bike, CheckCircle2, Circle, MapPin, MessageCircle, Package, RefreshCw, Star, Truck, XCircle } from "lucide-react";
+import { RiderChatModal } from "@/components/buyer/rider-chat";
 
 // Track Order: the parcel's transit log, oldest → newest on the server,
 // shown newest-first like a courier tracking page. Same JSON as the buyer app
@@ -39,10 +40,15 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
 }
 
-export default function TrackOrder({ tracking: initial }: { tracking: Tracking }) {
+interface RiderInfo { name: string; job_status: string; can_chat: boolean; unread: number }
+
+interface ReviewSummary { can_write: boolean; reviewed: boolean; can_edit: boolean }
+
+export default function TrackOrder({ tracking: initial, rider, review }: { tracking: Tracking; rider?: RiderInfo | null; review?: ReviewSummary | null }) {
   const { auth } = usePage<{ auth: { user: any } }>().props;
   const [t, setT] = useState<Tracking>(initial);
   const [refreshing, setRefreshing] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const refresh = async () => {
     setRefreshing(true);
@@ -107,7 +113,41 @@ export default function TrackOrder({ tracking: initial }: { tracking: Tracking }
               {t.tracking.message ? ` · ${t.tracking.message}` : ""}
             </div>
           )}
+
+          {/* Message Rider: only once a rider is assigned to this order */}
+          {rider && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-gray-200 px-4 py-3">
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <Bike className="h-4 w-4 text-purple-700" />
+                Rider: <span className="font-semibold text-gray-900">{rider.name}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setChatOpen(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#4B2E7E] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3B1F6B]"
+              >
+                <MessageCircle className="h-4 w-4" />
+                {rider.can_chat ? "Message Rider" : "View rider chat"}
+                {rider.unread > 0 && <span className="rounded-full bg-red-500 px-1.5 text-[10px] font-bold">{rider.unread}</span>}
+              </button>
+            </div>
+          )}
+
+          {/* Review entry point: completed (delivered) orders only; null for every other status. */}
+          {review && (review.can_write || review.reviewed) && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-gray-200 px-4 py-3">
+              <p className="text-sm text-gray-700">{review.can_write ? "Your order was delivered. How was it?" : "Thanks for reviewing this order."}</p>
+              <Link
+                href={`/orders/${t.order_id}#reviews`}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#4B2E7E] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3B1F6B]"
+              >
+                <Star className="h-4 w-4" />
+                {review.can_write ? "Write a Review" : review.can_edit ? "Edit Review" : "View Review"}
+              </Link>
+            </div>
+          )}
         </section>
+        {chatOpen && <RiderChatModal orderId={t.order_id} onClose={() => setChatOpen(false)} />}
 
         {/* Timeline */}
         <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">

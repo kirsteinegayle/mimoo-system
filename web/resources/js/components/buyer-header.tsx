@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, type FormEvent } from "react";
 import { Link, router } from "@inertiajs/react";
 import { Search, ShoppingCart, LogOut, Package, Heart } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
+import { MessagesIcon } from "@/components/messages-icon";
 
 interface BuyerHeaderProps {
   user?: any;
@@ -104,7 +105,7 @@ export function BuyerHeader({
                 </button>
 
                 {showMenu && (
-                  <div className="absolute right-0 top-full mt-1 w-36 rounded-lg bg-white shadow-lg ring-1 ring-black/5 z-50">
+                  <div className="absolute right-0 top-full mt-1 w-40 rounded-lg bg-white shadow-lg ring-1 ring-black/5 z-50">
                     <Link
                       href="/orders"
                       className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
@@ -119,6 +120,21 @@ export function BuyerHeader({
                       onClick={() => setShowMenu(false)}
                     >
                       Following
+                    </Link>
+                    <Link href="/messages" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      Messages
+                    </Link>
+                    <Link href="/vouchers" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      My Vouchers
+                    </Link>
+                    <Link href="/addresses" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      Addresses
+                    </Link>
+                    <Link href="/my-reviews" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      My Reviews
+                    </Link>
+                    <Link href="/returns" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      Returns
                     </Link>
                     <Link
                       href="/settings"
@@ -186,6 +202,9 @@ export function BuyerHeader({
           <div className="flex shrink-0 items-center gap-4 sm:gap-5">
             {/* Bell */}
             <NotificationBell isLoggedIn={isLoggedIn} onGuestClick={onGuestAction} />
+
+            {/* Messages (sellers + riders) */}
+            <MessagesIcon isLoggedIn={isLoggedIn} onGuestClick={onGuestAction} />
 
             {/* Wishlist — Link for logged-in, button for guests */}
             {isLoggedIn ? (

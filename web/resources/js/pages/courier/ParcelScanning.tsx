@@ -422,12 +422,9 @@ export default function ParcelScanning({ auth, company, facilities }: Props) {
                                 <h2 className="text-base font-semibold text-gray-900">Parcel Scanning</h2>
                             </div>
                             <div className="flex items-center gap-4">
-                                <button className="p-2 hover:bg-gray-100 rounded-lg transition">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <circle cx="12" cy="12" r="5"/>
-                                        <path d="M12 1v6m0 6v6"/>
-                                    </svg>
-                                </button>
+                                <Link href="/courier/messages" aria-label="Messages" title="Messages" className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                </Link>
                                 <button className="p-2 hover:bg-gray-100 rounded-lg transition relative">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />

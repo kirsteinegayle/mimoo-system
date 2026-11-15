@@ -682,7 +682,7 @@ export default function SellerRegistration() {
                                         )}
                                     </span>
                                     <span className="relative inline-block">
-                                        <span className="text-white/40">{label}</span>
+                                        <span className="text-white/60">{label}</span>
                                         {isDone && (
                                             <span key={`text-${label}`} className="water-fill-text absolute inset-0 text-white">
                                                 {label}

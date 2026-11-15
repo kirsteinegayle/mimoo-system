@@ -706,12 +706,12 @@ export const changePhoneVerify = {
  * @see app/Http/Controllers/Api/BuyerAccountController.php:456
  * @route '/api/buyer/profile/photo'
  */
-export const uploadPhoto = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: uploadPhoto.url(options),
+const uploadPhoto282f4bb1d68d82afc3fa7146774cec9a = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: uploadPhoto282f4bb1d68d82afc3fa7146774cec9a.url(options),
     method: 'post',
 })
 
-uploadPhoto.definition = {
+uploadPhoto282f4bb1d68d82afc3fa7146774cec9a.definition = {
     methods: ["post"],
     url: '/api/buyer/profile/photo',
 } satisfies RouteDefinition<["post"]>
@@ -721,8 +721,8 @@ uploadPhoto.definition = {
  * @see app/Http/Controllers/Api/BuyerAccountController.php:456
  * @route '/api/buyer/profile/photo'
  */
-uploadPhoto.url = (options?: RouteQueryOptions) => {
-    return uploadPhoto.definition.url + queryParams(options)
+uploadPhoto282f4bb1d68d82afc3fa7146774cec9a.url = (options?: RouteQueryOptions) => {
+    return uploadPhoto282f4bb1d68d82afc3fa7146774cec9a.definition.url + queryParams(options)
 }
 
 /**
@@ -730,8 +730,8 @@ uploadPhoto.url = (options?: RouteQueryOptions) => {
  * @see app/Http/Controllers/Api/BuyerAccountController.php:456
  * @route '/api/buyer/profile/photo'
  */
-uploadPhoto.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: uploadPhoto.url(options),
+uploadPhoto282f4bb1d68d82afc3fa7146774cec9a.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: uploadPhoto282f4bb1d68d82afc3fa7146774cec9a.url(options),
     method: 'post',
 })
 
@@ -740,8 +740,8 @@ uploadPhoto.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
  * @see app/Http/Controllers/Api/BuyerAccountController.php:456
  * @route '/api/buyer/profile/photo'
  */
-    const uploadPhotoForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: uploadPhoto.url(options),
+    const uploadPhoto282f4bb1d68d82afc3fa7146774cec9aForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: uploadPhoto282f4bb1d68d82afc3fa7146774cec9a.url(options),
         method: 'post',
     })
 
@@ -750,12 +750,78 @@ uploadPhoto.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
  * @see app/Http/Controllers/Api/BuyerAccountController.php:456
  * @route '/api/buyer/profile/photo'
  */
-        uploadPhotoForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: uploadPhoto.url(options),
+        uploadPhoto282f4bb1d68d82afc3fa7146774cec9aForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: uploadPhoto282f4bb1d68d82afc3fa7146774cec9a.url(options),
             method: 'post',
         })
     
-    uploadPhoto.form = uploadPhotoForm
+    uploadPhoto282f4bb1d68d82afc3fa7146774cec9a.form = uploadPhoto282f4bb1d68d82afc3fa7146774cec9aForm
+    /**
+* @see \App\Http\Controllers\Api\BuyerAccountController::uploadPhoto
+ * @see app/Http/Controllers/Api/BuyerAccountController.php:456
+ * @route '/buyer/profile/photo'
+ */
+const uploadPhoto16c440e025132ba0cd8497b2ec3a0b18 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: uploadPhoto16c440e025132ba0cd8497b2ec3a0b18.url(options),
+    method: 'post',
+})
+
+uploadPhoto16c440e025132ba0cd8497b2ec3a0b18.definition = {
+    methods: ["post"],
+    url: '/buyer/profile/photo',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\Api\BuyerAccountController::uploadPhoto
+ * @see app/Http/Controllers/Api/BuyerAccountController.php:456
+ * @route '/buyer/profile/photo'
+ */
+uploadPhoto16c440e025132ba0cd8497b2ec3a0b18.url = (options?: RouteQueryOptions) => {
+    return uploadPhoto16c440e025132ba0cd8497b2ec3a0b18.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Api\BuyerAccountController::uploadPhoto
+ * @see app/Http/Controllers/Api/BuyerAccountController.php:456
+ * @route '/buyer/profile/photo'
+ */
+uploadPhoto16c440e025132ba0cd8497b2ec3a0b18.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: uploadPhoto16c440e025132ba0cd8497b2ec3a0b18.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\Api\BuyerAccountController::uploadPhoto
+ * @see app/Http/Controllers/Api/BuyerAccountController.php:456
+ * @route '/buyer/profile/photo'
+ */
+    const uploadPhoto16c440e025132ba0cd8497b2ec3a0b18Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: uploadPhoto16c440e025132ba0cd8497b2ec3a0b18.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\BuyerAccountController::uploadPhoto
+ * @see app/Http/Controllers/Api/BuyerAccountController.php:456
+ * @route '/buyer/profile/photo'
+ */
+        uploadPhoto16c440e025132ba0cd8497b2ec3a0b18Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: uploadPhoto16c440e025132ba0cd8497b2ec3a0b18.url(options),
+            method: 'post',
+        })
+    
+    uploadPhoto16c440e025132ba0cd8497b2ec3a0b18.form = uploadPhoto16c440e025132ba0cd8497b2ec3a0b18Form
+
+/**
+* Multiple routes resolve to \App\Http\Controllers\Api\BuyerAccountController::uploadPhoto, so this export is a
+* dictionary keyed by URI rather than a callable. Call a specific route with `uploadPhoto['<uri>'](...)`,
+* or import the route by name from your generated `routes/` directory.
+*/
+export const uploadPhoto = {
+    '/api/buyer/profile/photo': uploadPhoto282f4bb1d68d82afc3fa7146774cec9a,
+    '/buyer/profile/photo': uploadPhoto16c440e025132ba0cd8497b2ec3a0b18,
+}
+
 const BuyerAccountController = { servePhoto, changePassword, changeEmailRequest, changeEmailVerify, changePhoneRequest, changePhoneVerify, uploadPhoto }
 
 export default BuyerAccountController

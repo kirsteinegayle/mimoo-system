@@ -712,7 +712,7 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
                 <h2 className="text-lg font-semibold mb-4" style={fontSyne}>Needs your attention</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* To Prepare */}
-                    <a href="#" className="flex items-center gap-4 bg-white rounded-xl p-4 border-2 border-[color-mix(in_srgb,#B9A6DE_44%,white)] hover:border-[#B9A6DE] hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                    <a href="/seller/orders" className="flex items-center gap-4 bg-white rounded-xl p-4 border-2 border-[color-mix(in_srgb,#B9A6DE_44%,white)] hover:border-[#B9A6DE] hover:-translate-y-0.5 hover:shadow-lg transition-all">
                         <div className="relative flex-none w-12 h-12 bg-[#f7ecd6] text-[#a9752b] rounded-xl flex items-center justify-center">
                             <Box className="w-5 h-5" />
                             {stats.to_prepare > 0 && (
@@ -726,7 +726,7 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
                     </a>
 
                     {/* Low Stock */}
-                    <a href="#" className="flex items-center gap-4 bg-white rounded-xl p-4 border-2 border-[color-mix(in_srgb,#B9A6DE_44%,white)] hover:border-[#B9A6DE] hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                    <a href="/seller/products" className="flex items-center gap-4 bg-white rounded-xl p-4 border-2 border-[color-mix(in_srgb,#B9A6DE_44%,white)] hover:border-[#B9A6DE] hover:-translate-y-0.5 hover:shadow-lg transition-all">
                         <div className="relative flex-none w-12 h-12 bg-[#f7ecd6] text-[#a9752b] rounded-xl flex items-center justify-center">
                             <AlertTriangle className="w-5 h-5" />
                             {stats.low_stock_count > 0 && (
@@ -740,7 +740,7 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
                     </a>
 
                     {/* New Messages */}
-                    <a href="#" className="flex items-center gap-4 bg-white rounded-xl p-4 border-2 border-[color-mix(in_srgb,#B9A6DE_44%,white)] hover:border-[#B9A6DE] hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                    <a href="/seller/messages" className="flex items-center gap-4 bg-white rounded-xl p-4 border-2 border-[color-mix(in_srgb,#B9A6DE_44%,white)] hover:border-[#B9A6DE] hover:-translate-y-0.5 hover:shadow-lg transition-all">
                         <div className="relative flex-none w-12 h-12 bg-[#e4eef3] text-[#2f6f8f] rounded-xl flex items-center justify-center">
                             <MessageSquare className="w-5 h-5" />
                             {stats.new_messages > 0 && (
@@ -754,7 +754,7 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
                     </a>
 
                     {/* New Reviews */}
-                    <a href="#" className="flex items-center gap-4 bg-white rounded-xl p-4 border-2 border-[color-mix(in_srgb,#B9A6DE_44%,white)] hover:border-[#B9A6DE] hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                    <a href="/seller/customers?tab=feedback" className="flex items-center gap-4 bg-white rounded-xl p-4 border-2 border-[color-mix(in_srgb,#B9A6DE_44%,white)] hover:border-[#B9A6DE] hover:-translate-y-0.5 hover:shadow-lg transition-all">
                         <div className="relative flex-none w-12 h-12 bg-[#e7f5ec] text-[#2c7a52] rounded-xl flex items-center justify-center">
                             <Star className="w-5 h-5" />
                             {stats.new_reviews > 0 && (
@@ -773,7 +773,7 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold" style={fontSyne}>Recent orders</h2>
-                    <a href="#" className="text-sm font-bold text-[#4B2E7E] hover:text-[color-mix(in_srgb,#4B2E7E_82%,black)] hover:underline">View all orders</a>
+                    <a href="/seller/orders" className="text-sm font-bold text-[#4B2E7E] hover:text-[color-mix(in_srgb,#4B2E7E_82%,black)] hover:underline">View all orders</a>
                 </div>
                 <div className="bg-white rounded-xl border-2 border-[color-mix(in_srgb,#B9A6DE_44%,white)] p-6 overflow-x-auto">
                     <table className="w-full min-w-[720px] border-collapse">
@@ -818,7 +818,7 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
             <div>
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold" style={fontSyne}>Products & inventory</h2>
-                    <a href="#" className="text-sm font-bold text-[#4B2E7E] hover:text-[color-mix(in_srgb,#4B2E7E_82%,black)] hover:underline">Manage inventory</a>
+                    <a href="/seller/products" className="text-sm font-bold text-[#4B2E7E] hover:text-[color-mix(in_srgb,#4B2E7E_82%,black)] hover:underline">Manage inventory</a>
                 </div>
 
                 {/* Top Products */}

@@ -1,5 +1,147 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
+ * @see routes/web.php:2079
+ * @route '/addresses'
+ */
+export const addresses = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: addresses.url(options),
+    method: 'get',
+})
+
+addresses.definition = {
+    methods: ["get","head"],
+    url: '/addresses',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+ * @see routes/web.php:2079
+ * @route '/addresses'
+ */
+addresses.url = (options?: RouteQueryOptions) => {
+    return addresses.definition.url + queryParams(options)
+}
+
+/**
+ * @see routes/web.php:2079
+ * @route '/addresses'
+ */
+addresses.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: addresses.url(options),
+    method: 'get',
+})
+/**
+ * @see routes/web.php:2079
+ * @route '/addresses'
+ */
+addresses.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: addresses.url(options),
+    method: 'head',
+})
+
+    /**
+ * @see routes/web.php:2079
+ * @route '/addresses'
+ */
+    const addressesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: addresses.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/web.php:2079
+ * @route '/addresses'
+ */
+        addressesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: addresses.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/web.php:2079
+ * @route '/addresses'
+ */
+        addressesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: addresses.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    addresses.form = addressesForm
+/**
+ * @see routes/web.php:2087
+ * @route '/vouchers'
+ */
+export const vouchers = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: vouchers.url(options),
+    method: 'get',
+})
+
+vouchers.definition = {
+    methods: ["get","head"],
+    url: '/vouchers',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+ * @see routes/web.php:2087
+ * @route '/vouchers'
+ */
+vouchers.url = (options?: RouteQueryOptions) => {
+    return vouchers.definition.url + queryParams(options)
+}
+
+/**
+ * @see routes/web.php:2087
+ * @route '/vouchers'
+ */
+vouchers.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: vouchers.url(options),
+    method: 'get',
+})
+/**
+ * @see routes/web.php:2087
+ * @route '/vouchers'
+ */
+vouchers.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: vouchers.url(options),
+    method: 'head',
+})
+
+    /**
+ * @see routes/web.php:2087
+ * @route '/vouchers'
+ */
+    const vouchersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: vouchers.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/web.php:2087
+ * @route '/vouchers'
+ */
+        vouchersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: vouchers.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/web.php:2087
+ * @route '/vouchers'
+ */
+        vouchersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: vouchers.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    vouchers.form = vouchersForm
+/**
 * @see \App\Http\Controllers\Buyer\NotificationController::notifications
  * @see app/Http/Controllers/Buyer/NotificationController.php:58
  * @route '/buyer/notifications'
@@ -78,7 +220,7 @@ notifications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     
     notifications.form = notificationsForm
 /**
- * @see routes/web.php:2068
+ * @see routes/web.php:2128
  * @route '/following'
  */
 export const following = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -92,7 +234,7 @@ following.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2068
+ * @see routes/web.php:2128
  * @route '/following'
  */
 following.url = (options?: RouteQueryOptions) => {
@@ -100,7 +242,7 @@ following.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2068
+ * @see routes/web.php:2128
  * @route '/following'
  */
 following.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -108,7 +250,7 @@ following.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2068
+ * @see routes/web.php:2128
  * @route '/following'
  */
 following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -117,7 +259,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2068
+ * @see routes/web.php:2128
  * @route '/following'
  */
     const followingForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -126,7 +268,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2068
+ * @see routes/web.php:2128
  * @route '/following'
  */
         followingForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -134,7 +276,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2068
+ * @see routes/web.php:2128
  * @route '/following'
  */
         followingForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -149,7 +291,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     following.form = followingForm
 /**
- * @see routes/web.php:2086
+ * @see routes/web.php:2146
  * @route '/returns'
  */
 export const returns = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -163,7 +305,7 @@ returns.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2086
+ * @see routes/web.php:2146
  * @route '/returns'
  */
 returns.url = (options?: RouteQueryOptions) => {
@@ -171,7 +313,7 @@ returns.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2086
+ * @see routes/web.php:2146
  * @route '/returns'
  */
 returns.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -179,7 +321,7 @@ returns.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2086
+ * @see routes/web.php:2146
  * @route '/returns'
  */
 returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -188,7 +330,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2086
+ * @see routes/web.php:2146
  * @route '/returns'
  */
     const returnsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -197,7 +339,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2086
+ * @see routes/web.php:2146
  * @route '/returns'
  */
         returnsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -205,7 +347,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2086
+ * @see routes/web.php:2146
  * @route '/returns'
  */
         returnsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -298,7 +440,9 @@ reviews.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     reviews.form = reviewsForm
 const buyer = {
-    notifications: Object.assign(notifications, notifications),
+    addresses: Object.assign(addresses, addresses),
+vouchers: Object.assign(vouchers, vouchers),
+notifications: Object.assign(notifications, notifications),
 following: Object.assign(following, following),
 returns: Object.assign(returns, returns),
 reviews: Object.assign(reviews, reviews),
