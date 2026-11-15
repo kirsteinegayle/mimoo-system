@@ -362,21 +362,39 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                 }
                 
                 $order = $latestScan->order;
-                $totalWeight = $order->items->sum(function ($item) {
+                if (! $order && $latestScan->waybill_number) {
+                    $order = \App\Models\Order::where('waybill_number', $latestScan->waybill_number)->first();
+                }
+                if (! $order) {
+                    return null;
+                }
+
+                $totalWeight = $order->items ? $order->items->sum(function ($item) {
                     return ($item->product->weight ?? 0) * $item->quantity;
-                });
+                }) : 0;
+
+                $activeJob = \App\Models\DeliveryJob::where('order_id', $order->id)
+                    ->whereIn('status', \App\Models\DeliveryJob::ACTIVE_STATUSES)
+                    ->with('personnel')
+                    ->latest('id')
+                    ->first();
                 
                 return [
                     'id' => $latestScan->id,
+                    'scan_id' => $latestScan->id,
+                    'order_id' => $order->id,
                     'waybill_number' => $latestScan->waybill_number,
                     'order_number' => 'ORD-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
                     'buyer_name' => $order->shipping_name ?? $order->buyer->name ?? 'Unknown',
                     'buyer_address' => $order->shipping_address,
                     'destination' => $order->shipping_municipality_city,
                     'weight' => round($totalWeight, 2),
-                    'payment_method' => strtoupper($order->payment_method),
+                    'payment_method' => strtoupper($order->payment_method ?? 'COD'),
                     'total_amount' => $order->total,
                     'status' => $order->status,
+                    'has_active_job' => (bool) $activeJob,
+                    'assigned_rider_name' => $activeJob?->personnel?->name,
+                    'delivery_job_status' => $activeJob?->status,
                     'received_at' => $latestScan->created_at->format('M d, Y h:i A'),
                     'scanned_by' => $latestScan->scanned_by,
                 ];
@@ -420,12 +438,21 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                 }
                 
                 $order = $facilityReceiveScan->order;
-                $totalWeight = $order->items->sum(function ($item) {
+                if (! $order && $facilityReceiveScan->waybill_number) {
+                    $order = \App\Models\Order::where('waybill_number', $facilityReceiveScan->waybill_number)->first();
+                }
+                if (! $order) {
+                    return null;
+                }
+
+                $totalWeight = $order->items ? $order->items->sum(function ($item) {
                     return ($item->product->weight ?? 0) * $item->quantity;
-                });
+                }) : 0;
                 
                 return [
                     'id' => $facilityReceiveScan->id,
+                    'scan_id' => $facilityReceiveScan->id,
+                    'order_id' => $order->id,
                     'waybill_number' => $facilityReceiveScan->waybill_number,
                     'order_number' => 'ORD-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
                     'buyer_name' => $order->shipping_name ?? $order->buyer->name ?? 'Unknown',
@@ -442,7 +469,151 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         
         return response()->json($archivedScans);
     })->middleware('role:courier,logistics_staff');
-    
+
+    // API: Get available riders for a facility (for the "Assign Rider" modal)
+    Route::get('/api/courier/facility/{facilityId}/available-riders', function ($facilityId) {
+        $courier  = \App\Support\CourierCompanyResolver::scope(auth()->user());
+        $facility = \App\Models\CourierFacility::findOrFail($facilityId);
+        if ($facility->courier_id !== $courier->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Online riders of this courier (is_online = true, active, with a linked user account).
+        $personnel = \App\Models\CourierPersonnel::where('courier_id', $courier->id)
+            ->where('status', 'active')
+            ->where('is_online', true)
+            ->whereNotNull('user_id')
+            ->whereHas('user', fn ($q) => $q
+                ->where(fn ($r) => $r->where('role', 'rider')
+                    ->orWhere(fn ($x) => $x->whereNull('role')->where('account_type', 'rider')))
+                ->where('status', 'approved')
+                ->where('verification_status', 'verified'))
+            ->orderBy('name')
+            ->get(['id', 'name', 'contact_number', 'is_online']);
+
+        // Active delivery jobs per personnel
+        $activeCounts = \App\Models\DeliveryJob::whereIn('personnel_id', $personnel->pluck('id'))
+            ->whereIn('status', \App\Models\DeliveryJob::ACTIVE_STATUSES)
+            ->selectRaw('personnel_id, COUNT(*) as c')
+            ->groupBy('personnel_id')
+            ->pluck('c', 'personnel_id');
+
+        return response()->json($personnel->map(fn ($p) => [
+            'personnel_id'       => $p->id,
+            'name'               => $p->name,
+            'contact_number'     => $p->contact_number,
+            'active_jobs'        => (int) ($activeCounts[$p->id] ?? 0),
+        ])->values());
+    })->middleware('role:courier,logistics_staff');
+
+    // API: Assign rider to a parcel AT the facility (parcel is physically here, skip pickup_status guard)
+    Route::post('/api/courier/facility/{facilityId}/assign-rider', function (Illuminate\Http\Request $request, $facilityId) {
+        // Resolve order_id: accept order ID directly, or shipment scan ID, or lookup by waybill
+        $rawOrderId = $request->input('order_id');
+        if ($rawOrderId && ! \App\Models\Order::where('id', $rawOrderId)->exists()) {
+            $scan = \App\Models\ShipmentScan::find($rawOrderId);
+            if ($scan && $scan->order_id) {
+                $request->merge(['order_id' => $scan->order_id]);
+            } elseif ($scan && $scan->waybill_number) {
+                $orderIdFromWaybill = \App\Models\Order::where('waybill_number', $scan->waybill_number)->value('id');
+                if ($orderIdFromWaybill) {
+                    $request->merge(['order_id' => $orderIdFromWaybill]);
+                }
+            }
+        }
+
+        $validated = $request->validate([
+            'order_id'     => 'required|integer|exists:orders,id',
+            'personnel_id' => 'required|integer|exists:courier_personnel,id',
+        ]);
+
+        $courier  = \App\Support\CourierCompanyResolver::scope(auth()->user());
+        $facility = \App\Models\CourierFacility::findOrFail($facilityId);
+        if ($facility->courier_id !== $courier->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $courier, $facility) {
+            $order = \App\Models\Order::whereKey($validated['order_id'])->lockForUpdate()->first();
+
+            // Order must belong to this courier and be in a deliverable status.
+            if (! in_array($order->status, ['in_transit', 'shipped'], true)) {
+                return response()->json([
+                    'error' => "Order is {$order->status}. Only in_transit or shipped orders can be assigned.",
+                ], 422);
+            }
+
+            // Parcel must have been scanned at THIS facility.
+            $scanned = \App\Models\ShipmentScan::where(function ($q) use ($order) {
+                    $q->where('order_id', $order->id)
+                      ->orWhere('waybill_number', $order->waybill_number);
+                })
+                ->where('facility_id', $facility->id)
+                ->exists();
+            if (! $scanned) {
+                return response()->json([
+                    'error' => 'This parcel has not been scanned at this facility.',
+                ], 422);
+            }
+
+            // Block if already has an active delivery job.
+            $existing = \App\Models\DeliveryJob::where('order_id', $order->id)->latest('id')->first();
+            if ($existing && in_array($existing->status, \App\Models\DeliveryJob::ACTIVE_STATUSES, true)) {
+                return response()->json([
+                    'error'          => 'This order already has an active delivery job.',
+                    'delivery_job_id'=> $existing->id,
+                ], 422);
+            }
+
+            // Rider must belong to this courier and be online.
+            $personnel = \App\Models\CourierPersonnel::where('id', $validated['personnel_id'])
+                ->where('courier_id', $courier->id)
+                ->where('status', 'active')
+                ->where('is_online', true)
+                ->whereNotNull('user_id')
+                ->first();
+            if (! $personnel) {
+                return response()->json([
+                    'error' => 'Rider not found or not online. The rider must be active and checked in.',
+                ], 422);
+            }
+
+            $isCod = strtolower((string) $order->payment_method) === 'cod'
+                && ! in_array(strtolower((string) $order->payment_status), ['paid', 'refunded'], true);
+
+            $job = \App\Models\DeliveryJob::create([
+                'order_id'      => $order->id,
+                'rider_user_id' => $personnel->user_id,
+                'personnel_id'  => $personnel->id,
+                'courier_id'    => $courier->id,
+                'facility_id'   => $facility->id,
+                'assigned_by'   => auth()->id(),
+                'status'        => \App\Models\DeliveryJob::STATUS_ASSIGNED,
+                'cod_amount'    => $isCod ? (float) $order->total : 0.0,
+                'assigned_at'   => now(),
+            ]);
+
+            // Update buyer tracking
+            $order->updateTracking('assigned_courier', "Parcel out for delivery: Assigned to delivery rider {$personnel->name}");
+
+            // Notify the rider
+            \App\Models\RiderNotification::notify(
+                $personnel->user_id,
+                'delivery_assigned',
+                'New delivery assigned',
+                ($order->waybill_number ?? 'Order #' . $order->id) . ' · ' . ($order->shipping_address ?? ''),
+                $job->id,
+                $order->id
+            );
+
+            return response()->json([
+                'message'         => "Rider {$personnel->name} assigned to order {$order->waybill_number}.",
+                'delivery_job_id' => $job->id,
+                'rider_name'      => $personnel->name,
+            ], 201);
+        });
+    })->middleware(['role:courier,logistics_staff', 'throttle:30,1']);
+
     // Courier - Rider Management
     Route::get('/courier/rider-management', [\App\Http\Controllers\Courier\RiderManagementController::class, 'index'])->name('courier.rider-management')->middleware('role:courier,logistics_staff');
     Route::post('/api/courier/riders/{id}/approve', [\App\Http\Controllers\Courier\RiderManagementController::class, 'approve'])->middleware('role:courier,logistics_staff');

@@ -293,7 +293,7 @@ vouchers.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     vouchers.form = vouchersForm
 /**
- * @see routes/web.php:2057
+ * @see routes/web.php:2228
  * @route '/admin/banners'
  */
 export const banners = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -307,7 +307,7 @@ banners.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2057
+ * @see routes/web.php:2228
  * @route '/admin/banners'
  */
 banners.url = (options?: RouteQueryOptions) => {
@@ -315,7 +315,7 @@ banners.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2057
+ * @see routes/web.php:2228
  * @route '/admin/banners'
  */
 banners.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -323,7 +323,7 @@ banners.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2057
+ * @see routes/web.php:2228
  * @route '/admin/banners'
  */
 banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -332,7 +332,7 @@ banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2057
+ * @see routes/web.php:2228
  * @route '/admin/banners'
  */
     const bannersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -341,7 +341,7 @@ banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2057
+ * @see routes/web.php:2228
  * @route '/admin/banners'
  */
         bannersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -349,7 +349,7 @@ banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2057
+ * @see routes/web.php:2228
  * @route '/admin/banners'
  */
         bannersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -849,7 +849,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     reports.form = reportsForm
 /**
- * @see routes/web.php:2095
+ * @see routes/web.php:2266
  * @route '/admin/messages'
  */
 export const messages = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -863,7 +863,7 @@ messages.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2095
+ * @see routes/web.php:2266
  * @route '/admin/messages'
  */
 messages.url = (options?: RouteQueryOptions) => {
@@ -871,7 +871,7 @@ messages.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2095
+ * @see routes/web.php:2266
  * @route '/admin/messages'
  */
 messages.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -879,7 +879,7 @@ messages.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2095
+ * @see routes/web.php:2266
  * @route '/admin/messages'
  */
 messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -888,7 +888,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2095
+ * @see routes/web.php:2266
  * @route '/admin/messages'
  */
     const messagesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -897,7 +897,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2095
+ * @see routes/web.php:2266
  * @route '/admin/messages'
  */
         messagesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -905,7 +905,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2095
+ * @see routes/web.php:2266
  * @route '/admin/messages'
  */
         messagesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

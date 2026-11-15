@@ -153,13 +153,18 @@ class _HomeScreenState extends State<HomeScreen> {
               duration: motion(context, const Duration(milliseconds: 300)),
               child: _loading
                   ? const _HomeSkeleton(key: ValueKey('skeleton'))
-                  : ListView(
-                      key: const ValueKey('content'),
-                      padding: MS.pagePadding,
-                      children: [
-                        for (var i = 0; i < children.length; i++)
-                          FadeSlideIn.stagger(i ~/ 2, child: children[i]),
-                      ],
+                  : RefreshIndicator(
+                      color: c.primary,
+                      onRefresh: mock.refresh,
+                      child: ListView(
+                        key: const ValueKey('content'),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: MS.pagePadding,
+                        children: [
+                          for (var i = 0; i < children.length; i++)
+                            FadeSlideIn.stagger(i ~/ 2, child: children[i]),
+                        ],
+                      ),
                     ),
             ),
           ),

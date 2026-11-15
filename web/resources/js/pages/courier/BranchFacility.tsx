@@ -56,6 +56,14 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
     const [archivedParcels, setArchivedParcels] = useState<any[]>([]);
     const [loadingParcels, setLoadingParcels] = useState(false);
 
+    // Assign Rider state
+    const [assignRiderParcel, setAssignRiderParcel] = useState<any | null>(null);
+    const [availableRiders, setAvailableRiders] = useState<any[]>([]);
+    const [loadingRiders, setLoadingRiders] = useState(false);
+    const [selectedRiderId, setSelectedRiderId] = useState<number | null>(null);
+    const [assigningRider, setAssigningRider] = useState(false);
+    const [assignError, setAssignError] = useState<string | null>(null);
+
     // PSGC API State
     const [psgcRegions, setPsgcRegions] = useState<Array<{ name: string; code: string }>>([]);
     const [psgcProvinces, setPsgcProvinces] = useState<Array<{ name: string; code: string }>>([]);
@@ -397,6 +405,50 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
             console.error('Error loading parcels:', error);
         } finally {
             setLoadingParcels(false);
+        }
+    };
+
+    // ── Assign Rider handlers ───────────────────────────────────────────────
+    const openAssignRider = async (parcel: any) => {
+        setAssignRiderParcel(parcel);
+        setSelectedRiderId(null);
+        setAssignError(null);
+        setAvailableRiders([]);
+        setLoadingRiders(true);
+        try {
+            const res = await fetch(`/api/courier/facility/${selectedFacilityForManagement}/available-riders`);
+            const data = await res.json();
+            setAvailableRiders(Array.isArray(data) ? data : []);
+        } catch {
+            setAvailableRiders([]);
+        } finally {
+            setLoadingRiders(false);
+        }
+    };
+
+    const confirmAssignRider = async () => {
+        if (!assignRiderParcel || !selectedRiderId) return;
+        setAssigningRider(true);
+        setAssignError(null);
+        try {
+            const csrf = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
+            const orderId = assignRiderParcel.order_id ?? assignRiderParcel.id;
+            const res = await fetch(`/api/courier/facility/${selectedFacilityForManagement}/assign-rider`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                body: JSON.stringify({ order_id: orderId, personnel_id: selectedRiderId }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setAssignError(data.error ?? data.message ?? 'Could not assign rider.');
+            } else {
+                setAssignRiderParcel(null);
+                loadParcels(); // refresh parcel list
+            }
+        } catch {
+            setAssignError('Network error. Please try again.');
+        } finally {
+            setAssigningRider(false);
         }
     };
 
@@ -958,15 +1010,37 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
-                                                                                <div className="ml-4">
+                                                                                <div className="ml-4 flex flex-col items-end gap-2">
                                                                                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                                                                                         parcel.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                                                                                        parcel.status === 'in_transit' ? 'bg-purple-100 text-purple-700' :
                                                                                         parcel.status === 'packed' ? 'bg-yellow-100 text-yellow-700' :
                                                                                         parcel.status === 'completed' ? 'bg-green-100 text-green-700' :
                                                                                         'bg-gray-100 text-gray-700'
                                                                                     }`}>
                                                                                         {parcel.status}
                                                                                     </span>
+                                                                                    {/* Assign Rider button or Assigned badge */}
+                                                                                    {parcel.has_active_job ? (
+                                                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg border border-blue-200">
+                                                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                                                <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+                                                                                                <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
+                                                                                            </svg>
+                                                                                            Assigned{parcel.assigned_rider_name ? `: ${parcel.assigned_rider_name}` : ''}
+                                                                                        </span>
+                                                                                    ) : (parcel.status === 'in_transit' || parcel.status === 'shipped') && (
+                                                                                        <button
+                                                                                            onClick={() => openAssignRider(parcel)}
+                                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3B1F6B] text-white text-xs font-semibold rounded-lg hover:bg-[#2E1850] transition"
+                                                                                        >
+                                                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                                                <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+                                                                                                <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
+                                                                                            </svg>
+                                                                                            Assign Rider
+                                                                                        </button>
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -1579,6 +1653,102 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                                 className="px-5 py-2.5 bg-[#3B1F6B] text-white rounded-lg font-semibold hover:bg-[#2E1850] transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Generate {generateForm.selectedCities.length > 0 && `(${generateForm.selectedCities.length})`} Branches
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Assign Rider Modal ───────────────────────────────────────── */}
+            {assignRiderParcel && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !assigningRider && setAssignRiderParcel(null)}>
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="flex items-center gap-3 mb-5">
+                            <div className="w-10 h-10 bg-[#F1EDFB] rounded-xl flex items-center justify-center">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B1F6B" strokeWidth="2">
+                                    <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+                                    <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900 text-lg">Assign Rider</h3>
+                                <p className="text-xs text-gray-500 font-mono">{assignRiderParcel.waybill_number} · {assignRiderParcel.buyer_name}</p>
+                            </div>
+                        </div>
+
+                        {/* Rider list */}
+                        {loadingRiders ? (
+                            <div className="flex items-center justify-center py-10 gap-3">
+                                <div className="w-5 h-5 border-2 border-[#3B1F6B] border-t-transparent rounded-full animate-spin" />
+                                <span className="text-sm text-gray-500">Loading available riders…</span>
+                            </div>
+                        ) : availableRiders.length === 0 ? (
+                            <div className="text-center py-8">
+                                <svg className="mx-auto mb-2 text-gray-300" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                    <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+                                    <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
+                                </svg>
+                                <p className="text-sm font-semibold text-gray-700">No riders online</p>
+                                <p className="text-xs text-gray-400 mt-1">Ask a rider to check in on the rider app first.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
+                                {availableRiders.map(rider => (
+                                    <button
+                                        key={rider.personnel_id}
+                                        onClick={() => setSelectedRiderId(rider.personnel_id)}
+                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition ${
+                                            selectedRiderId === rider.personnel_id
+                                                ? 'border-[#3B1F6B] bg-[#F1EDFB]'
+                                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-full bg-[#3B1F6B] text-white flex items-center justify-center text-sm font-bold">
+                                                {rider.name.charAt(0)}
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="text-sm font-semibold text-gray-900">{rider.name}</p>
+                                                <p className="text-xs text-gray-400">{rider.contact_number || '—'} · {rider.active_jobs} active job{rider.active_jobs !== 1 ? 's' : ''}</p>
+                                            </div>
+                                        </div>
+                                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition ${
+                                            selectedRiderId === rider.personnel_id ? 'border-[#3B1F6B] bg-[#3B1F6B]' : 'border-gray-300'
+                                        }`}>
+                                            {selectedRiderId === rider.personnel_id && (
+                                                <svg width="8" height="8" viewBox="0 0 8 8" fill="white"><polyline points="1 4 3 6 7 2" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>
+                                            )}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Error */}
+                        {assignError && (
+                            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                                {assignError}
+                            </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setAssignRiderParcel(null)}
+                                disabled={assigningRider}
+                                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmAssignRider}
+                                disabled={!selectedRiderId || assigningRider}
+                                className="flex-1 px-4 py-2.5 bg-[#3B1F6B] text-white font-semibold rounded-xl hover:bg-[#2E1850] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {assigningRider ? (
+                                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Assigning…</>
+                                ) : 'Assign Rider'}
                             </button>
                         </div>
                     </div>

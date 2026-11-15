@@ -30,6 +30,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   String? _shownLoadError;
   Timer? _unreadTimer;
+  Timer? _jobsTimer;
 
   @override
   void initState() {
@@ -39,6 +40,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     if (!useMock) {
       unawaited(TeamMessagesService.instance.refreshUnread());
       _unreadTimer = Timer.periodic(const Duration(seconds: 30), (_) => TeamMessagesService.instance.refreshUnread());
+      // Refresh jobs periodically so newly assigned jobs show up promptly without manual refresh.
+      _jobsTimer = Timer.periodic(const Duration(seconds: 15), (_) => RiderMock.instance.refresh());
     }
     // API mode: load jobs / wallet / notifications once the shell opens.
     RiderMock.instance.addListener(_onStoreChanged);
@@ -75,6 +78,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   @override
   void dispose() {
     _unreadTimer?.cancel();
+    _jobsTimer?.cancel();
     RiderMock.instance.removeListener(_onStoreChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -83,8 +87,13 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final status = _status;
-    if (state == AppLifecycleState.resumed && status != null) {
-      unawaited(status.syncLocationOnResume());
+    if (state == AppLifecycleState.resumed) {
+      if (status != null) {
+        unawaited(status.syncLocationOnResume());
+      }
+      if (!useMock) {
+        unawaited(RiderMock.instance.refresh());
+      }
     }
   }
 
