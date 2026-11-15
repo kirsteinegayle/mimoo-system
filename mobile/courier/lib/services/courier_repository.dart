@@ -613,6 +613,58 @@ class CourierRepository {
     return res['message']?.toString() ?? 'Delivery rider assigned.';
   }
 
+  // ── Recent Activity ──────────────────────────────────────────────────────
+
+  /// GET /activity — company operations log, newest first.
+  /// [type]: shipment | pickup | hub | delivery (null = all).
+  Future<List<ActivityItem>> activity({int limit = 15, String? type}) async {
+    final res = await ApiService.get('$_prefix/activity', queryParameters: {
+      'limit': '$limit',
+      if (type != null) 'type': type,
+    }) as Map<String, dynamic>;
+    return (res['data'] as List<dynamic>? ?? [])
+        .map((e) => ActivityItem.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  // ── New Assign per branch ────────────────────────────────────────────────
+
+  /// GET /branch-assign — branches of the company with waiting work counts.
+  Future<List<BranchSummary>> branchSummaries() async {
+    final res =
+        await ApiService.get('$_prefix/branch-assign') as Map<String, dynamic>;
+    return (res['data'] as List<dynamic>? ?? [])
+        .map((e) => BranchSummary.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  /// GET /branch-assign/{branch} — pickups, deliveries and riders of a branch.
+  Future<BranchQueue> branchQueue(int branchId) async {
+    final res = await ApiService.get('$_prefix/branch-assign/$branchId')
+        as Map<String, dynamic>;
+    return BranchQueue.fromJson(Map<String, dynamic>.from(res['data'] as Map));
+  }
+
+  /// POST /branch-assign/{branch}/pickups/{id}. Returns the server message.
+  Future<String> assignBranchPickup(
+      int branchId, int pickupId, int personnelId) async {
+    final res = await ApiService.post(
+      '$_prefix/branch-assign/$branchId/pickups/$pickupId',
+      body: {'personnel_id': personnelId},
+    ) as Map<String, dynamic>;
+    return res['message']?.toString() ?? 'Pickup rider assigned.';
+  }
+
+  /// POST /branch-assign/{branch}/deliveries/{orderId}. Returns the server message.
+  Future<String> assignBranchDelivery(
+      int branchId, int orderId, int personnelId) async {
+    final res = await ApiService.post(
+      '$_prefix/branch-assign/$branchId/deliveries/$orderId',
+      body: {'personnel_id': personnelId},
+    ) as Map<String, dynamic>;
+    return res['message']?.toString() ?? 'Delivery rider assigned.';
+  }
+
   // ── Rider Management (read-only) ─────────────────────────────────────────
 
   Future<({List<CourierRiderItem> items, int online, String? note})>

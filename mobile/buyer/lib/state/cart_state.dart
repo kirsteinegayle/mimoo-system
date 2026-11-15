@@ -100,29 +100,37 @@ class CartState extends ChangeNotifier {
 
   /// Add [product] to the cart. For logged-in users: calls the API.
   /// For guests: adds to the local list (gate is in the UI layer).
-  Future<void> add(Product product,
-      {String? variantId, int quantity = 1}) async {
+  ///
+  /// [replaceQuantity] sets the line to exactly [quantity] instead of adding
+  /// to it — used by Buy Now so a repeat tap doesn't stack quantities.
+  ///
+  /// Returns the server cart item id on success, null on failure (or guest).
+  Future<int?> add(Product product,
+      {String? variantId, int quantity = 1, bool replaceQuantity = false}) async {
     if (!_isLoggedIn) {
       final existing = _localItems.where((i) => i.product.id == product.id);
       if (existing.isNotEmpty) {
-        existing.first.quantity += quantity;
+        existing.first.quantity =
+            replaceQuantity ? quantity : existing.first.quantity + quantity;
       } else {
         _localItems.add(CartItem(product: product, quantity: quantity));
       }
       notifyListeners();
-      return;
+      return null;
     }
 
     // Optimistic: show loading
     _loading = true;
     notifyListeners();
     try {
-      await CartRepository.instance.addItem(
+      final res = await CartRepository.instance.addItem(
         productId: product.id,
         quantity: quantity,
         variantId: variantId,
+        replaceQuantity: replaceQuantity,
       );
       await _fetchFromServer();
+      return res.itemId;
     } on ApiException catch (e) {
       _lastError = e.message;
       _loading = false;
@@ -132,6 +140,7 @@ class CartState extends ChangeNotifier {
       _loading = false;
       notifyListeners();
     }
+    return null;
   }
 
   /// Remove a product from cart (by productId match).

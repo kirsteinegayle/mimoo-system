@@ -92,7 +92,7 @@ class RiderApproveCheck extends Command
             $this->row('in delivery-riders', $mine ? 'yes' : 'no', 'yes', $list->count() . ' rider(s)');
             $this->row('delivery-riders vehicle_type', $mine['vehicle_type'] ?? 'null', 'motorcycle', 'from riders.vehicle_type');
 
-            // 4. Pickup personnel list (same query as PickupManagementController::index).
+            // 4. Pickup personnel list (active personnel of the company, as in Api\CourierPickupController).
             $pickup = CourierPersonnel::where('courier_id', $courier->id)->where('status', 'active')->pluck('id');
             $this->row('in pickup personnel list', $p && $pickup->contains($p->id) ? 'yes' : 'no', 'yes', $pickup->count() . ' active personnel');
 

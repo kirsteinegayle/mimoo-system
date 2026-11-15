@@ -33,6 +33,8 @@ export interface ChatThreadView {
   lastMessage: ChatMessageItem | null;
   lastMessageAt: string | null;
   unread: number;
+  /** Optional role label of the other side ("Admin", "Logistics", ...). */
+  badge?: string | null;
 }
 
 export interface ChatInboxProps {
@@ -88,6 +90,28 @@ function preview(m: ChatMessageItem | null) {
 }
 
 const peso = (n: number) => "₱" + n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** `accent` + alpha for tints ("#3B1F6B" → "#3B1F6B14"); non-hex accents fall back to a neutral tint. */
+const tint = (accent: string, alphaHex: string) => (/^#[0-9a-f]{6}$/i.test(accent) ? `${accent}${alphaHex}` : "rgba(0,0,0,0.05)");
+
+/** Role pill shown next to a counterpart name. */
+function RoleBadge({ label, accent }: { label: string; accent: string }) {
+  return (
+    <span
+      className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+      style={{ background: tint(accent, "1A"), color: accent }}
+    >
+      {label}
+    </span>
+  );
+}
+
+// Messaging pages are light-only designs (white cards). The app adds `.dark`
+// on <html> when the OS is dark, which made inputs/selects inherit near-white
+// text on white boxes. Lock this component to the light scheme and give every
+// control an explicit text colour.
+const FIELD =
+  "rounded-lg border border-gray-300 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2";
 
 export function ChatInbox({
   threadsUrl,
@@ -297,22 +321,22 @@ export function ChatInbox({
   const product = activeProduct ?? active?.product ?? null;
 
   return (
-    <div className={`grid grid-cols-1 gap-4 lg:grid-cols-3 ${heightClass}`}>
+    <div className={`grid grid-cols-1 gap-4 text-gray-900 [color-scheme:light] lg:grid-cols-3 ${heightClass}`}>
       {/* Conversation list */}
       <aside
-        className={`${activeId ? "hidden lg:flex" : "flex"} min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white`}
+        className={`${activeId ? "hidden lg:flex" : "flex"} min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm`}
       >
         <div className="border-b border-gray-200 p-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={1.5} />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" strokeWidth={1.5} />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search conversations..."
               aria-label="Search conversations"
-              className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2"
-              style={{ ["--tw-ring-color" as any]: `${accent}33` }}
+              className={`w-full py-2 pl-9 pr-3 ${FIELD}`}
+              style={{ ["--tw-ring-color" as any]: tint(accent, "33") }}
             />
           </div>
         </div>
@@ -340,9 +364,11 @@ export function ChatInbox({
                     <button
                       type="button"
                       onClick={() => openThread(t.id)}
-                      className={`flex w-full items-start gap-3 border-b border-gray-100 px-3 py-3 text-left transition hover:bg-gray-50 ${
-                        isActive ? "bg-gray-50" : ""
+                      aria-current={isActive ? "true" : undefined}
+                      className={`flex w-full items-start gap-3 border-b border-l-4 border-b-gray-100 px-3 py-3 text-left transition ${
+                        isActive ? "" : "border-l-transparent hover:bg-gray-50"
                       }`}
+                      style={isActive ? { background: tint(accent, "12"), borderLeftColor: accent } : undefined}
                     >
                       {t.photoUrl ? (
                         <img src={t.photoUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
@@ -356,13 +382,16 @@ export function ChatInbox({
                       )}
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center justify-between gap-2">
-                          <span className={`truncate text-sm ${t.unread ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>
-                            {t.name}
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <span className={`truncate text-sm ${t.unread ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>
+                              {t.name}
+                            </span>
+                            {t.badge && <RoleBadge label={t.badge} accent={accent} />}
                           </span>
-                          <span className="shrink-0 text-[11px] text-gray-400">{timeAgo(t.lastMessageAt)}</span>
+                          <span className="shrink-0 text-[11px] text-gray-500">{timeAgo(t.lastMessageAt)}</span>
                         </span>
                         <span className="mt-0.5 flex items-center justify-between gap-2">
-                          <span className={`truncate text-xs ${t.unread ? "font-semibold text-gray-800" : "text-gray-500"}`}>
+                          <span className={`truncate text-xs ${t.unread ? "font-semibold text-gray-800" : "text-gray-600"}`}>
                             {preview(t.lastMessage)}
                           </span>
                           {t.unread > 0 && (
@@ -387,7 +416,7 @@ export function ChatInbox({
 
       {/* Conversation */}
       <section
-        className={`${activeId ? "flex" : "hidden lg:flex"} min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white lg:col-span-2`}
+        className={`${activeId ? "flex" : "hidden lg:flex"} min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:col-span-2`}
       >
         {!activeId ? (
           <div className="flex flex-1 items-center justify-center p-6 text-center">
@@ -420,7 +449,10 @@ export function ChatInbox({
                 {initials(title || "?")}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-gray-900">{title || "Conversation"}</p>
+                <p className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate text-sm font-semibold text-gray-900">{title || "Conversation"}</span>
+                  {active?.badge && <RoleBadge label={active.badge} accent={accent} />}
+                </p>
                 {product && (
                   <p className="truncate text-xs text-gray-500">
                     About: {product.name} · {peso(product.effective_price)}
@@ -432,7 +464,12 @@ export function ChatInbox({
               )}
             </header>
 
-            <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-gray-50 p-4">
+            <div
+              ref={scrollRef}
+              onScroll={onScroll}
+              className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4"
+              style={{ background: tint(accent, "08") }}
+            >
               {loadingMessages ? (
                 <div className="flex h-full items-center justify-center text-sm text-gray-500">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading messages...
@@ -446,6 +483,7 @@ export function ChatInbox({
               ) : (
                 messages.map((m) => (
                   <div key={m.id} className={`flex ${m.is_mine ? "justify-end" : "justify-start"}`}>
+                    {/* Sent = solid accent + white text; received = white card + dark text. */}
                     <div
                       className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
                         m.is_mine ? "rounded-br-sm text-white" : "rounded-bl-sm border border-gray-200 bg-white text-gray-900"
@@ -458,7 +496,7 @@ export function ChatInbox({
                         </a>
                       )}
                       {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
-                      <p className={`mt-1 text-right text-[10px] ${m.is_mine ? "text-white/70" : "text-gray-400"}`}>
+                      <p className={`mt-1 text-right text-[10px] ${m.is_mine ? "text-white/80" : "text-gray-500"}`}>
                         {clock(m.created_at)}
                         {m.is_mine && (m.read_at ? " · Seen" : " · Sent")}
                       </p>
@@ -517,8 +555,8 @@ export function ChatInbox({
                   maxLength={maxLength}
                   placeholder="Type a message..."
                   aria-label="Message"
-                  className="max-h-32 min-h-[40px] flex-1 resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                  style={{ ["--tw-ring-color" as any]: `${accent}33` }}
+                  className={`max-h-32 min-h-[40px] flex-1 resize-none px-3 py-2 ${FIELD}`}
+                  style={{ ["--tw-ring-color" as any]: tint(accent, "33") }}
                 />
                 <button
                   type="submit"
@@ -531,7 +569,7 @@ export function ChatInbox({
                 </button>
               </div>
               {draft.length > maxLength - 100 && (
-                <p className="mt-1 text-right text-[10px] text-gray-400">
+                <p className="mt-1 text-right text-[10px] text-gray-500">
                   {draft.length}/{maxLength}
                 </p>
               )}

@@ -171,23 +171,38 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
-  void _onVariantConfirmed({
+  Future<void> _onVariantConfirmed({
     required String? variantId,
     required int qty,
     required bool buyNow,
-  }) {
+  }) async {
     final cart = CartProvider.of(context);
-    // Single API call with the exact quantity chosen in the sheet
-    cart.add(_product, variantId: variantId, quantity: qty);
 
     if (buyNow) {
+      // Wait for the server before opening checkout (otherwise the page
+      // renders an empty cart = ₱0). replaceQuantity sets the line to exactly
+      // `qty` so repeat Buy Now taps don't stack (the old "double" bug).
+      final itemId = await cart.add(_product,
+          variantId: variantId, quantity: qty, replaceQuantity: true);
+      if (!mounted) return;
+      if (itemId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(cart.consumeError() ?? 'Could not start checkout.',
+              style: _pjs(size: 13, color: Colors.white)),
+          backgroundColor: AppColors.error,
+        ));
+        return;
+      }
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => CartProvider(cart: cart, child: const CheckoutPage()),
+          // Only check out the Buy Now item, not the whole cart.
+          builder: (_) => CartProvider(
+              cart: cart, child: CheckoutPage(onlyCartItemIds: [itemId])),
         ),
       );
     } else {
+      cart.add(_product, variantId: variantId, quantity: qty);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Added to cart!',

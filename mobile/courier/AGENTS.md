@@ -44,7 +44,21 @@ because the PHP CLI does not load `pdo_sqlite` by default.
 
 ## Current implementation notes
 
-- Bottom navigation is Home, Shipments, Scan, Pickup, Account; Scan is centered.
+- Bottom navigation is Home, Shipments, Scan, Assign, Delivery; Scan is centered.
+  The Pickup Management tab was removed (2026-11-15). "Assign" is New Assign per
+  branch (`pages/branch_assign/`, `/api/courier-app/branch-assign/*`): pickups
+  grouped by the branch covering the seller's city, deliveries by the parcel's
+  current facility, riders only from their own branch
+  (`riders.assigned_branch_id`). Backend check:
+  `php artisan courier:test-branch-assign` (rollback-only).
+- Home dashboard: Quick Actions (switch tabs via `CourierTabs` / open pages;
+  badges from `/dashboard` `new_pickups_unassigned`, `deliveries_waiting`,
+  `online_riders`) and Recent Activity (`/activity?limit=&type=`, built from
+  assignment history + hub scans + delivery jobs, no new table). The old
+  "Dispatch Timeline" stays behind `CourierFeatures.timeline` (no `/timeline`
+  route exists).
+- `lib/pages/facilities/facilities_page.dart` is not imported anywhere and does
+  not compile against the current repository/models (analyzer errors).
 - Home timeline, in-app notifications/chat, profile, documents, duty/checklist,
   trip lifecycle, history and pay have Courier API support.
 - Trip assignment/acceptance is serialized by courier; breakdown reassignment

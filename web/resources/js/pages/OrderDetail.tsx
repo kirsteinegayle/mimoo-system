@@ -224,13 +224,22 @@ export default function OrderDetail({ order, auth, returnReasons = [] }: PagePro
             </div>
           </div>
 
-          {order.waybill_number && (
-            <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-md">
-              <Package className="w-4 h-4" />
-              <span className="font-medium">Waybill:</span>
-              <span className="font-mono">{order.waybill_number}</span>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            {order.waybill_number && (
+              <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-md">
+                <Package className="w-4 h-4" />
+                <span className="font-medium">Waybill:</span>
+                <span className="font-mono">{order.waybill_number}</span>
+              </div>
+            )}
+            <Link
+              href={`/orders/${order.id}/tracking`}
+              className="inline-flex items-center gap-2 rounded-md border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-medium text-purple-800 hover:bg-purple-100"
+            >
+              <Truck className="w-4 h-4" />
+              Track Order
+            </Link>
+          </div>
         </div>
 
         {/* In-transit timeline (same steps as the buyer app); other statuses unchanged */}

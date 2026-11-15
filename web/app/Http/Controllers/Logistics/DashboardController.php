@@ -39,7 +39,8 @@ class DashboardController extends Controller
             'deliveredTotal' => DeliveryJob::where('status', DeliveryJob::STATUS_DELIVERED)->count(),
         ];
 
-        $recent = ShipmentAssignment::with(['order:id,waybill_number,shipping_address,status,tracking_status,tracking_updated_at', 'personnel:id,name'])
+        // Full order row: Order::recipient() needs shipping_* (and the optional structured address columns).
+        $recent = ShipmentAssignment::with(['order', 'personnel:id,name'])
             ->latest('id')->limit(8)->get();
         $jobs = DeliveryJob::with('personnel:id,name')
             ->whereIn('order_id', $recent->pluck('order_id'))->orderBy('id')->get()->keyBy('order_id');
@@ -47,14 +48,13 @@ class DashboardController extends Controller
         $recentShipments = $recent->map(function (ShipmentAssignment $a) use ($jobs) {
             $order = $a->order;
             $job   = $jobs->get($a->order_id);
-            $parts = array_values(array_filter(array_map('trim', explode(',', (string) $order?->shipping_address))));
-            $city  = count($parts) >= 2 ? $parts[count($parts) - 2] : ($parts[0] ?? '—');
+            $r     = $order?->recipient();
             $when  = $order?->tracking_updated_at ?? $a->updated_at;
 
             return [
                 'id'          => $order?->waybill_number ?? ('#' . $a->order_id),
-                'destination' => $city,
-                'address'     => $order?->shipping_address ?? '—',
+                'destination' => $r['city'] ?? '—',
+                'address'     => $r['address'] ?? '—',
                 'rider'       => $job?->personnel?->name ?? $a->personnel?->name ?? 'Not assigned',
                 'lastScan'    => $when?->format('h:i A') ?? '—',
                 'date'        => $when?->format('M d') ?? '',

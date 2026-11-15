@@ -5,6 +5,7 @@ import '../../services/api_service.dart';
 import '../../services/order_repository.dart';
 import 'real_order_actions.dart';
 import 'delivery_chat_page.dart';
+import 'order_transit_page.dart';
 import '../../widgets/order_tracking_section.dart';
 import '../../widgets/proof_of_delivery_card.dart';
 import '../../theme/app_theme.dart';
@@ -138,6 +139,26 @@ class _ApiOrderDetailPageState extends State<ApiOrderDetailPage> {
                           ),
                         ),
                       OrderTrackingSection(order: o),
+                      // Full transit log (hub scans, rider steps, timestamps).
+                      if (o.status != api_order.OrderStatus.cancelled)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          OrderTransitPage(orderId: o.id))),
+                              icon: const Icon(Icons.timeline),
+                              label: const Text('View transit history'),
+                              style: OutlinedButton.styleFrom(
+                                  foregroundColor: _kPrimary,
+                                  side: const BorderSide(color: _kBorder),
+                                  padding: const EdgeInsets.symmetric(vertical: 12)),
+                            ),
+                          ),
+                        ),
                       // Proof of delivery — only once delivered; hides itself
                       // when the server has no photo (404).
                       if (o.trackingStatus == 'delivered' ||

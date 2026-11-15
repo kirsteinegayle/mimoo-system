@@ -4,11 +4,11 @@ import '../../services/courier_repository.dart';
 import '../../state/auth_service.dart';
 import '../../theme/mimoo_theme.dart';
 import '../account/account_tab.dart';
+import '../branch_assign/branch_assign_page.dart';
 import '../dashboard/dashboard_tab.dart';
 import '../delivery/delivery_management_page.dart';
 import '../messages/messages_page.dart';
 import '../notifications/notifications_page.dart';
-import '../pickups/pickups_tab.dart';
 import '../riders/rider_management_page.dart';
 import '../scan/scan_tab.dart';
 import '../shipments/shipments_tab.dart';
@@ -25,23 +25,29 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  static const _tabs = [
-    DashboardTab(),
-    ShipmentsTab(),
-    ScanTab(),
-    PickupsTab(),
+  // Not const: the dashboard's Quick Actions switch tabs / open pages here.
+  late final List<Widget> _tabs = [
+    DashboardTab(
+      onOpenTab: (i) => setState(() => _selectedIndex = i),
+      onOpenPage: _openPage,
+    ),
+    const ShipmentsTab(),
+    const ScanTab(),
+    // New Assign per branch (replaces the removed Pickup Management tab):
+    // pickup + delivery riders, grouped by branch.
+    const BranchAssignPage(),
     // Delivery tab: rider assignment (same as web Delivery Management).
     // Linehaul trips have no backend route yet (CourierFeatures.trips).
     CourierFeatures.trips
-        ? TripsPage(embedded: true)
-        : DeliveryManagementPage(),
+        ? const TripsPage(embedded: true)
+        : const DeliveryManagementPage(),
   ];
 
   static const _labels = [
     'Home',
     'Shipments',
     'Scan',
-    'Pickup',
+    'Assign',
     'Delivery',
   ];
 
@@ -49,7 +55,7 @@ class _HomePageState extends State<HomePage> {
     Icons.home_outlined,
     Icons.assignment_outlined,
     Icons.qr_code_scanner_outlined,
-    Icons.local_shipping_outlined,
+    Icons.assignment_ind_outlined,
     Icons.route_outlined,
   ];
 
@@ -57,7 +63,7 @@ class _HomePageState extends State<HomePage> {
     Icons.home,
     Icons.assignment,
     Icons.qr_code_scanner,
-    Icons.local_shipping,
+    Icons.assignment_ind,
     Icons.route,
   ];
 
@@ -65,7 +71,7 @@ class _HomePageState extends State<HomePage> {
     'Home',
     'Incoming Shipments',
     'Parcel Scan',
-    'Pickup Management',
+    'New Assign',
     'Delivery Management',
   ];
 

@@ -517,8 +517,8 @@ class RiderDeliveryController extends Controller
             'waybill_number' => $order?->waybill_number,
             'status'         => $job->status,
             'attempt'        => $this->attemptLabel($job),
-            'buyer_name'     => $order?->shipping_name ?? $order?->buyer?->name,
-            'address'        => $order?->shipping_address,
+            'buyer_name'     => $order?->recipient()['name'],
+            'address'        => $order?->recipient()['address'],
             'cod_amount'     => (float) $job->cod_amount,
             'assigned_at'    => $job->assigned_at?->toIso8601String(),
         ];
@@ -530,11 +530,10 @@ class RiderDeliveryController extends Controller
         $order = $job->order;
 
         return $this->summary($job) + [
-            'buyer' => $order ? [
-                'name'    => $order->shipping_name ?? $order->buyer?->name,
-                'phone'   => $order->shipping_phone ?? $order->buyer?->contact_number,
-                'address' => $order->shipping_address,
-            ] : null,
+            'buyer' => $order ? array_intersect_key(
+                $order->recipient(),
+                array_flip(['name', 'phone', 'address'])
+            ) : null,
             'seller'          => $order ? $this->sellerFromOrder($order) : null,
             'hub'             => $job->facility ? [
                 'id'   => $job->facility->id,

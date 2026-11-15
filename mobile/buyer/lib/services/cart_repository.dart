@@ -16,11 +16,13 @@ class CartRepository {
     required int productId,
     int quantity = 1,
     String? variantId,
+    bool replaceQuantity = false,
   }) async {
     final res = await ApiService.post('/buyer/cart/items', body: {
       'product_id': productId,
       'quantity': quantity,
       if (variantId != null) 'variant_id': variantId,
+      if (replaceQuantity) 'replace_quantity': true,
     }) as Map<String, dynamic>;
     return CartMutationResult.fromJson(res);
   }

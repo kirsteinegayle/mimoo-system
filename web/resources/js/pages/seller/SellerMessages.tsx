@@ -81,7 +81,7 @@ export default function SellerMessages() {
                         emptyHint="Customer messages will appear here"
                     />
                     ) : (
-                        <RoleInbox base="/messaging" onUnreadTotal={setTeamUnread} emptyHint="Messages from the admin team and couriers appear here" />
+                        <RoleInbox base="/messaging" onUnreadTotal={setTeamUnread} emptyHint="Message the admin team, and the couriers and logistics hubs handling your orders" />
                     )}
                 </div>
             </SellerShell>

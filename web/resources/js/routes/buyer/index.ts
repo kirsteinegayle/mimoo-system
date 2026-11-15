@@ -78,7 +78,7 @@ notifications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     
     notifications.form = notificationsForm
 /**
- * @see routes/web.php:2105
+ * @see routes/web.php:2068
  * @route '/following'
  */
 export const following = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -92,7 +92,7 @@ following.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2105
+ * @see routes/web.php:2068
  * @route '/following'
  */
 following.url = (options?: RouteQueryOptions) => {
@@ -100,7 +100,7 @@ following.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2105
+ * @see routes/web.php:2068
  * @route '/following'
  */
 following.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -108,7 +108,7 @@ following.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2105
+ * @see routes/web.php:2068
  * @route '/following'
  */
 following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -117,7 +117,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2105
+ * @see routes/web.php:2068
  * @route '/following'
  */
     const followingForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -126,7 +126,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2105
+ * @see routes/web.php:2068
  * @route '/following'
  */
         followingForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -134,7 +134,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2105
+ * @see routes/web.php:2068
  * @route '/following'
  */
         followingForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -149,7 +149,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     following.form = followingForm
 /**
- * @see routes/web.php:2123
+ * @see routes/web.php:2086
  * @route '/returns'
  */
 export const returns = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -163,7 +163,7 @@ returns.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2123
+ * @see routes/web.php:2086
  * @route '/returns'
  */
 returns.url = (options?: RouteQueryOptions) => {
@@ -171,7 +171,7 @@ returns.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2123
+ * @see routes/web.php:2086
  * @route '/returns'
  */
 returns.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -179,7 +179,7 @@ returns.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2123
+ * @see routes/web.php:2086
  * @route '/returns'
  */
 returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -188,7 +188,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2123
+ * @see routes/web.php:2086
  * @route '/returns'
  */
     const returnsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -197,7 +197,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2123
+ * @see routes/web.php:2086
  * @route '/returns'
  */
         returnsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -205,7 +205,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2123
+ * @see routes/web.php:2086
  * @route '/returns'
  */
         returnsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

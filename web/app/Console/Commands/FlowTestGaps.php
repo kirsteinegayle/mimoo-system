@@ -112,7 +112,7 @@ class FlowTestGaps extends Command
 
         $o4 = $mk('in_transit');
         $a4 = $this->assignment($o4, $c1, 'accepted', 'scheduled');
-        $r = $this->http($hub1, 'POST', "/api/courier/pickups/{$a4->id}/cancel", ['reason' => 'Seller closed the shop today.']);
+        $r = $this->http($c1, 'POST', "/api/courier-app/pickups/{$a4->id}/cancel", ['reason' => 'Seller closed the shop today.']);
         $this->check('2 pickup cancelled by the courier', $r['status'] . '/' . ShipmentAssignment::find($a4->id)->pickup_status, '200/cancelled', $r['body']['message'] ?? '');
         $this->check('2 cancelled pickup: order back to shipped', Order::find($o4->id)->status, 'shipped', '');
 
@@ -200,9 +200,9 @@ class FlowTestGaps extends Command
         $this->check('6 stored values are all valid enum values', ShipmentAssignmentHistory::where('assignment_id', $ha->id)->whereNotIn('action', ['assigned', 'accepted', 'rejected', 're-assigned'])->count(), 0, '');
         $this->check('6 real wording kept in the notes', ShipmentAssignmentHistory::where('assignment_id', $ha->id)->where('notes', 'like', 'failed attempt%')->count(), 1, '');
         $ha2 = $this->assignment($mk('in_transit'), $c1, 'accepted', 'pending_pickup');
-        $this->check('6 web schedule', $this->http($hub1, 'POST', "/api/courier/pickups/{$ha2->id}/schedule", ['scheduled_date' => now()->toDateString(), 'scheduled_time_window' => '09:00-12:00'])['status'], 200, '');
-        $this->check('6 web reschedule', $this->http($hub1, 'POST', "/api/courier/pickups/{$ha2->id}/reschedule", ['scheduled_date' => now()->addDay()->toDateString(), 'scheduled_time_window' => '13:00-16:00', 'reason' => 'Seller asked for a later time.'])['status'], 200, '');
-        $this->check('6 web record failed attempt', $this->http($hub1, 'POST', "/api/courier/pickups/{$ha2->id}/record-failed", ['reason' => 'Seller was not around.'])['status'], 200, '');
+        $this->check('6 app schedule', $this->http($c1, 'POST', "/api/courier-app/pickups/{$ha2->id}/schedule", ['scheduled_date' => now()->toDateString(), 'scheduled_time_window' => '09:00-12:00'])['status'], 200, '');
+        $this->check('6 app reschedule', $this->http($c1, 'POST', "/api/courier-app/pickups/{$ha2->id}/reschedule", ['scheduled_date' => now()->addDay()->toDateString(), 'scheduled_time_window' => '13:00-16:00', 'reason' => 'Seller asked for a later time.'])['status'], 200, '');
+        $this->check('6 app record failed attempt', $this->http($c1, 'POST', "/api/courier-app/pickups/{$ha2->id}/record-failed", ['reason' => 'Seller was not around.'])['status'], 200, '');
 
         // ── 7. Legacy seller order API ──────────────────────────────────────
         $seller2 = $this->makeUser('seller.2', ['account_type' => 'seller', 'role' => 'seller']);
@@ -236,14 +236,14 @@ class FlowTestGaps extends Command
         }
         $this->check('8 three scans: one pickup earning', RiderEarning::where('shipment_assignment_id', $a10->id)->count(), 1, '');
         $hist = ShipmentAssignmentHistory::where('assignment_id', $a10->id)->count();
-        $r = $this->http($hub1, 'POST', "/api/courier/pickups/{$a10->id}/confirm", ['scanned_waybill' => $o10->waybill_number]);
+        $r = $this->http($c1, 'POST', "/api/courier-app/pickups/{$a10->id}/confirm", ['scanned_waybill' => $o10->waybill_number]);
         $this->check('8 staff confirm after the rider scan: idempotent, no new history', $r['status'] . '/' . json_encode($r['body']['idempotent'] ?? null) . '/' . (ShipmentAssignmentHistory::where('assignment_id', $a10->id)->count() - $hist), '200/true/0', '');
         $this->check('8 picked_up_by stays the rider', ShipmentAssignment::find($a10->id)->picked_up_by, $rider->id, '');
         $o11 = $mk('in_transit');
         $a11 = $this->assignment($o11, $c1, 'accepted', 'scheduled');
-        $this->http($hub1, 'POST', "/api/courier/pickups/{$a11->id}/confirm", ['scanned_waybill' => $o11->waybill_number]);
-        $r = $this->http($hub1, 'POST', "/api/courier/pickups/{$a11->id}/confirm", ['scanned_waybill' => $o11->waybill_number]);
-        $this->check('8 confirm twice: one history row, picked_up_by = the staff member', $r['status'] . '/' . ShipmentAssignmentHistory::where('assignment_id', $a11->id)->count() . '/' . ShipmentAssignment::find($a11->id)->picked_up_by, "200/1/{$hub1->id}", '');
+        $this->http($c1, 'POST', "/api/courier-app/pickups/{$a11->id}/confirm", ['scanned_waybill' => $o11->waybill_number]);
+        $r = $this->http($c1, 'POST', "/api/courier-app/pickups/{$a11->id}/confirm", ['scanned_waybill' => $o11->waybill_number]);
+        $this->check('8 confirm twice: one history row, picked_up_by = the courier', $r['status'] . '/' . ShipmentAssignmentHistory::where('assignment_id', $a11->id)->count() . '/' . ShipmentAssignment::find($a11->id)->picked_up_by, "200/1/{$c1->id}", '');
         $idx = fn (string $t, string $i) => collect(DB::select("show index from {$t}"))->contains(fn ($x) => $x->Key_name === $i && (int) $x->Non_unique === 0) ? 'unique' : 'MISSING';
         $this->check('8 DB: one earning per delivery / pickup', $idx('rider_earnings', 'rider_earnings_delivery_job_id_unique') . '/' . $idx('rider_earnings', 'rider_earnings_shipment_assignment_id_unique'), 'unique/unique', '');
         $this->check('8 DB: one delivery job per order, one active assignment per order', $idx('delivery_jobs', 'delivery_jobs_order_id_unique') . '/' . $idx('shipment_assignments', 'idx_active_assignment_per_order'), 'unique/unique', '');

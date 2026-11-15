@@ -56,7 +56,7 @@ class HelpCenterPage extends StatelessWidget {
               _HelpItem(
                 title: 'A pickup could not be completed',
                 body:
-                    'Open Pickup Management, select the pickup, and record the reason so the attempt is documented.',
+                    'Contact your logistics hub with the waybill number and the reason so the attempt is documented.',
               ),
               _HelpItem(
                 title: 'Account or document issue',

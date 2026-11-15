@@ -95,23 +95,8 @@ class IncomingShipmentsController extends Controller
             }
 
             // Get buyer destination from shipping address (city and barangay only)
-            $destination = 'Not provided';
-            if ($order->shipping_address) {
-                $address = $order->shipping_address;
-                $parts = array_map('trim', explode(',', $address));
-                
-                // Format: Street, Barangay, City, Province/Region
-                if (count($parts) >= 3) {
-                    $barangay = isset($parts[1]) ? preg_replace('/^(Brgy\.?|Barangay)\s+/i', '', $parts[1]) : '';
-                    $city = isset($parts[count($parts) - 2]) ? preg_replace('/^(City of|Municipality of)\s+/i', '', $parts[count($parts) - 2]) : '';
-                    
-                    if ($barangay && $city) {
-                        $destination = "$city, $barangay";
-                    } elseif ($city) {
-                        $destination = $city;
-                    }
-                }
-            }
+            $r = $order->recipient();
+            $destination = implode(', ', array_filter([$r['city'], $r['barangay']])) ?: 'Not provided';
 
             return [
                 'id' => $assignment->id,
@@ -243,57 +228,15 @@ class IncomingShipmentsController extends Controller
         }
 
         // Get buyer destination from shipping address
+        // Limited buyer destination (full details only after acceptance) —
+        // same source as every other module: Order::recipient().
+        $r = $order->recipient();
         $buyerDestination = [
-            'city' => 'Not provided',
-            'barangay' => 'Not provided',
-            'province' => 'Not provided',
-            'region' => 'Not provided',
+            'city'     => $r['city'] ?? 'Not provided',
+            'barangay' => $r['barangay'] ?? 'Not provided',
+            'province' => $r['province'] ?? 'Not provided',
+            'region'   => $r['region'] ?? 'Not provided',
         ];
-        
-        // Parse shipping address to extract city, barangay, province, region
-        if ($order->shipping_address) {
-            $address = $order->shipping_address;
-            $parts = array_map('trim', explode(',', $address));
-            
-            // Address format: Street, Barangay, City, Province/Region
-            // Example: "092 Gen Luna St., Maracta (Pob.), Lumban, Laguna"
-            
-            if (count($parts) >= 4) {
-                // Extract barangay (usually 2nd part)
-                if (isset($parts[1])) {
-                    $barangay = $parts[1];
-                    // Clean up "Brgy." or "Barangay" prefix
-                    $barangay = preg_replace('/^(Brgy\.?|Barangay)\s+/i', '', $barangay);
-                    $buyerDestination['barangay'] = $barangay;
-                }
-                
-                // Extract city (usually 3rd part, second to last)
-                if (isset($parts[count($parts) - 2])) {
-                    $city = $parts[count($parts) - 2];
-                    // Clean up "City of" or "Municipality of" prefix
-                    $city = preg_replace('/^(City of|Municipality of)\s+/i', '', $city);
-                    $buyerDestination['city'] = $city;
-                }
-                
-                // Extract province/region (usually last part)
-                if (isset($parts[count($parts) - 1])) {
-                    $provinceOrRegion = $parts[count($parts) - 1];
-                    
-                    // Check if it's a region (contains "Region" or known region names)
-                    if (preg_match('/(Region|NCR|CALABARZON|Metro Manila)/i', $provinceOrRegion)) {
-                        $buyerDestination['region'] = $provinceOrRegion;
-                    } else {
-                        $buyerDestination['province'] = $provinceOrRegion;
-                    }
-                }
-            } elseif (count($parts) >= 2) {
-                // Fallback for shorter addresses
-                $buyerDestination['city'] = $parts[count($parts) - 1];
-                if (isset($parts[count($parts) - 2])) {
-                    $buyerDestination['barangay'] = $parts[count($parts) - 2];
-                }
-            }
-        }
 
         // Transform history
         $history = $assignment->history->map(function ($entry) {

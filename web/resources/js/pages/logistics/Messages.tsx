@@ -213,7 +213,7 @@ export default function Messages({ auth, company }: Props) {
                     <main className="flex-1 overflow-auto p-6 bg-gray-50">
                         <div className="max-w-6xl mx-auto">
                             <h1 className="text-2xl font-bold text-gray-900 mb-6">Messages</h1>
-                            <RoleInbox base="/messaging" emptyHint="Messages from the admin team appear here" />
+                            <RoleInbox base="/messaging" emptyHint="Message the admin team, your courier company and sellers you ship for" />
                         </div>
                     </main>
                 </div>

@@ -20,6 +20,10 @@ class Order extends Model
         'shipping_name',
         'shipping_address',
         'shipping_phone',
+        'shipping_barangay',
+        'shipping_municipality_city',
+        'shipping_province',
+        'shipping_region',
         'idempotency_key',
         'waybill_number',
         'waybill_generated_at',
@@ -144,6 +148,116 @@ class Order extends Model
     public function buyer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'buyer_id');
+    }
+
+    // ── Recipient: the ONE source of truth for "buyer info" ──────────────────
+    // Seller, Courier, Logistics and Rider screens must all use these instead
+    // of reading shipping_* / buyer->name by hand.
+    //
+    // Rule: the order's shipping snapshot (who receives the parcel) wins; the
+    // buyer account is only a fallback for legacy orders with missing fields.
+
+    // Load full order rows (no column-restricted selects): recipient() reads
+    // shipping_* and the structured shipping_barangay/_municipality_city/
+    // _province/_region columns, which may not exist before the migration runs.
+
+    /**
+     * @return array{name: ?string, phone: ?string, address: ?string,
+     *               barangay: ?string, city: ?string, province: ?string, region: ?string}
+     */
+    public function recipient(): array
+    {
+        $blank  = fn ($v) => $v === null || trim((string) $v) === '';
+        // Only touch the buyer account (extra query) when the snapshot is missing data.
+        $needsAccount = $blank($this->shipping_name) || $blank($this->shipping_phone);
+        $buyer  = ($needsAccount && $this->buyer_id) ? $this->buyer : null;
+        $parsed = self::parseAddress($this->shipping_address);
+
+        $accountName = $buyer
+            ? ($buyer->name ?: trim(($buyer->first_name ?? '') . ' ' . ($buyer->last_name ?? '')))
+            : null;
+
+        $pick = fn (...$vals) => collect($vals)->first(fn ($v) => ! $blank($v));
+
+        return [
+            'name'     => $pick($this->shipping_name, $accountName),
+            'phone'    => $pick($this->shipping_phone, $buyer?->contact_number),
+            'address'  => $pick($this->shipping_address),
+            'barangay' => $pick($this->shipping_barangay, $parsed['barangay']),
+            'city'     => $pick($this->shipping_municipality_city, $parsed['city']),
+            'province' => $pick($this->shipping_province, $parsed['province']),
+            'region'   => $pick($this->shipping_region, $parsed['region']),
+        ];
+    }
+
+    /**
+     * Flat buyer_* keys used by the courier/logistics pages and apps.
+     * Missing values come back as 'N/A' (never null) so UIs can't crash.
+     */
+    public function buyerFields(): array
+    {
+        $r = $this->recipient();
+
+        return [
+            'buyer_name'     => $r['name'] ?? 'N/A',
+            'buyer_phone'    => $r['phone'] ?? 'N/A',
+            'buyer_address'  => $r['address'] ?? 'N/A',
+            'buyer_barangay' => $r['barangay'] ?? 'N/A',
+            'buyer_city'     => $r['city'] ?? 'N/A',
+            'buyer_province' => $r['province'] ?? 'N/A',
+            'buyer_region'   => $r['region'] ?? 'N/A',
+        ];
+    }
+
+    /** "City, Barangay"-style short destination for lists. */
+    public function destinationLabel(): string
+    {
+        $r = $this->recipient();
+        $label = implode(', ', array_filter([$r['city'], $r['province']]));
+
+        return $label !== '' ? $label : 'Not provided';
+    }
+
+    /**
+     * Best-effort split of a free-text address for legacy orders. Expects the
+     * BuyerAddress::fullAddress() order: street, barangay, city, [district],
+     * province, [region], [postal].
+     *
+     * @return array{barangay: ?string, city: ?string, province: ?string, region: ?string}
+     */
+    public static function parseAddress(?string $address): array
+    {
+        $out = ['barangay' => null, 'city' => null, 'province' => null, 'region' => null];
+        $parts = array_values(array_filter(array_map('trim', explode(',', (string) $address)), fn ($p) => $p !== ''));
+
+        // Drop trailing postal code, then a trailing region token.
+        if ($parts && preg_match('/^\d{4}$/', end($parts))) {
+            array_pop($parts);
+        }
+        if ($parts && preg_match('/\b(Region|NCR|National Capital|CALABARZON|MIMAROPA|BARMM|CAR|Cordillera|Metro Manila)\b/i', end($parts))) {
+            $out['region'] = array_pop($parts);
+        }
+
+        $n = count($parts);
+        if ($n >= 4) {
+            $out['barangay'] = $parts[1];
+            $out['city']     = $parts[2];
+            $out['province'] = $parts[$n - 1];
+        } elseif ($n === 3) {
+            $out['barangay'] = $parts[1];
+            $out['city']     = $parts[2];
+        } elseif ($n === 2) {
+            $out['city'] = $parts[1];
+        }
+
+        if ($out['barangay']) {
+            $out['barangay'] = preg_replace('/^(Brgy\.?|Barangay)\s+/i', '', $out['barangay']);
+        }
+        if ($out['city']) {
+            $out['city'] = preg_replace('/^(City of|Municipality of)\s+/i', '', $out['city']);
+        }
+
+        return $out;
     }
 
     /**

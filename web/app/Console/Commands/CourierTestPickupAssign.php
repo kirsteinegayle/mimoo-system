@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Http\Controllers\Api\CourierPickupController;
 use App\Http\Controllers\Api\RiderPickupController;
-use App\Http\Controllers\Courier\PickupManagementController;
 use App\Models\CourierPersonnel;
 use App\Models\Order;
 use App\Models\RiderEarning;
@@ -20,7 +19,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Rollback-only tests for pickup assignment rules (web + courier app share
+ * Rollback-only tests for pickup assignment rules (courier app, using
  * App\Services\PickupAssignmentRules) and the locked re-check in the rider
  * pickup scan. Fixture couriers / riders / orders only; ONE transaction,
  * ALWAYS rolled back.
@@ -31,7 +30,7 @@ class CourierTestPickupAssign extends Command
 {
     protected $signature = 'courier:test-pickup-assign';
 
-    protected $description = 'Rollback-only: pickup assign rules (rider + account + status) on web and app, and reassign race on rider scan';
+    protected $description = 'Rollback-only: pickup assign rules (rider + account + status) on the courier app, and reassign race on rider scan';
 
     private array $rows = [];
 
@@ -79,7 +78,6 @@ class CourierTestPickupAssign extends Command
 
     private function runTests(): void
     {
-        $web = app(PickupManagementController::class);
         $app = app(CourierPickupController::class);
 
         // ── Fixtures ────────────────────────────────────────────────────────
@@ -104,20 +102,15 @@ class CourierTestPickupAssign extends Command
         $this->check('fixture: 2 couriers, 8 personnel, 5 pickups', 'ok', 'ok', "courier A #{$courierA->id}");
 
         Auth::setUser($courierA);
-        $both = function (string $label, ShipmentAssignment $a, CourierPersonnel $p, string $expect) use ($web, $app, $courierA) {
+        // Courier-app endpoint only (the web Pickup Management endpoint was removed).
+        $both = function (string $label, ShipmentAssignment $a, CourierPersonnel $p, string $expect) use ($app, $courierA) {
             $before = ShipmentAssignment::whereKey($a->id)->value('assigned_personnel_id');
-            $w = $this->invoke(fn () => $web->assignPersonnel($this->req($courierA, ['personnel_id' => $p->id]), $a->id));
-            $after = ShipmentAssignment::whereKey($a->id)->value('assigned_personnel_id');
-            if ((int) $after !== (int) $before) {
-                ShipmentAssignment::whereKey($a->id)->update(['assigned_personnel_id' => $before]); // reset for the app call
-            }
             $x = $this->invoke(fn () => $app->assignPersonnel($this->req($courierA, ['personnel_id' => $p->id]), $a->id));
-            $this->check("{$label} (web)", $w['status'], $expect, $w['body']['message'] ?? '');
             $this->check("{$label} (app)", $x['status'], $expect, $x['body']['message'] ?? '');
             if ($expect !== '200') {
                 $this->check("{$label}: unchanged", (int) ShipmentAssignment::whereKey($a->id)->value('assigned_personnel_id'), (int) $before, '');
             }
-            return [$w, $x];
+            return $x;
         };
 
         // (a) non-rider personnel
@@ -131,12 +124,12 @@ class CourierTestPickupAssign extends Command
         $both('(e) other courier personnel', $sa['scheduled'], $pOther, '404');
         // (d) assignable statuses
         foreach (['pending_pickup', 'scheduled', 'failed'] as $k) {
-            [$w] = $both("(d) {$k} -> rider2", $sa[$k], $p2, '200');
-            $this->check("(d) {$k}: assigned to rider2", (int) ShipmentAssignment::whereKey($sa[$k]->id)->value('assigned_personnel_id'), $p2->id, 'web shape success=' . json_encode($w['body']['success'] ?? null));
+            $both("(d) {$k} -> rider2", $sa[$k], $p2, '200');
+            $this->check("(d) {$k}: assigned to rider2", (int) ShipmentAssignment::whereKey($sa[$k]->id)->value('assigned_personnel_id'), $p2->id, '');
         }
         // cancelled → 422
-        [$w] = $both('cancelled pickup', $sa['cancelled'], $p2, '422');
-        $this->check('web 422 shape', json_encode($w['body']['success'] ?? null) . '|' . (isset($w['body']['message']) ? 'message' : '-'), 'false|message', '');
+        $x = $both('cancelled pickup', $sa['cancelled'], $p2, '422');
+        $this->check('422 has a message', isset($x['body']['message']) ? 'message' : '-', 'message', '');
         // courier B cannot touch courier A's pickup
         Auth::setUser($courierB);
         $r = $this->invoke(fn () => $app->assignPersonnel($this->req($courierB, ['personnel_id' => $pOther->id]), $sa['scheduled']->id));
@@ -163,8 +156,8 @@ class CourierTestPickupAssign extends Command
         $r = $this->invoke(fn () => $scan->scan($this->riderReq($r1, ['waybill_number' => $wb]), $race->id));
         $this->check('(g) old rider scans again', $r['status'], 404, 'not "already confirmed"');
 
-        // (c) picked_up pickup cannot be reassigned (web + app)
-        [$w, $x] = $both('(c) picked_up pickup', $race, $p1, '422');
+        // (c) picked_up pickup cannot be reassigned
+        $x = $both('(c) picked_up pickup', $race, $p1, '422');
         $this->check('(c) message', $x['body']['message'] ?? '-', 'Pickup already picked up; cannot reassign.', '');
     }
 

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../models/order.dart';
+import '../models/order_tracking.dart';
 import 'api_service.dart';
 
 /// Thin repository over [ApiService] for order operations.
@@ -53,6 +54,13 @@ class OrderRepository {
     final res =
         await ApiService.get('/buyer/orders/$id') as Map<String, dynamic>;
     return Order.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
+  /// GET /api/buyer/orders/{id}/tracking — parcel transit log (oldest first).
+  Future<OrderTracking> fetchTracking(int id) async {
+    final res = await ApiService.get('/buyer/orders/$id/tracking')
+        as Map<String, dynamic>;
+    return OrderTracking.fromJson(res['data'] as Map<String, dynamic>);
   }
 
   /// GET /api/buyer/orders/{id}/delivery-code — read-only. Returns null

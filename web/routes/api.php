@@ -98,6 +98,7 @@ Route::prefix('buyer')->group(function () {
         Route::get('/orders/{id}',         [BuyerOrderController::class, 'show']);
         Route::post('/orders/{id}/cancel', [BuyerOrderController::class, 'cancel']);
         Route::post('/orders/{id}/receive', [BuyerOrderController::class, 'receive'])->middleware('throttle:10,1,buyer-order-receive')->whereNumber('id');
+        Route::get('/orders/{id}/tracking',      [\App\Http\Controllers\Buyer\OrderTrackingController::class, 'show'])->middleware('throttle:60,1,buyer-order-tracking')->whereNumber('id');
         Route::get('/orders/{id}/delivery-code', [BuyerDeliveryCodeController::class, 'show'])->middleware('throttle:30,1,buyer-delivery-code')->whereNumber('id');
         Route::get('/orders/{id}/pod-photo',     [DeliveryPodPhotoController::class, 'buyerOrderPhoto'])->middleware('throttle:60,1,buyer-pod-photo')->whereNumber('id');
         // Rider <-> buyer delivery chat (polling)
@@ -170,6 +171,7 @@ Route::prefix('courier-app')->group(function () {
 
         // Dashboard
         Route::get('/dashboard', [CourierDashboardController::class, 'index']);
+        Route::get('/activity',  [CourierDashboardController::class, 'activity'])->middleware('throttle:60,1,courier-activity');
 
         // Incoming shipments
         Route::get('/shipments',              [CourierShipmentController::class, 'index']);
@@ -194,8 +196,14 @@ Route::prefix('courier-app')->group(function () {
         Route::post('/notifications/read-all', [\App\Http\Controllers\Api\CourierAppNotificationController::class, 'markAllRead'])->middleware('throttle:30,1,courier-app-notifications-all');
         Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\CourierAppNotificationController::class, 'markRead'])->middleware('throttle:60,1,courier-app-notifications-read')->whereNumber('id');
 
-        // Pickup management
-        Route::get('/pickups',                          [CourierPickupController::class, 'index']);
+        // New Assign per branch (pickup + delivery riders grouped by branch)
+        Route::get('/branch-assign',                               [\App\Http\Controllers\Api\CourierBranchAssignController::class, 'index'])->middleware('throttle:60,1,courier-branch-assign');
+        Route::get('/branch-assign/{branch}',                      [\App\Http\Controllers\Api\CourierBranchAssignController::class, 'show'])->middleware('throttle:60,1,courier-branch-assign')->whereNumber('branch');
+        Route::post('/branch-assign/{branch}/pickups/{id}',        [\App\Http\Controllers\Api\CourierBranchAssignController::class, 'assignPickup'])->middleware('throttle:30,1,courier-branch-assign-pickup')->whereNumber(['branch', 'id']);
+        Route::post('/branch-assign/{branch}/deliveries/{orderId}', [\App\Http\Controllers\Api\CourierBranchAssignController::class, 'assignDelivery'])->middleware('throttle:30,1,courier-branch-assign-delivery')->whereNumber(['branch', 'orderId']);
+
+        // Pickup API (Pickup Management UI was removed; used by branch-assign)
+        Route::get('/pickups',                         [CourierPickupController::class, 'index']);
         Route::get('/pickups/{id}',                     [CourierPickupController::class, 'show'])->whereNumber('id');
         Route::post('/pickups/{id}/schedule',           [CourierPickupController::class, 'schedule'])->middleware('throttle:30,1,courier-pickup-schedule')->whereNumber('id');
         Route::post('/pickups/{id}/assign-personnel',   [CourierPickupController::class, 'assignPersonnel'])->middleware('throttle:30,1,courier-pickup-assign')->whereNumber('id');

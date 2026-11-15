@@ -115,6 +115,10 @@ class MessagingTestMatrix extends Command
             'courier -> rider (own company)' => [$c1, 'rider', $rider->id],
             'rider -> courier (own company)' => [$rider, 'courier', $c1->id],
             'logistics -> admin' => [$hub, 'admin', 0],
+            'logistics -> courier (own company)' => [$hub, 'courier', $c1->id],
+            'courier -> logistics (own company)' => [$c1, 'logistics', $hub->id],
+            'logistics -> seller (company shipped their order)' => [$hub, 'seller', $seller->id],
+            'seller -> logistics (company shipped their order)' => [$seller, 'logistics', $hub->id],
             'buyer -> admin'    => [$buyer, 'admin', 0],
         ];
         foreach ($allowed as $label => [$u, $role, $id]) {
@@ -127,19 +131,22 @@ class MessagingTestMatrix extends Command
             'seller -> itself'        => [$seller, 'seller', $seller->id],
             'seller -> courier (no shared order)' => [$seller2, 'courier', $c1->id],
             'seller -> other courier' => [$seller, 'courier', $c2->id],
-            'seller -> logistics'     => [$seller, 'logistics', $hub->id],
+            'seller -> logistics (no shared order)' => [$seller2, 'logistics', $hub->id],
             'seller -> rider'         => [$seller, 'rider', $rider->id],
             'seller -> buyer'         => [$seller, 'buyer', $buyer->id],
             'courier -> courier'      => [$c1, 'courier', $c2->id],
-            'courier -> logistics'    => [$c1, 'logistics', $hub->id],
+            'courier -> logistics of another company' => [$c2, 'logistics', $hub->id],
             'courier -> seller (no shared order)' => [$c2, 'seller', $seller->id],
             'courier -> rider of another company' => [$c2, 'rider', $rider->id],
             'rider -> admin'          => [$rider, 'admin', 0],
             'rider -> seller'         => [$rider, 'seller', $seller->id],
             'rider -> other company courier' => [$rider, 'courier', $c2->id],
             'rider -> logistics'      => [$rider, 'logistics', $hub->id],
-            'logistics -> seller'     => [$hub, 'seller', $seller->id],
-            'logistics -> courier'    => [$hub, 'courier', $c1->id],
+            'logistics -> seller (no shared order)' => [$hub, 'seller', $seller2->id],
+            'logistics -> courier of another company' => [$hub, 'courier', $c2->id],
+            'logistics -> rider'      => [$hub, 'rider', $rider->id],
+            'logistics -> buyer'      => [$hub, 'buyer', $buyer->id],
+            'logistics -> logistics'  => [$hub, 'logistics', $hub->id],
             'buyer -> courier'        => [$buyer, 'courier', $c1->id],
             'buyer -> seller (existing buyer chat)' => [$buyer, 'seller', $seller->id],
             'admin -> rider'          => [null, 'rider', $rider->id],
@@ -149,7 +156,19 @@ class MessagingTestMatrix extends Command
             $this->check("refused: {$label}", $start($u, $role, $id), 403, '');
         }
         $this->check('start: invalid role value', $this->http($seller, 'POST', '/messaging/start', ['role' => 'hacker', 'id' => 1])['status'], 422, '');
-        $this->check('contacts (seller): admin + related courier only', json_encode(collect($this->http($seller, 'GET', '/messaging/contacts')['body']['data'])->map(fn ($c) => $c['role'] . ':' . $c['id'])->all()), json_encode(['admin:0', "courier:{$c1->id}"]), '');
+        $contacts = fn (User $u) => json_encode(collect($this->http($u, 'GET', '/messaging/contacts')['body']['data'])->map(fn ($c) => $c['role'] . ':' . $c['id'])->all());
+        $this->check('contacts (seller): admin + related courier + its logistics', $contacts($seller), json_encode(['admin:0', "courier:{$c1->id}", "logistics:{$hub->id}"]), '');
+        $this->check('contacts (logistics): admin + related seller + own company', $contacts($hub), json_encode(['admin:0', "seller:{$seller->id}", "courier:{$c1->id}"]), '');
+        $this->check('contacts (courier): admin + seller + own logistics + rider', $contacts($c1), json_encode(['admin:0', "seller:{$seller->id}", "logistics:{$hub->id}", "rider:{$rider->id}"]), '');
+        $asym = [];
+        foreach (\App\Services\MessagingService::MATRIX as $from => $tos) {
+            foreach ($tos as $to => $scope) {
+                if ((\App\Services\MessagingService::MATRIX[$to][$from] ?? null) !== $scope) {
+                    $asym[] = "{$from}->{$to}";
+                }
+            }
+        }
+        $this->check('MATRIX is symmetric (same scope both ways)', json_encode($asym), '[]', '');
         $this->check('contacts (rider): own company only', json_encode(collect($this->http($rider, 'GET', '/messaging/contacts')['body']['data'])->map(fn ($c) => $c['role'] . ':' . $c['id'])->all()), json_encode(["courier:{$c1->id}"]), '');
         $this->check('one thread per pair (start twice)', $this->http($seller, 'POST', '/messaging/start', ['role' => 'courier', 'id' => $c1->id])['body']['data']['id'] === $this->http($c1, 'POST', '/messaging/start', ['role' => 'seller', 'id' => $seller->id])['body']['data']['id'] ? 'same' : 'DIFFERENT', 'same', '');
 

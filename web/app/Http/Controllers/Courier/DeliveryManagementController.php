@@ -43,7 +43,7 @@ class DeliveryManagementController extends Controller
                     ->where('delivery_jobs.courier_id', $courier->id)))
             ->orderByDesc('id')
             ->limit(200)
-            ->get(['id', 'status', 'waybill_number', 'shipping_name', 'shipping_address', 'payment_method', 'payment_status', 'total', 'updated_at']);
+            ->get(); // all columns: Order::recipient() reads shipping_* + optional structured address
 
         $jobs = DeliveryJob::whereIn('order_id', $orders->pluck('id'))
             ->with('personnel:id,name')
@@ -65,8 +65,9 @@ class DeliveryManagementController extends Controller
                     'order_number' => 'MIM-' . str_pad((string) $o->id, 8, '0', STR_PAD_LEFT),
                     'waybill_number' => $o->waybill_number,
                     'status' => $o->status,
-                    'shipping_name' => $o->shipping_name,
-                    'shipping_address' => $o->shipping_address,
+                    'shipping_name' => $o->recipient()['name'],
+                    'shipping_address' => $o->recipient()['address'],
+                    ...$o->buyerFields(),
                     'payment_method' => $o->payment_method,
                     'cod_amount' => strtolower((string) $o->payment_method) === 'cod' && ! in_array(strtolower((string) $o->payment_status), ['paid', 'refunded'], true)
                         ? (float) $o->total : 0.0,

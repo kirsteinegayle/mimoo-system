@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\WaybillController::qr
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
 export const qr = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ qr.definition = {
 
 /**
 * @see \App\Http\Controllers\WaybillController::qr
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
 qr.url = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ qr.url = (args: { waybillNumber: string | number } | [waybillNumber: string | nu
 
 /**
 * @see \App\Http\Controllers\WaybillController::qr
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
 qr.get = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ qr.get = (args: { waybillNumber: string | number } | [waybillNumber: string | nu
 })
 /**
 * @see \App\Http\Controllers\WaybillController::qr
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
 qr.head = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ qr.head = (args: { waybillNumber: string | number } | [waybillNumber: string | n
 
     /**
 * @see \App\Http\Controllers\WaybillController::qr
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
     const qrForm = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ qr.head = (args: { waybillNumber: string | number } | [waybillNumber: string | n
 
             /**
 * @see \App\Http\Controllers\WaybillController::qr
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
         qrForm.get = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ qr.head = (args: { waybillNumber: string | number } | [waybillNumber: string | n
         })
             /**
 * @see \App\Http\Controllers\WaybillController::qr
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
         qrForm.head = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

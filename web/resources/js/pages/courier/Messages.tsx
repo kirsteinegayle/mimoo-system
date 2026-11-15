@@ -18,14 +18,15 @@ interface Props {
     };
 }
 
-// Inbox for admin, sellers with a shipment of ours, and our own riders.
+// Inbox for admin, our own logistics hub staff, sellers with a shipment of
+// ours, and our own riders (MessagingService::MATRIX).
 export default function Messages({ auth, company }: Props) {
     return (
         <CourierLayout auth={auth} company={company} activeTab="messages" pageTitle="Messages">
             <Head title="Messages" />
 
             <div className="max-w-6xl mx-auto">
-                <RoleInbox base="/messaging" emptyHint="Messages from the admin team, sellers and your riders appear here" />
+                <RoleInbox base="/messaging" emptyHint="Message the admin team, your logistics hub, sellers and your riders" />
             </div>
         </CourierLayout>
     );

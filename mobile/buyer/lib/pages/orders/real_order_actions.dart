@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/order.dart' as api_order;
 import '../../services/api_service.dart';
 import '../../services/order_repository.dart';
-import 'api_order_detail_page.dart';
+import 'order_transit_page.dart';
 import 'return_request_pages.dart';
 import 'write_review_page.dart';
 import '../../theme/app_theme.dart';
@@ -93,11 +93,11 @@ class RealOrderActions extends StatelessWidget {
             await Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) => ApiOrderDetailPage(orderId: order.id)),
+                  builder: (_) => OrderTransitPage(orderId: order.id)),
             );
             onChanged();
           },
-          icon: const Icon(Icons.map_outlined, size: 16),
+          icon: const Icon(Icons.timeline, size: 16),
           label: const Text('Track Order'),
         ),
       if (isShipped && !hasOpenReturn)

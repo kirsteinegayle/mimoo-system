@@ -1,4 +1,5 @@
 import Api from './Api'
+import Buyer from './Buyer'
 import MessagingController from './MessagingController'
 import SellerDashboardController from './SellerDashboardController'
 import Logistics from './Logistics'
@@ -11,7 +12,6 @@ import ProductController from './ProductController'
 import CartController from './CartController'
 import WishlistController from './WishlistController'
 import Admin from './Admin'
-import Buyer from './Buyer'
 import Seller from './Seller'
 import SellerAnalyticsController from './SellerAnalyticsController'
 import SellerOrderController from './SellerOrderController'
@@ -19,6 +19,7 @@ import SellerDashboardStreamController from './SellerDashboardStreamController'
 import Settings from './Settings'
 const Controllers = {
     Api: Object.assign(Api, Api),
+Buyer: Object.assign(Buyer, Buyer),
 MessagingController: Object.assign(MessagingController, MessagingController),
 SellerDashboardController: Object.assign(SellerDashboardController, SellerDashboardController),
 Logistics: Object.assign(Logistics, Logistics),
@@ -31,7 +32,6 @@ ProductController: Object.assign(ProductController, ProductController),
 CartController: Object.assign(CartController, CartController),
 WishlistController: Object.assign(WishlistController, WishlistController),
 Admin: Object.assign(Admin, Admin),
-Buyer: Object.assign(Buyer, Buyer),
 Seller: Object.assign(Seller, Seller),
 SellerAnalyticsController: Object.assign(SellerAnalyticsController, SellerAnalyticsController),
 SellerOrderController: Object.assign(SellerOrderController, SellerOrderController),

@@ -158,6 +158,7 @@ class BuyerOrderController extends Controller
         $user = $request->user();
 
         // ── Address book snapshot ─────────────────────────────────────────────
+        $shippingParts = [];
         if (! empty($validated['address_id'])) {
             $address = BuyerAddress::where('buyer_id', $user->id)->find($validated['address_id']);
             if (! $address) {
@@ -166,6 +167,14 @@ class BuyerOrderController extends Controller
             $validated['shipping_name']    = $address->recipient_name;
             $validated['shipping_address'] = mb_substr($address->fullAddress(), 0, 500);
             $validated['shipping_phone']   = $address->phone;
+            // Structured parts so courier/logistics never have to parse text
+            // (only once the 2026_11_15 migration has added the columns).
+            $shippingParts = ! \Illuminate\Support\Facades\Schema::hasColumn('orders', 'shipping_barangay') ? [] : [
+                'shipping_barangay'          => $address->barangay,
+                'shipping_municipality_city' => $address->municipality_city,
+                'shipping_province'          => $address->province,
+                'shipping_region'            => $address->region,
+            ];
         }
 
         // ── Idempotency: return existing order instead of a new one ──────────
@@ -352,7 +361,7 @@ class BuyerOrderController extends Controller
                 'shipping_address'=> $validated['shipping_address'],
                 'shipping_phone'  => $validated['shipping_phone'],
                 'idempotency_key' => $validated['idempotency_key'] ?? null,
-            ]);
+            ] + $shippingParts);
 
             foreach ($orderItems as &$item) {
                 $item['order_id'] = $order->id;

@@ -8,10 +8,9 @@ use App\Models\User;
 
 /**
  * Shared rules for assigning a pickup (shipment_assignments.assigned_personnel_id)
- * to a rider. Used by BOTH assignPersonnel endpoints so web and courier app
- * behave the same:
- *   - Courier\PickupManagementController::assignPersonnel   (web)
- *   - Api\CourierPickupController::assignPersonnel          (courier app)
+ * to a rider. Used by Api\CourierPickupController::assignPersonnel (courier app);
+ * any future assign endpoint (e.g. per-branch "New Assign") must call it too.
+ * (The web Pickup Management page and its endpoints were removed.)
  *
  * Personnel (courier_personnel):
  *   same courier + status 'active'                → else 404 (unchanged behaviour)

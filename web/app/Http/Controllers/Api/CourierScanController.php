@@ -80,19 +80,6 @@ class CourierScanController extends CourierBaseController
 
         $totalWeight = $order->items->sum(fn ($i) => ($i->product->weight ?? 0) * $i->quantity);
 
-        $destination = trim(implode(', ', array_filter([
-            $order->shipping_municipality_city ?? null,
-            $order->shipping_province ?? null,
-        ])));
-
-        if ($destination === '') {
-            $parts = array_map('trim', explode(',', (string) $order->shipping_address));
-            if (count($parts) >= 2) {
-                $destination = implode(', ', array_slice($parts, -2));
-            } elseif (count($parts) === 1) {
-                $destination = $parts[0];
-            }
-        }
 
         $scans = ShipmentScan::with('facility')
             ->where('order_id', $order->id)
@@ -111,10 +98,8 @@ class CourierScanController extends CourierBaseController
             'data' => [
                 'waybill_number'    => $order->waybill_number,
                 'order_number'      => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
-                'buyer_name'        => $order->shipping_name,
-                'buyer_address'     => $order->shipping_address,
-                'buyer_phone'       => $order->shipping_phone,
-                'destination'       => $destination !== '' ? $destination : 'Not provided',
+                ...$order->buyerFields(),
+                'destination'       => $order->destinationLabel(),
                 'weight'            => round((float) $totalWeight, 2),
                 'payment_method'    => strtoupper($order->payment_method ?? ''),
                 'total_amount'      => $order->total,

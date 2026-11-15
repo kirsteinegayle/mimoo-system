@@ -20,15 +20,11 @@ use Illuminate\Support\Facades\DB;
  *   admin     ['admin', 0]  (master-code admin has no users row: one shared admin team)
  *   seller / buyer / rider  their own user id
  *   courier   the courier company user (role courier)
- *   logistics their own user id (logistics_staff)
+ *   logistics their own user id (logistics_staff, linked to a company via courier_company_id)
  *
- * Allowed pairs (everything else is refused with 403):
- *   admin <-> seller | buyer | courier | logistics
- *   seller <-> courier   only when the courier company has a shipment of an order that has an item of that seller
- *   courier <-> rider    only the company's own active rider personnel (courier_personnel.courier_id)
- * Deliberately NOT allowed: seller-seller, seller-logistics, seller-rider, courier-logistics,
- * courier-courier, rider-admin, rider-seller, rider-logistics, buyer-courier / logistics / rider
- * (buyer-seller and buyer-rider already exist elsewhere), and anyone with themselves.
+ * ALL rules live in MATRIX below — canMessage(), contacts() and the conversation
+ * type are derived from it. To allow a new pair, add it on BOTH sides.
+ * Anything not in the matrix is refused (403), and nobody can message themselves.
  */
 class MessagingService
 {
@@ -36,10 +32,26 @@ class MessagingService
 
     public const ADMIN = ['role' => 'admin', 'id' => 0];
 
-    private const PAIRS = [
-        'admin|seller', 'admin|buyer', 'admin|courier', 'admin|logistics',
-        'courier|seller', 'courier|rider',
+    /**
+     * Who may message whom, and under which relationship ("scope"):
+     *   any       – always (both accounts must exist / be approved)
+     *   company   – both sides belong to the same courier company
+     *               (courier = the company, logistics = courier_company_id, rider = active personnel)
+     *   shipment  – the seller has an order item shipped by the other side's courier company
+     */
+    public const MATRIX = [
+        'admin'     => ['seller' => 'any', 'buyer' => 'any', 'courier' => 'any', 'logistics' => 'any'],
+        'seller'    => ['admin' => 'any', 'courier' => 'shipment', 'logistics' => 'shipment'],
+        'courier'   => ['admin' => 'any', 'seller' => 'shipment', 'logistics' => 'company', 'rider' => 'company'],
+        'logistics' => ['admin' => 'any', 'seller' => 'shipment', 'courier' => 'company'],
+        'rider'     => ['courier' => 'company'],
+        'buyer'     => ['admin' => 'any'],
     ];
+
+    public static function scopeOf(string $from, string $to): ?string
+    {
+        return self::MATRIX[$from][$to] ?? null;
+    }
 
     public static function identityOf(User $user): ?array
     {
@@ -54,11 +66,13 @@ class MessagingService
 
     private static function typeOf(array $a, array $b): ?string
     {
+        if (self::scopeOf($a['role'], $b['role']) === null) {
+            return null;
+        }
         $roles = [$a['role'], $b['role']];
         sort($roles);
-        $type = implode('|', $roles);
 
-        return in_array($type, self::PAIRS, true) ? $type : null;
+        return implode('|', $roles);
     }
 
     public static function canMessage(array $a, array $b): bool
@@ -66,40 +80,88 @@ class MessagingService
         if ($a['role'] === $b['role'] && $a['id'] === $b['id']) {
             return false;
         }
-        $type = self::typeOf($a, $b);
-        if ($type === null) {
+        $scope = self::scopeOf($a['role'], $b['role']);
+        if ($scope === null || ! self::exists($a) || ! self::exists($b)) {
             return false;
         }
-        $by = [$a['role'] => $a['id'], $b['role'] => $b['id']];
 
-        return match ($type) {
-            'admin|seller', 'admin|buyer', 'admin|courier', 'admin|logistics' => self::exists($by),
-            'courier|seller' => ShipmentAssignment::where('courier_id', $by['courier'])
-                ->whereIn('order_id', OrderItem::where('seller_id', $by['seller'])->select('order_id'))->exists(),
-            'courier|rider' => CourierPersonnel::where('courier_id', $by['courier'])->where('user_id', $by['rider'])
-                ->where('status', 'active')->exists(),
-            default => false,
+        return match ($scope) {
+            'any'      => true,
+            'company'  => array_intersect(self::companiesOf($a), self::companiesOf($b)) !== [],
+            'shipment' => self::shareShipment($a, $b),
+            default    => false,
         };
     }
 
-    /** The non-admin side must be a real user of that role (admin team id 0 always exists). */
-    private static function exists(array $by): bool
+    /** A real user of that role (admin team id 0 always exists). */
+    private static function exists(array $who): bool
     {
-        foreach ($by as $role => $id) {
-            if ($role === 'admin') {
-                continue;
-            }
-            $dbRole = $role === 'logistics' ? 'logistics_staff' : $role;
-            $q = User::whereKey($id)->where('role', $dbRole);
-            if ($role !== 'buyer' && $role !== 'rider') {
-                $q->where('status', 'approved');
-            }
-            if (! $q->exists()) {
-                return false;
-            }
+        if ($who['role'] === 'admin') {
+            return $who['id'] === 0;
+        }
+        $q = User::whereKey($who['id'])->where('role', self::dbRole($who['role']));
+        if ($who['role'] !== 'buyer' && $who['role'] !== 'rider') {
+            $q->where('status', 'approved');
         }
 
-        return true;
+        return $q->exists();
+    }
+
+    private static function dbRole(string $role): string
+    {
+        return $role === 'logistics' ? 'logistics_staff' : $role;
+    }
+
+    /**
+     * Courier company ids an identity belongs to.
+     * @return int[]
+     */
+    public static function companiesOf(array $who): array
+    {
+        $personnel = fn () => CourierPersonnel::where('user_id', $who['id'])->where('status', 'active')
+            ->pluck('courier_id')->map(fn ($v) => (int) $v)->all();
+
+        return array_values(array_unique(match ($who['role']) {
+            'courier'   => [(int) $who['id']],
+            'logistics' => ($c = (int) User::whereKey($who['id'])->value('courier_company_id')) > 0 ? [$c] : $personnel(),
+            'rider'     => $personnel(),
+            default     => [],
+        }));
+    }
+
+    /** Seller side + courier/logistics side: a shipment of the seller's item by that company. */
+    private static function shareShipment(array $a, array $b): bool
+    {
+        [$seller, $other] = $a['role'] === 'seller' ? [$a, $b] : [$b, $a];
+        if ($seller['role'] !== 'seller') {
+            return false;
+        }
+        $companies = self::companiesOf($other);
+
+        return $companies !== [] && ShipmentAssignment::whereIn('courier_id', $companies)
+            ->whereIn('order_id', OrderItem::where('seller_id', $seller['id'])->select('order_id'))->exists();
+    }
+
+    /**
+     * Ids of $role accounts belonging to the given courier companies.
+     * @param int[] $companies
+     */
+    private static function membersOf(string $role, array $companies): array
+    {
+        if ($companies === []) {
+            return [];
+        }
+
+        return match ($role) {
+            'courier'   => $companies,
+            'logistics' => User::where('role', 'logistics_staff')
+                ->where(fn ($q) => $q->whereIn('courier_company_id', $companies)
+                    ->orWhereIn('id', CourierPersonnel::whereIn('courier_id', $companies)->where('status', 'active')->select('user_id')))
+                ->pluck('id')->all(),
+            'rider'     => CourierPersonnel::whereIn('courier_id', $companies)->where('status', 'active')
+                ->whereNotNull('user_id')->pluck('user_id')->all(),
+            default     => [],
+        };
     }
 
     public static function nameOf(array $who): string
@@ -127,36 +189,40 @@ class MessagingService
             }
         };
         $like = $q !== '' ? "%{$q}%" : null;
-        $users = fn (string $dbRole, bool $approved = true) => User::where('role', $dbRole)
-            ->when($approved, fn ($x) => $x->where('status', 'approved'))
+        $users = fn (string $role) => User::where('role', self::dbRole($role))
+            ->when($role !== 'buyer' && $role !== 'rider', fn ($x) => $x->where('status', 'approved'))
             ->when($like, fn ($x) => $x->where(fn ($w) => $w->where('name', 'like', $like)->orWhere('business_name', 'like', $like)
                 ->orWhere('company_name', 'like', $like)->orWhere('email', 'like', $like)))
             ->orderBy('id')->limit(30)->pluck('id');
 
-        switch ($me['role']) {
-            case 'admin':
-                $add('seller', $users('seller'));
-                $add('courier', $users('courier'));
-                $add('logistics', $users('logistics_staff'));
-                $add('buyer', $users('buyer', false));
-                break;
-            case 'seller':
+        // Built only from MATRIX — no per-role branches.
+        foreach (self::MATRIX[$me['role']] ?? [] as $role => $scope) {
+            if ($role === 'admin') {
                 $out[] = ['role' => 'admin', 'id' => 0, 'name' => 'mimoo Admin'];
-                $add('courier', ShipmentAssignment::whereIn('order_id', OrderItem::where('seller_id', $me['id'])->select('order_id'))->distinct()->pluck('courier_id'));
-                break;
-            case 'courier':
-                $out[] = ['role' => 'admin', 'id' => 0, 'name' => 'mimoo Admin'];
-                $add('seller', OrderItem::whereIn('order_id', ShipmentAssignment::where('courier_id', $me['id'])->select('order_id'))->whereNotNull('seller_id')->distinct()->pluck('seller_id'));
-                $add('rider', CourierPersonnel::where('courier_id', $me['id'])->where('status', 'active')->whereNotNull('user_id')->pluck('user_id'));
-                break;
-            case 'rider':
-                $add('courier', CourierPersonnel::where('user_id', $me['id'])->where('status', 'active')->pluck('courier_id'));
-                break;
-            default: // buyer, logistics
-                $out[] = ['role' => 'admin', 'id' => 0, 'name' => 'mimoo Admin'];
+                continue;
+            }
+            $ids = match ($scope) {
+                'any'      => $users($role),
+                'company'  => self::membersOf($role, self::companiesOf($me)),
+                'shipment' => $me['role'] === 'seller'
+                    // seller -> courier/logistics of companies that shipped my items
+                    ? self::membersOf($role, ShipmentAssignment::whereIn('order_id', OrderItem::where('seller_id', $me['id'])->select('order_id'))
+                        ->distinct()->pluck('courier_id')->map(fn ($v) => (int) $v)->all())
+                    // courier/logistics -> sellers whose items my company shipped
+                    : OrderItem::whereIn('order_id', ShipmentAssignment::whereIn('courier_id', self::companiesOf($me))->select('order_id'))
+                        ->whereNotNull('seller_id')->distinct()->pluck('seller_id'),
+                default    => [],
+            };
+            $add($role, $ids);
         }
 
-        // drop anything the rules would refuse (e.g. a deactivated rider)
+        // Search for the relationship-scoped lists (the "any" lists are searched in SQL).
+        if ($q !== '') {
+            $out = array_filter($out, fn ($c) => $c['role'] === 'admin' || stripos($c['name'], $q) !== false
+                || self::scopeOf($me['role'], $c['role']) === 'any');
+        }
+
+        // drop anything the rules would refuse (e.g. a deactivated rider) and myself
         return array_values(array_filter($out, fn ($c) => self::canMessage($me, $c)));
     }
 

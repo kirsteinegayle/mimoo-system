@@ -58,6 +58,9 @@ class DashboardStats {
     required this.pickedUpToday,
     required this.failed,
     required this.expiringSoon,
+    this.newPickupsUnassigned = 0,
+    this.deliveriesWaiting = 0,
+    this.onlineRiders = 0,
   });
 
   final int incomingShipments;
@@ -67,6 +70,13 @@ class DashboardStats {
   final int failed;
   final int expiringSoon;
 
+  /// Quick Actions badges (same numbers as the New Assign tab).
+  final int newPickupsUnassigned;
+  final int deliveriesWaiting;
+  final int onlineRiders;
+
+  int get awaitingRider => newPickupsUnassigned + deliveriesWaiting;
+
   factory DashboardStats.fromJson(Map<String, dynamic> j) => DashboardStats(
         incomingShipments: j['incoming_shipments'] as int? ?? 0,
         pendingPickups: j['pending_pickups'] as int? ?? 0,
@@ -74,6 +84,41 @@ class DashboardStats {
         pickedUpToday: j['picked_up_today'] as int? ?? 0,
         failed: j['failed'] as int? ?? 0,
         expiringSoon: j['expiring_soon'] as int? ?? 0,
+        newPickupsUnassigned: _readInt(j['new_pickups_unassigned']),
+        deliveriesWaiting: _readInt(j['deliveries_waiting']),
+        onlineRiders: _readInt(j['online_riders']),
+      );
+}
+
+/// One Recent Activity row (GET /api/courier-app/activity), newest first.
+class ActivityItem {
+  const ActivityItem({
+    required this.type,
+    required this.title,
+    required this.at,
+    this.detail,
+    this.waybillNumber,
+    this.orderId,
+  });
+
+  /// shipment | pickup | hub | delivery
+  final String type;
+  final String title;
+  final String? detail;
+  final String? waybillNumber;
+  final int? orderId;
+  final DateTime at;
+
+  bool get isProblem =>
+      title.contains('failed') || title.contains('rejected') || title.startsWith('Returned');
+
+  factory ActivityItem.fromJson(Map<String, dynamic> j) => ActivityItem(
+        type: _readString(j['type']),
+        title: _readString(j['title']),
+        detail: j['detail']?.toString(),
+        waybillNumber: j['waybill_number']?.toString(),
+        orderId: (j['order_id'] as num?)?.toInt(),
+        at: DateTime.tryParse(_readString(j['at']))?.toLocal() ?? DateTime.now(),
       );
 }
 
@@ -1312,4 +1357,159 @@ class CourierRiderItem {
         plateNumber: j['plate_number']?.toString(),
         lastCheckedInAt: j['last_checked_in_at']?.toString(),
       );
+}
+
+// ── New Assign per branch (/api/courier-app/branch-assign) ─────────────────
+
+/// One branch (or id 0 = "No branch") with its work counts.
+class BranchSummary {
+  const BranchSummary({
+    required this.id,
+    required this.name,
+    required this.newPickups,
+    required this.pickups,
+    required this.deliveries,
+    required this.riders,
+    this.type,
+    this.city,
+  });
+
+  final int id;
+  final String name;
+  final String? type;
+  final String? city;
+  final int newPickups;
+  final int pickups;
+  final int deliveries;
+  final int riders;
+
+  bool get isNoBranch => id == 0;
+  int get waiting => newPickups + deliveries;
+
+  factory BranchSummary.fromJson(Map<String, dynamic> j) => BranchSummary(
+        id: _readInt(j['id']),
+        name: _readString(j['name']),
+        type: j['type']?.toString(),
+        city: j['city']?.toString(),
+        newPickups: _readInt(j['new_pickups']),
+        pickups: _readInt(j['pickups']),
+        deliveries: _readInt(j['deliveries']),
+        riders: _readInt(j['riders']),
+      );
+}
+
+class BranchPickupItem {
+  const BranchPickupItem({
+    required this.id,
+    required this.waybillNumber,
+    required this.pickupStatus,
+    required this.sellerName,
+    required this.isNew,
+    this.pickupArea,
+    this.assignedRider,
+  });
+
+  final int id;
+  final String waybillNumber;
+  final String pickupStatus;
+  final String sellerName;
+  final String? pickupArea;
+  final String? assignedRider;
+  final bool isNew;
+
+  factory BranchPickupItem.fromJson(Map<String, dynamic> j) => BranchPickupItem(
+        id: _readInt(j['id']),
+        waybillNumber: _readString(j['waybill_number']),
+        pickupStatus: _readString(j['pickup_status']),
+        sellerName: _readString(j['seller_name']),
+        pickupArea: j['pickup_area']?.toString(),
+        assignedRider: j['assigned_rider']?.toString(),
+        isNew: j['is_new'] == true,
+      );
+}
+
+class BranchDeliveryItem {
+  const BranchDeliveryItem({
+    required this.orderId,
+    required this.orderNumber,
+    required this.waybillNumber,
+    required this.buyerName,
+    required this.destination,
+    required this.codAmount,
+  });
+
+  final int orderId;
+  final String orderNumber;
+  final String waybillNumber;
+  final String buyerName;
+  final String destination;
+  final double codAmount;
+
+  factory BranchDeliveryItem.fromJson(Map<String, dynamic> j) =>
+      BranchDeliveryItem(
+        orderId: _readInt(j['order_id']),
+        orderNumber: _readString(j['order_number']),
+        waybillNumber: _readString(j['waybill_number']),
+        buyerName: _readString(j['buyer_name']),
+        destination: _readString(j['destination']),
+        codAmount: (j['cod_amount'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+class BranchRiderItem {
+  const BranchRiderItem({
+    required this.personnelId,
+    required this.name,
+    required this.isOnline,
+    required this.activeDeliveries,
+    required this.openPickups,
+  });
+
+  final int personnelId;
+  final String name;
+  final bool isOnline;
+  final int activeDeliveries;
+  final int openPickups;
+
+  factory BranchRiderItem.fromJson(Map<String, dynamic> j) => BranchRiderItem(
+        personnelId: _readInt(j['personnel_id']),
+        name: _readString(j['name']),
+        isOnline: j['is_online'] == true,
+        activeDeliveries: _readInt(j['active_deliveries']),
+        openPickups: _readInt(j['open_pickups']),
+      );
+}
+
+class BranchQueue {
+  const BranchQueue({
+    required this.branch,
+    required this.pickups,
+    required this.deliveries,
+    required this.riders,
+  });
+
+  final BranchSummary branch;
+  final List<BranchPickupItem> pickups;
+  final List<BranchDeliveryItem> deliveries;
+  final List<BranchRiderItem> riders;
+
+  factory BranchQueue.fromJson(Map<String, dynamic> j) {
+    List<T> list<T>(String k, T Function(Map<String, dynamic>) f) =>
+        (j[k] as List<dynamic>? ?? const [])
+            .map((e) => f(Map<String, dynamic>.from(e as Map)))
+            .toList();
+    final b = Map<String, dynamic>.from(j['branch'] as Map? ?? const {});
+    return BranchQueue(
+      branch: BranchSummary.fromJson({
+        ...b,
+        'new_pickups': 0,
+        'pickups': 0,
+        'deliveries': 0,
+        'riders': 0,
+      }),
+      pickups: list('pickups', BranchPickupItem.fromJson),
+      deliveries: list('deliveries', BranchDeliveryItem.fromJson),
+      riders: list('riders', BranchRiderItem.fromJson),
+    );
+  }
 }

@@ -79,7 +79,7 @@ riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     riders.form = ridersForm
 /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::assign
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:148
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:149
  * @route '/api/courier-app/delivery-jobs'
  */
 export const assign = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ assign.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::assign
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:148
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:149
  * @route '/api/courier-app/delivery-jobs'
  */
 assign.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ assign.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::assign
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:148
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:149
  * @route '/api/courier-app/delivery-jobs'
  */
 assign.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +113,7 @@ assign.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::assign
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:148
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:149
  * @route '/api/courier-app/delivery-jobs'
  */
     const assignForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -123,7 +123,7 @@ assign.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\CourierDeliveryController::assign
- * @see app/Http/Controllers/Api/CourierDeliveryController.php:148
+ * @see app/Http/Controllers/Api/CourierDeliveryController.php:149
  * @route '/api/courier-app/delivery-jobs'
  */
         assignForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

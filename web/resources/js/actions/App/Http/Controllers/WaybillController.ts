@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\WaybillController::qrCode
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
 export const qrCode = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ qrCode.definition = {
 
 /**
 * @see \App\Http\Controllers\WaybillController::qrCode
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
 qrCode.url = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ qrCode.url = (args: { waybillNumber: string | number } | [waybillNumber: string 
 
 /**
 * @see \App\Http\Controllers\WaybillController::qrCode
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
 qrCode.get = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ qrCode.get = (args: { waybillNumber: string | number } | [waybillNumber: string 
 })
 /**
 * @see \App\Http\Controllers\WaybillController::qrCode
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
 qrCode.head = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ qrCode.head = (args: { waybillNumber: string | number } | [waybillNumber: string
 
     /**
 * @see \App\Http\Controllers\WaybillController::qrCode
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
     const qrCodeForm = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ qrCode.head = (args: { waybillNumber: string | number } | [waybillNumber: string
 
             /**
 * @see \App\Http\Controllers\WaybillController::qrCode
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
         qrCodeForm.get = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ qrCode.head = (args: { waybillNumber: string | number } | [waybillNumber: string
         })
             /**
 * @see \App\Http\Controllers\WaybillController::qrCode
- * @see app/Http/Controllers/WaybillController.php:157
+ * @see app/Http/Controllers/WaybillController.php:156
  * @route '/waybill/{waybillNumber}/qr'
  */
         qrCodeForm.head = (args: { waybillNumber: string | number } | [waybillNumber: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -269,7 +269,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
     show.form = showForm
 /**
 * @see \App\Http\Controllers\WaybillController::markPrinted
- * @see app/Http/Controllers/WaybillController.php:123
+ * @see app/Http/Controllers/WaybillController.php:122
  * @route '/api/orders/{id}/waybill/mark-printed'
  */
 export const markPrinted = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -284,7 +284,7 @@ markPrinted.definition = {
 
 /**
 * @see \App\Http\Controllers\WaybillController::markPrinted
- * @see app/Http/Controllers/WaybillController.php:123
+ * @see app/Http/Controllers/WaybillController.php:122
  * @route '/api/orders/{id}/waybill/mark-printed'
  */
 markPrinted.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -312,7 +312,7 @@ markPrinted.url = (args: { id: string | number } | [id: string | number ] | stri
 
 /**
 * @see \App\Http\Controllers\WaybillController::markPrinted
- * @see app/Http/Controllers/WaybillController.php:123
+ * @see app/Http/Controllers/WaybillController.php:122
  * @route '/api/orders/{id}/waybill/mark-printed'
  */
 markPrinted.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -322,7 +322,7 @@ markPrinted.post = (args: { id: string | number } | [id: string | number ] | str
 
     /**
 * @see \App\Http\Controllers\WaybillController::markPrinted
- * @see app/Http/Controllers/WaybillController.php:123
+ * @see app/Http/Controllers/WaybillController.php:122
  * @route '/api/orders/{id}/waybill/mark-printed'
  */
     const markPrintedForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -332,7 +332,7 @@ markPrinted.post = (args: { id: string | number } | [id: string | number ] | str
 
             /**
 * @see \App\Http\Controllers\WaybillController::markPrinted
- * @see app/Http/Controllers/WaybillController.php:123
+ * @see app/Http/Controllers/WaybillController.php:122
  * @route '/api/orders/{id}/waybill/mark-printed'
  */
         markPrintedForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

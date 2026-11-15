@@ -104,11 +104,10 @@ class WaybillController extends Controller
                 'printed_at' => $order->waybill_printed_at?->format('M d, Y h:i A'),
                 'status' => $order->status,
                 'payment_method' => $order->payment_method,
-                'shipping' => [
-                    'name' => $order->shipping_name,
-                    'phone' => $order->shipping_phone,
-                    'address' => $order->shipping_address,
-                ],
+                'shipping' => array_intersect_key(
+                    $order->recipient(),
+                    array_flip(['name', 'phone', 'address'])
+                ),
                 'items' => $items,
                 'total_amount' => number_format($totalAmount, 2),
                 'item_count' => $items->count(),

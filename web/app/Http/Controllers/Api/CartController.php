@@ -188,7 +188,15 @@ class CartController extends Controller
                 $replace  = (bool) ($validated['replace_quantity'] ?? false);
                 $newQty   = $replace ? $qty : $cartItem->quantity + $qty;
                 $newQty   = min($newQty, $stockToCheck);
-                $cartItem->update(['quantity' => $newQty]);
+                $cartItem->quantity = $newQty;
+                // Buy Now (replace) with a different variant: switch the line
+                // to the chosen variant so the order saves what was shown.
+                // (variant_snapshot isn't fillable, so assign directly.)
+                if ($replace && ! empty($validated['variant_id'])) {
+                    $cartItem->variant_id       = $validated['variant_id'];
+                    $cartItem->variant_snapshot = $variantData;
+                }
+                $cartItem->save();
                 $message = 'Cart updated successfully.';
             } else {
                 $cartItem = CartItem::create([

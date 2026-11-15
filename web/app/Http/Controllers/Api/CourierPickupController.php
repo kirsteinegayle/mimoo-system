@@ -13,7 +13,7 @@ class CourierPickupController extends CourierBaseController
 {
     /**
      * GET /api/courier-app/pickups
-     * Only accepted assignments (mirrors web PickupManagementController).
+     * Only accepted assignments.
      */
     public function index(Request $request): JsonResponse
     {
@@ -23,7 +23,7 @@ class CourierPickupController extends CourierBaseController
             ->where('courier_id', $courier->id)
             ->where('assignment_status', 'accepted');
 
-        // Same filters as the web PickupManagementController.
+        // Filters: search, status, service area, date range.
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('order', function ($q) use ($search) {
@@ -248,6 +248,12 @@ class CourierPickupController extends CourierBaseController
             return response()->json(['message' => 'Pickup not found.'], 404);
         }
 
+        // Already picked up (e.g. the rider scanned a moment ago, or a double tap):
+        // nothing to do, nothing doubled.
+        if ($assignment->pickup_status === 'picked_up') {
+            return response()->json(['message' => 'Pickup was already confirmed.', 'idempotent' => true]);
+        }
+
         if (! $assignment->canTransitionTo('picked_up')) {
             return response()->json([
                 'message' => 'Cannot confirm pickup. Must be scheduled first.',
@@ -263,12 +269,25 @@ class CourierPickupController extends CourierBaseController
             ], 422);
         }
 
-        $assignment->update([
-            'pickup_status' => 'picked_up',
-            'picked_up_at'  => now(),
-            'picked_up_by'  => $request->user()->id,
-        ]);
-        $assignment->addHistory('accepted', $request->user()->id, 'Parcel picked up and scanned');
+        $actorId = $request->user()->id;
+        $claimed = \Illuminate\Support\Facades\DB::transaction(function () use ($assignment, $actorId) {
+            // Row lock + re-check: a rider scan and this confirm can never both write.
+            $locked = ShipmentAssignment::whereKey($assignment->id)->lockForUpdate()->first();
+            if (! $locked || $locked->pickup_status === 'picked_up' || ! $locked->canTransitionTo('picked_up')) {
+                return false;
+            }
+            $locked->update([
+                'pickup_status' => 'picked_up',
+                'picked_up_at'  => now(),
+                'picked_up_by'  => $actorId,
+            ]);
+            $locked->addHistory('accepted', $actorId, 'Parcel picked up and scanned');
+
+            return true;
+        });
+        if (! $claimed) {
+            return response()->json(['message' => 'Pickup was already confirmed.', 'idempotent' => true]);
+        }
 
         return response()->json(['message' => 'Pickup confirmed. Parcel is ready for sorting.']);
     }

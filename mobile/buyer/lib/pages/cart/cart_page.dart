@@ -642,7 +642,9 @@ class _CartPageState extends State<CartPage> {
             ElevatedButton(
               onPressed: _checkedCount > 0
                   ? () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const CheckoutPage()))
+                      MaterialPageRoute(
+                          builder: (_) => CheckoutPage(
+                              onlyCartItemIds: _selected.toList())))
                   : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: _kPrimary,

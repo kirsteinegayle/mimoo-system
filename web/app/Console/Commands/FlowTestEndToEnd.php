@@ -126,26 +126,25 @@ class FlowTestEndToEnd extends Command
         $r = $this->http($hub1, 'POST', "/api/courier/shipments/{$aid}/accept");
         $this->check('5 hub of company 1 accepts', $r['status'] . '/' . ShipmentAssignment::find($aid)->assignment_status, '200/accepted', $r['body']['message'] ?? '');
 
-        // ── 6. Pickups visible to the right people ───────────────────────────
-        $pick = fn (User $u) => str_contains($this->http($u, 'GET', '/courier/pickup-management', [], true)['raw'], $wb) ? 'sees' : 'hidden';
-        $this->check('6 pickups: logistics_staff of company 1', $pick($hub1), 'sees', '');
-        $this->check('6 pickups: courier company 1 (unchanged)', $pick($c1), 'sees', '');
-        $this->check('6 pickups: logistics_staff of company 2', $pick($hub2), 'hidden', 'not other companies');
-        $this->check('6 pickups: courier company 2', $pick($c2), 'hidden', '');
-        $this->check('6 pickups: staff without company', $pick($hubNone), 'hidden', '');
-        $this->check('6 pickups: seller blocked', $this->http($sellerA, 'GET', '/courier/pickup-management', [], true)['status'], 403, '');
-        $this->check('6 pickups: rider blocked on web', $this->http($rider, 'GET', '/courier/pickup-management', [], true)['status'], 403, '');
-        $this->check('6 pickup detail: company 2 hub', $this->http($hub2, 'GET', "/api/courier/pickups/{$aid}")['status'], 404, '');
-        $this->check('6 pickup detail: company 1 hub', $this->http($hub1, 'GET', "/api/courier/pickups/{$aid}")['status'], 200, '');
+        // ── 6. Pickups (web Pickup Management removed → courier-app API only) ─
+        $this->check('6 old pickup page URL redirects', $this->http($c1, 'GET', '/courier/pickup-management')['status'], 302, 'Pickup Management removed');
+        $this->check('6 web pickup endpoint is gone', $this->http($hub1, 'GET', "/api/courier/pickups/{$aid}")['status'], 404, '');
+        $pick = fn (User $u) => collect($this->http($u, 'GET', '/api/courier-app/pickups')['body']['data'] ?? [])->contains('id', $aid) ? 'sees' : 'hidden';
+        $this->check('6 app pickups: courier company 1', $pick($c1), 'sees', '');
+        $this->check('6 app pickups: courier company 2', $pick($c2), 'hidden', 'not other companies');
+        $this->check('6 app pickups: logistics staff blocked (courier role only)', $this->http($hub1, 'GET', '/api/courier-app/pickups')['status'], 403, 'until per-branch assign (#6)');
+        $this->check('6 app pickups: seller blocked', $this->http($sellerA, 'GET', '/api/courier-app/pickups')['status'], 403, '');
+        $this->check('6 app pickup detail: company 2', $this->http($c2, 'GET', "/api/courier-app/pickups/{$aid}")['status'], 404, '');
+        $this->check('6 app pickup detail: company 1', $this->http($c1, 'GET', "/api/courier-app/pickups/{$aid}")['status'], 200, '');
 
-        // ── 7. Schedule + assign rider (pickup) ──────────────────────────────
-        $this->check('7 schedule by company 2 hub', $this->http($hub2, 'POST', "/api/courier/pickups/{$aid}/schedule", ['scheduled_date' => now()->toDateString(), 'scheduled_time_window' => '09:00-12:00'])['status'], 404, '');
-        $r = $this->http($hub1, 'POST', "/api/courier/pickups/{$aid}/schedule", ['scheduled_date' => now()->toDateString(), 'scheduled_time_window' => '09:00-12:00']);
-        $this->check('7 schedule by hub 1', $r['status'] . '/' . ShipmentAssignment::find($aid)->pickup_status, '200/scheduled', $r['body']['message'] ?? '');
-        $this->check('7 assign rider by company 2 hub', $this->http($hub2, 'POST', "/api/courier/pickups/{$aid}/assign-personnel", ['personnel_id' => $p->id])['status'], 404, '');
-        $r = $this->http($hub1, 'POST', "/api/courier/pickups/{$aid}/assign-personnel", ['personnel_id' => $p->id]);
-        $this->check('7 assign rider by hub 1', $r['status'] . '/' . ShipmentAssignment::find($aid)->assigned_personnel_id, "200/{$p->id}", $r['body']['message'] ?? '');
-        $this->check('7 history records the staff member (actor)', ShipmentAssignmentHistory::where('assignment_id', $aid)->where('notes', 'like', 'Pickup scheduled%')->value('performed_by'), $hub1->id, '');
+        // ── 7. Schedule + assign rider (pickup) via the courier app ──────────
+        $this->check('7 schedule by company 2', $this->http($c2, 'POST', "/api/courier-app/pickups/{$aid}/schedule", ['scheduled_date' => now()->toDateString(), 'scheduled_time_window' => '09:00-12:00'])['status'], 404, '');
+        $r = $this->http($c1, 'POST', "/api/courier-app/pickups/{$aid}/schedule", ['scheduled_date' => now()->toDateString(), 'scheduled_time_window' => '09:00-12:00']);
+        $this->check('7 schedule by company 1', $r['status'] . '/' . ShipmentAssignment::find($aid)->pickup_status, '200/scheduled', $r['body']['message'] ?? '');
+        $this->check('7 assign rider by company 2', $this->http($c2, 'POST', "/api/courier-app/pickups/{$aid}/assign-personnel", ['personnel_id' => $p->id])['status'], 404, '');
+        $r = $this->http($c1, 'POST', "/api/courier-app/pickups/{$aid}/assign-personnel", ['personnel_id' => $p->id]);
+        $this->check('7 assign rider by company 1', $r['status'] . '/' . ShipmentAssignment::find($aid)->assigned_personnel_id, "200/{$p->id}", $r['body']['message'] ?? '');
+        $this->check('7 history records the actor', ShipmentAssignmentHistory::where('assignment_id', $aid)->where('notes', 'like', 'Pickup scheduled%')->value('performed_by'), $c1->id, '');
 
         // ── 8. Rider scan: picked up, +20, seller notified ───────────────────
         $scan = app(RiderPickupController::class);

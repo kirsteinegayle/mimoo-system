@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mimoo_courier/pages/auth/login_page.dart';
+import 'package:mimoo_courier/pages/dashboard/dashboard_tab.dart';
 import 'package:mimoo_courier/pages/home/home_page.dart';
 import 'package:mimoo_courier/services/api_service.dart';
 import 'package:mimoo_courier/state/auth_service.dart';
@@ -133,7 +134,22 @@ void main() {
     expect(find.byType(HomePage), findsOneWidget);
     expect(find.text('Test Logistics Co'), findsOneWidget);
     expect(find.text('Incoming'), findsOneWidget);
-    expect(find.text('4'), findsOneWidget);
+    // incoming_shipments = 4: the stat tile + the "Accept Shipments" quick-action badge.
+    expect(find.text('4'), findsNWidgets(2));
+    expect(find.text('Quick Actions'), findsOneWidget);
+    expect(find.text('Accept Shipments'), findsOneWidget);
+    // Recent Activity is below the fold of the dashboard's lazy ListView.
+    await tester.scrollUntilVisible(
+      find.text('Recent Activity'),
+      200,
+      scrollable: find
+          .descendant(
+              of: find.byType(DashboardTab), matching: find.byType(Scrollable))
+          .first,
+    );
+    expect(find.text('Recent Activity'), findsOneWidget);
+    // Empty /activity from the fake API → empty state, no demo rows.
+    expect(find.textContaining('No activity yet'), findsOneWidget);
 
     final login = requests.firstWhere(
       (r) => r.url.path.endsWith('/courier-app/login'),

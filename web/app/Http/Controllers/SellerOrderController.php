@@ -30,16 +30,14 @@ class SellerOrderController extends Controller
         })
             ->with(['items' => function ($query) use ($seller) {
                 $query->where('seller_id', $seller->id)->with('product');
-            }, 'buyer:id,name,email'])
+            }, 'buyer:id,name,first_name,last_name,email,contact_number'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($order) {
                 return [
                     'id' => $order->id,
                     'order_number' => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
-                    'buyer_name' => $order->buyer->name,
-                    'buyer_phone' => $order->shipping_phone,
-                    'buyer_address' => $order->shipping_address,
+                    ...$order->buyerFields(),
                     'status' => $order->status,
                     'payment_status' => $order->payment_status,
                     'payment_method' => $order->payment_method,

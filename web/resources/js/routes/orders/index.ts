@@ -252,10 +252,108 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
         })
     
     show.form = showForm
+/**
+* @see \App\Http\Controllers\Buyer\OrderTrackingController::tracking
+ * @see app/Http/Controllers/Buyer/OrderTrackingController.php:38
+ * @route '/orders/{id}/tracking'
+ */
+export const tracking = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: tracking.url(args, options),
+    method: 'get',
+})
+
+tracking.definition = {
+    methods: ["get","head"],
+    url: '/orders/{id}/tracking',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Buyer\OrderTrackingController::tracking
+ * @see app/Http/Controllers/Buyer/OrderTrackingController.php:38
+ * @route '/orders/{id}/tracking'
+ */
+tracking.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { id: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    id: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        id: args.id,
+                }
+
+    return tracking.definition.url
+            .replace('{id}', parsedArgs.id.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Buyer\OrderTrackingController::tracking
+ * @see app/Http/Controllers/Buyer/OrderTrackingController.php:38
+ * @route '/orders/{id}/tracking'
+ */
+tracking.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: tracking.url(args, options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Buyer\OrderTrackingController::tracking
+ * @see app/Http/Controllers/Buyer/OrderTrackingController.php:38
+ * @route '/orders/{id}/tracking'
+ */
+tracking.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: tracking.url(args, options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Buyer\OrderTrackingController::tracking
+ * @see app/Http/Controllers/Buyer/OrderTrackingController.php:38
+ * @route '/orders/{id}/tracking'
+ */
+    const trackingForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: tracking.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Buyer\OrderTrackingController::tracking
+ * @see app/Http/Controllers/Buyer/OrderTrackingController.php:38
+ * @route '/orders/{id}/tracking'
+ */
+        trackingForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: tracking.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Buyer\OrderTrackingController::tracking
+ * @see app/Http/Controllers/Buyer/OrderTrackingController.php:38
+ * @route '/orders/{id}/tracking'
+ */
+        trackingForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: tracking.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    tracking.form = trackingForm
 const orders = {
     index: Object.assign(index, index),
 success: Object.assign(success, success),
 show: Object.assign(show, show),
+tracking: Object.assign(tracking, tracking),
 }
 
 export default orders

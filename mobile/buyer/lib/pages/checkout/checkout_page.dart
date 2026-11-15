@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../account/address_book_page.dart';
 import '../orders/orders_page.dart';
 import '../../models/buyer_address.dart';
+import '../../models/db_cart_item.dart';
 import '../../services/address_repository.dart';
 import '../voucher/voucher_wallet_page.dart';
 import '../../models/voucher.dart';
@@ -40,7 +41,11 @@ TextStyle _pjs({
         decoration: decoration);
 
 class CheckoutPage extends StatefulWidget {
-  const CheckoutPage({super.key});
+  const CheckoutPage({super.key, this.onlyCartItemIds});
+
+  /// Cart lines to check out. Buy Now passes its single line; the cart page
+  /// passes the ticked lines. null = whole cart (legacy behaviour).
+  final List<int>? onlyCartItemIds;
 
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
@@ -180,22 +185,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   String get _paymentMethod => _selectedPayment == 0 ? 'gcash' : 'cod';
 
-  /// Total from real cart items (no shipping/voucher/VAT — matches server)
-  double get _merchandiseTotal {
-    final cart = CartProvider.defaultCart;
-    return cart.dbItems.fold(0.0, (s, i) => s + i.lineTotal);
+  /// The cart lines this checkout covers. Summary, total and the IDs sent to
+  /// the server all come from this one list, so what you see is what's saved.
+  List<DbCartItem> get _items {
+    final only = widget.onlyCartItemIds;
+    final all = CartProvider.defaultCart.dbItems;
+    if (only == null) return all;
+    return all.where((i) => only.contains(i.id)).toList();
   }
+
+  /// Total from real cart items (no shipping/voucher/VAT — matches server)
+  double get _merchandiseTotal =>
+      _items.fold(0.0, (s, i) => s + i.lineTotal);
 
   double get _finalTotal =>
       (_merchandiseTotal - _voucherDiscount).clamp(0.0, double.infinity);
 
-  List<int> get _selectedCartItemIds {
-    // Use all valid items in the cart
-    return CartProvider.defaultCart.dbItems
-        .where((i) => i.isValid)
-        .map((i) => i.id)
-        .toList();
-  }
+  List<int> get _selectedCartItemIds =>
+      _items.where((i) => i.isValid).map((i) => i.id).toList();
 
   // ── Place order ──────────────────────────────────────────────────────────
 
@@ -213,6 +220,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
+      ));
+      return;
+    }
+
+    // An empty id list would make the server check out the WHOLE cart.
+    if (_selectedCartItemIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('No items to check out.',
+            style: _pjs(size: 13, color: Colors.white)),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
       ));
       return;
     }
@@ -343,6 +361,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Rebuild whenever the cart changes (a refresh landing after the page
+    // opened used to leave the summary stale).
+    return ListenableBuilder(
+      listenable: CartProvider.defaultCart,
+      builder: (context, _) => _buildScaffold(),
+    );
+  }
+
+  Widget _buildScaffold() {
     return Scaffold(
       backgroundColor: _kSurface,
       appBar: AppBar(
@@ -484,7 +511,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Widget _buildPackageOverview() {
-    final items = CartProvider.defaultCart.dbItems;
+    final items = _items;
     return _SCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -45,7 +45,7 @@ class CourierNotificationService
             $num = BuyerNotificationService::orderNumber((int) $sa->order_id);
             self::create((int) $sa->courier_id, 'rider_assigned', 'Rider assigned to pickup',
                 "A rider was assigned to pick up order {$num}.", "rider_assigned:{$sa->id}:{$sa->assigned_personnel_id}",
-                ['order_id' => $sa->order_id, 'assignment_id' => $sa->id], '/courier/pickup-management');
+                ['order_id' => $sa->order_id, 'assignment_id' => $sa->id], '/courier/incoming-shipments');
         });
     }
 

@@ -56,6 +56,30 @@ class CourierDashboardController extends CourierBaseController
                 ->count(),
         ];
 
+        // Quick Actions badges (additive keys): work still needing a rider
+        // (same numbers as the New Assign tab) and riders online now.
+        $branches = \App\Services\BranchAssignService::summary($courierId);
+        $stats['new_pickups_unassigned'] = array_sum(array_column($branches, 'new_pickups'));
+        $stats['deliveries_waiting']     = array_sum(array_column($branches, 'deliveries'));
+        $stats['online_riders']          = \App\Models\CourierPersonnel::where('courier_id', $courierId)
+            ->where('role', 'rider')->where('status', 'active')->where('is_online', true)->count();
+
         return response()->json(['data' => $stats]);
+    }
+
+    /**
+     * GET /api/courier-app/activity?limit=15&type=shipment|pickup|hub|delivery
+     * Recent Activity of the company, newest first (CourierActivityService).
+     */
+    public function activity(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'type'  => ['nullable', 'string', 'in:' . implode(',', \App\Services\CourierActivityService::TYPES)],
+        ]);
+
+        return response()->json(['data' => \App\Services\CourierActivityService::recent(
+            (int) $request->user()->id, (int) ($data['limit'] ?? 15), $data['type'] ?? null
+        )]);
     }
 }

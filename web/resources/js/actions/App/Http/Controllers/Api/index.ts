@@ -22,6 +22,7 @@ import CourierAuthController from './CourierAuthController'
 import CourierDashboardController from './CourierDashboardController'
 import CourierShipmentController from './CourierShipmentController'
 import CourierAppNotificationController from './CourierAppNotificationController'
+import CourierBranchAssignController from './CourierBranchAssignController'
 import CourierPickupController from './CourierPickupController'
 import CourierScanController from './CourierScanController'
 import CourierFacilityApiController from './CourierFacilityApiController'
@@ -59,6 +60,7 @@ CourierAuthController: Object.assign(CourierAuthController, CourierAuthControlle
 CourierDashboardController: Object.assign(CourierDashboardController, CourierDashboardController),
 CourierShipmentController: Object.assign(CourierShipmentController, CourierShipmentController),
 CourierAppNotificationController: Object.assign(CourierAppNotificationController, CourierAppNotificationController),
+CourierBranchAssignController: Object.assign(CourierBranchAssignController, CourierBranchAssignController),
 CourierPickupController: Object.assign(CourierPickupController, CourierPickupController),
 CourierScanController: Object.assign(CourierScanController, CourierScanController),
 CourierFacilityApiController: Object.assign(CourierFacilityApiController, CourierFacilityApiController),

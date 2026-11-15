@@ -103,16 +103,11 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::post('/api/courier/shipments/{id}/accept', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'accept'])->middleware('role:courier,logistics_staff');
     Route::post('/api/courier/shipments/{id}/reject', [\App\Http\Controllers\Courier\IncomingShipmentsController::class, 'reject'])->middleware('role:courier,logistics_staff');
     
-    // Courier - Pickup Management (with full functionality)
-    Route::get('/courier/pickup-management', [\App\Http\Controllers\Courier\PickupManagementController::class, 'index'])->name('courier.pickup-management')->middleware('role:courier,logistics_staff');
-    Route::get('/api/courier/pickups/{id}', [\App\Http\Controllers\Courier\PickupManagementController::class, 'show'])->middleware('role:courier,logistics_staff');
-    Route::post('/api/courier/pickups/{id}/schedule', [\App\Http\Controllers\Courier\PickupManagementController::class, 'schedule'])->middleware('role:courier,logistics_staff');
-    Route::post('/api/courier/pickups/{id}/assign-personnel', [\App\Http\Controllers\Courier\PickupManagementController::class, 'assignPersonnel'])->middleware('role:courier,logistics_staff');
-    Route::post('/api/courier/pickups/{id}/reschedule', [\App\Http\Controllers\Courier\PickupManagementController::class, 'reschedule'])->middleware('role:courier,logistics_staff');
-    Route::post('/api/courier/pickups/{id}/cancel', [\App\Http\Controllers\Courier\PickupManagementController::class, 'cancel'])->middleware('role:courier,logistics_staff');
-    Route::post('/api/courier/pickups/{id}/record-failed', [\App\Http\Controllers\Courier\PickupManagementController::class, 'recordFailed'])->middleware('role:courier,logistics_staff');
-    Route::post('/api/courier/pickups/{id}/confirm', [\App\Http\Controllers\Courier\PickupManagementController::class, 'confirmPickup'])->middleware('role:courier,logistics_staff');
-    
+    // Pickup Management (web page + /api/courier/pickups/*) was removed. Pickups
+    // are managed through the courier-app API (Api\CourierPickupController).
+    // Old bookmarks / notification links land on Incoming Shipments instead of a 404.
+    Route::redirect('/courier/pickup-management', '/courier/incoming-shipments');
+
     // Courier company notifications (bell + page); courier and linked logistics_staff.
     Route::get('/courier/notifications', [\App\Http\Controllers\Courier\NotificationController::class, 'page'])->name('courier.notifications')->middleware('role:courier,logistics_staff');
     Route::get('/courier/notifications/feed', [\App\Http\Controllers\Courier\NotificationController::class, 'feed'])->middleware('role:courier,logistics_staff');
@@ -215,16 +210,12 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         return response()->json([
             'waybill_number' => $order->waybill_number,
             'order_number' => 'ORD-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
-            'buyer_name' => $order->shipping_name ?? $order->buyer->name ?? 'Unknown',
-            'buyer_address' => $order->shipping_address,
-            'buyer_city' => $order->shipping_municipality_city,
-            'buyer_barangay' => $order->shipping_barangay,
-            'buyer_phone' => $order->shipping_phone,
+            ...$order->buyerFields(), // buyer_name/phone/address/city/barangay/...
             'seller_name' => $order->items->first()->product->seller->business_name ?? $order->items->first()->product->seller->name ?? 'Unknown Seller',
             'weight' => round($totalWeight, 2),
             'payment_method' => strtoupper($order->payment_method),
             'total_amount' => $order->total,
-            'destination' => $order->shipping_municipality_city . ', ' . $order->shipping_province,
+            'destination' => $order->destinationLabel(),
             'status' => $order->status,
         ]);
     })->middleware('role:courier,logistics_staff');
@@ -385,9 +376,8 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     'order_id' => $order->id,
                     'waybill_number' => $latestScan->waybill_number,
                     'order_number' => 'ORD-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
-                    'buyer_name' => $order->shipping_name ?? $order->buyer->name ?? 'Unknown',
-                    'buyer_address' => $order->shipping_address,
-                    'destination' => $order->shipping_municipality_city,
+                    ...$order->buyerFields(),
+                    'destination' => $order->destinationLabel(),
                     'weight' => round($totalWeight, 2),
                     'payment_method' => strtoupper($order->payment_method ?? 'COD'),
                     'total_amount' => $order->total,
@@ -455,8 +445,8 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     'order_id' => $order->id,
                     'waybill_number' => $facilityReceiveScan->waybill_number,
                     'order_number' => 'ORD-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
-                    'buyer_name' => $order->shipping_name ?? $order->buyer->name ?? 'Unknown',
-                    'destination' => $order->shipping_municipality_city,
+                    ...$order->buyerFields(),
+                    'destination' => $order->destinationLabel(),
                     'weight' => round($totalWeight, 2),
                     'status' => $order->status,
                     'received_at' => $facilityReceiveScan->created_at->format('M d, Y h:i A'),
@@ -682,8 +672,6 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             ->orderBy('updated_at', 'desc')
             ->get()
             ->map(function ($order) {
-                // Get buyer info
-                $buyer = \App\Models\User::find($order->buyer_id);
                 
                 // Get seller info from first item's product
                 $sellerName = 'N/A';
@@ -714,9 +702,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     'id' => $order->id,
                     'order_number' => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
                     'waybill_number' => $order->waybill_number,
-                    'buyer_name' => $buyer->name ?? $order->shipping_name ?? 'N/A',
-                    'buyer_phone' => $order->shipping_phone ?? 'N/A',
-                    'buyer_address' => $order->shipping_address ?? 'N/A',
+                    ...$order->buyerFields(),
                     'seller_name' => $sellerName,
                     'total_amount' => $order->total ?? 0,
                     'payment_method' => $paymentMethodDisplay,
@@ -770,8 +756,6 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             ], 404);
         }
         
-        // Get buyer info
-        $buyer = \App\Models\User::find($order->buyer_id);
         
         // Get seller info from first item's product
         $sellerName = 'N/A';
@@ -803,9 +787,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                 'id' => $order->id,
                 'order_number' => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
                 'waybill_number' => $order->waybill_number,
-                'buyer_name' => $buyer->name ?? $order->shipping_name ?? 'N/A',
-                'buyer_phone' => $order->shipping_phone ?? 'N/A',
-                'buyer_address' => $order->shipping_address ?? 'N/A',
+                ...$order->buyerFields(),
                 'seller_name' => $sellerName,
                 'total_amount' => $order->total,
                 'payment_method' => $paymentMethodDisplay,
@@ -1165,8 +1147,6 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             ->orderBy('updated_at', 'desc')
             ->get()
             ->map(function ($order) {
-                // Get buyer info
-                $buyer = \App\Models\User::find($order->buyer_id);
                 
                 // Get seller info from first item's product
                 $sellerName = 'N/A';
@@ -1178,29 +1158,11 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     }
                 }
                 
-                // Extract barangay AND municipality/city from shipping address
-                $address = $order->shipping_address ?? '';
-                $barangay = 'Unknown';
-                $city = 'Unknown';
-                
-                // Extract barangay
-                if (preg_match('/Brgy\.?\s+([^,]+)/i', $address, $matches)) {
-                    $barangay = trim($matches[1]);
-                } elseif (preg_match('/Barangay\s+([^,]+)/i', $address, $matches)) {
-                    $barangay = trim($matches[1]);
-                }
-                
-                // Extract city/municipality (usually the second-to-last or last part before region)
-                $addressParts = array_map('trim', explode(',', $address));
-                if (count($addressParts) >= 2) {
-                    // Try to find city/municipality (usually after barangay)
-                    // Format: Street, Barangay, City, Province/Region
-                    $city = $addressParts[count($addressParts) - 2] ?? 'Unknown'; // Second to last
-                    
-                    // Clean up common patterns
-                    $city = preg_replace('/^(City of|Municipality of)\s+/i', '', $city);
-                    $city = trim($city);
-                }
+                // Barangay + city for courier service-area matching — from the
+                // order's structured snapshot (see Order::recipient()).
+                $recipient = $order->recipient();
+                $barangay = $recipient['barangay'] ?? 'Unknown';
+                $city = $recipient['city'] ?? 'Unknown';
                 
                 // Normalize payment method (database stores "cod", "gcash", etc. in lowercase)
                 $paymentMethod = strtolower($order->payment_method ?? 'cod');
@@ -1221,9 +1183,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     'id' => $order->id,
                     'order_number' => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
                     'waybill_number' => $order->waybill_number,
-                    'buyer_name' => $buyer->name ?? $order->shipping_name ?? 'N/A',
-                    'buyer_phone' => $order->shipping_phone ?? 'N/A',
-                    'buyer_address' => $order->shipping_address ?? 'N/A',
+                    ...$order->buyerFields(),
                     'barangay' => $barangay,
                     'city' => $city, // Add city/municipality for matching
                     'seller_name' => $sellerName,
@@ -1941,6 +1901,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/success', [\App\Http\Controllers\OrderController::class, 'success'])->name('orders.success');
     Route::get('/orders/{id}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
+    Route::get('/orders/{id}/tracking', [\App\Http\Controllers\Buyer\OrderTrackingController::class, 'page'])->name('orders.tracking')->whereNumber('id');
 });
 
 Route::get('/product/{id}', function (string $id) {
@@ -2071,6 +2032,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/api/orders/{id}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel']);
     // Buyer delivery code (read-only; same controller as GET /api/buyer/orders/{id}/delivery-code)
     Route::get('/api/orders/{id}/delivery-code', [\App\Http\Controllers\Api\BuyerDeliveryCodeController::class, 'show'])->middleware('throttle:30,1')->whereNumber('id');
+    // Track Order transit log (same controller/JSON as GET /api/buyer/orders/{id}/tracking)
+    Route::get('/api/orders/{id}/tracking', [\App\Http\Controllers\Buyer\OrderTrackingController::class, 'show'])->middleware('throttle:60,1,web-order-tracking')->whereNumber('id');
     
     // Voucher validation
     Route::post('/api/vouchers/validate', [\App\Http\Controllers\Admin\VoucherController::class, 'validate']);
