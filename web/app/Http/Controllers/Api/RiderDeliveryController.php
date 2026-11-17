@@ -200,7 +200,8 @@ class RiderDeliveryController extends Controller
     public function deliver(Request $request, int $id): JsonResponse
     {
         $data = $request->validate([
-            'cod_collected' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
+            'cod_collected'  => ['nullable', 'numeric', 'min:0', 'max:9999999'],
+            'recipient_name' => ['nullable', 'string', 'max:120'],
         ]);
 
         return $this->locked($request, $id, function (DeliveryJob $job) use ($data, $request) {
@@ -232,6 +233,7 @@ class RiderDeliveryController extends Controller
                 'cod_collected'    => $job->hasCod() ? $job->cod_amount : 0,
                 'cod_collected_at' => $job->hasCod() ? $now : null,
                 'delivered_at'     => $now,
+                'pod_recipient_name' => isset($data['recipient_name']) ? trim($data['recipient_name']) ?: null : null,
             ]);
 
             $this->writeTracking($job, self::TRACK_DELIVERED, 'Parcel delivered.');
@@ -550,6 +552,7 @@ class RiderDeliveryController extends Controller
             'max_attempts'    => $job->max_attempts,
             'failure_reasons' => $job->failure_reasons ?? [],
             'pod_uploaded'    => (bool) $job->pod_photo_path,
+            'pod_recipient_name' => $job->pod_recipient_name,
             'otp_verified'    => (bool) $job->otp_verified_at,
             'cod_collected'   => $job->cod_collected !== null ? (float) $job->cod_collected : null,
             'can_start'       => $job->canGoOutForDelivery(),

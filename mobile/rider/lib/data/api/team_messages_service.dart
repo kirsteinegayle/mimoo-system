@@ -26,8 +26,12 @@ class TeamThread {
     required this.unread,
     this.lastBody,
     this.lastAt,
+    this.photoUrl,
   });
   final int id;
+
+  /// Counterpart avatar (null = icon/initials).
+  final String? photoUrl;
   final String name;
   final String role;
   final int unread;
@@ -40,6 +44,9 @@ class TeamThread {
       id: (j['id'] as num).toInt(),
       name: (j['counterpart_name'] ?? 'Conversation').toString(),
       role: (j['counterpart_role'] ?? '').toString(),
+      photoUrl: (j['counterpart_photo_url'] as String?)?.trim().isEmpty == true
+          ? null
+          : j['counterpart_photo_url'] as String?,
       unread: (j['unread_count'] as num?)?.toInt() ?? 0,
       lastBody: last is Map ? last['body']?.toString() : null,
       lastAt: DateTime.tryParse('${j['last_message_at']}')?.toLocal(),

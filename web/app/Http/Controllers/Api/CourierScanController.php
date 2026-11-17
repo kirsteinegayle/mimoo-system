@@ -135,11 +135,28 @@ class CourierScanController extends CourierBaseController
         $order = Order::where('waybill_number', $request->waybill_number)->first();
 
         if (! $order) {
+            \App\Services\ScanRouteGuard::logRejected(null, $request->waybill_number, $facility, 'received', 'Waybill not found', (int) $courier->id);
+
             return response()->json(['message' => "No parcel found with waybill: {$request->waybill_number}"], 404);
         }
 
         if ($order->assigned_courier_id && $order->assigned_courier_id !== $courier->id) {
+            \App\Services\ScanRouteGuard::logRejected($order, null, $facility, 'received', 'Parcel assigned to a different logistics company', (int) $courier->id);
+
             return response()->json(['message' => 'This parcel is assigned to a different courier company.'], 403);
+        }
+
+        // Same rule as the web scanner: only parcels whose pickup assignment this company accepted.
+        $assigned = \App\Models\ShipmentAssignment::where('order_id', $order->id)->where('courier_id', $courier->id)
+            ->where('assignment_status', 'accepted')->where('pickup_status', '<>', 'cancelled')->exists();
+        if (! $assigned) {
+            \App\Services\ScanRouteGuard::logRejected($order, null, $facility, 'received', 'Parcel not assigned to this company', (int) $courier->id);
+
+            return response()->json(['message' => 'This parcel is not assigned to your company (or the assignment was not accepted yet), so it cannot be scanned in.'], 422);
+        }
+
+        if ($routeError = \App\Services\ScanRouteGuard::check($order, $facility, 'received')) {
+            return response()->json(['message' => $routeError], 422);
         }
 
         ShipmentScan::create([

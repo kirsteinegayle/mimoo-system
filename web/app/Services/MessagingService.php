@@ -164,6 +164,16 @@ class MessagingService
         };
     }
 
+    /** Avatar URL of a participant (null for the admin team / no picture). */
+    public static function photoOf(array $who): ?string
+    {
+        if ($who['role'] === 'admin') {
+            return null;
+        }
+
+        return \App\Support\AvatarUrl::forUser(User::find($who['id']));
+    }
+
     public static function nameOf(array $who): string
     {
         if ($who['role'] === 'admin') {

@@ -52,11 +52,12 @@ class DeliveryManagementController extends Controller
             ->keyBy('order_id'); // latest job per order wins
 
         $riders = app(CourierDeliveryController::class)->riders($request)->getData(true)['data'] ?? [];
+        $proofs = \App\Support\DeliveryProof::forOrders($orders->pluck('id'));
 
         return Inertia::render('courier/DeliveryManagement', [
             'auth' => ['user' => ['id' => $courier->id, 'name' => $courier->name, 'email' => $courier->email, 'account_type' => $courier->account_type]],
             'company' => ['name' => $courier->company_name ?? $courier->business_name ?? 'Courier Company', 'contact_person' => trim(($courier->contact_first_name ?? '') . ' ' . ($courier->contact_last_name ?? ''))],
-            'orders' => $orders->map(function (Order $o) use ($jobs, $pickupStatus) {
+            'orders' => $orders->map(function (Order $o) use ($jobs, $pickupStatus, $proofs) {
                 $job = $jobs->get($o->id);
                 $pickedUp = ($pickupStatus[$o->id] ?? null) === 'picked_up';
 
@@ -78,6 +79,7 @@ class DeliveryManagementController extends Controller
                         'status' => $job->status,
                         'rider_name' => $job->personnel?->name,
                         'assigned_at' => $job->assigned_at?->toIso8601String(),
+                        'pod' => $proofs[$o->id] ?? null,
                     ] : null,
                 ];
             })->values(),

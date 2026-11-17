@@ -27,7 +27,11 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             \App\Http\Middleware\EnsurePortalAccess::class,
+            \App\Http\Middleware\PlatformMaintenance::class, // Admin > Settings > Maintenance mode (needs the session, so after it starts)
         ]);
+
+        // The apps (Sanctum API) honour maintenance mode too.
+        $middleware->api(append: [\App\Http\Middleware\PlatformMaintenance::class]);
 
         $middleware->alias([
             'admin.verified' => EnsureAdminSession::class,

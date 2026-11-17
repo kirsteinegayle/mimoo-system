@@ -13,6 +13,7 @@ import 'inbox_screen.dart';
 import 'job_actions.dart' show openMessages;
 import 'job_router.dart';
 import 'state_gallery_screen.dart';
+import '../../widgets/user_avatar.dart';
 
 /// Profile tab: identity, hub/vehicle info, and links (Vehicle & Documents,
 /// Messages, Notifications, Settings, Help Center, Logout).
@@ -78,17 +79,11 @@ class ProfileTab extends StatelessWidget {
               ],
             ),
             child: Row(children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.16),
-                  border: Border.all(color: Colors.white54, width: 2),
-                ),
-                alignment: Alignment.center,
-                child: Text(p.initials,
-                    style: ts(22, w: FontWeight.w800, c: Colors.white)),
+              UserAvatar(
+                url: p.photoUrl,
+                name: p.name,
+                size: 64,
+                border: Border.all(color: Colors.white54, width: 2),
               ),
               const SizedBox(width: 14),
               Expanded(

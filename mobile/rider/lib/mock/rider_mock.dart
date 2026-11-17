@@ -273,8 +273,12 @@ class MockProfile {
     this.hubAddress,
     this.hubAssigned = true,
     this.courierCompany,
+    this.photoUrl,
   });
   final String name, riderId, status, hub, municipality, vehicleType, plateNo;
+
+  /// API mode: profile picture URL from GET /me (null = initials).
+  final String? photoUrl;
 
   /// API mode: address of the rider's branch (null when unknown).
   final String? hubAddress;
@@ -557,6 +561,22 @@ class RiderMock extends ChangeNotifier {
     clearSession();
   }
 
+  /// API mode: ONE server-validated scan (POST /scan-waybill). The server applies the same rules as
+  /// the pickup / hand-off / delivery actions, refuses (and audits) anything out of sequence or not
+  /// assigned to this rider, and answers with the specific reason as an [ApiException].
+  /// [intent] = pickup | handoff | delivery (null = the server decides); [expected] = the job being scanned for.
+  /// Returns the action the server performed, and reloads the jobs.
+  Future<String> scanWaybillOnServer(String code,
+      {String? intent, String? expected}) async {
+    final body = await _api.post('/scan-waybill', {
+      'waybill_number': code,
+      if (intent != null) 'intent': intent,
+      if (expected != null) 'expected_waybill': expected,
+    });
+    unawaited(refresh());
+    return (body['action'] as String?) ?? 'pickup';
+  }
+
   /// 1 → 2: waybill scanned at the seller.
   Future<void> markPickedUp(MockJob job, {String? waybill}) async {
     if (job.stage != MockStage.readyToPickUp) return;
@@ -768,8 +788,13 @@ class RiderMock extends ChangeNotifier {
       hubAddress: _str(hub?['address']).isEmpty ? null : _str(hub?['address']),
       hubAssigned: hubName.isNotEmpty,
       courierCompany: company.isEmpty ? null : company,
-      // TODO(api): municipality is not in the rider API yet.
-      municipality: '-',
+      photoUrl: _str(r['profile_photo_url']).trim().isEmpty
+          ? null
+          : _str(r['profile_photo_url']).trim(),
+      // Municipality from the approved rider application (GET /me).
+      municipality: _str(r['city_municipality']).trim().isEmpty
+          ? 'Not set'
+          : _str(r['city_municipality']).trim(),
       // Vehicle from the approved rider application (GET /me); '-' if none.
       vehicleType: _vehicleLabel(_str(r['vehicle_type'])),
       plateNo: _str(r['plate_number']).trim().isEmpty

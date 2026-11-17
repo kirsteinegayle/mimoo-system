@@ -32,12 +32,18 @@ class DeliveryChatMessage {
 /// Result of one poll: new messages + chat state.
 class DeliveryChatPage {
   const DeliveryChatPage(
-      {required this.messages, required this.canSend, this.riderName});
+      {required this.messages,
+      required this.canSend,
+      this.riderName,
+      this.riderPhotoUrl});
   final List<DeliveryChatMessage> messages;
 
   /// False once the delivery is finished: the chat is read-only.
   final bool canSend;
   final String? riderName;
+
+  /// Rider avatar URL (null = initials).
+  final String? riderPhotoUrl;
 }
 
 /// One rider conversation in the inbox (GET /api/buyer/rider-chats).
@@ -105,6 +111,7 @@ class DeliveryChatRepository {
           : const [],
       canSend: meta['can_send'] == true,
       riderName: meta['counterpart_name'] as String?,
+      riderPhotoUrl: meta['counterpart_photo_url'] as String?,
     );
   }
 

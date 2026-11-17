@@ -7,6 +7,7 @@ import '../../data/api/delivery_chat_service.dart';
 import '../../data/api/rider_api.dart' show ApiException;
 import '../../data/parcel_flow.dart' show clock;
 import '../../mock/rider_mock.dart';
+import '../../widgets/user_avatar.dart';
 
 /// Text chat with the buyer of one delivery job.
 /// Polls every 5 s while the screen is open (no websocket). Read-only once
@@ -41,6 +42,7 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
   bool _canSend = true;
   String? _error;
   String? _buyerName;
+  String? _buyerPhotoUrl;
 
   int get _lastId => _messages.isEmpty ? 0 : _messages.last.id;
 
@@ -71,6 +73,7 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
         _error = null;
         _canSend = page.canSend;
         _buyerName = page.counterpartName ?? _buyerName;
+        _buyerPhotoUrl = page.counterpartPhotoUrl ?? _buyerPhotoUrl;
       });
       if (added.any((m) => !m.mine)) _chat.markRead();
       if (added.isNotEmpty) _scrollToEnd();
@@ -141,7 +144,7 @@ class _DeliveryChatScreenState extends State<DeliveryChatScreen> {
           color: c.tint,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(children: [
-            Icon(Icons.person, size: 18, color: c.primary),
+            UserAvatar(url: _buyerPhotoUrl, name: name, size: 28),
             const SizedBox(width: 8),
             Expanded(
               child: Text('$name · ${widget.job.tracking}',

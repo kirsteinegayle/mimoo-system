@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../models/buyer_profile.dart';
 import 'api_service.dart';
 
@@ -6,17 +7,25 @@ class ProfileRepository {
   ProfileRepository._();
   static final ProfileRepository instance = ProfileRepository._();
 
+  /// Latest profile photo URL (null = show initials). Updated on every
+  /// profile fetch/update/upload so the Account card follows changes.
+  static final ValueNotifier<String?> photoUrl = ValueNotifier<String?>(null);
+
   // ── Profile ─────────────────────────────────────────────────────────────────
 
   Future<BuyerProfile> fetchProfile() async {
     final res = await ApiService.get('/buyer/profile') as Map<String, dynamic>;
-    return BuyerProfile.fromJson(res['data'] as Map<String, dynamic>);
+    final p = BuyerProfile.fromJson(res['data'] as Map<String, dynamic>);
+    photoUrl.value = p.profilePhotoUrl;
+    return p;
   }
 
   Future<BuyerProfile> updateProfile(Map<String, dynamic> fields) async {
     final res = await ApiService.put('/buyer/profile', body: fields)
         as Map<String, dynamic>;
-    return BuyerProfile.fromJson(res['data'] as Map<String, dynamic>);
+    final p = BuyerProfile.fromJson(res['data'] as Map<String, dynamic>);
+    photoUrl.value = p.profilePhotoUrl;
+    return p;
   }
 
   // ── Change password ──────────────────────────────────────────────────────────
@@ -94,6 +103,8 @@ class ProfileRepository {
       filename: filename,
       contentType: mimeType,
     ) as Map<String, dynamic>;
-    return res['data']['profile_photo_url'] as String? ?? '';
+    final url = res['data']['profile_photo_url'] as String? ?? '';
+    photoUrl.value = url.isEmpty ? null : url;
+    return url;
   }
 }

@@ -1,3 +1,4 @@
+import { confirmDialog } from '@/components/app-modal';
 import { Head, router } from '@inertiajs/react';
 import { AlertTriangle, Check, CheckCircle2, ClipboardList, Clock, Eye, History, Inbox, Loader2, MapPin, Package, PackageSearch, Search, Store, X, XCircle } from 'lucide-react';
 import { ReactNode, useState } from 'react';
@@ -206,7 +207,7 @@ export default function IncomingShipments({ auth, company, shipments: initialShi
     };
 
     const handleAccept = async (id: number) => {
-        if (!confirm('Accept this shipment? It will become available for pickup.')) {
+        if (!(await confirmDialog('Accept this shipment? It will become available for pickup.'))) {
             return;
         }
 

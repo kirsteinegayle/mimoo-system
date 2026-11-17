@@ -97,7 +97,7 @@ export default function CategoryPage({ auth, category, products: initialProducts
         currentCategory={category}
       />
 
-      <main className="mx-auto max-w-[1200px] px-6 py-6">
+      <main className="mx-auto max-w-[1100px] px-6 py-6 pb-16">
         {/* Minimal Category Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>

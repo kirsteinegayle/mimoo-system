@@ -1,3 +1,8 @@
+import '../config/checkout_limits.dart';
+
+int _capToCheckoutMax(int stock, int perCheckout) =>
+    stock < perCheckout ? stock : perCheckout;
+
 /// A cart line as returned by the server API.
 /// Distinct from the local [CartItem] (which holds a full [Product] object)
 /// — this model holds only the fields the server returns.
@@ -46,7 +51,9 @@ class DbCartItem {
         isOnSale: j['is_on_sale'] as bool? ?? false,
         quantity: (j['quantity'] as num).toInt(),
         lineTotal: (j['line_total'] as num?)?.toDouble() ?? 0.0,
-        maxQuantity: (j['max_quantity'] as num?)?.toInt() ?? 0,
+        maxQuantity: _capToCheckoutMax(
+            (j['max_quantity'] as num?)?.toInt() ?? 0,
+            (j['max_per_checkout'] as num?)?.toInt() ?? kMaxQtyPerCheckout),
         stockStatus: j['stock_status'] as String? ?? '',
         isValid: j['is_valid'] as bool? ?? true,
         validationIssue: j['validation_issue'] as String?,

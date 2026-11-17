@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from '@/components/app-modal';
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import { Package, X } from "lucide-react";
 import { BuyerHeader } from "@/components/buyer-header";
@@ -44,7 +45,7 @@ export default function OrderHistory() {
   }
 
   async function handleCancelOrder(orderId: number) {
-    if (!confirm('Are you sure you want to cancel this order?')) {
+    if (!(await confirmDialog('Are you sure you want to cancel this order?'))) {
       return;
     }
 

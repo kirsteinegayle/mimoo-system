@@ -1,16 +1,29 @@
 import AdminShell from '@/layouts/admin/admin-shell';
 import { csrfHeaders } from '@/components/notification-bell';
 import { Head } from '@inertiajs/react';
-import { KeyRound, Loader2, UserCog } from 'lucide-react';
+import { KeyRound, Loader2, SlidersHorizontal, UserCog } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 
 // Admin settings. The admin team signs in with an access code (no user row),
 // so "Change password" changes that code; it is stored hashed and replaces
 // ADMIN_MASTER_CODE from then on.
 
+interface Platform {
+    platform_name: string;
+    support_email: string;
+    commission_percent: number;
+    default_shipping_fee: number;
+    default_logistics_id: number | null;
+    cod_enabled: boolean;
+    maintenance_mode: boolean;
+    maintenance_message: string;
+}
+
 interface Props {
     profile: { display_name: string; email: string };
     codeChangedAt: string | null;
+    platform: Platform;
+    logisticsOptions: { id: number; name: string }[];
 }
 
 type Msg = { ok: boolean; text: string } | null;
@@ -66,7 +79,22 @@ function Label({ htmlFor, children }: { htmlFor: string; children: ReactNode }) 
     );
 }
 
-export default function AdminSettings({ profile, codeChangedAt }: Props) {
+export default function AdminSettings({ profile, codeChangedAt, platform, logisticsOptions }: Props) {
+    const [pf, setPf] = useState<Platform>(platform);
+    const [pfBusy, setPfBusy] = useState(false);
+    const [pfMsg, setPfMsg] = useState<Msg>(null);
+    const [pfErr, setPfErr] = useState<Record<string, string>>({});
+
+    async function savePlatform(e: FormEvent) {
+        e.preventDefault();
+        setPfBusy(true);
+        setPfErr({});
+        const { ok, json } = await post('/admin/settings/platform', pf);
+        setPfBusy(false);
+        setPfErr(ok ? {} : firstErrors(json));
+        setPfMsg({ ok, text: json?.message || (ok ? 'Saved.' : 'Could not save.') });
+    }
+
     const [p, setP] = useState(profile);
     const [pBusy, setPBusy] = useState(false);
     const [pMsg, setPMsg] = useState<Msg>(null);
@@ -114,6 +142,59 @@ export default function AdminSettings({ profile, codeChangedAt }: Props) {
             </div>
 
             <div className="max-w-2xl space-y-6">
+                <Section icon={SlidersHorizontal} title="Platform" desc="Branding, money and availability. Every setting here changes real behaviour in the apps and web.">
+                    <form onSubmit={savePlatform} className="space-y-4">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <Label htmlFor="platform_name">Platform name</Label>
+                                <input id="platform_name" className={field} value={pf.platform_name} maxLength={40} onChange={(e) => setPf({ ...pf, platform_name: e.target.value })} />
+                                {err(pfErr, 'platform_name')}
+                            </div>
+                            <div>
+                                <Label htmlFor="support_email">Support email (shown in account messages)</Label>
+                                <input id="support_email" type="email" className={field} value={pf.support_email} placeholder="support@example.com" onChange={(e) => setPf({ ...pf, support_email: e.target.value })} />
+                                {err(pfErr, 'support_email')}
+                            </div>
+                            <div>
+                                <Label htmlFor="commission_percent">Platform commission (%)</Label>
+                                <input id="commission_percent" type="number" min="0" max="50" step="0.01" className={field} value={pf.commission_percent} onChange={(e) => setPf({ ...pf, commission_percent: Number(e.target.value) })} />
+                                {err(pfErr, 'commission_percent')}
+                            </div>
+                            <div>
+                                <Label htmlFor="default_shipping_fee">Standard shipping fee (₱)</Label>
+                                <input id="default_shipping_fee" type="number" min="0" step="0.01" className={field} value={pf.default_shipping_fee} onChange={(e) => setPf({ ...pf, default_shipping_fee: Number(e.target.value) })} />
+                                <p className="mt-1 text-xs text-gray-500">Charged when no logistics zone / weight bracket matches the address.</p>
+                                {err(pfErr, 'default_shipping_fee')}
+                            </div>
+                            <div className="sm:col-span-2">
+                                <Label htmlFor="default_logistics_id">Default logistics</Label>
+                                <select id="default_logistics_id" className={field} value={pf.default_logistics_id ?? ''} onChange={(e) => setPf({ ...pf, default_logistics_id: e.target.value ? Number(e.target.value) : null })}>
+                                    <option value="">None (oldest approved logistics)</option>
+                                    {logisticsOptions.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                                </select>
+                                <p className="mt-1 text-xs text-gray-500">Gets parcels when rates tie, or when no logistics covers the buyer's area.</p>
+                                {err(pfErr, 'default_logistics_id')}
+                            </div>
+                        </div>
+                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                            <input type="checkbox" checked={pf.cod_enabled} onChange={(e) => setPf({ ...pf, cod_enabled: e.target.checked })} />
+                            Offer Cash on Delivery at checkout (web and app)
+                        </label>
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                            <label className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+                                <input type="checkbox" checked={pf.maintenance_mode} onChange={(e) => setPf({ ...pf, maintenance_mode: e.target.checked })} />
+                                Maintenance mode
+                            </label>
+                            <p className="mt-1 text-xs text-amber-800">Buyers, sellers, logistics and the apps see the message below. The admin panel keeps working.</p>
+                            <input className={`${field} mt-2`} value={pf.maintenance_message} maxLength={200} onChange={(e) => setPf({ ...pf, maintenance_message: e.target.value })} />
+                        </div>
+                        <button type="submit" disabled={pfBusy} className="inline-flex items-center gap-2 rounded-lg bg-[#3B1F6B] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2D1652] disabled:opacity-60">
+                            {pfBusy && <Loader2 className="h-4 w-4 animate-spin" />} Save platform settings
+                        </button>
+                        <Note msg={pfMsg} />
+                    </form>
+                </Section>
+
                 <Section icon={UserCog} title="Profile" desc="How the admin team is identified in the panel.">
                     <form onSubmit={saveProfile} className="space-y-4">
                         <div>

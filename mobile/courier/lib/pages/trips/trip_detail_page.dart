@@ -504,7 +504,7 @@ class _TripDetailPageState extends State<TripDetailPage>
             ),
             child: Text(displayStatus(trip.status).toUpperCase(),
                 style:
-                    pjs(size: 9, weight: FontWeight.w900, color: Colors.white)),
+                    pjs(size: 11, weight: FontWeight.w900, color: Colors.white)),
           ),
         ]),
         const SizedBox(height: 8),
@@ -551,7 +551,7 @@ class _TripDetailPageState extends State<TripDetailPage>
           ),
           child: Text(displayStatus(trip.status),
               style:
-                  pjs(size: 10, weight: FontWeight.w700, color: Colors.white)),
+                  pjs(size: 11, weight: FontWeight.w700, color: Colors.white)),
         ),
       ]),
     );
@@ -739,12 +739,12 @@ class _TripDetailPageState extends State<TripDetailPage>
                         Text(
                           '${p.weight.toStringAsFixed(1)} kg · '
                           '${p.missing ? 'Missing in Transit' : p.received ? 'Received' : p.loaded ? 'Loaded' : 'Pending'}',
-                          style: pjs(size: 10, color: kSubtext),
+                          style: pjs(size: 11, color: kSubtext),
                         ),
                         if (p.damaged)
                           Text(
                             'Damaged${p.damageNote == null ? '' : ': ${p.damageNote}'}',
-                            style: pjs(size: 10, color: kFlash),
+                            style: pjs(size: 11, color: kFlash),
                           ),
                       ]),
                 ),
@@ -787,7 +787,7 @@ class _TripDetailPageState extends State<TripDetailPage>
                               style: pjs(size: 12, weight: FontWeight.w700)),
                         ),
                         Text(trip.events[i].occurredAt,
-                            style: pjs(size: 10, color: kSubtext)),
+                            style: pjs(size: 11, color: kSubtext)),
                       ]),
                       if (trip.events[i].place.isNotEmpty)
                         Text(trip.events[i].place,

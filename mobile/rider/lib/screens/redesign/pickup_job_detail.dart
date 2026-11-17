@@ -6,6 +6,7 @@ import '../../data/parcel_flow.dart' show clock;
 import '../../mock/rider_mock.dart';
 import '../../widgets/job_widgets.dart';
 import '../../widgets/motion.dart';
+import '../../widgets/waybill_qr_sheet.dart';
 import '../pickup_detail_screen.dart' show showNavigationPicker;
 import 'job_actions.dart';
 
@@ -69,7 +70,8 @@ class PickupJobDetailScreen extends StatelessWidget {
           MCard(
             radius: 20,
             child: Column(children: [
-              _row(c, Icons.qr_code_2, 'Tracking no.', job.tracking),
+              _row(c, Icons.qr_code_2, 'Tracking no.', job.tracking,
+                  onTap: () => showWaybillQr(context, job.tracking)),
               const Divider(height: 20),
               _row(c, Icons.inventory_2_outlined, 'Parcel', job.item),
               const Divider(height: 20),
@@ -141,8 +143,8 @@ class PickupJobDetailScreen extends StatelessWidget {
       );
 
   static Widget _row(MimooColors c, IconData icon, String label, String value,
-          {bool strong = false}) =>
-      Row(children: [
+          {bool strong = false, VoidCallback? onTap}) =>
+      _tap(onTap, Row(children: [
         Icon(icon, size: 20, color: c.primary),
         const SizedBox(width: 10),
         Expanded(child: Text(label, style: MT.bodyMd.copyWith(color: c.muted))),
@@ -152,7 +154,20 @@ class PickupJobDetailScreen extends StatelessWidget {
               style: (strong ? MT.labelLg : MT.bodyMd)
                   .copyWith(color: strong ? c.primary : c.text)),
         ),
-      ]);
+        if (onTap != null) ...[
+          const SizedBox(width: 6),
+          Icon(Icons.qr_code_2, size: 18, color: c.primary),
+        ],
+      ]));
+
+  static Widget _tap(VoidCallback? onTap, Widget child) => onTap == null
+      ? child
+      : InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Align(alignment: Alignment.centerLeft, child: child)));
 }
 
 /// Vertical status timeline: (title, time, done).

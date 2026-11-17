@@ -1,6 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
+import complaints23c87c from './complaints'
 /**
- * @see routes/web.php:2079
+ * @see routes/web.php:2186
  * @route '/addresses'
  */
 export const addresses = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -14,7 +15,7 @@ addresses.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2079
+ * @see routes/web.php:2186
  * @route '/addresses'
  */
 addresses.url = (options?: RouteQueryOptions) => {
@@ -22,7 +23,7 @@ addresses.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2079
+ * @see routes/web.php:2186
  * @route '/addresses'
  */
 addresses.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -30,7 +31,7 @@ addresses.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2079
+ * @see routes/web.php:2186
  * @route '/addresses'
  */
 addresses.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -39,7 +40,7 @@ addresses.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2079
+ * @see routes/web.php:2186
  * @route '/addresses'
  */
     const addressesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -48,7 +49,7 @@ addresses.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2079
+ * @see routes/web.php:2186
  * @route '/addresses'
  */
         addressesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -56,7 +57,7 @@ addresses.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2079
+ * @see routes/web.php:2186
  * @route '/addresses'
  */
         addressesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -71,7 +72,7 @@ addresses.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     addresses.form = addressesForm
 /**
- * @see routes/web.php:2087
+ * @see routes/web.php:2194
  * @route '/vouchers'
  */
 export const vouchers = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -85,7 +86,7 @@ vouchers.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2087
+ * @see routes/web.php:2194
  * @route '/vouchers'
  */
 vouchers.url = (options?: RouteQueryOptions) => {
@@ -93,7 +94,7 @@ vouchers.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2087
+ * @see routes/web.php:2194
  * @route '/vouchers'
  */
 vouchers.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -101,7 +102,7 @@ vouchers.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2087
+ * @see routes/web.php:2194
  * @route '/vouchers'
  */
 vouchers.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -110,7 +111,7 @@ vouchers.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2087
+ * @see routes/web.php:2194
  * @route '/vouchers'
  */
     const vouchersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -119,7 +120,7 @@ vouchers.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2087
+ * @see routes/web.php:2194
  * @route '/vouchers'
  */
         vouchersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -127,7 +128,7 @@ vouchers.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2087
+ * @see routes/web.php:2194
  * @route '/vouchers'
  */
         vouchersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -220,7 +221,7 @@ notifications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     
     notifications.form = notificationsForm
 /**
- * @see routes/web.php:2128
+ * @see routes/web.php:2235
  * @route '/following'
  */
 export const following = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -234,7 +235,7 @@ following.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2128
+ * @see routes/web.php:2235
  * @route '/following'
  */
 following.url = (options?: RouteQueryOptions) => {
@@ -242,7 +243,7 @@ following.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2128
+ * @see routes/web.php:2235
  * @route '/following'
  */
 following.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -250,7 +251,7 @@ following.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2128
+ * @see routes/web.php:2235
  * @route '/following'
  */
 following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -259,7 +260,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2128
+ * @see routes/web.php:2235
  * @route '/following'
  */
     const followingForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -268,7 +269,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2128
+ * @see routes/web.php:2235
  * @route '/following'
  */
         followingForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -276,7 +277,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2128
+ * @see routes/web.php:2235
  * @route '/following'
  */
         followingForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -291,7 +292,7 @@ following.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     following.form = followingForm
 /**
- * @see routes/web.php:2146
+ * @see routes/web.php:2253
  * @route '/returns'
  */
 export const returns = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -305,7 +306,7 @@ returns.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2146
+ * @see routes/web.php:2253
  * @route '/returns'
  */
 returns.url = (options?: RouteQueryOptions) => {
@@ -313,7 +314,7 @@ returns.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2146
+ * @see routes/web.php:2253
  * @route '/returns'
  */
 returns.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -321,7 +322,7 @@ returns.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2146
+ * @see routes/web.php:2253
  * @route '/returns'
  */
 returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -330,7 +331,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2146
+ * @see routes/web.php:2253
  * @route '/returns'
  */
     const returnsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -339,7 +340,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2146
+ * @see routes/web.php:2253
  * @route '/returns'
  */
         returnsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -347,7 +348,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2146
+ * @see routes/web.php:2253
  * @route '/returns'
  */
         returnsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -439,6 +440,162 @@ reviews.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     reviews.form = reviewsForm
+/**
+* @see \App\Http\Controllers\SupportTicketController::support
+ * @see app/Http/Controllers/SupportTicketController.php:26
+ * @route '/support'
+ */
+export const support = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: support.url(options),
+    method: 'get',
+})
+
+support.definition = {
+    methods: ["get","head"],
+    url: '/support',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\SupportTicketController::support
+ * @see app/Http/Controllers/SupportTicketController.php:26
+ * @route '/support'
+ */
+support.url = (options?: RouteQueryOptions) => {
+    return support.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\SupportTicketController::support
+ * @see app/Http/Controllers/SupportTicketController.php:26
+ * @route '/support'
+ */
+support.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: support.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\SupportTicketController::support
+ * @see app/Http/Controllers/SupportTicketController.php:26
+ * @route '/support'
+ */
+support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: support.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\SupportTicketController::support
+ * @see app/Http/Controllers/SupportTicketController.php:26
+ * @route '/support'
+ */
+    const supportForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: support.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\SupportTicketController::support
+ * @see app/Http/Controllers/SupportTicketController.php:26
+ * @route '/support'
+ */
+        supportForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: support.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\SupportTicketController::support
+ * @see app/Http/Controllers/SupportTicketController.php:26
+ * @route '/support'
+ */
+        supportForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: support.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    support.form = supportForm
+/**
+* @see \App\Http\Controllers\Buyer\ComplaintController::complaints
+ * @see app/Http/Controllers/Buyer/ComplaintController.php:28
+ * @route '/complaints'
+ */
+export const complaints = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: complaints.url(options),
+    method: 'get',
+})
+
+complaints.definition = {
+    methods: ["get","head"],
+    url: '/complaints',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Buyer\ComplaintController::complaints
+ * @see app/Http/Controllers/Buyer/ComplaintController.php:28
+ * @route '/complaints'
+ */
+complaints.url = (options?: RouteQueryOptions) => {
+    return complaints.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Buyer\ComplaintController::complaints
+ * @see app/Http/Controllers/Buyer/ComplaintController.php:28
+ * @route '/complaints'
+ */
+complaints.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: complaints.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Buyer\ComplaintController::complaints
+ * @see app/Http/Controllers/Buyer/ComplaintController.php:28
+ * @route '/complaints'
+ */
+complaints.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: complaints.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Buyer\ComplaintController::complaints
+ * @see app/Http/Controllers/Buyer/ComplaintController.php:28
+ * @route '/complaints'
+ */
+    const complaintsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: complaints.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Buyer\ComplaintController::complaints
+ * @see app/Http/Controllers/Buyer/ComplaintController.php:28
+ * @route '/complaints'
+ */
+        complaintsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: complaints.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Buyer\ComplaintController::complaints
+ * @see app/Http/Controllers/Buyer/ComplaintController.php:28
+ * @route '/complaints'
+ */
+        complaintsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: complaints.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    complaints.form = complaintsForm
 const buyer = {
     addresses: Object.assign(addresses, addresses),
 vouchers: Object.assign(vouchers, vouchers),
@@ -446,6 +603,8 @@ notifications: Object.assign(notifications, notifications),
 following: Object.assign(following, following),
 returns: Object.assign(returns, returns),
 reviews: Object.assign(reviews, reviews),
+support: Object.assign(support, support),
+complaints: Object.assign(complaints, complaints23c87c),
 }
 
 export default buyer

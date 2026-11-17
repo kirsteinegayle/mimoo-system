@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../data/api/rider_api.dart' show ApiException;
 import '../../data/api/team_messages_service.dart';
 import '../../data/parcel_flow.dart' show clock;
+import '../../widgets/user_avatar.dart';
 
 String _err(Object e, String fallback) => e is ApiException ? e.message : fallback;
 
@@ -183,7 +184,9 @@ class _TeamMessagesScreenState extends State<TeamMessagesScreen> {
                 border: Border.all(color: c.outlineVariant),
               ),
               child: Row(children: [
-                CircleAvatar(backgroundColor: c.tint, child: Icon(Icons.business_outlined, color: c.primary)),
+                t.photoUrl != null
+                    ? UserAvatar(url: t.photoUrl, name: t.name, size: 40)
+                    : CircleAvatar(backgroundColor: c.tint, child: Icon(Icons.business_outlined, color: c.primary)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

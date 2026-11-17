@@ -1,4 +1,5 @@
 ﻿import { Link, useForm } from '@inertiajs/react';
+import { alertDialog } from '@/components/app-modal';
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import StepProgress from '../../components/registration/StepProgress';
 
@@ -314,6 +315,8 @@ export default function LogisticsRegistration() {
     const [barangays, setBarangays] = useState<Barangay[]>([]);
     const [loading, setLoading] = useState({ regions: false, provinces: false, cities: false, barangays: false });
 
+    const submittingRef = useRef(false); // blocks a fast double click before React re-renders
+    const [submitting, setSubmitting] = useState(false);
     const { data, setData, post, processing, errors } = useForm<FormShape>({
         company_name: '',
         sec_registration_no: '',
@@ -579,6 +582,10 @@ export default function LogisticsRegistration() {
                 }
             }
             
+            if (submittingRef.current) return;
+            submittingRef.current = true;
+            setSubmitting(true);
+
             // Submit using fetch API directly since we need full control over FormData
             fetch('/register', {
                 method: 'POST',
@@ -591,20 +598,24 @@ export default function LogisticsRegistration() {
             })
             .then(response => {
                 if (response.ok) {
-                    window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+                    window.location.href = `/verify-email?email=${encodeURIComponent(email)}`; // stay locked while leaving
                 } else {
+                    submittingRef.current = false;
+                    setSubmitting(false);
                     return response.json().then(data => {
                         console.error('Validation errors:', data.errors);
                         const errorMessages = Object.keys(data.errors || {})
                             .map(k => `• ${k}: ${data.errors[k]}`)
                             .join('\n');
-                        alert(`Registration failed:\n\n${errorMessages}`);
+                        alertDialog(`Registration failed:\n\n${errorMessages}`);
                     });
                 }
             })
             .catch(error => {
                 console.error('Network error:', error);
-                alert('Network error occurred. Please try again.');
+                submittingRef.current = false;
+                setSubmitting(false);
+                alertDialog('Network error occurred. Please try again.');
             });
         }
     };
@@ -1130,10 +1141,10 @@ export default function LogisticsRegistration() {
                             )}
                             <button
                                 type="submit"
-                                disabled={processing}
+                                disabled={processing || submitting}
                                 className="flex-1 bg-[#3B1F6B] text-white rounded-xl py-3 font-medium hover:bg-[#2E1854] transition disabled:opacity-60"
                             >
-                                {processing ? 'Submitting...' : step === TOTAL_STEPS ? 'Submit Application' : 'Continue'}
+                                {processing || submitting ? 'Submitting...' : step === TOTAL_STEPS ? 'Submit Application' : 'Continue'}
                             </button>
                         </div>
                     </form>

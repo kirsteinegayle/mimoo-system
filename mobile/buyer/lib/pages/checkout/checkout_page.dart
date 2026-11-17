@@ -6,6 +6,7 @@ import '../orders/orders_page.dart';
 import '../../models/buyer_address.dart';
 import '../../models/db_cart_item.dart';
 import '../../services/address_repository.dart';
+import '../../services/shipping_repository.dart';
 import '../voucher/voucher_wallet_page.dart';
 import '../../models/voucher.dart';
 import '../../state/auth_service.dart';
@@ -84,6 +85,56 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _idempotencyKey =
         '${auth.buyerId ?? '0'}-${DateTime.now().millisecondsSinceEpoch}';
     _loadDefaultAddress();
+    _scheduleQuote(); // profile-prefilled address
+  }
+
+  // ── Shipping fee (same calculation as web) ────────────────────────────────
+  ShippingQuote? _quote;
+  bool _quoting = false;
+  bool _quoteFailed = false;
+  Timer? _quoteDebounce;
+  int _quoteSeq = 0; // ignore answers that arrive after a newer address was entered
+
+  /// Recalculate whenever the delivery address changes (typing is debounced).
+  void _scheduleQuote({bool immediate = false}) {
+    _quoteDebounce?.cancel();
+    final run = _loadQuote;
+    if (immediate) {
+      run();
+    } else {
+      _quoteDebounce = Timer(const Duration(milliseconds: 700), run);
+    }
+  }
+
+  Future<void> _loadQuote() async {
+    final address = _addressCtrl.text.trim();
+    if (_selectedAddress == null && address.length < 8) {
+      if (mounted) setState(() => _quote = null);
+      return;
+    }
+    final seq = ++_quoteSeq;
+    setState(() {
+      _quoting = true;
+      _quoteFailed = false;
+    });
+    try {
+      final q = await ShippingRepository.instance.quote(
+        cartItemIds: _selectedCartItemIds,
+        addressId: _selectedAddress?.id,
+        shippingAddress: address,
+      );
+      if (!mounted || seq != _quoteSeq) return;
+      setState(() {
+        _quote = q;
+        _quoting = false;
+      });
+    } catch (_) {
+      if (!mounted || seq != _quoteSeq) return;
+      setState(() {
+        _quoting = false;
+        _quoteFailed = true; // the server still charges the correct fee when the order is placed
+      });
+    }
   }
 
   // ── Address book ──────────────────────────────────────────────────────────
@@ -96,6 +147,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       _phoneCtrl.text = a.phone;
       _addressCtrl.text = a.fullAddress;
     });
+    _scheduleQuote(immediate: true);
   }
 
   Future<void> _loadDefaultAddress() async {
@@ -122,6 +174,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   /// Manual edits detach the order from the saved address (legacy mode).
   void _onShippingEdited(String _) {
     if (_selectedAddress != null) setState(() => _selectedAddress = null);
+    _scheduleQuote();
   }
 
   @override
@@ -129,6 +182,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _noteCtrl.dispose();
     _voucherCodeCtrl.dispose();
     _nameCtrl.dispose();
+    _quoteDebounce?.cancel();
     _addressCtrl.dispose();
     _phoneCtrl.dispose();
     super.dispose();
@@ -198,8 +252,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
   double get _merchandiseTotal =>
       _items.fold(0.0, (s, i) => s + i.lineTotal);
 
+  double get _shippingFee => _quote?.fee ?? 0.0;
+
+  /// Merchandise - voucher + shipping, the amount the order is charged.
   double get _finalTotal =>
-      (_merchandiseTotal - _voucherDiscount).clamp(0.0, double.infinity);
+      (_merchandiseTotal - _voucherDiscount).clamp(0.0, double.infinity) + _shippingFee;
 
   List<int> get _selectedCartItemIds =>
       _items.where((i) => i.isValid).map((i) => i.id).toList();
@@ -834,6 +891,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ],
             ),
           ],
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Shipping Fee', style: _pjs(size: 13, weight: FontWeight.w500, color: _kSubtext)),
+              if (_quoting)
+                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              else if (_quote != null)
+                Text('₱${_quote!.fee.toStringAsFixed(2)}', style: _pjs(size: 13, weight: FontWeight.w600))
+              else
+                Text(_quoteFailed ? 'Added at order' : 'Enter address', style: _pjs(size: 12, color: _kSubtext)),
+            ],
+          ),
+          if (_quote != null && !_quoting)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(_quote!.label, style: _pjs(size: 11, color: _kSubtext)),
+            ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
             child: Divider(color: _kBorder),

@@ -47,7 +47,7 @@ class SellerStorePhotoController extends Controller
 
             return response()->json([
                 'message' => 'Profile photo uploaded successfully',
-                'photo_url' => Storage::url($path),
+                'photo_url' => \App\Support\AvatarUrl::fromPath($path) ?? Storage::url($path),
             ]);
         } catch (\Exception $e) {
             \Log::error('Profile photo upload failed', [

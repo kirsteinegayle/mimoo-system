@@ -86,6 +86,8 @@ class MessagingController extends Controller
             'id'                => $c->id,
             'counterpart_name'  => $who ? MessagingService::nameOf($who) : 'Unknown',
             'counterpart_role'  => $who['role'] ?? null,
+            // Additive: avatar URL or null (app/web show initials). Admin = null.
+            'counterpart_photo_url' => $who ? MessagingService::photoOf($who) : null,
             'last_message'      => $last ? ['id' => $last->id, 'body' => $last->body ?? ($last->image_path ? 'Photo' : null), 'created_at' => $last->created_at?->toISOString()] : null,
             'last_message_at'   => $c->last_message_at?->toISOString(),
             'unread_count'      => MessagingService::unread($c->id, $me),

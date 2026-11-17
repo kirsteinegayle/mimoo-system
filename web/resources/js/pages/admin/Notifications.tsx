@@ -1,7 +1,7 @@
 import AdminShell from '@/layouts/admin/admin-shell';
 import { csrfHeaders, timeAgo } from '@/components/notification-bell';
 import { Head, router } from '@inertiajs/react';
-import { AlertTriangle, Bell, CheckCheck, CheckSquare, Loader2, RotateCcw, Truck, UserCheck } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCheck, CheckSquare, LifeBuoy, Loader2, PackageX, RotateCcw, Truck, UserCheck } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 // Admin team notifications (admin_notifications). The feed endpoint first adds
@@ -30,6 +30,9 @@ const TYPE: Record<string, { icon: React.ElementType; cls: string; label: string
     product_approval: { icon: CheckSquare, cls: 'bg-amber-100 text-amber-800', label: 'Product' },
     product_report: { icon: AlertTriangle, cls: 'bg-rose-100 text-rose-700', label: 'Report' },
     return_escalated: { icon: RotateCcw, cls: 'bg-orange-100 text-orange-800', label: 'Return' },
+    parcel_report: { icon: PackageX, cls: 'bg-red-100 text-red-700', label: 'Parcel' },
+    support_ticket: { icon: LifeBuoy, cls: 'bg-teal-100 text-teal-700', label: 'Support' },
+    support_reply: { icon: LifeBuoy, cls: 'bg-teal-100 text-teal-700', label: 'Support' },
 };
 
 async function post(url: string) {

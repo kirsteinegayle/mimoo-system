@@ -1,3 +1,4 @@
+import { alertDialog } from '@/components/app-modal';
 import { Link, router } from '@inertiajs/react';
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import StepProgress from '../../components/registration/StepProgress';
@@ -394,6 +395,7 @@ export default function CourierRegistration() {
     const [clientErrors, setClientErrors] = useState<Errs>({});
     const [serverErrors, setServerErrors] = useState<Record<string, string[]>>({});
     const [submitting, setSubmitting] = useState(false);
+    const submittingRef = useRef(false); // blocks a fast double click before React re-renders
     const headingRef = useRef<HTMLHeadingElement>(null);
 
     const [data, setDataRaw] = useState<FormShape>({
@@ -588,6 +590,8 @@ export default function CourierRegistration() {
     };
 
     const submitRegistration = async () => {
+        if (submittingRef.current) return;
+        submittingRef.current = true;
         setSubmitting(true);
         setServerErrors({});
 
@@ -684,16 +688,19 @@ export default function CourierRegistration() {
                 const json = await response.json();
                 if (json.errors) {
                     setServerErrors(json.errors);
+                    submittingRef.current = false;
                     setSubmitting(false);
                 }
             } else {
                 // Other error
                 const text = await response.text();
-                alert(`Registration failed: ${response.status} ${response.statusText}`);
+                alertDialog(`Registration failed: ${response.status} ${response.statusText}`);
+                submittingRef.current = false;
                 setSubmitting(false);
             }
         } catch (error) {
-            alert(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            alertDialog(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            submittingRef.current = false;
             setSubmitting(false);
         }
     };

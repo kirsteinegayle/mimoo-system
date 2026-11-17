@@ -137,6 +137,8 @@ class RiderPickupController extends Controller
 
         $assignment = $this->findMine($request, $id);
         if (! $assignment) {
+            $this->auditRejected($request, null, $request->waybill_number, 'Pickup not found or not assigned to this rider');
+
             return response()->json(['message' => 'Pickup not found.'], 404);
         }
 
@@ -149,15 +151,19 @@ class RiderPickupController extends Controller
         }
 
         if (! $assignment->canTransitionTo('picked_up')) {
+            $this->auditRejected($request, $assignment, null, 'Pickup is not scheduled yet');
+
             return response()->json([
                 'message' => 'Cannot confirm pickup. Pickup must be scheduled first.',
             ], 422);
         }
 
         $actual  = $assignment->order->waybill_number;
-        $scanned = trim($request->waybill_number);
+        $scanned = strtoupper(trim($request->waybill_number));
 
-        if ($scanned !== $actual) {
+        if ($scanned !== strtoupper((string) $actual)) {
+            $this->auditRejected($request, $assignment, $request->waybill_number, "Waybill mismatch (scanned {$scanned}, expected {$actual})");
+
             return response()->json([
                 'message' => "Waybill mismatch. Expected: {$actual}",
             ], 422);
@@ -174,6 +180,8 @@ class RiderPickupController extends Controller
             if (! $locked || ! $personnel
                 || $locked->assignment_status !== 'accepted'
                 || (int) $locked->assigned_personnel_id !== (int) $personnel->id) {
+                $this->auditRejected($request, $assignment, null, 'Pickup was reassigned before the scan finished');
+
                 return response()->json(['message' => 'Pickup not found.'], 404);
             }
             if ($locked->pickup_status === 'picked_up') {
@@ -295,6 +303,10 @@ class RiderPickupController extends Controller
                 ], 422);
             }
 
+            if ($routeError = \App\Services\ScanRouteGuard::check($assignment->order, $hub, self::SCAN_RIDER_DROP_OFF)) {
+                return response()->json(['message' => $routeError], 422);
+            }
+
             $scan = ShipmentScan::create([
                 'order_id'       => $assignment->order_id,
                 'waybill_number' => $assignment->order->waybill_number,
@@ -311,6 +323,144 @@ class RiderPickupController extends Controller
                 'data'    => $this->dropPayload($scan),
             ], 201);
         });
+    }
+
+    /**
+     * POST /api/rider-app/scan-waybill { waybill_number, intent? }
+     *
+     * ONE entry point for the rider's camera: resolves the scanned waybill to this rider's own
+     * job and runs the existing, unchanged rule set for it:
+     *   - pickup at the seller  -> scan()            (scheduled first, waybill must match)
+     *   - handoff at the hub    -> dropAtHub()       (intent=handoff, parcel must be picked up)
+     *   - start a delivery      -> outForDelivery()  (assigned / retry of a failed attempt)
+     * Final delivery confirmation stays proof-of-delivery photo (+ exact COD), never a scan.
+     *
+     * The rider must be the assigned rider of the parcel. Every refusal changes nothing, is written to
+     * scan_attempts, and returns the specific reason in `message` (404 unknown waybill, 403 not yours,
+     * 422 wrong state / sequence).
+     */
+    public function scanWaybill(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'waybill_number' => ['required', 'string', 'max:100'],
+            'intent'         => ['nullable', 'in:pickup,handoff,delivery'],
+            // Scanning FOR one specific job: a different parcel is refused (and audited), never acted on.
+            'expected_waybill' => ['nullable', 'string', 'max:100'],
+        ], [
+            'waybill_number.required' => 'Please enter or scan the waybill number.',
+        ]);
+
+        $code   = strtoupper(trim($data['waybill_number']));
+        $intent = $data['intent'] ?? null;
+        $user   = $request->user();
+        $type   = match ($intent) {
+            'handoff'  => self::SCAN_RIDER_DROP_OFF,
+            'delivery' => 'rider_delivery',
+            default    => 'rider_pickup',
+        };
+
+        $personnel = $this->myPersonnel($request);
+        if (! $personnel) {
+            return response()->json(['message' => 'Rider profile not found.'], 404);
+        }
+
+        $reject = function (int $status, string $reason, ?\App\Models\Order $order = null) use ($request, $code, $type, $personnel): JsonResponse {
+            \App\Services\ScanRouteGuard::logRejected($order, $order ? null : $code, null, $type, $reason,
+                $order?->assigned_courier_id ? (int) $order->assigned_courier_id : (int) $personnel->courier_id, (int) $request->user()->id);
+
+            return response()->json(['message' => $reason], $status);
+        };
+
+        $order = \App\Models\Order::whereRaw('UPPER(waybill_number) = ?', [$code])->first();
+        if (! $order) {
+            return $reject(404, "No parcel found with waybill: {$code}");
+        }
+
+        $assignment = ShipmentAssignment::with('order.items')
+            ->where('order_id', $order->id)
+            ->where('assignment_status', 'accepted')
+            ->where('assigned_personnel_id', $personnel->id)
+            ->latest('id')
+            ->first();
+        $job = \App\Models\DeliveryJob::where('order_id', $order->id)
+            ->where('rider_user_id', $user->id)
+            ->latest('id')
+            ->first();
+
+        if (! $assignment && ! $job) {
+            return $reject(403, 'This parcel is not assigned to you.', $order);
+        }
+
+        $expected = strtoupper(trim((string) ($data['expected_waybill'] ?? '')));
+        if ($expected !== '' && $expected !== $code) {
+            return $reject(422, "Wrong parcel: you scanned {$code}, but this job is {$expected}.", $order);
+        }
+
+        $request->merge(['waybill_number' => $code]);
+        $withAction = function (JsonResponse $r, string $action) use ($code): JsonResponse {
+            $r->setData(array_merge($r->getData(true), ['action' => $action, 'waybill_number' => $code]));
+
+            return $r;
+        };
+
+        if ($intent === 'handoff') {
+            if (! $assignment) {
+                return $reject(403, 'This parcel is not one of your pickups, so it cannot be handed off.', $order);
+            }
+            $r = $this->dropAtHub($request, $assignment->id);
+            if ($r->getStatusCode() >= 400) {
+                $this->auditRejected($request, $assignment, null, (string) ($r->getData(true)['message'] ?? 'Hand-off refused'), $type);
+            }
+
+            return $withAction($r, 'handoff');
+        }
+
+        $pickupOpen = $assignment && $assignment->pickup_status !== 'picked_up' && $intent !== 'delivery';
+        if ($pickupOpen) {
+            return $withAction($this->scan($request, $assignment->id), 'pickup');
+        }
+
+        if ($job && $intent !== 'pickup') {
+            if (in_array($job->status, [\App\Models\DeliveryJob::STATUS_DELIVERED, \App\Models\DeliveryJob::STATUS_RETURN_TO_SENDER], true)) {
+                return $reject(422, $job->status === \App\Models\DeliveryJob::STATUS_DELIVERED
+                    ? 'This parcel was already delivered.'
+                    : 'This parcel is being returned to the sender.', $order);
+            }
+            $r = app(RiderDeliveryController::class)->outForDelivery($request, $job->id);
+            if ($r->getStatusCode() >= 400) {
+                return $reject($r->getStatusCode(), (string) ($r->getData(true)['message'] ?? 'Delivery cannot be started.'), $order);
+            }
+
+            return $withAction($r, 'delivery');
+        }
+
+        if ($assignment) {
+            // intent=pickup (or no delivery job) on an already picked-up parcel
+            if ($intent === 'pickup') {
+                return $withAction($this->scan($request, $assignment->id), 'pickup');
+            }
+
+            return $reject(422, 'This parcel is already picked up. Hand it over at the hub (Drop at hub) next.', $order);
+        }
+
+        return $reject(422, 'This parcel cannot be scanned for that step.', $order);
+    }
+
+    /**
+     * Audit row for a refused rider scan (scan_attempts). Never touches orders / shipment_scans.
+     * $assignment null = the waybill did not resolve to one of this rider's pickups.
+     */
+    public function auditRejected(Request $request, ?ShipmentAssignment $assignment, ?string $waybill, string $reason, string $scanType = 'rider_pickup'): void
+    {
+        \App\Services\ScanRouteGuard::logRejected(
+            $assignment?->order,
+            $assignment ? null : ($waybill !== null ? strtoupper(trim($waybill)) : null),
+            null,
+            $scanType,
+            $reason,
+            $assignment?->courier_id ? (int) $assignment->courier_id : $this->myPersonnel($request)?->courier_id,
+            (int) $request->user()->id
+        );
     }
 
     /** The rider drop-off scan for this assignment's order + courier, if any. */

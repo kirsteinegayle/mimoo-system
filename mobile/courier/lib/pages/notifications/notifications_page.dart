@@ -146,13 +146,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
         title: Text('Notifications',
             style: pjs(size: 17, weight: FontWeight.w800)),
         actions: [
-          TextButton(
+          // Icon (48dp) instead of a text button: "Mark all read" overflowed the app bar on small phones at large font sizes.
+          IconButton(
+            tooltip: 'Mark all read',
             onPressed: _markingAll || !hasUnread ? null : _markAll,
-            child: Text('Mark all read',
-                style: pjs(
-                    size: 12,
-                    weight: FontWeight.w700,
-                    color: hasUnread ? kPrimary : kSubtext)),
+            icon: Icon(Icons.done_all,
+                color: hasUnread ? kPrimary : kSubtext),
           ),
         ],
       ),
@@ -181,7 +180,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ]),
         ),
         SizedBox(
-          height: 44,
+          // grows with the user's font size so the chips never overflow
+          height: 48 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.8),
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -347,7 +347,7 @@ class _NotificationCard extends StatelessWidget {
                       style: pjs(size: 12, color: kSubtext, height: 1.35)),
                   const SizedBox(height: 5),
                   Text(item.timeAgo.isEmpty ? item.createdAt : item.timeAgo,
-                      style: pjs(size: 10, color: kSubtext)),
+                      style: pjs(size: 11, color: kSubtext)),
                 ]),
           ),
         ]),

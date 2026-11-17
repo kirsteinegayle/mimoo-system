@@ -1,4 +1,5 @@
 ﻿import { Link, router } from '@inertiajs/react';
+import { alertDialog } from '@/components/app-modal';
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import StepProgress from '../../components/registration/StepProgress';
 import MultiSelectChips from '../../components/registration/MultiSelectChips';
@@ -687,7 +688,7 @@ export default function RiderRegistration() {
             forceFormData: true,
             onSuccess: () => {
                 // Redirect to pending page or show success message
-                alert('Rider registration submitted successfully! Your application is now pending approval.');
+                alertDialog('Rider registration submitted successfully! Your application is now pending approval.');
                 // Optionally redirect to a pending page
                 // router.visit('/register/rider/pending');
             },

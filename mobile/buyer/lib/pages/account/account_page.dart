@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../models/order.dart' as api_order;
 import '../../services/follow_repository.dart';
 import '../../services/order_repository.dart';
+import '../../services/profile_repository.dart';
 import '../../services/voucher_repository.dart';
 import '../../state/auth_service.dart';
 import '../../state/cart_provider.dart';
@@ -12,6 +13,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/animations.dart';
 import '../../widgets/header_actions.dart';
 import '../../widgets/motion.dart';
+import '../../widgets/user_avatar.dart';
 import '../chat/chat_page.dart';
 import '../notifications/notifications_page.dart';
 import '../orders/my_reviews_page.dart';
@@ -53,6 +55,10 @@ class _AccountPageState extends State<AccountPage> {
   void initState() {
     super.initState();
     _loadCounts();
+    // Profile photo for the card (initials stay when there is none / offline).
+    if (AuthService.instance.isLoggedIn) {
+      ProfileRepository.instance.fetchProfile().then((_) {}, onError: (_) {});
+    }
   }
 
   Future<void> _loadCounts() async {
@@ -202,14 +208,6 @@ class _ProfileCard extends StatelessWidget {
   final VoidCallback onEdit;
   final Widget stats;
 
-  static String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return 'B';
-    final first = parts.first[0];
-    final last = parts.length > 1 ? parts.last[0] : '';
-    return (first + last).toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -227,18 +225,14 @@ class _ProfileCard extends StatelessWidget {
               final display = name ?? AuthService.instance.buyerName ?? 'Buyer';
               return Row(
                 children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: AppColors.chip,
-                      shape: BoxShape.circle,
+                  ValueListenableBuilder<String?>(
+                    valueListenable: ProfileRepository.photoUrl,
+                    builder: (_, url, __) => UserAvatar(
+                      url: url,
+                      name: display,
+                      size: 60,
                       border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 2),
                     ),
-                    alignment: Alignment.center,
-                    child: Text(_initials(display),
-                        style: AppText.style(
-                            size: 21, weight: FontWeight.w800, color: AppColors.primary)),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(

@@ -51,6 +51,32 @@ class Product extends Model
     ];
 
     /**
+     * Products an admin may see in approval lists: everything except unsubmitted drafts
+     * (a draft that is still awaiting approval is visible to its seller only).
+     */
+    public function scopeSubmitted($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('status', '!=', 'draft')->orWhere('approval_status', '!=', 'pending');
+        });
+    }
+
+    /**
+     * Hide products whose seller was suspended / deactivated by the admin.
+     * Apply to every buyer-facing query (listings, search, product pages, cart).
+     */
+    public function scopeSellerActive($query)
+    {
+        return $query->whereHas('seller', fn ($s) => $s->whereNotIn('status', \App\Support\AccountStatus::BLOCKED));
+    }
+
+    /** True when this product's seller is suspended / deactivated (single-product checks). */
+    public function sellerIsBlocked(): bool
+    {
+        return in_array($this->seller?->status, \App\Support\AccountStatus::BLOCKED, true);
+    }
+
+    /**
      * Get the seller that owns the product.
      */
     public function seller(): BelongsTo
@@ -95,7 +121,7 @@ class Product extends Model
      */
     public function getTotalSoldAttribute(): int
     {
-        return $this->orderItems()->sum('quantity');
+        return (int) $this->orderItems()->whereHas('order', fn ($q) => $q->delivered())->sum('quantity');
     }
 
     /**

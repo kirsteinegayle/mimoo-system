@@ -26,6 +26,15 @@ class EnsureAccountApproved
             return $next($request);
         }
 
+        // Suspended / deactivated by the admin: end the session with the reason.
+        if ($blocked = \App\Support\AccountStatus::blockReason($user)) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->withErrors(['email' => $blocked]);
+        }
+
         // Buyers don't need approval - skip this middleware for them
         if ($user->account_type === 'buyer') {
             return $next($request);
@@ -36,6 +45,7 @@ class EnsureAccountApproved
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+            \App\Http\Controllers\Auth\ApprovalStatusController::remember($request, $user);
 
             return redirect()->route('register.pending')
                 ->with('message', 'Your account is still pending approval.');

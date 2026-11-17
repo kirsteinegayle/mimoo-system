@@ -1,3 +1,4 @@
+import { confirmDialog, alertDialog } from '@/components/app-modal';
 import { Head, router } from '@inertiajs/react';
 import {
     CheckCircle2,
@@ -156,22 +157,22 @@ export default function LogisticsApproval({ registrations, stats, filters, pagin
             setSelectedLogistics(data);
         } catch (error) {
             console.error('Failed to load logistics details:', error);
-            alert('Failed to load logistics details');
+            alertDialog('Failed to load logistics details');
             setShowModal(false);
         } finally {
             setLoadingDetails(false);
         }
     }
 
-    function handleApprove(userId: number) {
-        if (confirm('Are you sure you want to approve this logistics partner registration?')) {
+    async function handleApprove(userId: number) {
+        if (await confirmDialog('Are you sure you want to approve this logistics partner registration?')) {
             router.post(`/admin/logistics-approval/${userId}/approve`);
             setShowModal(false);
         }
     }
 
-    function handleDisapprove(userId: number) {
-        if (confirm('Are you sure you want to disapprove this logistics partner registration?')) {
+    async function handleDisapprove(userId: number) {
+        if (await confirmDialog('Are you sure you want to disapprove this logistics partner registration?')) {
             router.post(`/admin/logistics-approval/${userId}/disapprove`);
             setShowModal(false);
         }

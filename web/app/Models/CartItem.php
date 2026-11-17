@@ -60,7 +60,7 @@ class CartItem extends Model
             return false;
         }
 
-        if ($this->product->status !== 'active') {
+        if ($this->product->status !== 'active' || $this->product->sellerIsBlocked()) {
             return false;
         }
 
@@ -80,7 +80,7 @@ class CartItem extends Model
             return 'Product no longer available';
         }
 
-        if ($this->product->status !== 'active') {
+        if ($this->product->status !== 'active' || $this->product->sellerIsBlocked()) {
             return 'Product is no longer available';
         }
 

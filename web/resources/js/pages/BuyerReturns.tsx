@@ -1,3 +1,4 @@
+import { confirmDialog } from '@/components/app-modal';
 import { useCallback, useEffect, useState } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import { Loader2, RotateCcw, AlertTriangle } from "lucide-react";
@@ -103,7 +104,7 @@ export default function BuyerReturns() {
   }, [loading, highlight]);
 
   async function escalate(r: ReturnItem) {
-    if (!confirm("Escalate this request for review? You can only do this once.")) return;
+    if (!(await confirmDialog("Escalate this request for review? You can only do this once."))) return;
     setBusyId(r.id);
     setNotice(null);
     try {

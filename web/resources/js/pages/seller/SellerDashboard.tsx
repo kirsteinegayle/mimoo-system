@@ -1,3 +1,4 @@
+import { alertDialog } from '@/components/app-modal';
 import { Head } from '@inertiajs/react';
 import { AlertTriangle, Box, MessageSquare, Package, Star, TrendingUp } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
@@ -22,6 +23,7 @@ interface SellerDashboardProps {
         cover_photo_url?: string | null;
     };
     stats: {
+        total_sold?: number;
         total_sales: number;
         sales_growth: number;
         total_orders: number;
@@ -40,7 +42,7 @@ interface SellerDashboardProps {
         buyer_name: string;
         item: string;
         total: number;
-        status: 'To Ship' | 'In Transit' | 'Delivered';
+        status: string;
         date: string;
     }>;
     topProducts: Array<{
@@ -74,7 +76,6 @@ const peso = (n: number) => '₱' + n.toLocaleString('en-PH', { minimumFractionD
 // Real-time stats from SSE
 interface RealtimeStats {
     timestamp: string;
-    total_stock: number;
     total_sold: number;
     total_revenue: number;
     recent_orders: Array<{
@@ -209,8 +210,7 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
     // Use real-time stats if available, otherwise fall back to initial props
     const displayStats = {
         total_sales: realtimeStats?.total_revenue ?? stats.total_sales,
-        total_sold: realtimeStats?.total_sold ?? 0,
-        total_stock: realtimeStats?.total_stock ?? 0,
+        total_sold: realtimeStats?.total_sold ?? stats.total_sold ?? 0,
     };
 
     const displayRecentOrders = realtimeStats?.recent_orders ?? recentOrders;
@@ -221,6 +221,8 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
             case 'To Ship': return 'text-[#a9752b]';
             case 'In Transit': return 'text-[#4B2E7E]';
             case 'Delivered': return 'text-[#2c7a52]';
+            case 'Out for Delivery': case 'At Sorting Facility': case 'Picked Up': case 'Courier Accepted': case 'Awaiting Pickup': return 'text-[#4B2E7E]';
+            case 'Delivery Failed': case 'Returning to Sender': return 'text-[#b3384f]';
             default: return 'text-gray-600';
         }
     };
@@ -240,13 +242,13 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
 
         // Validate file size (5MB)
         if (file.size > 5 * 1024 * 1024) {
-            alert('File size must be less than 5MB');
+            alertDialog('File size must be less than 5MB');
             return;
         }
 
         // Validate file type
         if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-            alert('Only JPG and PNG files are allowed');
+            alertDialog('Only JPG and PNG files are allowed');
             return;
         }
 
@@ -268,14 +270,14 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
 
             if (response.ok) {
                 setProfilePhotoUrl(data.photo_url);
-                alert('Profile photo uploaded successfully!');
+                alertDialog('Profile photo uploaded successfully!');
             } else {
                 console.error('Upload failed:', data);
-                alert(`Failed to upload profile photo: ${data.message || data.error || 'Unknown error'}`);
+                alertDialog(`Failed to upload profile photo: ${data.message || data.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Upload error:', error);
-            alert(`Failed to upload profile photo: ${error instanceof Error ? error.message : 'Network error'}`);
+            alertDialog(`Failed to upload profile photo: ${error instanceof Error ? error.message : 'Network error'}`);
         } finally {
             setUploadingProfile(false);
             if (profileInputRef.current) {
@@ -290,13 +292,13 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
 
         // Validate file size (5MB)
         if (file.size > 5 * 1024 * 1024) {
-            alert('File size must be less than 5MB');
+            alertDialog('File size must be less than 5MB');
             return;
         }
 
         // Validate file type
         if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-            alert('Only JPG and PNG files are allowed');
+            alertDialog('Only JPG and PNG files are allowed');
             return;
         }
 
@@ -318,14 +320,14 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
 
             if (response.ok) {
                 setCoverPhotoUrl(data.photo_url);
-                alert('Cover photo uploaded successfully!');
+                alertDialog('Cover photo uploaded successfully!');
             } else {
                 console.error('Upload failed:', data);
-                alert(`Failed to upload cover photo: ${data.message || data.error || 'Unknown error'}`);
+                alertDialog(`Failed to upload cover photo: ${data.message || data.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Upload error:', error);
-            alert(`Failed to upload cover photo: ${error instanceof Error ? error.message : 'Network error'}`);
+            alertDialog(`Failed to upload cover photo: ${error instanceof Error ? error.message : 'Network error'}`);
         } finally {
             setUploadingCover(false);
             if (coverInputRef.current) {
@@ -501,17 +503,6 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
                                 </div>
                             </div>
 
-                            {/* Preview Store Button */}
-                            <div className="pb-4">
-                                <a 
-                                    href={`/seller/${auth.user.id}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 rounded-lg border-2 border-[#4B2E7E] bg-white px-6 py-2.5 text-sm font-semibold text-[#4B2E7E] hover:bg-violet-50 transition"
-                                >
-                                    👁️ Preview Store Page
-                                </a>
-                            </div>
                         </div>
 
                         {/* Upload Requirements Card */}
@@ -543,7 +534,7 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
             {/* Stats Row */}
             <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-4" style={fontSyne}>Store overview</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* Total Sales - Accent card */}
                     <div className="bg-gradient-to-br from-[#4B2E7E] to-[#B9A6DE] text-white rounded-xl p-5 border-0">
                         <div className="flex items-center gap-2 text-sm font-semibold opacity-80 mb-3" style={fontSyne}>
@@ -567,16 +558,6 @@ export default function SellerDashboard({ auth, seller, stats, recentOrders, top
                         </div>
                         <div className="text-[1.7rem] font-extrabold leading-none" style={fontPoppins}>{displayStats.total_sold.toLocaleString()}</div>
                         <p className="text-[0.76rem] text-[#6E6570] mt-2">Units sold (all time)</p>
-                    </div>
-
-                    {/* Stock */}
-                    <div className="bg-white rounded-xl p-5 border-2 border-[#F7ECD6] border-l-[3px] border-l-[#a9752b]">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-[#6E6570] mb-3" style={fontSyne}>
-                            <Package className="w-4 h-4 text-[#a9752b]" />
-                            <span>Total Stock</span>
-                        </div>
-                        <div className="text-[1.7rem] font-extrabold leading-none" style={fontPoppins}>{displayStats.total_stock.toLocaleString()}</div>
-                        <p className="text-[0.76rem] text-[#6E6570] mt-2">Current inventory</p>
                     </div>
 
                     {/* Store Rating */}

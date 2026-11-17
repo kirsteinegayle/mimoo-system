@@ -36,7 +36,7 @@ class CourierAppAccountController extends CourierBaseController
         // Approved application of this courier (riders.email = users.email): vehicle, plate.
         $apps = Rider::where('courier_company_id', $courier->id)
             ->where('verification_status', 'approved')
-            ->get(['email', 'vehicle_type', 'plate_number', 'verification_status'])
+            ->get(['email', 'vehicle_type', 'plate_number', 'verification_status', 'profile_picture'])
             ->keyBy(fn ($r) => strtolower((string) $r->email));
 
         $activeJobs = DeliveryJob::whereIn('personnel_id', $personnel->pluck('id'))
@@ -63,6 +63,8 @@ class CourierAppAccountController extends CourierBaseController
                 'application_status'   => $app?->verification_status,
                 'vehicle_type'         => $app?->vehicle_type,
                 'plate_number'         => $app?->plate_number,
+                // Additive: avatar URL or null (app shows initials).
+                'profile_photo_url'    => \App\Support\AvatarUrl::fromPath($u?->profile_photo) ?? \App\Support\AvatarUrl::fromPath($app?->profile_picture),
                 'is_online'            => (bool) $p->is_online,
                 'last_checked_in_at'   => $p->last_checked_in_at?->toIso8601String(),
                 'active_delivery_jobs' => (int) ($activeJobs[$p->id] ?? 0),
@@ -91,6 +93,8 @@ class CourierAppAccountController extends CourierBaseController
                 'name'             => $contact !== '' ? $contact : (string) $u->name,
                 'email'            => $u->email,
                 'company_name'     => $u->company_name ?? $u->business_name ?? $u->name,
+                // Additive: avatar URL or null (app shows the company icon).
+                'profile_photo_url' => \App\Support\AvatarUrl::forUser($u),
                 'phone'            => $u->company_contact_number ?? $u->contact_number,
                 'business_address' => $u->business_address,
                 'status'           => $u->status === 'approved' ? 'active' : (string) $u->status,

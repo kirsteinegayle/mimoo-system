@@ -1,3 +1,4 @@
+import { confirmDialog } from '@/components/app-modal';
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import { ArrowLeft, Loader2, MapPin, Pencil, Plus, Star, Trash2, X } from "lucide-react";
@@ -258,7 +259,7 @@ export default function BuyerAddresses() {
   }
 
   async function remove(a: Address) {
-    if (!window.confirm(`Delete the "${a.label}" address?`)) return;
+    if (!(await confirmDialog(`Delete the "${a.label}" address?`))) return;
     setBusy(a.id);
     const { ok, json } = await api(`/buyer/addresses/${a.id}`, "DELETE");
     setBusy(null);

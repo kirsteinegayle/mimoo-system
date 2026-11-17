@@ -79,7 +79,7 @@ riders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     riders.form = ridersForm
 /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::profile
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:83
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:85
  * @route '/api/courier-app/profile'
  */
 export const profile = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ profile.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::profile
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:83
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:85
  * @route '/api/courier-app/profile'
  */
 profile.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ profile.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::profile
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:83
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:85
  * @route '/api/courier-app/profile'
  */
 profile.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ profile.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::profile
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:83
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:85
  * @route '/api/courier-app/profile'
  */
 profile.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ profile.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::profile
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:83
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:85
  * @route '/api/courier-app/profile'
  */
     const profileForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ profile.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::profile
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:83
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:85
  * @route '/api/courier-app/profile'
  */
         profileForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ profile.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::profile
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:83
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:85
  * @route '/api/courier-app/profile'
  */
         profileForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ profile.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     profile.form = profileForm
 /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::changePassword
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:104
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:108
  * @route '/api/courier-app/profile/change-password'
  */
 export const changePassword = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ changePassword.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::changePassword
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:104
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:108
  * @route '/api/courier-app/profile/change-password'
  */
 changePassword.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ changePassword.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::changePassword
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:104
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:108
  * @route '/api/courier-app/profile/change-password'
  */
 changePassword.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ changePassword.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
 
     /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::changePassword
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:104
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:108
  * @route '/api/courier-app/profile/change-password'
  */
     const changePasswordForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ changePassword.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
 
             /**
 * @see \App\Http\Controllers\Api\CourierAppAccountController::changePassword
- * @see app/Http/Controllers/Api/CourierAppAccountController.php:104
+ * @see app/Http/Controllers/Api/CourierAppAccountController.php:108
  * @route '/api/courier-app/profile/change-password'
  */
         changePasswordForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

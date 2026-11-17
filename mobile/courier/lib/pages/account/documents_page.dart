@@ -57,7 +57,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   Future<void> _pickAndUpload() async {
     if (_uploading) return;
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf'],
       withData: true,
@@ -252,7 +252,7 @@ class _DocumentRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: pjs(size: 11, color: kSubtext)),
             if (document.uploadedAt != null)
-              Text(document.uploadedAt!, style: pjs(size: 10, color: kSubtext)),
+              Text(document.uploadedAt!, style: pjs(size: 11, color: kSubtext)),
           ]),
         ),
         CourierStatusBadge(

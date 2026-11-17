@@ -118,6 +118,7 @@ class RiderTestVehicle extends Command
         $me = app(RiderAuthController::class)->me($this->req($user, 'GET'))->getData(true)['data']['rider'] ?? [];
         $this->check('/me vehicle_type', $me['vehicle_type'] ?? 'null', 'tricycle', '');
         $this->check('/me plate_number', $me['plate_number'] ?? 'null', 'VHC 4321', '');
+        $this->check('/me city_municipality', $me['city_municipality'] ?? 'null', 'Santa Cruz', '');
         $this->check('/me has is_online', array_key_exists('is_online', $me) ? json_encode($me['is_online']) : 'missing', 'false', '');
 
         // 5. Rider without an application (e.g. demo seed) → nulls, no error

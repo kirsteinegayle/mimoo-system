@@ -1,3 +1,4 @@
+import { alertDialog } from '@/components/app-modal';
 import AdminShell from '@/layouts/admin/admin-shell';
 import { Head } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
@@ -23,6 +24,8 @@ interface Report {
         price: number;
         main_image: string | null;
         sku: string;
+        removed?: boolean;
+        url?: string | null;
         seller: {
             id: number;
             name: string;
@@ -39,11 +42,13 @@ interface ReportsResponse {
         per_page: number;
         total: number;
     };
+    stats?: { pending: number; approved: number; rejected: number };
 }
 
 export default function ProductReportsPage() {
     const [reports, setReports] = useState<Report[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0 });
     const [meta, setMeta] = useState({ current_page: 1, last_page: 1, per_page: 20, total: 0 });
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
@@ -80,7 +85,7 @@ export default function ProductReportsPage() {
 
             if (!response.ok) {
                 if (response.status === 403) {
-                    alert('Session expired. Please refresh the page.');
+                    alertDialog('Session expired. Please refresh the page.');
                     return;
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -88,6 +93,7 @@ export default function ProductReportsPage() {
 
             const data: ReportsResponse = await response.json();
             setReports(data.data || []);
+            if (data.stats) setStats(data.stats);
             setMeta(data.meta || { current_page: 1, last_page: 1, per_page: 20, total: 0 });
         } catch (error) {
             console.error('Failed to fetch reports:', error);
@@ -112,14 +118,14 @@ export default function ProductReportsPage() {
                 fetchReports();
                 setShowModal(false);
                 setShowConfirmApprove(false);
-                alert('Report approved and product deleted successfully!');
+                alertDialog('Report approved and product deleted successfully!');
             } else {
                 const error = await response.json();
-                alert(error.error || 'Failed to approve report');
+                alertDialog(error.error || 'Failed to approve report');
             }
         } catch (error) {
             console.error('Failed to approve report:', error);
-            alert('Failed to approve report');
+            alertDialog('Failed to approve report');
         } finally {
             setActionLoading(false);
         }
@@ -127,7 +133,7 @@ export default function ProductReportsPage() {
 
     const handleRejectReport = async (reportId: number) => {
         if (!adminNotes.trim()) {
-            alert('Please provide admin notes for rejection');
+            alertDialog('Please provide admin notes for rejection');
             return;
         }
 
@@ -147,14 +153,14 @@ export default function ProductReportsPage() {
                 setShowModal(false);
                 setShowConfirmReject(false);
                 setAdminNotes('');
-                alert('Report rejected successfully!');
+                alertDialog('Report rejected successfully!');
             } else {
                 const error = await response.json();
-                alert(error.error || 'Failed to reject report');
+                alertDialog(error.error || 'Failed to reject report');
             }
         } catch (error) {
             console.error('Failed to reject report:', error);
-            alert('Failed to reject report');
+            alertDialog('Failed to reject report');
         } finally {
             setActionLoading(false);
         }
@@ -179,12 +185,6 @@ export default function ProductReportsPage() {
             other: 'Other',
         };
         return labels[reason] || reason;
-    };
-
-    const stats = {
-        pending: reports.filter(r => r.status === 'pending').length,
-        approved: reports.filter(r => r.status === 'approved').length,
-        rejected: reports.filter(r => r.status === 'rejected').length,
     };
 
     return (
@@ -462,6 +462,13 @@ export default function ProductReportsPage() {
                                         <p className="font-bold text-gray-900">{selectedReport.product.name}</p>
                                         <p className="text-sm text-gray-600 mt-1">{selectedReport.product.description}</p>
                                         <p className="text-sm text-gray-600 mt-1">SKU: {selectedReport.product.sku}</p>
+                                        {selectedReport.product.removed || !selectedReport.product.url ? (
+                                            <p className="mt-1 text-xs font-semibold text-red-600">This product has been removed from the store.</p>
+                                        ) : (
+                                            <a href={selectedReport.product.url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-semibold text-purple-700 underline">
+                                                View product page
+                                            </a>
+                                        )}
                                         <p className="text-sm font-semibold text-purple-700 mt-2">
                                             Price: ₱{selectedReport.product.price.toFixed(2)}
                                         </p>

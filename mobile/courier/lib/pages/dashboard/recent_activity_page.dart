@@ -88,7 +88,7 @@ class ActivityRow extends StatelessWidget {
             ]),
           ),
           const SizedBox(width: 8),
-          Text(activityTimeAgo(item.at), style: pjs(size: 10, color: kSubtext)),
+          Text(activityTimeAgo(item.at), style: pjs(size: 11, color: kSubtext)),
         ]),
       ),
       if (showDivider) const Divider(height: 1, color: kBorder),

@@ -1,5 +1,6 @@
 import { createInertiaApp } from '@inertiajs/react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
+import { AppDialogHost } from '@/components/app-modal';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -29,6 +30,7 @@ createInertiaApp({
                 <TooltipProvider delayDuration={0}>
                     <App {...props} />
                     <Toaster />
+                    <AppDialogHost />
                 </TooltipProvider>
             );
 

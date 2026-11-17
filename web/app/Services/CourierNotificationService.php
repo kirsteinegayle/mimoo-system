@@ -39,6 +39,19 @@ class CourierNotificationService
     public static function assignmentUpdated(ShipmentAssignment $sa): void
     {
         self::safely(function () use ($sa) {
+            // Pickup outcome (picked up / failed / cancelled) so the company sees it without opening the page.
+            if ($sa->wasChanged('pickup_status') && in_array($sa->pickup_status, ['picked_up', 'failed', 'cancelled'], true)) {
+                $num = BuyerNotificationService::orderNumber((int) $sa->order_id);
+                [$title, $msg] = match ($sa->pickup_status) {
+                    'picked_up' => ['Parcel picked up', "Order {$num} was picked up from the seller."],
+                    'failed'    => ['Pickup failed', "Pickup for order {$num} failed" . ($sa->failure_reason ? ": {$sa->failure_reason}" : '.')],
+                    default     => ['Pickup cancelled', "Pickup for order {$num} was cancelled."],
+                };
+                self::create((int) $sa->courier_id, 'pickup_' . $sa->pickup_status, $title, $msg,
+                    "pickup_{$sa->pickup_status}:{$sa->id}:" . (int) $sa->attempt_count,
+                    ['order_id' => $sa->order_id, 'assignment_id' => $sa->id], '/courier/incoming-shipments');
+            }
+
             if (! $sa->wasChanged('assigned_personnel_id') || ! $sa->assigned_personnel_id) {
                 return;
             }
@@ -46,6 +59,18 @@ class CourierNotificationService
             self::create((int) $sa->courier_id, 'rider_assigned', 'Rider assigned to pickup',
                 "A rider was assigned to pick up order {$num}.", "rider_assigned:{$sa->id}:{$sa->assigned_personnel_id}",
                 ['order_id' => $sa->order_id, 'assignment_id' => $sa->id], '/courier/incoming-shipments');
+        });
+    }
+
+    /** A rider applied; every approved courier company is told (the rider is attached to one on approval). */
+    public static function riderApplied(\App\Models\Rider $rider): void
+    {
+        self::safely(function () use ($rider) {
+            $name = trim($rider->first_name . ' ' . $rider->last_name);
+            \App\Models\User::where('account_type', 'logistics')->where('role', 'courier')->where('status', 'approved')
+                ->pluck('id')->each(fn ($cid) => self::create((int) $cid, 'rider_application', 'New rider application',
+                    "{$name} applied to become a rider.", 'rider_application:' . $rider->id,
+                    ['rider_id' => $rider->id], '/courier/rider-management'));
         });
     }
 

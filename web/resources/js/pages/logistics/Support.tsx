@@ -1,5 +1,7 @@
 ﻿import { Head, Link, router } from '@inertiajs/react';
 import { ReactNode, useState } from 'react';
+import { CurrentUserAvatar } from '@/components/user-avatar';
+import StaffSupportQueue from '@/components/support/staff-queue';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
 const fontSyne = { fontFamily: 'Syne, sans-serif' };
@@ -31,36 +33,6 @@ export default function Support({ auth, company }: Props) {
         router.post('/logout');
     };
 
-    const tickets = [
-        {
-            id: 'RPT-0001',
-            subject: 'Parcel #1009 marked delivered but buyer has not received it',
-            shortSubject: '#1009',
-            category: 'Parcel Issue',
-            priority: 'High',
-            updated: '1 day ago',
-            status: 'open'
-        },
-        {
-            id: 'RPT-0002',
-            subject: 'Rider R5 reported an unresponsive buyer phone number',
-            shortSubject: 'R5',
-            category: 'Rider Issue',
-            priority: 'Normal',
-            updated: '1 day ago',
-            status: 'open'
-        },
-        {
-            id: 'RPT-0003',
-            subject: 'COD remittance for R3 does not match the collected amount',
-            shortSubject: 'R3',
-            category: 'COD / Remittance',
-            priority: 'Urgent',
-            updated: '1 day ago',
-            status: 'open'
-        }
-    ];
-
     const navItems = [
         { id: 'dashboard', label: 'Dashboard', icon: 'grid', href: '/logistics/dashboard' },
         { id: 'incoming-parcels', label: 'Incoming Parcels', icon: 'inbox', href: '/logistics/incoming-parcels' },
@@ -68,7 +40,7 @@ export default function Support({ auth, company }: Props) {
         { id: 'courier-applications', label: 'Courier Applications', icon: 'file-text', href: '/logistics/courier-applications' },
         { id: 'delivery-monitoring', label: 'Delivery Monitoring', icon: 'monitor', href: '/logistics/delivery-monitoring' },
         { id: 'riders', label: 'Riders', icon: 'bike', href: '/logistics/riders' },
-        { id: 'branches-checklists', label: 'Branches & Checklists', icon: 'checklist', href: '/logistics/branches-checklists' },
+        { id: 'branches-facilities', label: 'Branches & Facilities', icon: 'checklist', href: '/logistics/branches-facilities' },
         { id: 'zones-rates', label: 'Zones & Rates', icon: 'zones', href: '/logistics/zones-rates' },
         { id: 'cod-remittance', label: 'COD & Remittance', icon: 'chart-bar', href: '/logistics/cod-remittance' },
         { id: 'reports', label: 'Reports', icon: 'chart', href: '/logistics/reports' },
@@ -216,9 +188,9 @@ export default function Support({ auth, company }: Props) {
                                 <div className="relative">
                                     <button 
                                         onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="w-9 h-9 rounded-full bg-[#2B2249] text-white flex items-center justify-center text-sm font-bold hover:bg-[#3d2e5f] transition"
+                                        className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center hover:opacity-90 transition"
                                     >
-                                        {auth.user.name.charAt(0)}
+                                        <CurrentUserAvatar fallbackName={auth.user.name} className="h-9 w-9 text-sm" />
                                     </button>
                                     {showUserMenu && (
                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
@@ -254,143 +226,7 @@ export default function Support({ auth, company }: Props) {
 
                     {/* Content Area */}
                     <main className="flex-1 overflow-auto p-6 bg-gray-50">
-                        <div className="max-w-7xl mx-auto">
-                            {/* Header with buttons */}
-                            <div className="flex items-center justify-between mb-6">
-                                <button className="px-4 py-2 bg-[#E8E3F0] text-[#5B4B6E] rounded-lg text-sm font-semibold hover:bg-[#D4CEE0] transition flex items-center gap-2">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                    </svg>
-                                    HELP DESK
-                                </button>
-                                
-                                <button className="px-4 py-2 bg-[#4B5EF9] text-white rounded-lg text-sm font-semibold hover:bg-[#3B4EE9] transition flex items-center gap-2">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <line x1="12" y1="5" x2="12" y2="19"/>
-                                        <line x1="5" y1="12" x2="19" y2="12"/>
-                                    </svg>
-                                    New Report
-                                </button>
-                            </div>
-
-                            {/* Filters */}
-                            <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    {/* Search */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Search</label>
-                                        <input
-                                            type="text"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249] focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    {/* Status */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Status</label>
-                                        <select
-                                            value={statusFilter}
-                                            onChange={(e) => setStatusFilter(e.target.value)}
-                                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249] focus:border-transparent"
-                                        >
-                                            <option value="all">All statuses</option>
-                                            <option value="open">Open</option>
-                                            <option value="in-progress">In Progress</option>
-                                            <option value="resolved">Resolved</option>
-                                            <option value="closed">Closed</option>
-                                        </select>
-                                    </div>
-
-                                    {/* Category */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Category</label>
-                                        <select
-                                            value={categoryFilter}
-                                            onChange={(e) => setCategoryFilter(e.target.value)}
-                                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249] focus:border-transparent"
-                                        >
-                                            <option value="all">All categories</option>
-                                            <option value="parcel">Parcel Issue</option>
-                                            <option value="rider">Rider Issue</option>
-                                            <option value="cod">COD / Remittance</option>
-                                            <option value="technical">Technical</option>
-                                        </select>
-                                    </div>
-
-                                    {/* Priority */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Priority</label>
-                                        <select
-                                            value={priorityFilter}
-                                            onChange={(e) => setPriorityFilter(e.target.value)}
-                                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249] focus:border-transparent"
-                                        >
-                                            <option value="all">All priorities</option>
-                                            <option value="urgent">Urgent</option>
-                                            <option value="high">High</option>
-                                            <option value="normal">Normal</option>
-                                            <option value="low">Low</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-3 mt-4">
-                                    <button className="px-4 py-2 bg-[#2B2249] text-white rounded-lg text-sm font-semibold hover:bg-[#3B1F6B] transition">
-                                        Filter
-                                    </button>
-                                    <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 transition">
-                                        Reset
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Tickets Table */}
-                            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50 border-b border-gray-200">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600" style={fontSyncopate}>Ticket</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600" style={fontSyncopate}>Subject</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600" style={fontSyncopate}>Category</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600" style={fontSyncopate}>Priority</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600" style={fontSyncopate}>Updated</th>
-                                            <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600" style={fontSyncopate}>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {tickets.map((ticket) => (
-                                            <tr key={ticket.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4">
-                                                    <span className="text-sm font-bold text-gray-900">{ticket.id}</span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-sm text-gray-900">{ticket.subject}</div>
-                                                    <div className="text-xs text-gray-500 mt-1">{ticket.shortSubject}</div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-sm text-gray-900">{ticket.category}</span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${getPriorityColor(ticket.priority)}`}>
-                                                        {ticket.priority}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-sm text-gray-600">{ticket.updated}</span>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <button className="text-sm font-semibold text-[#4B5EF9] hover:underline">
-                                                        View
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <StaffSupportQueue />
                     </main>
                 </div>
             </div>

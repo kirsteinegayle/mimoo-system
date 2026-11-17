@@ -49,14 +49,15 @@ class CourierStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = statusColor(status);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         (label ?? displayStatus(status)).toUpperCase(),
-        style: pjs(size: 9, weight: FontWeight.w800, color: color),
+        // 11sp (was 9) and an AA-safe shade of the status colour on its tinted background
+        style: pjs(size: 11, weight: FontWeight.w800, color: aaText(color)),
       ),
     );
   }
@@ -170,9 +171,15 @@ class CourierEmptyState extends StatelessWidget {
     super.key,
     required this.icon,
     required this.message,
+    this.actionLabel,
+    this.onAction,
   });
   final IconData icon;
   final String message;
+
+  /// Optional next step ("no dead ends"): refresh, clear filters, add…
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -185,10 +192,132 @@ class CourierEmptyState extends StatelessWidget {
           Text(message,
               style: pjs(size: 13, color: kSubtext),
               textAlign: TextAlign.center),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: onAction,
+              style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  side: const BorderSide(color: kPrimary)),
+              child: Text(actionLabel!,
+                  style:
+                      pjs(size: 13, weight: FontWeight.w700, color: kPrimary)),
+            ),
+          ],
         ]),
       ),
     );
   }
+}
+
+/// Spinner for first loads (lists keep showing old data while refreshing).
+class CourierLoadingState extends StatelessWidget {
+  const CourierLoadingState({super.key});
+
+  @override
+  Widget build(BuildContext context) => const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(color: kPrimary),
+        ),
+      );
+}
+
+/// Search box used on long lists.
+class CourierSearchField extends StatelessWidget {
+  const CourierSearchField({
+    super.key,
+    required this.onChanged,
+    this.hint = 'Search',
+  });
+  final ValueChanged<String> onChanged;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) => TextField(
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        style: pjs(size: 14),
+        decoration: mimooInput(hint: hint, icon: Icons.search),
+      );
+}
+
+/// Horizontal filter chips (48dp tall touch targets).
+class CourierFilterChips extends StatelessWidget {
+  const CourierFilterChips({
+    super.key,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+  });
+  final Map<String, String> options; // value -> label
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: 48 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.8),
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: [
+            for (final e in options.entries)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(e.value,
+                      style: pjs(
+                          size: 12,
+                          weight: FontWeight.w700,
+                          color: value == e.key ? Colors.white : kText)),
+                  selected: value == e.key,
+                  selectedColor: kPrimary,
+                  backgroundColor: kCard,
+                  side: const BorderSide(color: kBorder),
+                  showCheckmark: false,
+                  onSelected: (_) => onChanged(e.key),
+                ),
+              ),
+          ],
+        ),
+      );
+}
+
+/// Confirmation for destructive / irreversible actions.
+Future<bool> courierConfirm(BuildContext context,
+    {required String title,
+    required String message,
+    String confirmLabel = 'Confirm',
+    bool destructive = false}) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(title, style: pjs(size: 16, weight: FontWeight.w800)),
+      content: Text(message, style: pjs(size: 13, color: kSubtext)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text('Cancel', style: pjs(size: 13, weight: FontWeight.w700)),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          style: FilledButton.styleFrom(
+              backgroundColor: destructive ? kFlash : kPrimary),
+          child: Text(confirmLabel,
+              style:
+                  pjs(size: 13, weight: FontWeight.w700, color: Colors.white)),
+        ),
+      ],
+    ),
+  );
+  return ok ?? false;
+}
+
+/// ₱1,234.50
+String courierPeso(num n) {
+  final parts = n.toStringAsFixed(2).split('.');
+  final whole = parts[0].replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+  return '₱$whole.${parts[1]}';
 }
 
 void courierSnack(BuildContext context, String message, Color color) {

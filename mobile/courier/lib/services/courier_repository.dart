@@ -680,4 +680,142 @@ class CourierRepository {
       note: meta['note']?.toString(),
     );
   }
+
+  // ── COD & Remittance (same API as web: confirm the cash riders handed in) ──
+
+  Future<({List<Map<String, dynamic>> items, double awaitingAmount, int awaitingCount})>
+      codRemittances({String status = ''}) async {
+    final res = await ApiService.get('$_prefix/cod-remittances',
+        queryParameters: {if (status.isNotEmpty) 'status': status}) as Map<String, dynamic>;
+    final meta = res['meta'] as Map<String, dynamic>? ?? {};
+    return (
+      items: (res['data'] as List<dynamic>? ?? [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(),
+      awaitingAmount: (meta['awaiting_amount'] as num?)?.toDouble() ?? 0,
+      awaitingCount: (meta['awaiting_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Future<String> confirmCodRemittance(int id) async {
+    final res = await ApiService.post('$_prefix/cod-remittances/$id/confirm')
+        as Map<String, dynamic>;
+    return res['message']?.toString() ?? 'Remittance confirmed.';
+  }
+
+  // ── Sorting & Transfers ───────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> transfersData({int? facilityId}) async {
+    final res = await ApiService.get('$_prefix/transfers-data', queryParameters: {
+      if (facilityId != null) 'facility_id': '$facilityId',
+    }) as Map<String, dynamic>;
+    return res;
+  }
+
+  Future<String> transferParcel(String waybill, int toFacilityId) async {
+    final res = await ApiService.post('$_prefix/transfers',
+        body: {'waybill_number': waybill, 'to_facility_id': toFacilityId})
+        as Map<String, dynamic>;
+    return res['message']?.toString() ?? 'Parcel transferred.';
+  }
+
+  // ── Branches & Facilities ────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> allFacilities() async {
+    final res = await ApiService.get('$_prefix/facilities',
+        queryParameters: {'status': 'all'}) as Map<String, dynamic>;
+    return (res['data'] as List<dynamic>? ?? [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+  }
+
+  Future<String> saveFacility(Map<String, dynamic> body, {int? id}) async {
+    final res = id == null
+        ? await ApiService.post('$_prefix/facilities', body: body)
+        : await ApiService.put('$_prefix/facilities/$id', body: body);
+    return (res as Map<String, dynamic>)['message']?.toString() ?? 'Saved.';
+  }
+
+  Future<String> deleteFacility(int id) async {
+    final res = await ApiService.delete('$_prefix/facilities/$id')
+        as Map<String, dynamic>;
+    return res['message']?.toString() ?? 'Facility deleted.';
+  }
+
+  // ── Company Settings ──────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> companySettings() async {
+    final res = await ApiService.get('$_prefix/company-settings')
+        as Map<String, dynamic>;
+    return Map<String, dynamic>.from(res['data'] as Map);
+  }
+
+  Future<String> saveCompanySettings(Map<String, dynamic> body) async {
+    final res = await ApiService.post('$_prefix/company-settings', body: body)
+        as Map<String, dynamic>;
+    return res['message']?.toString() ?? 'Saved.';
+  }
+
+  // ── Courier Support queue (tickets routed to couriers; same as web) ───────
+
+  Future<({List<Map<String, dynamic>> items, Map<String, dynamic> counts})>
+      supportFeed(String status) async {
+    final res = await ApiService.get('$_prefix/staff-support/feed',
+        queryParameters: {'status': status}) as Map<String, dynamic>;
+    return (
+      items: (res['data'] as List<dynamic>? ?? [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(),
+      counts: Map<String, dynamic>.from(res['counts'] as Map? ?? {}),
+    );
+  }
+
+  Future<Map<String, dynamic>> supportTicket(int id) async {
+    final res = await ApiService.get('$_prefix/staff-support/$id')
+        as Map<String, dynamic>;
+    return Map<String, dynamic>.from(res['data'] as Map);
+  }
+
+  Future<void> supportReply(int id, String body,
+      {List<({List<int> bytes, String filename})> files = const []}) async {
+    if (files.isEmpty) {
+      await ApiService.post('$_prefix/staff-support/$id/reply', body: {'body': body});
+    } else {
+      await ApiService.postMultipartFiles('$_prefix/staff-support/$id/reply',
+          field: 'attachments[]', files: files, fields: {'body': body});
+    }
+  }
+
+  Future<void> supportStatus(int id, String status) async {
+    await ApiService.post('$_prefix/staff-support/$id/status', body: {'status': status});
+  }
+
+  // ── Own support tickets (to the admin team) ───────────────────────────────
+
+  Future<({List<Map<String, dynamic>> items, Map<String, String> categories})>
+      myTickets() async {
+    final res = await ApiService.get('$_prefix/support/tickets') as Map<String, dynamic>;
+    final cats = (res['meta']?['categories'] as Map?)
+            ?.map((k, v) => MapEntry('$k', '$v')) ??
+        <String, String>{};
+    return (
+      items: (res['data'] as List<dynamic>? ?? [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(),
+      categories: Map<String, String>.from(cats),
+    );
+  }
+
+  Future<String> createTicket(String category, String subject, String message,
+      {List<({List<int> bytes, String filename})> files = const []}) async {
+    final res = (files.isEmpty
+        ? await ApiService.post('$_prefix/support/tickets',
+            body: {'category': category, 'subject': subject, 'message': message})
+        : await ApiService.postMultipartFiles('$_prefix/support/tickets',
+            field: 'attachments[]',
+            files: files,
+            fields: {'category': category, 'subject': subject, 'message': message}))
+        as Map<String, dynamic>;
+    return res['message']?.toString() ?? 'Ticket sent.';
+  }
 }

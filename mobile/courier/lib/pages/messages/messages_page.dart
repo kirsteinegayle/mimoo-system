@@ -6,6 +6,7 @@ import '../../services/api_service.dart';
 import '../../services/courier_repository.dart';
 import '../../theme/mimoo_theme.dart';
 import '../../widgets/courier_shared.dart';
+import '../../widgets/user_avatar.dart';
 
 class MessagesPage extends StatefulWidget {
   const MessagesPage({super.key});
@@ -140,12 +141,10 @@ class _MessagesPageState extends State<MessagesPage> {
                                 border: Border.all(color: kBorder),
                               ),
                               child: Row(children: [
-                                const CircleAvatar(
-                                  backgroundColor: kChip,
-                                  radius: 22,
-                                  child: Icon(Icons.chat_bubble_outline,
-                                      color: kPrimary, size: 22),
-                                ),
+                                UserAvatar(
+                                    url: c.otherPhotoUrl,
+                                    name: c.otherName,
+                                    size: 44),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(

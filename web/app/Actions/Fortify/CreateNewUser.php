@@ -103,6 +103,11 @@ class CreateNewUser implements CreatesNewUsers
             $input['estimated_delivery_time'] = !empty($input['estimated_delivery_time']) ? trim($input['estimated_delivery_time']) : null;
         }
         
+        // A registration that was started but never finished (double click, closed tab, failed
+        // request) leaves an unverified row that blocks the email / phone forever. Clean it up
+        // first so the person can simply try again.
+        $this->purgeAbandonedRegistrations($input);
+
         $validator = Validator::make($input, [
             // ── Personal details ──────────────────────────────────────────
             'first_name'      => ['required', 'string', new ValidName()],
@@ -178,8 +183,8 @@ class CreateNewUser implements CreatesNewUsers
             'password'        => ['required', 'string', new StrongPassword(), 'confirmed'],
         ], [
             'birthday.before'          => 'You must be at least 18 years old.',
-            'contact_number.unique'    => 'Mobile number is already in use.',
-            'email.unique'             => 'This email is already registered.',
+            'contact_number.unique'    => 'Mobile number is already registered. Please use a different number, log in, or contact support.',
+            'email.unique'             => 'Email is already registered. Please log in or contact support.',
             'username.unique'          => 'This username is already taken.',
             'username.regex'           => 'Username can only contain letters, numbers, and underscores.',
             'id_document.required'     => 'Please upload a valid government-issued ID.',
@@ -366,7 +371,17 @@ class CreateNewUser implements CreatesNewUsers
 
             return [$user, $verification->code];
         });
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Two submits raced past validation; the other one won. Say which field is taken.
+            $this->deleteStoredFiles();
+            $taken = str_contains($e->getMessage(), 'contact_number') ? 'contact_number' : 'email';
+            throw ValidationException::withMessages([
+                $taken => $taken === 'email'
+                    ? 'Email is already registered. Please log in or contact support.'
+                    : 'Mobile number is already registered. Please use a different number, log in, or contact support.',
+            ]);
         } catch (\Throwable $e) {
+            $this->deleteStoredFiles(); // the transaction rolled back, so do not leave its uploads behind
             \Log::error('=== DATABASE TRANSACTION FAILED ===', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
@@ -397,6 +412,68 @@ class CreateNewUser implements CreatesNewUsers
         return $user;
     }
 
+    /** Paths stored during this registration, removed again if the transaction fails. */
+    private array $storedPaths = [];
+
+    private function deleteStoredFiles(): void
+    {
+        foreach ($this->storedPaths as $path) {
+            Storage::disk('local')->delete($path);
+        }
+        $this->storedPaths = [];
+    }
+
+    /**
+     * Delete an incomplete earlier registration that uses this email / mobile number so the
+     * person can retry. Incomplete = email never verified and still pending, and either the
+     * same password was entered (same person retrying) or it is older than config('platform.abandoned_registration_minutes') (30).
+     * Verified accounts are never touched.
+     */
+    private function purgeAbandonedRegistrations(array $input): void
+    {
+        $email = (string) ($input['email'] ?? '');
+        $mobile = (string) ($input['contact_number'] ?? '');
+        if ($email === '' && $mobile === '') {
+            return;
+        }
+
+        $stale = User::query()
+            ->where(function ($q) use ($email, $mobile) {
+                if ($email !== '') {
+                    $q->orWhere('email', $email);
+                }
+                if ($mobile !== '') {
+                    $q->orWhere('contact_number', $mobile);
+                }
+            })
+            ->whereNull('email_verified_at')
+            ->where('verification_status', 'unverified')
+            ->where('status', 'pending')
+            ->get();
+
+        foreach ($stale as $old) {
+            $samePerson = ! empty($input['password']) && \Illuminate\Support\Facades\Hash::check((string) $input['password'], (string) $old->password);
+            if (! $samePerson && $old->created_at && $old->created_at->gt(now()->subMinutes((int) config('platform.abandoned_registration_minutes', 30)))) {
+                continue; // recent and unproven: leave it, the normal "already registered" error applies
+            }
+
+            try {
+                DB::transaction(function () use ($old) {
+                    EmailVerification::where('email', $old->email)->delete();
+                    $files = array_filter([$old->id_document, $old->business_permit, $old->dti_registration, $old->bir_2303,
+                        $old->sec_certificate, $old->valid_id, $old->proof_of_address, $old->operating_permits, $old->company_logo]);
+                    $old->delete();
+                    foreach ($files as $f) {
+                        Storage::disk('local')->delete($f);
+                    }
+                });
+                \Log::info('Removed abandoned registration so the email / number can be reused', ['user_id' => $old->id]);
+            } catch (\Throwable $e) {
+                \Log::warning('Could not remove abandoned registration: ' . $e->getMessage(), ['user_id' => $old->id]);
+            }
+        }
+    }
+
     /**
      * Store an uploaded file and return its path relative to the storage disk.
      */
@@ -406,6 +483,11 @@ class CreateNewUser implements CreatesNewUsers
             return null;
         }
 
-        return $file->store($directory, 'local');
+        $path = $file->store($directory, 'local');
+        if ($path) {
+            $this->storedPaths[] = $path;
+        }
+
+        return $path;
     }
 }

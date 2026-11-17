@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, type FormEvent } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
+import { BannerCarousel, type LiveBanner, type LiveBanners } from '@/components/banner-carousel';
 import {
   ChevronRight,
   ChevronLeft,
@@ -59,172 +60,21 @@ const PRODUCTS: Product[] = [
 // Small building blocks
 // ---------------------------------------------------------------------------
 
-function HeroMainBanner() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  
-  const slides = [
-    {
-      title: 'Main promo banner 1',
-      bgColor: 'bg-violet-100',
-      image: '/images/main banner 1.jpg',
-    },
-    {
-      title: 'Main promo banner 2',
-      bgColor: 'bg-blue-100',
-      image: '/images/main banner 2.jpg',
-    },
-    {
-      title: 'Main promo banner 3',
-      bgColor: 'bg-pink-100',
-      image: null,
-    },
-  ];
-
-  useEffect(() => {
-    if (isPaused) return;
-    
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [slides.length, isPaused]);
-
+// Banners come from Admin > Banner Management (live ones only).
+function SmallBanner({ banner }: { banner: LiveBanner }) {
+  const img = <img src={banner.image} alt={banner.title} className="block h-full w-full object-cover" />;
   return (
-    <div className="relative overflow-hidden rounded-xl min-h-48 sm:min-h-56">
-      {/* Carousel slides */}
-      <div className="relative h-full min-h-48 sm:min-h-56">
-        {slides.map((slide, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
-            }`}
-          >
-            {slide.image ? (
-              <div className="relative h-full w-full">
-                <img src={slide.image} alt={slide.title} className="w-full h-full object-cover rounded-xl" />
-              </div>
-            ) : (
-              <div className={`flex items-center justify-center rounded-xl ${slide.bgColor} text-xs font-medium text-neutral-400 h-full`}>
-                {slide.title}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Carousel indicators */}
-      {slides.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`h-1.5 sm:h-2 rounded-full transition-all ${
-                index === currentSlide 
-                  ? 'w-6 sm:w-8 bg-white' 
-                  : 'w-1.5 sm:w-2 bg-white/50 hover:bg-white/70'
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Navigation controls - bottom right */}
-      {slides.length > 1 && (
-        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
-          <button
-            onClick={() => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)}
-            className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 flex items-center justify-center text-violet-600 text-xl font-bold transition shadow-md"
-            aria-label="Previous slide"
-          >
-            ‹
-          </button>
-          <button
-            onClick={() => setIsPaused(!isPaused)}
-            className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 flex items-center justify-center text-violet-600 transition shadow-md"
-            aria-label={isPaused ? 'Play' : 'Pause'}
-          >
-            {isPaused ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-              </svg>
-            )}
-          </button>
-          <button
-            onClick={() => setCurrentSlide((prev) => (prev + 1) % slides.length)}
-            className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 flex items-center justify-center text-violet-600 text-xl font-bold transition shadow-md"
-            aria-label="Next slide"
-          >
-            ›
-          </button>
-        </div>
-      )}
+    <div className="relative min-h-24 overflow-hidden rounded-xl bg-neutral-200">
+      {banner.link_url ? <a href={banner.link_url} className="block h-full w-full">{img}</a> : img}
     </div>
   );
 }
 
-// Each banner box uses the real aspect ratio of its image file, so
-// object-fill never stretches. Images are absolutely positioned inside the
-// box, so they never push the row height around.
-function SmallPlaceholderBanner({ label }: { label: string }) {
-  let imageSrc: string | null = null;
-  let ratioClass = "min-h-24";
-  if (label === "Perfume & makeup offers") {
-    imageSrc = "/images/perfumes banner.jpg";
-    ratioClass = "aspect-[1199/439]"; // image is 1199 x 439
-  } else if (label === "iPhone offers") {
-    imageSrc = "/images/phones banner.jpg";
-    ratioClass = "aspect-[1200/600]"; // image is 1200 x 600
-  }
-
-  return (
-    <div
-      className={`relative flex items-center justify-center overflow-hidden rounded-xl bg-neutral-200 text-xs font-medium text-neutral-400 ${ratioClass}`}
-    >
-      {imageSrc ? (
-        <img
-          src={imageSrc}
-          alt={label}
-          className="absolute inset-0 h-full w-full object-fill"
-        />
-      ) : (
-        label
-      )}
-    </div>
-  );
-}
-
-// Image is 415 x 356. On mobile it keeps its own ratio; from sm up it
-// stretches to the row height (which matches its ratio by design).
-function BuyOneGetOneBanner() {
+function SideBanner({ banner }: { banner: LiveBanner }) {
+  const img = <img src={banner.image} alt={banner.title} className="absolute inset-0 h-full w-full object-cover" />;
   return (
     <div className="relative aspect-[415/356] overflow-hidden rounded-xl bg-neutral-200 sm:aspect-auto">
-      <img
-        src="/images/payday sale.png"
-        alt="Payday sale"
-        className="absolute inset-0 h-full w-full object-fill"
-      />
-    </div>
-  );
-}
-
-// Image is 1080 x 1080 (square).
-function SuperSeratusBanner() {
-  return (
-    <div className="relative aspect-square overflow-hidden rounded-xl bg-neutral-200 sm:aspect-auto">
-      <img
-        src="/images/sale banner.jpg"
-        alt="Sale Banner"
-        className="absolute inset-0 h-full w-full object-fill"
-      />
+      {banner.link_url ? <a href={banner.link_url} className="absolute inset-0">{img}</a> : img}
     </div>
   );
 }
@@ -404,7 +254,7 @@ function ProductCard({
 // ---------------------------------------------------------------------------
 
 export default function Homepage() {
-  const { auth } = usePage<{ auth: { user: any } }>().props;
+  const { auth, banners = { hero: [], secondary: [], sidebar: [] } } = usePage<{ auth: { user: any }; banners?: LiveBanners }>().props;
   const user = auth?.user;
   const role: UserRole = user ? (user.account_type as UserRole) : "guest";
   const [showSignupModal, setShowSignupModal] = useState(false);
@@ -436,16 +286,17 @@ export default function Homepage() {
             columns come out the same height with no stretching:
             perfume+phone stack : payday : sale  ≈  372 : 390 : 334 */}
         <section className="flex flex-col gap-2 sm:gap-3">
-          <HeroMainBanner />
+          <BannerCarousel banners={banners.hero} />
 
-          <div className="grid grid-cols-[162fr_173fr] gap-2 sm:grid-cols-[372fr_390fr_334fr] sm:gap-3">
-            <div className="flex flex-col gap-2 sm:gap-3">
-              <SmallPlaceholderBanner label="Perfume & makeup offers" />
-              <SmallPlaceholderBanner label="iPhone offers" />
+          {(banners.secondary.length > 0 || banners.sidebar.length > 0) && (
+            <div className="grid grid-cols-[162fr_173fr] gap-2 sm:grid-cols-[372fr_390fr_334fr] sm:gap-3">
+              <div className="flex flex-col gap-2 sm:gap-3">
+                {banners.secondary.slice(0, 2).map((b) => <SmallBanner key={b.id} banner={b} />)}
+              </div>
+              {banners.sidebar[0] ? <SideBanner banner={banners.sidebar[0]} /> : <div />}
+              {banners.sidebar[1] ? <SideBanner banner={banners.sidebar[1]} /> : <div />}
             </div>
-            <BuyOneGetOneBanner />
-            <SuperSeratusBanner />
-          </div>
+          )}
         </section>
 
         {/* Browse by categories */}

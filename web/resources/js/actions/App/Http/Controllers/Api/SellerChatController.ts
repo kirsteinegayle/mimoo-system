@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::index
- * @see app/Http/Controllers/Api/SellerChatController.php:126
+ * @see app/Http/Controllers/Api/SellerChatController.php:127
  * @route '/seller/chat/threads'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::index
- * @see app/Http/Controllers/Api/SellerChatController.php:126
+ * @see app/Http/Controllers/Api/SellerChatController.php:127
  * @route '/seller/chat/threads'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::index
- * @see app/Http/Controllers/Api/SellerChatController.php:126
+ * @see app/Http/Controllers/Api/SellerChatController.php:127
  * @route '/seller/chat/threads'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::index
- * @see app/Http/Controllers/Api/SellerChatController.php:126
+ * @see app/Http/Controllers/Api/SellerChatController.php:127
  * @route '/seller/chat/threads'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\SellerChatController::index
- * @see app/Http/Controllers/Api/SellerChatController.php:126
+ * @see app/Http/Controllers/Api/SellerChatController.php:127
  * @route '/seller/chat/threads'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\SellerChatController::index
- * @see app/Http/Controllers/Api/SellerChatController.php:126
+ * @see app/Http/Controllers/Api/SellerChatController.php:127
  * @route '/seller/chat/threads'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Api\SellerChatController::index
- * @see app/Http/Controllers/Api/SellerChatController.php:126
+ * @see app/Http/Controllers/Api/SellerChatController.php:127
  * @route '/seller/chat/threads'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::messages
- * @see app/Http/Controllers/Api/SellerChatController.php:145
+ * @see app/Http/Controllers/Api/SellerChatController.php:146
  * @route '/seller/chat/{id}/messages'
  */
 export const messages = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ messages.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::messages
- * @see app/Http/Controllers/Api/SellerChatController.php:145
+ * @see app/Http/Controllers/Api/SellerChatController.php:146
  * @route '/seller/chat/{id}/messages'
  */
 messages.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -122,7 +122,7 @@ messages.url = (args: { id: string | number } | [id: string | number ] | string 
 
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::messages
- * @see app/Http/Controllers/Api/SellerChatController.php:145
+ * @see app/Http/Controllers/Api/SellerChatController.php:146
  * @route '/seller/chat/{id}/messages'
  */
 messages.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -131,7 +131,7 @@ messages.get = (args: { id: string | number } | [id: string | number ] | string 
 })
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::messages
- * @see app/Http/Controllers/Api/SellerChatController.php:145
+ * @see app/Http/Controllers/Api/SellerChatController.php:146
  * @route '/seller/chat/{id}/messages'
  */
 messages.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -141,7 +141,7 @@ messages.head = (args: { id: string | number } | [id: string | number ] | string
 
     /**
 * @see \App\Http\Controllers\Api\SellerChatController::messages
- * @see app/Http/Controllers/Api/SellerChatController.php:145
+ * @see app/Http/Controllers/Api/SellerChatController.php:146
  * @route '/seller/chat/{id}/messages'
  */
     const messagesForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -151,7 +151,7 @@ messages.head = (args: { id: string | number } | [id: string | number ] | string
 
             /**
 * @see \App\Http\Controllers\Api\SellerChatController::messages
- * @see app/Http/Controllers/Api/SellerChatController.php:145
+ * @see app/Http/Controllers/Api/SellerChatController.php:146
  * @route '/seller/chat/{id}/messages'
  */
         messagesForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -160,7 +160,7 @@ messages.head = (args: { id: string | number } | [id: string | number ] | string
         })
             /**
 * @see \App\Http\Controllers\Api\SellerChatController::messages
- * @see app/Http/Controllers/Api/SellerChatController.php:145
+ * @see app/Http/Controllers/Api/SellerChatController.php:146
  * @route '/seller/chat/{id}/messages'
  */
         messagesForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -176,7 +176,7 @@ messages.head = (args: { id: string | number } | [id: string | number ] | string
     messages.form = messagesForm
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::send
- * @see app/Http/Controllers/Api/SellerChatController.php:174
+ * @see app/Http/Controllers/Api/SellerChatController.php:176
  * @route '/seller/chat/{id}/messages'
  */
 export const send = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ send.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::send
- * @see app/Http/Controllers/Api/SellerChatController.php:174
+ * @see app/Http/Controllers/Api/SellerChatController.php:176
  * @route '/seller/chat/{id}/messages'
  */
 send.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -219,7 +219,7 @@ send.url = (args: { id: string | number } | [id: string | number ] | string | nu
 
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::send
- * @see app/Http/Controllers/Api/SellerChatController.php:174
+ * @see app/Http/Controllers/Api/SellerChatController.php:176
  * @route '/seller/chat/{id}/messages'
  */
 send.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -229,7 +229,7 @@ send.post = (args: { id: string | number } | [id: string | number ] | string | n
 
     /**
 * @see \App\Http\Controllers\Api\SellerChatController::send
- * @see app/Http/Controllers/Api/SellerChatController.php:174
+ * @see app/Http/Controllers/Api/SellerChatController.php:176
  * @route '/seller/chat/{id}/messages'
  */
     const sendForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -239,7 +239,7 @@ send.post = (args: { id: string | number } | [id: string | number ] | string | n
 
             /**
 * @see \App\Http\Controllers\Api\SellerChatController::send
- * @see app/Http/Controllers/Api/SellerChatController.php:174
+ * @see app/Http/Controllers/Api/SellerChatController.php:176
  * @route '/seller/chat/{id}/messages'
  */
         sendForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -250,7 +250,7 @@ send.post = (args: { id: string | number } | [id: string | number ] | string | n
     send.form = sendForm
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::markRead
- * @see app/Http/Controllers/Api/SellerChatController.php:219
+ * @see app/Http/Controllers/Api/SellerChatController.php:221
  * @route '/seller/chat/{id}/read'
  */
 export const markRead = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -265,7 +265,7 @@ markRead.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::markRead
- * @see app/Http/Controllers/Api/SellerChatController.php:219
+ * @see app/Http/Controllers/Api/SellerChatController.php:221
  * @route '/seller/chat/{id}/read'
  */
 markRead.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -293,7 +293,7 @@ markRead.url = (args: { id: string | number } | [id: string | number ] | string 
 
 /**
 * @see \App\Http\Controllers\Api\SellerChatController::markRead
- * @see app/Http/Controllers/Api/SellerChatController.php:219
+ * @see app/Http/Controllers/Api/SellerChatController.php:221
  * @route '/seller/chat/{id}/read'
  */
 markRead.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -303,7 +303,7 @@ markRead.post = (args: { id: string | number } | [id: string | number ] | string
 
     /**
 * @see \App\Http\Controllers\Api\SellerChatController::markRead
- * @see app/Http/Controllers/Api/SellerChatController.php:219
+ * @see app/Http/Controllers/Api/SellerChatController.php:221
  * @route '/seller/chat/{id}/read'
  */
     const markReadForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -313,7 +313,7 @@ markRead.post = (args: { id: string | number } | [id: string | number ] | string
 
             /**
 * @see \App\Http\Controllers\Api\SellerChatController::markRead
- * @see app/Http/Controllers/Api/SellerChatController.php:219
+ * @see app/Http/Controllers/Api/SellerChatController.php:221
  * @route '/seller/chat/{id}/read'
  */
         markReadForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import ApprovalWatcher from '@/components/approval-watcher';
 import { ReactNode } from 'react';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
@@ -9,6 +10,7 @@ const fontSFCompact = { fontFamily: "'SF Compact', -apple-system, BlinkMacSystem
 export default function PendingApproval() {
     return (
         <div className="flex flex-col lg:flex-row min-h-screen overflow-hidden" style={fontPoppins}>
+            <ApprovalWatcher />
             {/* Mobile header */}
             <div className="lg:hidden w-full bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2">

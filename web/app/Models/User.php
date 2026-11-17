@@ -59,7 +59,6 @@ use Illuminate\Support\Carbon;
     'middle_initial',
     'sex',
     'email',
-    'google_id',
     'contact_number',
     'tin',
     'birthday',

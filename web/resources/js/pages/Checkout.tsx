@@ -23,6 +23,9 @@ interface CartItem {
 
 interface PageProps {
   cartItems: CartItem[];
+  codEnabled?: boolean;
+  buyNow?: { product_id: number; quantity: number; variant_id: string | null } | null;
+  shippingQuote?: { fee: number; zone: string | null; weight: number; logistics: string | null; fallback: boolean } | null;
   subtotal: number;
   total: number;
   auth: { user: any };
@@ -68,7 +71,7 @@ const inputClass =
 // ---------------------------------------------------------------------------
 
 export default function Checkout() {
-  const { cartItems, subtotal, total, auth } = usePage<PageProps>().props;
+  const { cartItems, buyNow, subtotal, total, auth, shippingQuote, codEnabled = true } = usePage<PageProps>().props;
   const user = auth?.user;
 
   // State
@@ -76,7 +79,7 @@ export default function Checkout() {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [shippingName, setShippingName] = useState(user?.name || "");
   const [shippingPhone, setShippingPhone] = useState(user?.contact_number || "");
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "gcash" | "paymongo">("cod");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "gcash" | "paymongo">(codEnabled ? "cod" : "gcash");
 
   // Voucher state
   const [voucherCode, setVoucherCode] = useState("");
@@ -135,6 +138,49 @@ export default function Checkout() {
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Shipping fee: from the buyer's zone + parcel weight; recalculated whenever the address changes.
+  const [quote, setQuote] = useState<PageProps["shippingQuote"]>(shippingQuote ?? null);
+  const [saveToBook, setSaveToBook] = useState(false);
+  useEffect(() => {
+    if (!city) return;
+    const p = new URLSearchParams({ city, province: isNCR ? "" : province });
+    if (buyNow) {
+      p.set("buy_now", "1");
+      p.set("product_id", String(buyNow.product_id));
+      p.set("quantity", String(buyNow.quantity));
+      if (buyNow.variant_id) p.set("variant_id", buyNow.variant_id);
+    } else {
+      p.set("cart_item_ids", cartItems.map((i) => i.id).join(","));
+    }
+    let cancelled = false;
+    fetch(`/api/shipping/quote?${p.toString()}`, { credentials: "same-origin", headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((q) => { if (!cancelled && q) setQuote(q); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [city, province, isNCR]);
+  const shippingFee = quote?.fee ?? 0;
+
+  // Save the typed address into the address book (same endpoint as the Addresses page)
+  const saveAddressToBook = async () => {
+    try {
+      await fetch("/buyer/addresses", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
+        },
+        body: JSON.stringify({
+          label: "Checkout address", recipient_name: shippingName, phone: shippingPhone, region, province: isNCR ? null : province,
+          municipality_city: city, barangay, street_address: street,
+        }),
+      }).then((r) => (r.ok ? r.json() : null)).then((j) => { if (j?.data) setSavedAddresses((a) => [...a, j.data]); });
+    } catch { /* the address still works for this order */ }
+  };
 
   // Created ONCE per checkout page, so double-clicks/retries reuse the same key
   const idempotencyKeyRef = useRef(
@@ -294,7 +340,7 @@ export default function Checkout() {
   }
 
   // Calculate final total with voucher
-  const finalTotal = subtotal - voucherDiscount;
+  const finalTotal = subtotal - voucherDiscount + shippingFee;
 
   async function handlePlaceOrder(e: React.FormEvent) {
     e.preventDefault();
@@ -358,8 +404,13 @@ export default function Checkout() {
           shipping_name: shippingName,
           shipping_address: fullAddress,
           shipping_phone: shippingPhone,
+          shipping_region: region,
+          shipping_province: isNCR ? null : province,
+          shipping_municipality_city: city,
+          shipping_barangay: barangay,
           idempotency_key: idempotencyKeyRef.current,
-          cart_item_ids: cartItems.map(item => item.id), // Send selected cart item IDs
+          // Buy Now orders the one product directly; otherwise send the selected cart item IDs
+          ...(buyNow ? { buy_now: buyNow } : { cart_item_ids: cartItems.map(item => item.id) }),
           voucher_code: voucherCode || null, // Send voucher code if applied
         }),
       });
@@ -479,7 +530,7 @@ export default function Checkout() {
                 </div>
 
                 <div className="space-y-3">
-                  <label
+                  {codEnabled && (<label
                     className={`flex items-center gap-3 p-4 rounded-lg border-[1.5px] cursor-pointer transition ${
                       paymentMethod === "cod"
                         ? "border-[#4B2E7E] bg-[#F9F7FC]"
@@ -498,7 +549,7 @@ export default function Checkout() {
                       <div className="text-[0.88rem] font-bold text-[#2A1B4D]">Cash on Delivery</div>
                       <div className="text-[0.76rem] text-[#6E6570]">Pay when you receive</div>
                     </div>
-                  </label>
+                  </label>)}
 
                   <label
                     className={`flex items-center gap-3 p-4 rounded-lg border-[1.5px] cursor-pointer transition ${
@@ -637,9 +688,14 @@ export default function Checkout() {
                       className="font-bold text-[#2A1B4D]"
                       style={{ fontFamily: "'Poppins', sans-serif" }}
                     >
-                      FREE
+                      {quote ? peso(shippingFee) : "Enter address"}
                     </span>
                   </div>
+                  {quote && (
+                    <p className="-mt-2 text-[0.72rem] text-[#6E6570]">
+                      {quote.zone ? `${quote.zone} zone` : "Standard rate"} · {quote.weight} kg
+                    </p>
+                  )}
                   <div className="flex justify-between text-[1.1rem] pt-2 border-t border-[#E6DFF2]">
                     <span className="font-bold text-[#2A1B4D]">Total</span>
                     <span
@@ -746,7 +802,18 @@ export default function Checkout() {
                 <label className="block text-sm font-semibold text-[#2A1B4D] mb-1">Street Address</label>
                 <input type="text" value={street} onChange={(e) => setStreet(e.target.value)} placeholder="House No., Street Name" className={inputClass} />
               </div>
-              <button onClick={() => setShowAddressModal(false)} className="w-full bg-[#4B2E7E] text-white font-semibold py-3 rounded-lg hover:bg-[#3a2360] transition">
+              <label className="flex items-center gap-2 text-sm text-[#2A1B4D]">
+                <input type="checkbox" checked={saveToBook} onChange={(e) => setSaveToBook(e.target.checked)} />
+                Also save this address to my address book
+              </label>
+              <button
+                onClick={async () => {
+                  if (saveToBook && region && city && barangay && street) await saveAddressToBook();
+                  setSaveToBook(false);
+                  setShowAddressModal(false);
+                }}
+                className="w-full bg-[#4B2E7E] text-white font-semibold py-3 rounded-lg hover:bg-[#3a2360] transition"
+              >
                 Save Address
               </button>
             </div>

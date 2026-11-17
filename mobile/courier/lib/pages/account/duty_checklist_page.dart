@@ -174,9 +174,9 @@ class _DutyChecklistPageState extends State<DutyChecklistPage> {
                           setState(() => _answers[item.$1] = value.first);
                         },
                         style: ButtonStyle(
-                          visualDensity: VisualDensity.compact,
+                          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
                           textStyle: WidgetStatePropertyAll(
-                              pjs(size: 10, weight: FontWeight.w700)),
+                              pjs(size: 11, weight: FontWeight.w700)),
                         ),
                       ),
                     ]),

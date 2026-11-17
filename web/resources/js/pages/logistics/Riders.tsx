@@ -1,5 +1,7 @@
 ﻿import { Head, Link, router } from '@inertiajs/react';
 import { ReactNode, useState } from 'react';
+import { CurrentUserAvatar } from '@/components/user-avatar';
+import RidersManager from '@/components/logistics/riders-manager';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
 const fontSyne = { fontFamily: 'Syne, sans-serif' };
@@ -79,7 +81,7 @@ export default function Riders({ auth }: Props) {
         { id: 'courier-applications', label: 'Courier Applications', icon: 'file-text', href: '/logistics/courier-applications' },
         { id: 'delivery-monitoring', label: 'Delivery Monitoring', icon: 'monitor', href: '/logistics/delivery-monitoring' },
         { id: 'riders', label: 'Riders', icon: 'bike', href: '/logistics/riders' },
-        { id: 'branches-checklists', label: 'Branches & Checklists', icon: 'checklist', href: '/logistics/branches-checklists' },
+        { id: 'branches-facilities', label: 'Branches & Facilities', icon: 'checklist', href: '/logistics/branches-facilities' },
         { id: 'zones-rates', label: 'Zones & Rates', icon: 'zones', href: '/logistics/zones-rates' },
         { id: 'cod-remittance', label: 'COD & Remittance', icon: 'chart-bar', href: '/logistics/cod-remittance' },
         { id: 'reports', label: 'Reports', icon: 'chart', href: '/logistics/reports' },
@@ -214,9 +216,9 @@ export default function Riders({ auth }: Props) {
                                 <div className="relative">
                                     <button 
                                         onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="w-9 h-9 rounded-full bg-[#2B2249] text-white flex items-center justify-center text-sm font-bold hover:bg-[#3d2e5f] transition"
+                                        className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center hover:opacity-90 transition"
                                     >
-                                        {auth.user.name.charAt(0)}
+                                        <CurrentUserAvatar fallbackName={auth.user.name} className="h-9 w-9 text-sm" />
                                     </button>
                                     {showUserMenu && (
                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
@@ -252,184 +254,7 @@ export default function Riders({ auth }: Props) {
 
                     {/* Content Area */}
                     <main className="flex-1 overflow-auto p-6 bg-gray-50">
-                        <div className="max-w-7xl mx-auto">
-                            {/* Top Action Buttons */}
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <button className="px-4 py-2 bg-[#E8E3F0] text-[#5B4B6E] rounded-lg text-sm font-semibold hover:bg-[#D4CEE0] transition flex items-center gap-2">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                                            <polyline points="22 4 12 14.01 9 11.01"/>
-                                        </svg>
-                                        FLEET VERIFICATION
-                                    </button>
-                                    <button className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900">
-                                        Bulk
-                                    </button>
-                                </div>
-                                
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-[#E8E3F0] rounded-full"></div>
-                                        <span className="text-sm text-gray-600">Online: <span className="font-semibold">4 Pending</span></span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                                        <span className="text-sm text-gray-600"><span className="font-semibold">0 On Duty</span></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Tabs */}
-                            <div className="flex gap-2 mb-6">
-                                <button
-                                    onClick={() => setRiderTab('pending')}
-                                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${
-                                        riderTab === 'pending'
-                                            ? 'bg-red-50 text-red-600 border border-red-200'
-                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                    }`}
-                                >
-                                    Pending Applications
-                                    <span className="w-5 h-5 bg-red-600 text-white rounded-full text-xs flex items-center justify-center">
-                                        0
-                                    </span>
-                                </button>
-                                <button
-                                    onClick={() => setRiderTab('active')}
-                                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${
-                                        riderTab === 'active'
-                                            ? 'bg-[#E8E3F0] text-[#5B4B6E] border border-[#D4CEE0]'
-                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                    }`}
-                                >
-                                    Active Riders
-                                    <span className="w-5 h-5 bg-[#3D2E54] text-white rounded-full text-xs flex items-center justify-center">
-                                        16
-                                    </span>
-                                </button>
-                            </div>
-
-                            {/* Active Riders Section */}
-                            {riderTab === 'active' && (
-                                <div className="space-y-6">
-                                    <div className="bg-white rounded-xl border border-gray-200 p-6">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <div>
-                                                <h3 className="text-lg font-bold text-gray-900" style={fontSyncopate}>Active Riders</h3>
-                                                <p className="text-sm text-gray-500">One rider per barangay "” 15 cleared, 1 unassigned</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Search and Filters */}
-                                        <div className="grid grid-cols-6 gap-3 mb-6">
-                                            <div className="col-span-2">
-                                                <input
-                                                    type="text"
-                                                    value={searchQuery}
-                                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249]"
-                                                />
-                                            </div>
-                                            <select className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249]">
-                                                <option>Sort: Default</option>
-                                                <option>Name A-Z</option>
-                                                <option>Name Z-A</option>
-                                            </select>
-                                            <select className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249]">
-                                                <option>All statuses</option>
-                                                <option>Active</option>
-                                                <option>Inactive</option>
-                                            </select>
-                                            <select className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249]">
-                                                <option>All barangays</option>
-                                                <option>801</option>
-                                                <option>808</option>
-                                            </select>
-                                            <div className="flex gap-2">
-                                                <button className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm hover:bg-gray-100">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
-                                                        <rect x="3" y="4" width="18" height="18" rx="2"/>
-                                                        <line x1="16" y1="2" x2="16" y2="6"/>
-                                                        <line x1="8" y1="2" x2="8" y2="6"/>
-                                                        <line x1="3" y1="10" x2="21" y2="10"/>
-                                                    </svg>
-                                                </button>
-                                                <button className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm hover:bg-gray-100">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
-                                                        <rect x="3" y="4" width="18" height="18" rx="2"/>
-                                                        <line x1="16" y1="2" x2="16" y2="6"/>
-                                                        <line x1="8" y1="2" x2="8" y2="6"/>
-                                                        <line x1="3" y1="10" x2="21" y2="10"/>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {/* Riders Table */}
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full">
-                                                <thead className="bg-gray-50 border-b border-gray-200">
-                                                    <tr>
-                                                        <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600" style={fontSyncopate}>Rider Details</th>
-                                                        <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600" style={fontSyncopate}>Plate & Transport</th>
-                                                        <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600" style={fontSyncopate}>Assigned Route Area</th>
-                                                        <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600" style={fontSyncopate}>Action</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-100">
-                                                    {riders.map((rider, idx) => (
-                                                        <tr key={idx} className="hover:bg-gray-50">
-                                                            <td className="px-6 py-4">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-10 h-10 rounded-full bg-[#D4CEE0] text-[#5B4B6E] flex items-center justify-center text-sm font-bold flex-shrink-0">
-                                                                        {rider.initial}
-                                                                    </div>
-                                                                    <div>
-                                                                        <div className="text-sm font-bold text-gray-900">{rider.name}</div>
-                                                                        <div className="text-xs text-gray-500">{rider.id} "¢ {rider.hub}</div>
-                                                                        <div className="text-xs text-gray-500">{rider.status}</div>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4">
-                                                                <div className="text-sm font-bold text-gray-900">{rider.plate}</div>
-                                                                <div className="text-xs text-gray-500">{rider.transport}</div>
-                                                            </td>
-                                                            <td className="px-6 py-4">
-                                                                <div className="text-sm text-gray-900">{rider.route}</div>
-                                                                <div className="text-xs text-gray-500">{rider.barangay}</div>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-right">
-                                                                <button className="text-sm font-semibold text-[#5B4B6E] hover:underline">
-                                                                    View
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Pending Applications Section */}
-                            {riderTab === 'pending' && (
-                                <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 text-gray-400 mb-4">
-                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <circle cx="5.5" cy="17.5" r="3.5"/>
-                                            <circle cx="18.5" cy="17.5" r="3.5"/>
-                                            <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                                            <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
-                                        </svg>
-                                    </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2">No Pending Applications</h3>
-                                    <p className="text-gray-600">There are currently no pending rider applications to review.</p>
-                                </div>
-                            )}
-                        </div>
+                        <RidersManager />
                     </main>
                 </div>
             </div>

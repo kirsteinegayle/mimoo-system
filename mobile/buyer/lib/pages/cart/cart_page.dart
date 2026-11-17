@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../services/address_repository.dart';
+import '../../services/shipping_repository.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../checkout/checkout_page.dart';
 import '../../state/cart_provider.dart';
@@ -629,9 +631,10 @@ class _CartPageState extends State<CartPage> {
                   if (_checkedCount > 0) ...[
                     Text('Total: ₱${_total.toStringAsFixed(2)}',
                         style: _pjs(size: 15, weight: FontWeight.w800)),
-                    Text('Saved ₱${_voucherSavings.toStringAsFixed(0)}',
-                        style: _pjs(
-                            size: 11, color: _kGreen, weight: FontWeight.w600)),
+                    _ShippingEstimate(
+                      ids: (_selected.toList()..sort()),
+                      merchandise: _total,
+                    ),
                   ] else
                     Text('Select items to checkout',
                         style: _pjs(size: 12, color: _kSubtext)),
@@ -974,5 +977,84 @@ class _ShippingBanner extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// "Shipping ≈ ₱X · Total ≈ ₱Y" under the cart total, from the buyer's default address
+/// (same fee calculation as checkout). Without a saved address it says the fee is set at checkout.
+class _ShippingEstimate extends StatefulWidget {
+  const _ShippingEstimate({required this.ids, required this.merchandise});
+  final List<int> ids;
+  final double merchandise;
+
+  @override
+  State<_ShippingEstimate> createState() => _ShippingEstimateState();
+}
+
+class _ShippingEstimateState extends State<_ShippingEstimate> {
+  ShippingQuote? _quote;
+  bool _loading = false;
+  bool _noAddress = false;
+  int _seq = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ShippingEstimate old) {
+    super.didUpdateWidget(old);
+    if (old.ids.join(',') != widget.ids.join(',')) _load();
+  }
+
+  Future<void> _load() async {
+    final seq = ++_seq;
+    setState(() => _loading = true);
+    try {
+      final list = await AddressRepository.instance.fetchAll();
+      if (!mounted || seq != _seq) return;
+      if (list.isEmpty) {
+        setState(() {
+          _noAddress = true;
+          _quote = null;
+          _loading = false;
+        });
+        return;
+      }
+      final a = list.firstWhere((x) => x.isDefault, orElse: () => list.first);
+      final q = await ShippingRepository.instance
+          .quote(cartItemIds: widget.ids, addressId: a.id);
+      if (!mounted || seq != _seq) return;
+      setState(() {
+        _quote = q;
+        _noAddress = false;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted || seq != _seq) return;
+      setState(() {
+        _quote = null;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _pjs(size: 11, color: _kSubtext, weight: FontWeight.w600);
+    if (_loading && _quote == null) return Text('Calculating shipping…', style: style);
+    final q = _quote;
+    if (q == null) {
+      return Text(
+          _noAddress
+              ? 'Shipping is added at checkout from your address'
+              : 'Shipping is added at checkout',
+          style: style);
+    }
+    return Text(
+        'Shipping ≈ ₱${q.fee.toStringAsFixed(2)} · With shipping ₱${(widget.merchandise + q.fee).toStringAsFixed(2)}',
+        style: style);
   }
 }

@@ -4,6 +4,8 @@ import '../../models/courier_models.dart';
 import '../../services/courier_repository.dart';
 import '../../services/api_service.dart';
 import '../../theme/mimoo_theme.dart';
+import '../../widgets/courier_shared.dart';
+import 'waybill_page.dart';
 
 class ShipmentsTab extends StatefulWidget {
   const ShipmentsTab({super.key});
@@ -19,6 +21,7 @@ class _ShipmentsTabState extends State<ShipmentsTab> {
   bool _loadingMore = false;
   String? _error;
   String _statusFilter = 'all';
+  String _query = '';
 
   static const _statuses = ['all', 'pending', 'accepted', 'rejected'];
 
@@ -77,39 +80,39 @@ class _ShipmentsTabState extends State<ShipmentsTab> {
     }
   }
 
+  List<ShipmentSummary> get _visible {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return _items;
+    return _items
+        .where((i) =>
+            '${i.waybillNumber} ${i.orderNumber} ${i.sellerName} ${i.destination}'
+                .toLowerCase()
+                .contains(q))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      // Status filter chips
-      SizedBox(
-        height: 44,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          children: _statuses.map((s) {
-            final sel = _statusFilter == s;
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(
-                    s == 'all' ? 'All' : s[0].toUpperCase() + s.substring(1),
-                    style: pjs(
-                        size: 12,
-                        weight: FontWeight.w600,
-                        color: sel ? Colors.white : kSubtext)),
-                selected: sel,
-                onSelected: (_) {
-                  setState(() => _statusFilter = s);
-                  _load();
-                },
-                selectedColor: kPrimary,
-                backgroundColor: kSurface,
-                checkmarkColor: Colors.white,
-                side: BorderSide(color: sel ? kPrimary : kBorder),
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-              ),
-            );
-          }).toList(),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+        child: CourierSearchField(
+          hint: 'Search waybill, order, seller or destination',
+          onChanged: (v) => setState(() => _query = v),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
+        child: CourierFilterChips(
+          options: {
+            for (final s in _statuses)
+              s: s == 'all' ? 'All' : s[0].toUpperCase() + s.substring(1)
+          },
+          value: _statusFilter,
+          onChanged: (s) {
+            setState(() => _statusFilter = s);
+            _load();
+          },
         ),
       ),
       const Divider(height: 1, color: kBorder),
@@ -120,6 +123,13 @@ class _ShipmentsTabState extends State<ShipmentsTab> {
                 ? _buildError()
                 : _items.isEmpty
                     ? _buildEmpty()
+                    : _visible.isEmpty
+                        ? CourierEmptyState(
+                            icon: Icons.search_off,
+                            message: 'No shipments match your search.',
+                            actionLabel: 'Clear search',
+                            onAction: () => setState(() => _query = ''),
+                          )
                     : RefreshIndicator(
                         color: kPrimary,
                         onRefresh: _load,
@@ -133,9 +143,9 @@ class _ShipmentsTabState extends State<ShipmentsTab> {
                           },
                           child: ListView.builder(
                             padding: const EdgeInsets.all(12),
-                            itemCount: _items.length + (_loadingMore ? 1 : 0),
+                            itemCount: _visible.length + (_loadingMore ? 1 : 0),
                             itemBuilder: (_, i) {
-                              if (i == _items.length) {
+                              if (i == _visible.length) {
                                 return const Center(
                                   child: Padding(
                                     padding: EdgeInsets.all(16),
@@ -145,8 +155,8 @@ class _ShipmentsTabState extends State<ShipmentsTab> {
                                 );
                               }
                               return _ShipmentCard(
-                                item: _items[i],
-                                onTap: () => _openDetail(_items[i]),
+                                item: _visible[i],
+                                onTap: () => _openDetail(_visible[i]),
                               );
                             },
                           ),
@@ -243,30 +253,56 @@ class _ShipmentCard extends StatelessWidget {
           Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Text(item.orderNumber,
-                    style: pjs(size: 13, weight: FontWeight.w800)),
-                const SizedBox(width: 8),
-                _Badge(label: item.assignmentStatus, color: badgeColor),
-                if (item.isOverdue)
-                  const Padding(
-                    padding: EdgeInsets.only(left: 4),
-                    child: _Badge(label: 'OVERDUE', color: kFlash),
-                  ),
-              ]),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(item.orderNumber,
+                      style: pjs(size: 13, weight: FontWeight.w800)),
+                  _Badge(label: item.assignmentStatus, color: badgeColor),
+                  if (item.isOverdue)
+                    const _Badge(label: 'OVERDUE', color: kFlash),
+                ],
+              ),
               const SizedBox(height: 4),
-              Text(item.sellerName, style: pjs(size: 12, color: kSubtext)),
+              Text(item.sellerName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: pjs(size: 12, color: kSubtext)),
               const SizedBox(height: 2),
-              Row(children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 13, color: kSubtext),
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child:
+                      Icon(Icons.location_on_outlined, size: 13, color: kSubtext),
+                ),
                 const SizedBox(width: 2),
-                Text(item.destination, style: pjs(size: 12, color: kSubtext)),
+                Expanded(
+                  child: Text(item.destination,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: pjs(size: 12, color: kSubtext)),
+                ),
               ]),
               const SizedBox(height: 2),
               Text(item.assignedAt, style: pjs(size: 11, color: kSubtext)),
             ]),
           ),
+          if (item.waybillNumber.isNotEmpty)
+            IconButton(
+              tooltip: 'View waybill',
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              icon: const Icon(Icons.qr_code_2, color: kPrimary),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => WaybillPage(
+                  waybillNumber: item.waybillNumber,
+                  orderNumber: item.orderNumber,
+                  sellerName: item.sellerName,
+                  destination: item.destination,
+                ),
+              )),
+            ),
           const Icon(Icons.chevron_right, color: kSubtext),
         ]),
       ),
@@ -288,7 +324,7 @@ class _Badge extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(label.toUpperCase(),
-          style: pjs(size: 9, weight: FontWeight.w800, color: color)),
+          style: pjs(size: 11, weight: FontWeight.w800, color: color)),
     );
   }
 }
@@ -308,6 +344,21 @@ class _ShipmentDetailPageState extends State<ShipmentDetailPage> {
   bool _loading = true;
   String? _error;
   bool _acting = false;
+
+  void _openWaybill(ShipmentDetail d) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => WaybillPage(
+        waybillNumber: d.waybillNumber,
+        orderNumber: d.orderNumber,
+        sellerName: d.seller?['name']?.toString() ??
+            d.seller?['business_name']?.toString(),
+        destination: d.shippingAddress,
+        weight: d.weight == null ? null : '${d.weight} kg',
+        paymentMethod: d.paymentMethod,
+        totalAmount: '₱${d.totalAmount.toStringAsFixed(2)}',
+      ),
+    ));
+  }
 
   @override
   void initState() {
@@ -556,17 +607,28 @@ class _ShipmentDetailPageState extends State<ShipmentDetailPage> {
                 d.waybillNumber.isEmpty ? 'Not provided' : d.waybillNumber,
                 trailing: d.waybillNumber.isEmpty
                     ? null
-                    : IconButton(
-                        tooltip: 'Copy waybill number',
-                        visualDensity: VisualDensity.compact,
-                        icon: const Icon(Icons.copy_outlined, size: 18),
-                        onPressed: () async {
-                          await Clipboard.setData(
-                              ClipboardData(text: d.waybillNumber));
-                          if (mounted) {
-                            _showSnack('Waybill copied.', kPrimary);
-                          }
-                        },
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'View waybill',
+                            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                            icon: const Icon(Icons.qr_code_2, size: 20),
+                            onPressed: () => _openWaybill(d),
+                          ),
+                          IconButton(
+                            tooltip: 'Copy waybill number',
+                            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                            icon: const Icon(Icons.copy_outlined, size: 18),
+                            onPressed: () async {
+                              await Clipboard.setData(
+                                  ClipboardData(text: d.waybillNumber));
+                              if (mounted) {
+                                _showSnack('Waybill copied.', kPrimary);
+                              }
+                            },
+                          ),
+                        ],
                       ),
               ),
               _Row('Order', d.orderNumber),

@@ -72,6 +72,10 @@ class FortifyServiceProvider extends ServiceProvider
                 return null;
             }
 
+            if ($blocked = \App\Support\AccountStatus::blockReason($user)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([Fortify::username() => $blocked]);
+            }
+
             $reason = \App\Support\PortalRole::denyReason($request->input('portal'), $user);
             if ($reason !== null) {
                 throw \Illuminate\Validation\ValidationException::withMessages([Fortify::username() => $reason]);

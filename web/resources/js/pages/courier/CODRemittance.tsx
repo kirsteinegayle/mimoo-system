@@ -1,3 +1,4 @@
+import { confirmDialog } from '@/components/app-modal';
 import { Head } from '@inertiajs/react';
 import { ReactNode, useCallback, useEffect, useState } from 'react';
 import CourierLayout from './CourierLayout';
@@ -60,7 +61,7 @@ export default function CODRemittance({ auth, company }: Props) {
     }, [load]);
 
     async function confirm(r: Remittance) {
-        if (!window.confirm(`Confirm that you received ${peso(r.amount)} (${r.reference})?`)) return;
+        if (!(await confirmDialog(`Confirm that you received ${peso(r.amount)} (${r.reference})?`))) return;
         setBusyId(r.id);
         setMsg(null);
         try {

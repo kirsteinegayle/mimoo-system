@@ -6,7 +6,7 @@ export const logisticsNavItems = [
     { id: 'courier-applications', label: 'Courier Applications', icon: 'file-text', href: '/logistics/courier-applications' },
     { id: 'delivery-monitoring', label: 'Delivery Monitoring', icon: 'monitor', href: '/logistics/delivery-monitoring' },
     { id: 'riders', label: 'Riders', icon: 'bike', href: '/logistics/riders' },
-    { id: 'branches-checklists', label: 'Branches & Checklists', icon: 'checklist', href: '/logistics/branches-checklists' },
+    { id: 'branches-facilities', label: 'Branches & Facilities', icon: 'checklist', href: '/logistics/branches-facilities' },
     { id: 'zones-rates', label: 'Zones & Rates', icon: 'zones', href: '/logistics/zones-rates' },
     { id: 'cod-remittance', label: 'COD & Remittance', icon: 'chart-bar', href: '/logistics/cod-remittance' },
     { id: 'reports', label: 'Reports', icon: 'chart', href: '/logistics/reports' },

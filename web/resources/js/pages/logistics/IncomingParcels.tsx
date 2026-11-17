@@ -1,7 +1,9 @@
+import { alertDialog } from '@/components/app-modal';
 import { Head, Link, router } from '@inertiajs/react';
 import { ReactNode, useState, useRef, useEffect } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import TrackingLine from '@/components/tracking-line';
+import { CurrentUserAvatar } from '@/components/user-avatar';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
 const fontSyne = { fontFamily: 'Syne, sans-serif' };
@@ -92,7 +94,7 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
             console.error('Error fetching order details:', error);
             setScannedOrderData(null);
             // Show error to user
-            alert('Parcel not found in system. Please check the waybill number.');
+            alertDialog('Parcel not found in system. Please check the waybill number.');
         } finally {
             setLoadingOrderData(false);
         }
@@ -116,7 +118,7 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
             }
             
             const data = await response.json();
-            alert(`✓ Parcel ${scannedOrderData.waybill_number} confirmed! Now in transit.`);
+            alertDialog(`✓ Parcel ${scannedOrderData.waybill_number} confirmed! Now in transit.`);
             
             // Clear scanned data and refresh
             setScannedOrderData(null);
@@ -127,7 +129,7 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
             router.reload();
         } catch (error) {
             console.error('Error confirming parcel:', error);
-            alert('Failed to confirm parcel. Please try again.');
+            alertDialog('Failed to confirm parcel. Please try again.');
         } finally {
             setProcessingAction(false);
         }
@@ -157,7 +159,7 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
             }
             
             const data = await response.json();
-            alert(`Problem reported for ${scannedOrderData.waybill_number}. Seller will be notified.`);
+            alertDialog(`Problem reported for ${scannedOrderData.waybill_number}. Seller will be notified.`);
             
             // Clear scanned data
             setScannedOrderData(null);
@@ -165,7 +167,7 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
             setLastScan(null);
         } catch (error) {
             console.error('Error reporting problem:', error);
-            alert('Failed to report problem. Please try again.');
+            alertDialog('Failed to report problem. Please try again.');
         } finally {
             setProcessingAction(false);
         }
@@ -241,7 +243,7 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
         { id: 'courier-applications', label: 'Courier Applications', icon: 'file-text', href: '/logistics/courier-applications' },
         { id: 'delivery-monitoring', label: 'Delivery Monitoring', icon: 'monitor', href: '/logistics/delivery-monitoring' },
         { id: 'riders', label: 'Riders', icon: 'bike', href: '/logistics/riders' },
-        { id: 'branches-checklists', label: 'Branches & Checklists', icon: 'checklist', href: '/logistics/branches-checklists' },
+        { id: 'branches-facilities', label: 'Branches & Facilities', icon: 'checklist', href: '/logistics/branches-facilities' },
         { id: 'zones-rates', label: 'Zones & Rates', icon: 'zones', href: '/logistics/zones-rates' },
         { id: 'cod-remittance', label: 'COD & Remittance', icon: 'chart-bar', href: '/logistics/cod-remittance' },
         { id: 'reports', label: 'Reports', icon: 'chart', href: '/logistics/reports' },
@@ -428,9 +430,9 @@ export default function IncomingParcels({ auth, company, incomingParcels = [] }:
                                 <div className="relative">
                                     <button 
                                         onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="w-9 h-9 rounded-full bg-[#2B2249] text-white flex items-center justify-center text-sm font-bold hover:bg-[#3d2e5f] transition"
+                                        className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center hover:opacity-90 transition"
                                     >
-                                        {auth.user.name.charAt(0)}
+                                        <CurrentUserAvatar fallbackName={auth.user.name} className="h-9 w-9 text-sm" />
                                     </button>
                                     {showUserMenu && (
                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">

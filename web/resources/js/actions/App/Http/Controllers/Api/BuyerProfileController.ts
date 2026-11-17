@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/api/buyer/profile'
  */
 const showbba90c7055ede149fa7ee062eeafd6cc = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ showbba90c7055ede149fa7ee062eeafd6cc.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/api/buyer/profile'
  */
 showbba90c7055ede149fa7ee062eeafd6cc.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ showbba90c7055ede149fa7ee062eeafd6cc.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/api/buyer/profile'
  */
 showbba90c7055ede149fa7ee062eeafd6cc.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ showbba90c7055ede149fa7ee062eeafd6cc.get = (options?: RouteQueryOptions): RouteD
 })
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/api/buyer/profile'
  */
 showbba90c7055ede149fa7ee062eeafd6cc.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ showbba90c7055ede149fa7ee062eeafd6cc.head = (options?: RouteQueryOptions): Route
 
     /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/api/buyer/profile'
  */
     const showbba90c7055ede149fa7ee062eeafd6ccForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ showbba90c7055ede149fa7ee062eeafd6cc.head = (options?: RouteQueryOptions): Route
 
             /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/api/buyer/profile'
  */
         showbba90c7055ede149fa7ee062eeafd6ccForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ showbba90c7055ede149fa7ee062eeafd6cc.head = (options?: RouteQueryOptions): Route
         })
             /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/api/buyer/profile'
  */
         showbba90c7055ede149fa7ee062eeafd6ccForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ showbba90c7055ede149fa7ee062eeafd6cc.head = (options?: RouteQueryOptions): Route
     showbba90c7055ede149fa7ee062eeafd6cc.form = showbba90c7055ede149fa7ee062eeafd6ccForm
     /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/buyer/profile'
  */
 const show3deaf4a649357b3d215ce1ba2b3927e5 = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ show3deaf4a649357b3d215ce1ba2b3927e5.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/buyer/profile'
  */
 show3deaf4a649357b3d215ce1ba2b3927e5.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ show3deaf4a649357b3d215ce1ba2b3927e5.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/buyer/profile'
  */
 show3deaf4a649357b3d215ce1ba2b3927e5.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ show3deaf4a649357b3d215ce1ba2b3927e5.get = (options?: RouteQueryOptions): RouteD
 })
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/buyer/profile'
  */
 show3deaf4a649357b3d215ce1ba2b3927e5.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ show3deaf4a649357b3d215ce1ba2b3927e5.head = (options?: RouteQueryOptions): Route
 
     /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/buyer/profile'
  */
     const show3deaf4a649357b3d215ce1ba2b3927e5Form = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ show3deaf4a649357b3d215ce1ba2b3927e5.head = (options?: RouteQueryOptions): Route
 
             /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/buyer/profile'
  */
         show3deaf4a649357b3d215ce1ba2b3927e5Form.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ show3deaf4a649357b3d215ce1ba2b3927e5.head = (options?: RouteQueryOptions): Route
         })
             /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::show
- * @see app/Http/Controllers/Api/BuyerProfileController.php:85
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:83
  * @route '/buyer/profile'
  */
         show3deaf4a649357b3d215ce1ba2b3927e5Form.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -168,7 +168,7 @@ export const show = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::update
- * @see app/Http/Controllers/Api/BuyerProfileController.php:102
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:100
  * @route '/api/buyer/profile'
  */
 const updatebba90c7055ede149fa7ee062eeafd6cc = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -183,7 +183,7 @@ updatebba90c7055ede149fa7ee062eeafd6cc.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::update
- * @see app/Http/Controllers/Api/BuyerProfileController.php:102
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:100
  * @route '/api/buyer/profile'
  */
 updatebba90c7055ede149fa7ee062eeafd6cc.url = (options?: RouteQueryOptions) => {
@@ -192,7 +192,7 @@ updatebba90c7055ede149fa7ee062eeafd6cc.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::update
- * @see app/Http/Controllers/Api/BuyerProfileController.php:102
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:100
  * @route '/api/buyer/profile'
  */
 updatebba90c7055ede149fa7ee062eeafd6cc.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -202,7 +202,7 @@ updatebba90c7055ede149fa7ee062eeafd6cc.put = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::update
- * @see app/Http/Controllers/Api/BuyerProfileController.php:102
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:100
  * @route '/api/buyer/profile'
  */
     const updatebba90c7055ede149fa7ee062eeafd6ccForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -217,7 +217,7 @@ updatebba90c7055ede149fa7ee062eeafd6cc.put = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::update
- * @see app/Http/Controllers/Api/BuyerProfileController.php:102
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:100
  * @route '/api/buyer/profile'
  */
         updatebba90c7055ede149fa7ee062eeafd6ccForm.put = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -233,7 +233,7 @@ updatebba90c7055ede149fa7ee062eeafd6cc.put = (options?: RouteQueryOptions): Rout
     updatebba90c7055ede149fa7ee062eeafd6cc.form = updatebba90c7055ede149fa7ee062eeafd6ccForm
     /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::update
- * @see app/Http/Controllers/Api/BuyerProfileController.php:102
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:100
  * @route '/buyer/profile'
  */
 const update3deaf4a649357b3d215ce1ba2b3927e5 = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -248,7 +248,7 @@ update3deaf4a649357b3d215ce1ba2b3927e5.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::update
- * @see app/Http/Controllers/Api/BuyerProfileController.php:102
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:100
  * @route '/buyer/profile'
  */
 update3deaf4a649357b3d215ce1ba2b3927e5.url = (options?: RouteQueryOptions) => {
@@ -257,7 +257,7 @@ update3deaf4a649357b3d215ce1ba2b3927e5.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::update
- * @see app/Http/Controllers/Api/BuyerProfileController.php:102
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:100
  * @route '/buyer/profile'
  */
 update3deaf4a649357b3d215ce1ba2b3927e5.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -267,7 +267,7 @@ update3deaf4a649357b3d215ce1ba2b3927e5.put = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::update
- * @see app/Http/Controllers/Api/BuyerProfileController.php:102
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:100
  * @route '/buyer/profile'
  */
     const update3deaf4a649357b3d215ce1ba2b3927e5Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -282,7 +282,7 @@ update3deaf4a649357b3d215ce1ba2b3927e5.put = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\Api\BuyerProfileController::update
- * @see app/Http/Controllers/Api/BuyerProfileController.php:102
+ * @see app/Http/Controllers/Api/BuyerProfileController.php:100
  * @route '/buyer/profile'
  */
         update3deaf4a649357b3d215ce1ba2b3927e5Form.put = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

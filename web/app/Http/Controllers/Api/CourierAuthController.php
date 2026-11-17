@@ -37,12 +37,14 @@ class CourierAuthController extends Controller
             return response()->json(['message' => 'This app is for courier accounts only.'], 401);
         }
 
-        // Must be approved and email-verified.
+        if ($blocked = \App\Support\AccountStatus::blockReason($user)) {
+            return response()->json(['message' => $blocked], 403);
+        }
+
+        // Must be approved. No separate email-verification step for couriers:
+        // correct email + password logs in straight to the dashboard.
         if ($user->status !== 'approved') {
             return response()->json(['message' => 'Your account has not been approved yet.'], 401);
-        }
-        if ($user->verification_status !== 'verified') {
-            return response()->json(['message' => 'Please verify your email before logging in.'], 401);
         }
 
         // Revoke any previous courier-app tokens to keep sessions clean.
@@ -60,6 +62,8 @@ class CourierAuthController extends Controller
                     'contact_last_name'  => $user->contact_last_name  ?? $user->last_name,
                     'role'               => $user->role,
                     'account_type'       => $user->account_type,
+                    // Additive: avatar URL or null (app shows initials).
+                    'profile_photo_url'  => \App\Support\AvatarUrl::forUser($user),
                 ],
                 'token' => $token,
             ],
@@ -93,6 +97,8 @@ class CourierAuthController extends Controller
                     'contact_last_name'  => $user->contact_last_name  ?? $user->last_name,
                     'role'               => $user->role,
                     'account_type'       => $user->account_type,
+                    // Additive: avatar URL or null (app shows initials).
+                    'profile_photo_url'  => \App\Support\AvatarUrl::forUser($user),
                 ],
             ],
         ]);

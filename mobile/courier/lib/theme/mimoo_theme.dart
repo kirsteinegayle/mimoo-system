@@ -33,6 +33,25 @@ const kSubtext = Color(0xFF6B6585);
 /// Success green.
 const kGreen = Color(0xFF1DB966);
 
+// ── AA-safe TEXT colours ───────────────────────────────────────────────────
+// kFlash (3.5:1), kGreen (2.6:1) and orange (2.2:1) fail WCAG AA as small text on white.
+// Fills, icons and borders keep the brand colours; TEXT in those colours uses these darker
+// shades (all >= 5.5:1 on white and on the tinted badge backgrounds). pjs() and the status
+// badges apply [aaText] automatically.
+const kFlashText = Color(0xFFA8102F);
+const kGreenText = Color(0xFF0B6B3A);
+const kWarnText = Color(0xFF8A4B00);
+
+/// Darker text shade for the brand red / green / orange; any other colour is returned unchanged.
+Color aaText(Color c) {
+  final v = c.toARGB32();
+  if (v == kFlash.toARGB32()) return kFlashText;
+  if (v == kGreen.toARGB32()) return kGreenText;
+  // Material orange family (orange, shade600/700/800) -> warn text
+  if (v == 0xFFFF9800 || v == 0xFFFB8C00 || v == 0xFFF57C00 || v == 0xFFEF6C00) return kWarnText;
+  return c;
+}
+
 // ── Brand name & tagline ───────────────────────────────────────────────────
 const kAppName = 'Mimoo Courier';
 const kTagline = 'A Little Bit of Everything, Just a Moo Away';
@@ -48,7 +67,7 @@ TextStyle pjs({
     GoogleFonts.plusJakartaSans(
       fontSize: size,
       fontWeight: weight,
-      color: color,
+      color: aaText(color),
       height: height,
       decoration: decoration,
     );

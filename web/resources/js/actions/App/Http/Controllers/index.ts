@@ -1,9 +1,13 @@
 import Api from './Api'
 import Buyer from './Buyer'
+import SupportAttachmentController from './SupportAttachmentController'
+import SupportTicketController from './SupportTicketController'
+import PolicyController from './PolicyController'
 import MessagingController from './MessagingController'
+import Courier from './Courier'
+import StaffSupportController from './StaffSupportController'
 import SellerDashboardController from './SellerDashboardController'
 import Logistics from './Logistics'
-import Courier from './Courier'
 import RiderRegistrationController from './RiderRegistrationController'
 import Auth from './Auth'
 import OrderController from './OrderController'
@@ -20,10 +24,14 @@ import Settings from './Settings'
 const Controllers = {
     Api: Object.assign(Api, Api),
 Buyer: Object.assign(Buyer, Buyer),
+SupportAttachmentController: Object.assign(SupportAttachmentController, SupportAttachmentController),
+SupportTicketController: Object.assign(SupportTicketController, SupportTicketController),
+PolicyController: Object.assign(PolicyController, PolicyController),
 MessagingController: Object.assign(MessagingController, MessagingController),
+Courier: Object.assign(Courier, Courier),
+StaffSupportController: Object.assign(StaffSupportController, StaffSupportController),
 SellerDashboardController: Object.assign(SellerDashboardController, SellerDashboardController),
 Logistics: Object.assign(Logistics, Logistics),
-Courier: Object.assign(Courier, Courier),
 RiderRegistrationController: Object.assign(RiderRegistrationController, RiderRegistrationController),
 Auth: Object.assign(Auth, Auth),
 OrderController: Object.assign(OrderController, OrderController),

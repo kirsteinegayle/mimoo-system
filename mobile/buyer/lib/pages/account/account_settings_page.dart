@@ -6,6 +6,7 @@ import '../../models/buyer_profile.dart';
 import '../../services/profile_repository.dart';
 import '../../services/api_service.dart';
 import '../../widgets/address_dropdown.dart';
+import '../../widgets/user_avatar.dart';
 import '../landing_page.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/animations.dart';
@@ -266,15 +267,12 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               onTap: _photoUploading ? null : _pickAndUploadPhoto,
               child: Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: _kChip,
-                    backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
-                        ? NetworkImage(photoUrl)
-                        : null,
-                    child: (photoUrl == null || photoUrl.isEmpty)
-                        ? Icon(Icons.person, size: 46, color: _kPrimary)
-                        : null,
+                  UserAvatar(
+                    url: photoUrl,
+                    name: '${p?.firstName ?? ''} ${p?.lastName ?? ''}'.trim().isEmpty
+                        ? (AuthService.instance.buyerName ?? 'Buyer')
+                        : '${p?.firstName ?? ''} ${p?.lastName ?? ''}',
+                    size: 80,
                   ),
                   Positioned(
                     bottom: 0,

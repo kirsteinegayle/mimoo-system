@@ -67,23 +67,23 @@ class AdminController extends Controller
             ->sum('total');
         
         // Pending registrations (sellers and logistics only, buyers auto-approved)
-        $adminQueue = fn () => \App\Models\User::where(function ($q) {
-            $q->where('account_type', 'seller')
-                ->orWhere(fn ($l) => $l->where('account_type', 'logistics')->where('role', 'logistics_staff'));
-        });
-        $pendingRegistrations = $adminQueue()->where('status', 'pending')->count();
-        $pendingToday = $adminQueue()->where('status', 'pending')->whereDate('created_at', today())->count();
+        $pendingRegistrations = $this->sellerQueue()->where('status', 'pending')->count()
+            + $this->logisticsQueue()->where('status', 'pending')->count();
+        $pendingToday = $this->sellerQueue()->where('status', 'pending')->whereDate('created_at', today())->count()
+            + $this->logisticsQueue()->where('status', 'pending')->whereDate('created_at', today())->count();
         
         // Orders by status
         $ordersInProgress = \App\Models\Order::whereIn('status', ['pending', 'paid', 'packed', 'shipped'])->count();
         $activeDeliveries = \App\Models\Order::where('status', 'shipped')->count();
         
         // Products pending approval
-        $productsPending = \App\Models\Product::where('approval_status', 'pending')->count();
+        $productsPending = \App\Models\Product::submitted()->where('approval_status', 'pending')->count();
         
-        // Commission this month (assume 5% commission rate)
-        $commissionRate = 0.05;
-        $commissionThisMonth = $revenueMTD * $commissionRate;
+        // Commission this month: same service as Manage Commission / Generate Reports (delivered or completed orders only).
+        $commissionThisMonth = (float) \App\Services\SalesReport::build([
+            'from' => now()->startOfMonth()->toDateString(), 'to' => now()->toDateString(),
+            'seller_id' => null, 'status' => 'completed', 'type' => 'commission',
+        ])['summary']['commission'];
         
         return Inertia::render('admin/dashboard', [
             'stats' => [
@@ -96,9 +96,10 @@ class AdminController extends Controller
             'attention' => [
                 'pendingRegistrations' => $pendingRegistrations,
                 'pendingToday' => $pendingToday,
-                'complianceFlags' => 0, // Placeholder
-                'openDisputes' => 0, // Placeholder
+                'complianceFlags' => \App\Http\Controllers\Admin\SellerComplianceController::flaggedCount(),
+                'openDisputes' => \Illuminate\Support\Facades\Schema::hasTable('complaints') ? \App\Models\Complaint::whereIn('status', ['open', 'in_review'])->count() : 0,
                 'commissionThisMonth' => (float) $commissionThisMonth,
+                'commissionRate' => (float) config('platform.commission_rate'),
             ],
             'operations' => [
                 'activeDeliveries' => $activeDeliveries,
@@ -108,41 +109,9 @@ class AdminController extends Controller
             'products' => [
                 'pendingApproval' => $productsPending,
             ],
-        ]);
-    }
-
-    /**
-     * Show the manage registrations page.
-     */
-    public function manageRegistrations(): Response
-    {
-        $registrations = \App\Models\User::query()
-            ->where(fn ($q) => $q->whereNull('role')->orWhereNotIn('role', ['courier', 'rider']))
-            ->whereIn('status', ['pending', 'approved', 'disapproved'])
-            ->orderByRaw("FIELD(status, 'pending', 'approved', 'disapproved')")
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(fn ($user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'account_type' => $user->account_type,
-                'business_name' => $user->business_name,
-                'status' => $user->status,
-                'created_at' => $user->created_at->format('M d, Y'),
-                'approved_at' => $user->approved_at?->format('M d, Y'),
-            ]);
-
-        $stats = [
-            'total' => \App\Models\User::count(),
-            'pending' => \App\Models\User::where('status', 'pending')->count(),
-            'approved' => \App\Models\User::where('status', 'approved')->count(),
-            'disapproved' => \App\Models\User::where('status', 'disapproved')->count(),
-        ];
-
-        return Inertia::render('admin/manage-registrations', [
-            'registrations' => $registrations,
-            'stats' => $stats,
+            'salesTrend'     => \App\Services\AdminDashboardStats::salesTrend(),
+            'ordersByStatus' => \App\Services\AdminDashboardStats::ordersByStatus(),
+            'topSellers'     => \App\Services\AdminDashboardStats::topSellers(),
         ]);
     }
 
@@ -231,6 +200,66 @@ class AdminController extends Controller
     }
 
     /**
+     * Pending Approval hub: pending logistics + seller applicants in one place.
+     * Uses the same queues as the dedicated approval pages so counts always match.
+     */
+    public function pendingApproval(): Response
+    {
+        $map = fn ($u, $name) => [
+            'id' => $u->id,
+            'name' => $name,
+            'contact' => $u->name,
+            'email' => $u->email,
+            'created_at' => $u->created_at->format('M d, Y'),
+        ];
+
+        $sellers = $this->sellerQueue()->where('status', 'pending')->latest()->get()
+            ->map(fn ($u) => $map($u, $u->business_name ?: $u->name))->values();
+
+        $logistics = $this->logisticsQueue()->where('status', 'pending')->latest()->get()
+            ->map(fn ($u) => $map($u, $u->company_name ?? $u->business_name ?? $u->name))->values();
+
+        return Inertia::render('admin/PendingApproval', [
+            'sellers' => $sellers,
+            'logistics' => $logistics,
+        ]);
+    }
+
+    /**
+     * Accounts Approval: one page for every role that needs admin approval (sellers, logistics).
+     * Filter buttons pick the role; status / search / sort / pagination run on the server.
+     */
+    public function accountsApproval(Request $request): Response
+    {
+        $type = $request->query('type') === 'logistics' ? 'logistics' : 'seller';
+        $query = $type === 'logistics' ? $this->logisticsQueue() : $this->sellerQueue();
+        $filters = $this->applyListFilters($query, $request, ['name', 'first_name', 'last_name', 'email', 'business_name', 'company_name', 'trade_name']);
+        $page = $query->paginate(self::LIST_PER_PAGE)->withQueryString();
+
+        $rows = $page->getCollection()->map(fn ($u) => [
+            'id' => $u->id,
+            'name' => $type === 'logistics' ? ($u->company_name ?? $u->business_name ?? $u->name) : ($u->business_name ?: $u->name),
+            'contact' => $u->name,
+            'email' => $u->email,
+            'status' => $u->status,
+            'status_reason' => $u->status_reason,
+            'created_at' => $u->created_at->format('M d, Y'),
+            'approved_at' => $u->approved_at?->format('M d, Y'),
+        ])->values();
+
+        return Inertia::render('admin/AccountsApproval', [
+            'type' => $type,
+            'rows' => $rows,
+            'filters' => $filters,
+            'pagination' => $this->pagination($page),
+            'counts' => [
+                'seller' => $this->approvalStats($this->sellerQueue()),
+                'logistics' => $this->approvalStats($this->logisticsQueue()),
+            ],
+        ]);
+    }
+
+    /**
      * Show the seller approval page.
      */
     public function sellerApproval(Request $request): Response
@@ -303,36 +332,6 @@ class AdminController extends Controller
     }
 
     /**
-     * Approve a user registration.
-     */
-    public function approveRegistration(Request $request, int $userId): RedirectResponse
-    {
-        $user = \App\Models\User::findOrFail($userId);
-        
-        $user->update([
-            'status' => 'approved',
-            'approved_at' => now(),
-        ]);
-
-        return back()->with('success', "Account for {$user->name} has been approved.");
-    }
-
-    /**
-     * Disapprove a user registration.
-     */
-    public function disapproveRegistration(Request $request, int $userId): RedirectResponse
-    {
-        $user = \App\Models\User::findOrFail($userId);
-        
-        $user->update([
-            'status' => 'disapproved',
-            'approved_at' => null,
-        ]);
-
-        return back()->with('success', "Account for {$user->name} has been disapproved.");
-    }
-
-    /**
      * Approve a seller registration.
      */
     public function approveSellerRegistration(Request $request, int $userId): RedirectResponse
@@ -362,10 +361,14 @@ class AdminController extends Controller
             return back()->withErrors(['error' => 'This account is not a seller.']);
         }
         
-        $user->update([
+        $reason = $request->validate(['reason' => ['nullable', 'string', 'max:500']])['reason'] ?? null;
+
+        $user->forceFill([
             'status' => 'disapproved',
             'approved_at' => null,
-        ]);
+            'status_reason' => $reason ? trim($reason) : null,
+            'status_changed_at' => now(),
+        ])->save();
 
         return back()->with('success', "Seller account for {$user->name} has been disapproved.");
     }
@@ -400,10 +403,14 @@ class AdminController extends Controller
             return back()->withErrors(['error' => 'This account is not a logistics company application.']);
         }
         
-        $user->update([
+        $reason = $request->validate(['reason' => ['nullable', 'string', 'max:500']])['reason'] ?? null;
+
+        $user->forceFill([
             'status' => 'disapproved',
             'approved_at' => null,
-        ]);
+            'status_reason' => $reason ? trim($reason) : null,
+            'status_changed_at' => now(),
+        ])->save();
 
         return back()->with('success', "Logistics partner {$user->business_name} has been disapproved.");
     }
@@ -498,30 +505,21 @@ class AdminController extends Controller
             'sec_certificate_url' => $user->sec_certificate ? route('admin.download-document', ['userId' => $user->id, 'type' => 'sec_certificate']) : null,
             'bir_form_2303_url' => $user->bir_2303 ? route('admin.download-document', ['userId' => $user->id, 'type' => 'bir_2303']) : null,
             'business_permit_url' => $user->business_permit ? route('admin.download-document', ['userId' => $user->id, 'type' => 'business_permit']) : null,
-            'valid_id_url' => $user->id_document ? route('admin.download-document', ['userId' => $user->id, 'type' => 'id_document']) : null,
+            'valid_id_url' => $user->valid_id ? route('admin.download-document', ['userId' => $user->id, 'type' => 'valid_id']) : null,
+            'proof_of_address_url' => $user->proof_of_address ? route('admin.download-document', ['userId' => $user->id, 'type' => 'proof_of_address']) : null,
+            'operating_permits_url' => $user->operating_permits ? route('admin.download-document', ['userId' => $user->id, 'type' => 'operating_permits']) : null,
         ]);
     }
 
     /**
      * Download a user's document (admin only).
      */
-    public function downloadDocument(int $userId, string $type): \Symfony\Component\HttpFoundation\BinaryFileResponse|RedirectResponse
+    public function downloadDocument(int $userId, string $type): \Symfony\Component\HttpFoundation\Response
     {
         $user = \App\Models\User::findOrFail($userId);
-        
-        $allowedTypes = ['id_document', 'business_permit', 'dti_registration', 'bir_2303', 'sec_certificate'];
-        
-        if (!in_array($type, $allowedTypes)) {
-            return back()->withErrors(['error' => 'Invalid document type.']);
-        }
-        
-        $filePath = $user->{$type};
-        
-        if (!$filePath || !\Storage::disk('local')->exists($filePath)) {
-            return back()->withErrors(['error' => 'Document not found.']);
-        }
-        
-        return response()->download(storage_path('app/' . $filePath));
+
+        // Inline by default so the preview iframe / new tab can render it; ?download=1 forces a download.
+        return \App\Support\PrivateDocument::stream($user, $type, request()->boolean('download'));
     }
 
     /**

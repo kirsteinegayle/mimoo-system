@@ -134,7 +134,7 @@ verifyOtp.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     verifyOtp.form = verifyOtpForm
 /**
 * @see \App\Http\Controllers\Auth\EmailVerificationController::resendOtp
- * @see app/Http/Controllers/Auth/EmailVerificationController.php:98
+ * @see app/Http/Controllers/Auth/EmailVerificationController.php:101
  * @route '/verify-email/resend'
  */
 export const resendOtp = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -149,7 +149,7 @@ resendOtp.definition = {
 
 /**
 * @see \App\Http\Controllers\Auth\EmailVerificationController::resendOtp
- * @see app/Http/Controllers/Auth/EmailVerificationController.php:98
+ * @see app/Http/Controllers/Auth/EmailVerificationController.php:101
  * @route '/verify-email/resend'
  */
 resendOtp.url = (options?: RouteQueryOptions) => {
@@ -158,7 +158,7 @@ resendOtp.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Auth\EmailVerificationController::resendOtp
- * @see app/Http/Controllers/Auth/EmailVerificationController.php:98
+ * @see app/Http/Controllers/Auth/EmailVerificationController.php:101
  * @route '/verify-email/resend'
  */
 resendOtp.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -168,7 +168,7 @@ resendOtp.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Auth\EmailVerificationController::resendOtp
- * @see app/Http/Controllers/Auth/EmailVerificationController.php:98
+ * @see app/Http/Controllers/Auth/EmailVerificationController.php:101
  * @route '/verify-email/resend'
  */
     const resendOtpForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -178,7 +178,7 @@ resendOtp.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Auth\EmailVerificationController::resendOtp
- * @see app/Http/Controllers/Auth/EmailVerificationController.php:98
+ * @see app/Http/Controllers/Auth/EmailVerificationController.php:101
  * @route '/verify-email/resend'
  */
         resendOtpForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

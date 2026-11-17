@@ -6,9 +6,16 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * Seller analytics. One definition of a "sale", shared with the seller dashboard and the admin sales
+ * report: an order line of this seller on an order that is not cancelled, failed or refunded
+ * (Order::scopeSale). The time window is the last N calendar days INCLUDING today, by order date, the
+ * same date the Orders page shows. Money = quantity x unit_price of THIS seller's lines only
+ * (no shipping fee, no other sellers' items in a mixed order).
+ */
 class SellerAnalyticsController extends Controller
 {
     /**
@@ -26,85 +33,53 @@ class SellerAnalyticsController extends Controller
 
         $range = $request->query('range', '30d');
         $days = $this->getDaysFromRange($range);
+        $from = now()->subDays($days - 1)->startOfDay();
 
-        // Get seller's product IDs
-        $productIds = Product::where('seller_id', $user->id)->pluck('id');
-
-        if ($productIds->isEmpty()) {
+        if (! Product::where('seller_id', $user->id)->exists() && ! OrderItem::where('seller_id', $user->id)->exists()) {
             return response()->json($this->getEmptyAnalytics());
         }
 
-        // Summary cards
-        $totalProducts = Product::where('seller_id', $user->id)->count();
-        $totalStockUnits = Product::where('seller_id', $user->id)->sum('stock');
-        
-        $lowStockItems = Product::where('seller_id', $user->id)
-            ->whereRaw('stock > 0 AND stock <= low_stock_threshold')
-            ->count();
-            
-        $outOfStockItems = Product::where('seller_id', $user->id)
-            ->where('stock', 0)
-            ->count();
+        // Inventory cards (live products only)
+        $products = Product::where('seller_id', $user->id);
+        $totalProducts = (clone $products)->count();
+        $totalStockUnits = (int) (clone $products)->sum('stock');
+        $lowStockItems = (clone $products)->whereRaw('stock > 0 AND stock <= COALESCE(low_stock_threshold, 5)')->count();
+        $outOfStockItems = (clone $products)->where('stock', 0)->count();
 
-        // Sales data (only paid orders)
-        $totalUnitsSold = OrderItem::whereIn('product_id', $productIds)
-            ->whereHas('order', function ($query) use ($days) {
-                $query->where('status', 'paid')
-                    ->where('created_at', '>=', now()->subDays($days));
-            })
-            ->sum('quantity');
+        // This seller's sale lines in the window (by seller_id, so deleted products still count)
+        $lines = fn () => OrderItem::where('seller_id', $user->id)
+            ->whereHas('order', fn ($q) => $q->sale()->where('created_at', '>=', $from));
 
-        $totalRevenue = OrderItem::whereIn('product_id', $productIds)
-            ->whereHas('order', function ($query) use ($days) {
-                $query->where('status', 'paid')
-                    ->where('created_at', '>=', now()->subDays($days));
-            })
-            ->selectRaw('SUM(quantity * unit_price) as revenue')
-            ->value('revenue') ?? 0;
+        $totalUnitsSold = (int) $lines()->sum('quantity');
+        $totalRevenue = (float) ($lines()->selectRaw('SUM(quantity * unit_price) as revenue')->value('revenue') ?? 0);
 
-        // Sales over time (grouped by day)
-        $salesOverTime = DB::table('order_items')
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->whereIn('order_items.product_id', $productIds)
-            ->where('orders.status', 'paid')
-            ->where('orders.created_at', '>=', now()->subDays($days))
-            ->select(
-                DB::raw('DATE(orders.created_at) as date'),
-                DB::raw('SUM(order_items.quantity * order_items.unit_price) as revenue'),
-                DB::raw('SUM(order_items.quantity) as units')
-            )
-            ->groupBy('date')
-            ->orderBy('date', 'asc')
-            ->get()
-            ->map(function ($item) {
+        // Sales over time: one point per calendar day, zero-filled
+        $byDay = $lines()->with('order:id,created_at')->get(['order_id', 'quantity', 'unit_price'])
+            ->groupBy(fn ($i) => $i->order->created_at->toDateString());
+        $salesOverTime = collect(range(0, $days - 1))->map(function ($n) use ($from, $byDay) {
+            $d = $from->copy()->addDays($n)->toDateString();
+            $rows = $byDay[$d] ?? collect();
+
+            return [
+                'date' => $d,
+                'revenue' => round((float) $rows->sum(fn ($i) => $i->quantity * $i->unit_price), 2),
+                'units' => (int) $rows->sum('quantity'),
+            ];
+        })->values();
+
+        // Top selling products (units), same lines
+        $topSellingProducts = $lines()->selectRaw('product_id, MAX(product_name) as name, SUM(quantity) as units_sold')
+            ->groupBy('product_id')->orderByDesc('units_sold')->limit(10)->get()
+            ->map(function ($row) {
+                $product = Product::withTrashed()->find($row->product_id);
+
                 return [
-                    'date' => $item->date,
-                    'revenue' => (float) $item->revenue,
-                    'units' => (int) $item->units,
+                    'id' => (int) $row->product_id,
+                    'name' => $product?->name ?? $row->name,
+                    'units_sold' => (int) $row->units_sold,
+                    'image' => $product?->main_image,
                 ];
-            });
-
-        // Top selling products
-        $topSellingProducts = Product::where('seller_id', $user->id)
-            ->withCount(['orderItems as units_sold' => function ($query) use ($days) {
-                $query->selectRaw('SUM(quantity)')
-                    ->whereHas('order', function ($q) use ($days) {
-                        $q->where('status', 'paid')
-                            ->where('created_at', '>=', now()->subDays($days));
-                    });
-            }])
-            ->having('units_sold', '>', 0)
-            ->orderBy('units_sold', 'desc')
-            ->take(10)
-            ->get()
-            ->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'units_sold' => (int) $product->units_sold,
-                    'image' => $product->main_image,
-                ];
-            });
+            })->values();
 
         // Stock levels per product
         $stockLevels = Product::where('seller_id', $user->id)
@@ -113,12 +88,14 @@ class SellerAnalyticsController extends Controller
             ->take(20)
             ->get()
             ->map(function ($product) {
+                $threshold = $product->low_stock_threshold ?? 5;
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
                     'stock' => $product->stock,
-                    'threshold' => $product->low_stock_threshold ?? 5,
-                    'status' => $product->stock == 0 ? 'out' : ($product->stock <= ($product->low_stock_threshold ?? 5) ? 'low' : 'ok'),
+                    'threshold' => $threshold,
+                    'status' => $product->stock == 0 ? 'out' : ($product->stock <= $threshold ? 'low' : 'ok'),
                 ];
             });
 
@@ -128,14 +105,16 @@ class SellerAnalyticsController extends Controller
                 'total_stock_units' => $totalStockUnits,
                 'low_stock_items' => $lowStockItems,
                 'out_of_stock_items' => $outOfStockItems,
-                'total_units_sold' => (int) $totalUnitsSold,
-                'total_revenue' => (float) $totalRevenue,
+                'total_units_sold' => $totalUnitsSold,
+                'total_revenue' => round($totalRevenue, 2),
             ],
             'sales_over_time' => $salesOverTime,
             'top_selling_products' => $topSellingProducts,
             'stock_levels' => $stockLevels,
             'range' => $range,
             'days' => $days,
+            'from' => $from->toDateString(),
+            'to' => Carbon::today()->toDateString(),
         ]);
     }
 

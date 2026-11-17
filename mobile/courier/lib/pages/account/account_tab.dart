@@ -15,6 +15,7 @@ import 'change_password_page.dart';
 import 'documents_page.dart';
 import 'duty_checklist_page.dart';
 import 'profile_page.dart';
+import '../../widgets/user_avatar.dart';
 
 class AccountTab extends StatefulWidget {
   const AccountTab({super.key});
@@ -287,11 +288,13 @@ class _AccountTabState extends State<AccountTab> {
               border: Border.all(color: kBorder),
             ),
             child: Row(children: [
-              const CircleAvatar(
-                backgroundColor: kChip,
-                radius: 26,
-                child: Icon(Icons.business_outlined, color: kPrimary, size: 25),
-              ),
+              (p.photoUrl ?? '').isNotEmpty
+                  ? UserAvatar(url: p.photoUrl, name: p.companyName, size: 52)
+                  : const CircleAvatar(
+                      backgroundColor: kChip,
+                      radius: 26,
+                      child: Icon(Icons.business_outlined, color: kPrimary, size: 25),
+                    ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(

@@ -263,6 +263,10 @@ class DeliveryChatController extends Controller
             'job_status'       => $job->status,
             'can_send'         => $this->isOpen($job),
             'counterpart_name' => $me === DeliveryMessage::ROLE_RIDER ? $this->buyerName($job) : $this->riderFirstName($job),
+            // Additive: avatar URL or null (initials shown instead).
+            'counterpart_photo_url' => \App\Support\AvatarUrl::forUser(User::find(
+                $me === DeliveryMessage::ROLE_RIDER ? (int) Order::whereKey($job->order_id)->value('buyer_id') : (int) $job->rider_user_id
+            )),
         ];
     }
 

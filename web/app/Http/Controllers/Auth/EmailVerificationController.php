@@ -70,6 +70,9 @@ class EmailVerificationController extends Controller
                 'email_verified_at' => now(),
             ]);
             
+            // Email proven in this browser: let the pending page sign them in once the admin approves.
+            \App\Http\Controllers\Auth\ApprovalStatusController::remember($request, $user);
+
             // Redirect based on account type
             if ($user->account_type === 'seller') {
                 // Sellers need admin approval

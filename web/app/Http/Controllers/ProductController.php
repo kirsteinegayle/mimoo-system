@@ -19,8 +19,9 @@ class ProductController extends Controller
     {
         // Admin verification is handled by middleware, no need to check Auth::user()
 
-        $query = Product::with(['seller:id,business_name,name,email'])
+        $query = Product::with(['seller:id,business_name,name,email,status'])
             ->where('approval_status', 'pending')
+            ->where('status', '!=', 'draft') // drafts are visible to the seller only
             ->orderBy('created_at', 'asc');
 
         // Search
@@ -65,6 +66,7 @@ class ProductController extends Controller
                         'id' => $product->seller->id,
                         'name' => $product->seller->business_name ?? $product->seller->name,
                         'email' => $product->seller->email,
+                        'status' => $product->seller->status,
                     ],
                     'created_at' => $product->created_at->toISOString(),
                 ];
@@ -174,7 +176,8 @@ class ProductController extends Controller
     {
         // Admin verification is handled by middleware
 
-        $query = Product::with(['seller:id,business_name,name,email', 'approvedBy:id,name']);
+        $query = Product::with(['seller:id,business_name,name,email,status', 'approvedBy:id,name'])
+            ->submitted(); // drafts awaiting submission are visible to the seller only
 
         // Filter by approval status
         if ($request->has('approval_status')) {
@@ -221,10 +224,12 @@ class ProductController extends Controller
                     'rejection_reason' => $product->rejection_reason,
                     'images' => $product->images ?? [],
                     'main_image' => $product->main_image,
+                    'brand' => $product->brand,
                     'seller' => [
                         'id' => $product->seller->id,
                         'name' => $product->seller->business_name ?? $product->seller->name,
                         'email' => $product->seller->email,
+                        'status' => $product->seller->status, // so admin can label deactivated sellers
                     ],
                     'approved_by' => $product->approvedBy ? $product->approvedBy->name : null,
                     'approved_at' => $product->approved_at ? $product->approved_at->toISOString() : null,
@@ -237,6 +242,13 @@ class ProductController extends Controller
                 'per_page' => $products->perPage(),
                 'total' => $products->total(),
             ],
+            // Per-status counts for the stat cards (always present, 0 when empty).
+            'stats' => [
+                'total' => Product::submitted()->count(),
+                'pending' => Product::submitted()->where('approval_status', 'pending')->count(),
+                'approved' => Product::submitted()->where('approval_status', 'approved')->count(),
+                'rejected' => Product::submitted()->where('approval_status', 'rejected')->count(),
+            ],
         ]);
     }
 
@@ -247,6 +259,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::with('seller:id,business_name,name')
+            ->sellerActive() // hide suspended / deactivated sellers
             ->where('status', 'active')
             ->where('approval_status', 'approved'); // Only show approved products to buyers
 
@@ -316,6 +329,7 @@ class ProductController extends Controller
     public function show($id)
     {
         $product = Product::with('seller:id,business_name,name')
+            ->sellerActive()
             ->findOrFail($id);
 
         return response()->json([
@@ -390,8 +404,11 @@ class ProductController extends Controller
         $perPage = $request->input('per_page', 15);
         $products = $query->paginate($perPage);
 
+        // Units sold per product (delivered order items only), one query for the whole page.
+        $soldByProduct = \App\Support\SoldStats::byProduct($user->id);
+
         return response()->json([
-            'data' => $products->map(function ($product) {
+            'data' => $products->map(function ($product) use ($soldByProduct) {
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -405,7 +422,7 @@ class ProductController extends Controller
                     'status' => $product->status,
                     'approval_status' => $product->approval_status ?? 'pending',
                     'rejection_reason' => $product->rejection_reason,
-                    'sold' => (int) $product->sold,
+                    'sold' => (int) ($soldByProduct[$product->id] ?? 0),
                     'images' => $product->images ?? [],
                     'main_image_index' => $product->main_image_index,
                     'weight' => $product->weight ? (float) $product->weight : null,
@@ -578,6 +595,11 @@ class ProductController extends Controller
             'variants.*.stock' => 'required_with:variants|integer|min:0',
             'variants.*.image' => 'nullable|string',
         ]);
+
+        // Hidden by the admin for a compliance violation: the seller cannot switch it back on.
+        if (! empty($product->compliance_hidden_at)) {
+            unset($validated['status']);
+        }
 
         // Validate sale_price is less than price if both are provided
         if (isset($validated['sale_price']) && isset($validated['price'])) {
@@ -907,7 +929,11 @@ class ProductController extends Controller
      */
     public function adminGetReports(Request $request)
     {
-        $query = \App\Models\ProductReport::with(['product.seller:id,business_name,name', 'reporter:id,name,email'])
+        // withTrashed: an approved report soft-deletes its product, but the admin still needs to see it.
+        $query = \App\Models\ProductReport::with([
+            'product' => fn ($q) => $q->withTrashed()->with('seller:id,business_name,name,email'),
+            'reporter:id,name,email',
+        ])
             ->orderBy('created_at', 'desc');
 
         // Filter by status
@@ -931,10 +957,12 @@ class ProductController extends Controller
                         'sku' => $report->product->sku,
                         'images' => $report->product->images ?? [],
                         'main_image' => $report->product->main_image,
+                        'removed' => $report->product->trashed(),
+                        'url' => $report->product->trashed() ? null : '/product/' . $report->product->id,
                         'seller' => [
-                            'id' => $report->product->seller->id,
-                            'name' => $report->product->seller->business_name ?? $report->product->seller->name,
-                            'email' => $report->product->seller->email,
+                            'id' => $report->product->seller?->id,
+                            'name' => $report->product->seller?->business_name ?? $report->product->seller?->name ?? 'Unknown seller',
+                            'email' => $report->product->seller?->email,
                         ],
                     ] : null,
                     'reporter' => [
@@ -955,6 +983,12 @@ class ProductController extends Controller
                 'last_page' => $reports->lastPage(),
                 'per_page' => $reports->perPage(),
                 'total' => $reports->total(),
+            ],
+            // Per-status counts for the stat cards (independent of the active filter / page).
+            'stats' => [
+                'pending' => \App\Models\ProductReport::where('status', 'pending')->count(),
+                'approved' => \App\Models\ProductReport::where('status', 'approved')->count(),
+                'rejected' => \App\Models\ProductReport::where('status', 'rejected')->count(),
             ],
         ]);
     }
@@ -1065,6 +1099,7 @@ class ProductController extends Controller
     {
         $seller = \App\Models\User::where('id', $id)
             ->where('account_type', 'seller')
+            ->whereNotIn('status', \App\Support\AccountStatus::BLOCKED) // deactivated / suspended stores are hidden
             ->firstOrFail();
 
         // Get seller's active products

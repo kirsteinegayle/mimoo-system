@@ -249,8 +249,63 @@ scan.post = (args: { id: string | number } | [id: string | number ] | string | n
     
     scan.form = scanForm
 /**
+* @see \App\Http\Controllers\Api\RiderPickupController::scanWaybill
+ * @see app/Http/Controllers/Api/RiderPickupController.php:342
+ * @route '/api/rider-app/scan-waybill'
+ */
+export const scanWaybill = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: scanWaybill.url(options),
+    method: 'post',
+})
+
+scanWaybill.definition = {
+    methods: ["post"],
+    url: '/api/rider-app/scan-waybill',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\Api\RiderPickupController::scanWaybill
+ * @see app/Http/Controllers/Api/RiderPickupController.php:342
+ * @route '/api/rider-app/scan-waybill'
+ */
+scanWaybill.url = (options?: RouteQueryOptions) => {
+    return scanWaybill.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Api\RiderPickupController::scanWaybill
+ * @see app/Http/Controllers/Api/RiderPickupController.php:342
+ * @route '/api/rider-app/scan-waybill'
+ */
+scanWaybill.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: scanWaybill.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\Api\RiderPickupController::scanWaybill
+ * @see app/Http/Controllers/Api/RiderPickupController.php:342
+ * @route '/api/rider-app/scan-waybill'
+ */
+    const scanWaybillForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: scanWaybill.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\RiderPickupController::scanWaybill
+ * @see app/Http/Controllers/Api/RiderPickupController.php:342
+ * @route '/api/rider-app/scan-waybill'
+ */
+        scanWaybillForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: scanWaybill.url(options),
+            method: 'post',
+        })
+    
+    scanWaybill.form = scanWaybillForm
+/**
 * @see \App\Http\Controllers\Api\RiderPickupController::dropAtHub
- * @see app/Http/Controllers/Api/RiderPickupController.php:250
+ * @see app/Http/Controllers/Api/RiderPickupController.php:258
  * @route '/api/rider-app/pickups/{id}/drop-at-hub'
  */
 export const dropAtHub = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -265,7 +320,7 @@ dropAtHub.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderPickupController::dropAtHub
- * @see app/Http/Controllers/Api/RiderPickupController.php:250
+ * @see app/Http/Controllers/Api/RiderPickupController.php:258
  * @route '/api/rider-app/pickups/{id}/drop-at-hub'
  */
 dropAtHub.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -293,7 +348,7 @@ dropAtHub.url = (args: { id: string | number } | [id: string | number ] | string
 
 /**
 * @see \App\Http\Controllers\Api\RiderPickupController::dropAtHub
- * @see app/Http/Controllers/Api/RiderPickupController.php:250
+ * @see app/Http/Controllers/Api/RiderPickupController.php:258
  * @route '/api/rider-app/pickups/{id}/drop-at-hub'
  */
 dropAtHub.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -303,7 +358,7 @@ dropAtHub.post = (args: { id: string | number } | [id: string | number ] | strin
 
     /**
 * @see \App\Http\Controllers\Api\RiderPickupController::dropAtHub
- * @see app/Http/Controllers/Api/RiderPickupController.php:250
+ * @see app/Http/Controllers/Api/RiderPickupController.php:258
  * @route '/api/rider-app/pickups/{id}/drop-at-hub'
  */
     const dropAtHubForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -313,7 +368,7 @@ dropAtHub.post = (args: { id: string | number } | [id: string | number ] | strin
 
             /**
 * @see \App\Http\Controllers\Api\RiderPickupController::dropAtHub
- * @see app/Http/Controllers/Api/RiderPickupController.php:250
+ * @see app/Http/Controllers/Api/RiderPickupController.php:258
  * @route '/api/rider-app/pickups/{id}/drop-at-hub'
  */
         dropAtHubForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -324,7 +379,7 @@ dropAtHub.post = (args: { id: string | number } | [id: string | number ] | strin
     dropAtHub.form = dropAtHubForm
 /**
 * @see \App\Http\Controllers\Api\RiderPickupController::history
- * @see app/Http/Controllers/Api/RiderPickupController.php:340
+ * @see app/Http/Controllers/Api/RiderPickupController.php:490
  * @route '/api/rider-app/history'
  */
 export const history = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -339,7 +394,7 @@ history.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RiderPickupController::history
- * @see app/Http/Controllers/Api/RiderPickupController.php:340
+ * @see app/Http/Controllers/Api/RiderPickupController.php:490
  * @route '/api/rider-app/history'
  */
 history.url = (options?: RouteQueryOptions) => {
@@ -348,7 +403,7 @@ history.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\RiderPickupController::history
- * @see app/Http/Controllers/Api/RiderPickupController.php:340
+ * @see app/Http/Controllers/Api/RiderPickupController.php:490
  * @route '/api/rider-app/history'
  */
 history.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -357,7 +412,7 @@ history.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\RiderPickupController::history
- * @see app/Http/Controllers/Api/RiderPickupController.php:340
+ * @see app/Http/Controllers/Api/RiderPickupController.php:490
  * @route '/api/rider-app/history'
  */
 history.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -367,7 +422,7 @@ history.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\RiderPickupController::history
- * @see app/Http/Controllers/Api/RiderPickupController.php:340
+ * @see app/Http/Controllers/Api/RiderPickupController.php:490
  * @route '/api/rider-app/history'
  */
     const historyForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -377,7 +432,7 @@ history.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\RiderPickupController::history
- * @see app/Http/Controllers/Api/RiderPickupController.php:340
+ * @see app/Http/Controllers/Api/RiderPickupController.php:490
  * @route '/api/rider-app/history'
  */
         historyForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -386,7 +441,7 @@ history.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Api\RiderPickupController::history
- * @see app/Http/Controllers/Api/RiderPickupController.php:340
+ * @see app/Http/Controllers/Api/RiderPickupController.php:490
  * @route '/api/rider-app/history'
  */
         historyForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -400,6 +455,6 @@ history.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     history.form = historyForm
-const RiderPickupController = { index, show, scan, dropAtHub, history }
+const RiderPickupController = { index, show, scan, scanWaybill, dropAtHub, history }
 
 export default RiderPickupController

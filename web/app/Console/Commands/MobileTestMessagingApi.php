@@ -90,7 +90,7 @@ class MobileTestMessagingApi extends Command
         $this->check('rider -> rider refused', $this->api($rider, 'POST', '/api/rider-app/messaging/start', ['role' => 'rider', 'id' => $rider2->id])['status'], 403, '');
         $s = $this->api($rider, 'POST', '/api/rider-app/messaging/start', ['role' => 'courier', 'id' => $c1->id]);
         $tid = $s['body']['data']['id'] ?? 0;
-        $this->check('rider starts a thread with the own company', $s['status'] . '/' . implode(',', array_keys($s['body']['data'] ?? [])), '201/id,counterpart_name,counterpart_role,last_message,last_message_at,unread_count', 'shape the app reads');
+        $this->check('rider starts a thread with the own company', $s['status'] . '/' . implode(',', array_keys($s['body']['data'] ?? [])), '201/id,counterpart_name,counterpart_role,counterpart_photo_url,last_message,last_message_at,unread_count', 'shape the app reads');
         $send = fn (User $u, string $base, string $text) => $this->api($u, 'POST', "{$base}/messaging/threads/{$tid}/messages", ['body' => $text]);
         $r = $send($rider, '/api/rider-app', 'Rider here, parcel is ready');
         $this->check('rider sends', $r['status'] . '/' . implode(',', array_keys($r['body']['data'] ?? [])), '201/id,thread_id,is_mine,body,image_url,read_at,created_at', '');

@@ -32,14 +32,17 @@ class LoginResponse implements LoginResponseContract
         // Sellers and logistics/courier accounts need admin/hub approval
         if (in_array($user->account_type, ['seller', 'logistics']) && $user->status === 'pending') {
             auth()->logout();
+            \App\Http\Controllers\Auth\ApprovalStatusController::remember($request, $user); // password was correct: allow auto-login on approval
             return redirect()->route('register.pending')
                 ->with('message', 'Your account is pending approval. You will receive an email once approved.');
         }
 
         if (in_array($user->account_type, ['seller', 'logistics']) && in_array($user->status, ['rejected', 'disapproved'], true)) {
             auth()->logout();
+            $why = trim((string) $user->status_reason);
+
             return redirect()->route('login')
-                ->withErrors(['email' => 'Your account application was rejected. Please contact support for more information.']);
+                ->withErrors(['email' => 'Your account application was rejected' . ($why !== '' ? ": {$why}" : '.') . ' Please contact support for more information.']);
         }
 
         // Riders have no web dashboard; they use the mobile app.

@@ -43,10 +43,8 @@ class BuyerProfileController extends Controller
     // ── Shared profile shape ──────────────────────────────────────────────────
     private function profileData($user): array
     {
-        $photoUrl = null;
-        if (! empty($user->profile_photo)) {
-            $photoUrl = url(Storage::url($user->profile_photo));
-        }
+        // Shared helper: current host, CORS endpoint, old values tolerated.
+        $photoUrl = \App\Support\AvatarUrl::fromPath($user->profile_photo);
 
         return [
             'id'                => $user->id,

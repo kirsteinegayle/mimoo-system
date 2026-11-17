@@ -1,3 +1,4 @@
+import { alertDialog } from '@/components/app-modal';
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState, useRef } from 'react';
 import { BuyerHeader } from '@/components/buyer-header';
@@ -58,11 +59,11 @@ export default function BuyerAcc({ auth }: BuyerAccProps) {
     profileForm.put('/settings/profile', {
       preserveScroll: true,
       onSuccess: () => {
-        alert('Profile updated successfully!');
+        alertDialog('Profile updated successfully!');
       },
       onError: (errors) => {
         console.error('Profile update errors:', errors);
-        alert('Failed to update profile. Please check your inputs.');
+        alertDialog('Failed to update profile. Please check your inputs.');
       },
     });
   }
@@ -72,12 +73,12 @@ export default function BuyerAcc({ auth }: BuyerAccProps) {
     passwordForm.put('/settings/password', {
       preserveScroll: true,
       onSuccess: () => {
-        alert('Password updated successfully!');
+        alertDialog('Password updated successfully!');
         passwordForm.reset();
       },
       onError: (errors) => {
         console.error('Password update errors:', errors);
-        alert('Failed to update password. Please check your inputs.');
+        alertDialog('Failed to update password. Please check your inputs.');
       },
     });
   }
@@ -88,13 +89,13 @@ export default function BuyerAcc({ auth }: BuyerAccProps) {
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      alertDialog('File size must be less than 5MB');
       return;
     }
 
     // Validate file type
     if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-      alert('Only JPG and PNG files are allowed');
+      alertDialog('Only JPG and PNG files are allowed');
       return;
     }
 
@@ -115,16 +116,16 @@ export default function BuyerAcc({ auth }: BuyerAccProps) {
       const data = await response.json();
 
       if (response.ok) {
-        alert('Profile photo uploaded successfully!');
+        alertDialog('Profile photo uploaded successfully!');
         // Reload to show new photo
         router.reload();
       } else {
         console.error('Upload failed:', data);
-        alert(`Failed to upload photo: ${data.message || data.error || 'Unknown error'}`);
+        alertDialog(`Failed to upload photo: ${data.message || data.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert(`Failed to upload photo: ${error instanceof Error ? error.message : 'Network error'}`);
+      alertDialog(`Failed to upload photo: ${error instanceof Error ? error.message : 'Network error'}`);
     } finally {
       setUploading(false);
       if (photoInputRef.current) {
@@ -495,7 +496,7 @@ export default function BuyerAcc({ auth }: BuyerAccProps) {
 
                     <div className="flex justify-end pt-4 border-t border-neutral-200 mt-4">
                       <button
-                        onClick={() => alert('Notification preferences saved!')}
+                        onClick={() => alertDialog('Notification preferences saved!')}
                         className="rounded-lg bg-violet-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 transition"
                       >
                         Save Preferences

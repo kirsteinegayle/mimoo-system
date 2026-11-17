@@ -1,3 +1,4 @@
+import { alertDialog } from '@/components/app-modal';
 import AdminShell from '@/layouts/admin/admin-shell';
 import { csrfHeaders } from '@/components/notification-bell';
 import { Head } from '@inertiajs/react';
@@ -71,7 +72,7 @@ export default function ReturnsPage() {
                 headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             });
             if (res.status === 403) {
-                alert('Session expired. Please refresh the page.');
+                alertDialog('Session expired. Please refresh the page.');
                 return;
             }
             if (!res.ok) throw new Error(`HTTP ${res.status}`);

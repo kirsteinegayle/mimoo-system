@@ -1,15 +1,20 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Landing');
+    return Inertia::render('Landing', ['bestSellers' => \App\Support\BestSellers::top(3), 'banners' => \App\Models\Banner::liveByPosition()]);
 })->name('home');
+
+// Proof-of-delivery photo for web users (seller / courier company / admin session); access is checked in the controller.
+Route::get('/pod/{id}/photo', [\App\Http\Controllers\Api\DeliveryPodPhotoController::class, 'showWeb'])
+    ->middleware('throttle:120,1,web-pod-view')->whereNumber('id')->name('pod.photo');
+
+Route::get('/policies/{type}', [\App\Http\Controllers\PolicyController::class, 'show'])->name('policies.show');
 
 Route::get('/seller', function () {
     return Inertia::render('seller/SellerLanding');
@@ -140,6 +145,14 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         ]);
     })->name('courier.parcel-scanning')->middleware('role:courier,logistics_staff');
     
+    // Sorting & Transfers + Company Settings data (courier company and its staff)
+    Route::middleware('role:courier,logistics_staff')->group(function () {
+        Route::get('/courier/transfers-data', [\App\Http\Controllers\Courier\TransferController::class, 'data'])->middleware('throttle:120,1,courier-transfers');
+        Route::post('/courier/transfers', [\App\Http\Controllers\Courier\TransferController::class, 'transfer'])->middleware('throttle:60,1,courier-transfer-write');
+        Route::get('/courier/company-settings', [\App\Http\Controllers\Courier\CompanySettingsController::class, 'show']);
+        Route::post('/courier/company-settings', [\App\Http\Controllers\Courier\CompanySettingsController::class, 'update'])->middleware('throttle:20,1,courier-company-settings');
+    });
+
     // Courier - Sorting & Transfers
     Route::get('/courier/sorting-transfers', function () {
         $user = auth()->user();
@@ -260,6 +273,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         $order = \App\Models\Order::where('waybill_number', $validated['waybill_number'])->first();
         
         if (!$order) {
+            \App\Services\ScanRouteGuard::logRejected(null, $validated['waybill_number'], $facility, 'received', 'Waybill not found', (int) $courier->id);
             \Log::warning('Parcel scan failed - waybill not found', [
                 'waybill_number' => $validated['waybill_number'],
                 'courier_id' => $courier->id,
@@ -297,6 +311,14 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
             return response()->json([
                 'error' => 'Already received',
                 'message' => 'This returned parcel was already received at a hub.'
+            ], 422);
+        }
+
+        // Route check: the parcel must belong to this facility (e.g. a Lumban parcel cannot be scanned in at Calamba).
+        if ($routeError = \App\Services\ScanRouteGuard::check($order, $facility, $scanType)) {
+            return response()->json([
+                'error' => 'Wrong facility',
+                'message' => $routeError,
             ], 422);
         }
 
@@ -968,6 +990,16 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     })->name('logistics.courier-applications');
     
     // View single courier application details
+    // Stream a courier applicant's uploaded document (private disk) to logistics staff.
+    Route::get('/logistics/courier-applications/{id}/document/{type}', function ($id, $type) {
+        $courier = \App\Models\User::where('account_type', 'logistics')
+            ->where('role', 'courier')
+            ->where('id', $id)
+            ->firstOrFail();
+
+        return \App\Support\PrivateDocument::stream($courier, $type, request()->boolean('download'));
+    })->whereNumber('id')->name('logistics.courier-applications.document')->middleware('role:logistics_staff');
+
     Route::get('/logistics/courier-applications/{id}', function ($id) {
         $user = auth()->user();
         
@@ -1210,6 +1242,9 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     'weight' => round($estimatedWeight, 1),
                     'confirmed_at' => $order->updated_at->format('M d, Y H:i'),
                     'status' => 'shipped',
+                    // ONLY the best-matching couriers for this buyer address (barangay > city > province tier)
+                    'eligible_courier_ids' => \App\Services\ShippingService::eligibleCouriers($order)->pluck('user.id')->values()->all(),
+                    'eligible_tier' => \App\Services\ShippingService::eligibleCouriers($order)->first()['tier'] ?? null,
                 ];
             });
         
@@ -1305,6 +1340,13 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                     continue;
                 }
                 
+                // The courier must be one of the best matches for this buyer's address
+                if (! \App\Services\ShippingService::eligibleCouriers($order)->contains(fn ($e) => (int) $e['user']->id === (int) $courierId)) {
+                    $errors[] = "{$courier->company_name} does not cover the delivery address of {$order->waybill_number}";
+                    $skippedCount++;
+                    continue;
+                }
+
                 // Check if already assigned
                 $existingAssignment = \App\Models\ShipmentAssignment::where('order_id', $orderId)
                     ->active()
@@ -1384,6 +1426,14 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     });
 
     
+    Route::middleware('role:logistics_staff')->group(function () {
+        Route::get('/logistics/monitoring-data', [\App\Http\Controllers\Logistics\OperationsController::class, 'monitoring'])->middleware('throttle:120,1,logi-monitoring');
+        Route::get('/logistics/riders-data', [\App\Http\Controllers\Logistics\OperationsController::class, 'riders'])->middleware('throttle:120,1,logi-riders');
+        Route::post('/logistics/riders', [\App\Http\Controllers\Logistics\OperationsController::class, 'storeRider'])->middleware('throttle:30,1,logi-riders-write');
+        Route::put('/logistics/riders/{id}', [\App\Http\Controllers\Logistics\OperationsController::class, 'updateRider'])->middleware('throttle:60,1,logi-riders-write')->whereNumber('id');
+        Route::get('/logistics/reports-data', [\App\Http\Controllers\Logistics\OperationsController::class, 'reports'])->middleware('throttle:60,1,logi-reports');
+    });
+
     // Logistics Delivery Monitoring
     Route::get('/logistics/delivery-monitoring', function () {
         $user = auth()->user();
@@ -1424,11 +1474,23 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         ]);
     })->name('logistics.riders');
     
-    // Logistics Branches & Checklists
-    Route::get('/logistics/branches-checklists', function () {
+    Route::redirect('/logistics/branches-checklists', '/logistics/branches-facilities'); // old bookmarks
+    
+    // Logistics Branches & Facilities
+    Route::get('/logistics/branches-facilities', function () {
         $user = auth()->user();
         
-        return Inertia::render('logistics/BranchesChecklists', [
+        $company = \App\Support\CourierCompanyResolver::scope($user);
+        $facilities = \App\Models\CourierFacility::where('courier_id', $company->id)->with('parentFacility')->orderBy('facility_type')->orderBy('facility_name')->get()
+            ->map(fn ($f) => [
+                'id' => $f->id, 'facility_name' => $f->facility_name, 'facility_code' => $f->facility_code, 'facility_type' => $f->facility_type,
+                'parent_facility_id' => $f->parent_facility_id, 'parent_facility' => $f->parentFacility?->facility_name, 'status' => $f->status,
+                'region' => $f->region, 'province' => $f->province, 'city' => $f->city, 'address' => $f->address,
+                'manager' => $f->manager_name, 'contact' => $f->contact_number, 'coverage' => $f->coverage_cities,
+            ]);
+
+        return Inertia::render('logistics/BranchesFacilities', [
+            'facilities' => $facilities,
             'auth' => [
                 'user' => [
                     'id' => $user->id,
@@ -1442,8 +1504,28 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
                 'contact_person' => trim($user->contact_first_name . ' ' . $user->contact_last_name),
             ],
         ]);
-    })->name('logistics.branches-checklists');
+    })->name('logistics.branches-facilities');
     
+    // Per-facility operational checklists (real rows)
+    Route::middleware('role:logistics_staff')->group(function () {
+        Route::get('/logistics/facilities/{id}/checklist', [\App\Http\Controllers\Logistics\FacilityChecklistController::class, 'index'])->middleware('throttle:120,1,facility-checklist')->whereNumber('id');
+        Route::post('/logistics/facilities/{id}/checklist', [\App\Http\Controllers\Logistics\FacilityChecklistController::class, 'store'])->middleware('throttle:60,1,facility-checklist-w')->whereNumber('id');
+        Route::post('/logistics/facilities/{id}/checklist/reset', [\App\Http\Controllers\Logistics\FacilityChecklistController::class, 'reset'])->middleware('throttle:30,1,facility-checklist-w')->whereNumber('id');
+        Route::put('/logistics/checklist-items/{id}', [\App\Http\Controllers\Logistics\FacilityChecklistController::class, 'update'])->middleware('throttle:120,1,facility-checklist-w')->whereNumber('id');
+        Route::delete('/logistics/checklist-items/{id}', [\App\Http\Controllers\Logistics\FacilityChecklistController::class, 'destroy'])->middleware('throttle:60,1,facility-checklist-w')->whereNumber('id');
+    });
+
+    // Zones & rates data + management (checkout shipping fee reads these)
+    Route::middleware('role:logistics_staff')->group(function () {
+        Route::get('/logistics/zones-data', [\App\Http\Controllers\Logistics\ZonesRatesController::class, 'data']);
+        Route::post('/logistics/zones', [\App\Http\Controllers\Logistics\ZonesRatesController::class, 'storeZone'])->middleware('throttle:60,1,zones-write');
+        Route::put('/logistics/zones/{id}', [\App\Http\Controllers\Logistics\ZonesRatesController::class, 'updateZone'])->middleware('throttle:60,1,zones-write')->whereNumber('id');
+        Route::delete('/logistics/zones/{id}', [\App\Http\Controllers\Logistics\ZonesRatesController::class, 'destroyZone'])->middleware('throttle:60,1,zones-write')->whereNumber('id');
+        Route::post('/logistics/zones/{id}/rates', [\App\Http\Controllers\Logistics\ZonesRatesController::class, 'storeRate'])->middleware('throttle:60,1,zones-write')->whereNumber('id');
+        Route::put('/logistics/rates/{id}', [\App\Http\Controllers\Logistics\ZonesRatesController::class, 'updateRate'])->middleware('throttle:60,1,zones-write')->whereNumber('id');
+        Route::delete('/logistics/rates/{id}', [\App\Http\Controllers\Logistics\ZonesRatesController::class, 'destroyRate'])->middleware('throttle:60,1,zones-write')->whereNumber('id');
+    });
+
     // Logistics Zones & Rates
     Route::get('/logistics/zones-rates', function () {
         $user = auth()->user();
@@ -1464,6 +1546,12 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         ]);
     })->name('logistics.zones-rates');
     
+    Route::middleware('role:logistics_staff')->group(function () {
+        Route::get('/logistics/cod-data', [\App\Http\Controllers\Logistics\CodSettlementController::class, 'data'])->middleware('throttle:120,1,cod-data');
+        Route::post('/logistics/cod/{id}/received', [\App\Http\Controllers\Logistics\CodSettlementController::class, 'received'])->middleware('throttle:30,1,cod-step')->whereNumber('id');
+        Route::post('/logistics/cod/{id}/settled', [\App\Http\Controllers\Logistics\CodSettlementController::class, 'settled'])->middleware('throttle:30,1,cod-step')->whereNumber('id');
+    });
+
     // Logistics COD & Remittance
     Route::get('/logistics/cod-remittance', function () {
         $user = auth()->user();
@@ -1504,6 +1592,14 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
         ]);
     })->name('logistics.reports');
     
+    // Support queues for logistics / courier staff (tickets routed to them, A5)
+    Route::prefix('staff-support')->middleware('role:logistics_staff,courier')->group(function () {
+        Route::get('/feed', [\App\Http\Controllers\StaffSupportController::class, 'feed'])->middleware('throttle:120,1,staff-support-feed');
+        Route::get('/{id}', [\App\Http\Controllers\StaffSupportController::class, 'show'])->middleware('throttle:120,1,staff-support-show')->whereNumber('id');
+        Route::post('/{id}/reply', [\App\Http\Controllers\StaffSupportController::class, 'reply'])->middleware('throttle:60,1,staff-support-reply')->whereNumber('id');
+        Route::post('/{id}/status', [\App\Http\Controllers\StaffSupportController::class, 'status'])->middleware('throttle:60,1,staff-support-status')->whereNumber('id');
+    });
+
     // Logistics Support
     Route::get('/logistics/support', function () {
         $user = auth()->user();
@@ -1775,6 +1871,10 @@ Route::get('/register/rider/pending', [App\Http\Controllers\RiderRegistrationCon
 // Rider Registration Routes (branch assignment removed - handled by courier during approval)
 // No API routes needed for frontend registration
 
+// Polled by the pending-approval pages: signs the user in once the admin has approved them.
+Route::get('/register/approval-status', [\App\Http\Controllers\Auth\ApprovalStatusController::class, 'show'])
+    ->middleware('throttle:60,1,approval-status')->name('register.approval-status');
+
 Route::get('/register/pending', function () {
     return Inertia::render('register-pending');
 })->name('register.pending');
@@ -1810,6 +1910,7 @@ Route::get('/terms', function () {
 Route::get('/homepage', function (Illuminate\Http\Request $request) {
     // Base query for products
     $query = \App\Models\Product::with('seller:id,business_name,name')
+        ->sellerActive() // hide suspended / deactivated sellers
         ->where('status', 'active')
         ->where('approval_status', 'approved');
     
@@ -1871,8 +1972,13 @@ Route::get('/homepage', function (Illuminate\Http\Request $request) {
         // Live vouchers (active, started, not ended, uses left) with this buyer's
         // claim state. Same rules as /api/vouchers/available and the mobile app.
         'vouchers' => \App\Services\VoucherService::available($request->user(), 12),
+        // Admin-managed banners that are live right now (hero / secondary / sidebar)
+        'banners' => \App\Models\Banner::liveByPosition(),
     ]);
 })->name('homepage');
+
+// Live banners for the buyer app (same data as the web homepage). Public.
+Route::get('/api/banners', fn () => response()->json(['data' => \App\Models\Banner::liveByPosition()]))->middleware('throttle:60,1,public-banners');
 
 // Buyer <-> seller chat page (real threads, same data as the mobile app).
 // resources/views/messages.blade.php (old hardcoded mock) is no longer used.
@@ -1900,7 +2006,7 @@ Route::get('/messages', function (\Illuminate\Http\Request $request) {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/cart', function () {
         // Fetch suggested products (top-selling or random)
-        $suggestedProducts = \App\Models\Product::where('status', 'active')
+        $suggestedProducts = \App\Models\Product::sellerActive()->where('status', 'active')
             ->where('stock', '>', 0)
             ->inRandomOrder()
             ->limit(6)
@@ -1924,6 +2030,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('cart');
     
     Route::get('/checkout', [\App\Http\Controllers\OrderController::class, 'checkout'])->name('checkout');
+    Route::get('/api/shipping/quote', [\App\Http\Controllers\OrderController::class, 'shippingQuote'])->middleware('throttle:60,1,shipping-quote')->name('shipping.quote');
     Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/success', [\App\Http\Controllers\OrderController::class, 'success'])->name('orders.success');
     Route::get('/orders/{id}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show')->whereNumber('id');
@@ -1932,6 +2039,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::get('/product/{id}', function (string $id) {
     $product = \App\Models\Product::with('seller:id,business_name,name,profile_photo')
+        ->sellerActive() // product page of a deactivated seller is a 404
         ->findOrFail($id);
     
     return Inertia::render('ProductDetail', [
@@ -1955,7 +2063,7 @@ Route::get('/product/{id}', function (string $id) {
             'sku' => $product->sku,
             'seller_name' => $product->seller->business_name ?? $product->seller->name,
             'seller_id' => $product->seller_id,
-            'seller_profile_photo' => $product->seller->profile_photo ? asset('storage/' . $product->seller->profile_photo) : null,
+            'seller_profile_photo' => \App\Support\AvatarUrl::fromPath($product->seller->profile_photo),
             'has_variants' => $product->has_variants ?? false,
             'variant_options' => $product->variant_options ?? null,
             'variants' => $product->variants ?? null,
@@ -1978,6 +2086,7 @@ Route::get('/product/{id}', function (string $id) {
 Route::get('/seller/{id}', function (string $id) {
     $seller = \App\Models\User::where('id', $id)
         ->where('account_type', 'seller')
+        ->whereNotIn('status', \App\Support\AccountStatus::BLOCKED) // deactivated / suspended stores are hidden
         ->firstOrFail();
     
     $sellerData = [
@@ -1985,7 +2094,7 @@ Route::get('/seller/{id}', function (string $id) {
         'name' => $seller->name,
         'business_name' => $seller->business_name,
         'email' => $seller->email,
-        'profile_photo_url' => $seller->profile_photo ? asset('storage/' . $seller->profile_photo) : null,
+        'profile_photo_url' => \App\Support\AvatarUrl::fromPath($seller->profile_photo),
         'cover_photo_url' => $seller->cover_photo ? asset('storage/' . $seller->cover_photo) : null,
     ];
     
@@ -1999,6 +2108,7 @@ Route::get('/seller/{id}', function (string $id) {
 
 Route::get('/category/{category}', function (string $category) {
     $products = \App\Models\Product::with('seller:id,business_name,name')
+        ->sellerActive()
         ->where('category', $category)
         ->where('status', 'active')
         ->orderBy('created_at', 'desc')
@@ -2024,9 +2134,6 @@ Route::get('/category/{category}', function (string $category) {
     ]);
 })->name('category.show');
 
-// Google OAuth routes
-Route::get('/auth/google', [SocialiteController::class, 'redirectToGoogle'])->name('auth.google');
-Route::get('/auth/google/callback', [SocialiteController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 
 // Waybill QR code (public for scanning)
 Route::get('/waybill/{waybillNumber}/qr', [\App\Http\Controllers\WaybillController::class, 'qrCode'])->name('waybill.qr');
@@ -2154,6 +2261,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Product Reports
     Route::post('/api/products/{id}/report', [ProductController::class, 'reportProduct']);
+
+    // Parcel problem reports (buyer, web session). Same controller as the app.
+    Route::get('/buyer/orders/{id}/parcel-report', [\App\Http\Controllers\Api\ParcelReportController::class, 'buyerShow'])->middleware('throttle:60,1,web-parcel-report-show')->whereNumber('id');
+    Route::post('/buyer/orders/{id}/parcel-report', [\App\Http\Controllers\Api\ParcelReportController::class, 'buyerStore'])->middleware('throttle:10,1,web-parcel-report')->whereNumber('id');
+
+    // Support tickets (web session: buyer + seller pages; JSON shared with the apps).
+    Route::get('/support', [\App\Http\Controllers\SupportTicketController::class, 'buyerPage'])->middleware('role:buyer')->name('buyer.support');
+    Route::get('/complaints', [\App\Http\Controllers\Buyer\ComplaintController::class, 'index'])->middleware('role:buyer')->name('buyer.complaints');
+    Route::post('/complaints', [\App\Http\Controllers\Buyer\ComplaintController::class, 'store'])->middleware(['role:buyer', 'throttle:10,1,buyer-complaint'])->name('buyer.complaints.store');
+    Route::get('/seller/support', [\App\Http\Controllers\SupportTicketController::class, 'sellerPage'])->middleware(['role:seller', 'approved'])->name('seller.support');
+    Route::get('/support/attachments/{id}', [\App\Http\Controllers\SupportAttachmentController::class, 'show'])->middleware('throttle:120,1,web-support-file')->whereNumber('id');
+    Route::get('/support/tickets', [\App\Http\Controllers\SupportTicketController::class, 'index'])->middleware('throttle:60,1,web-support-list');
+    Route::post('/support/tickets', [\App\Http\Controllers\SupportTicketController::class, 'store'])->middleware('throttle:5,1,web-support-store');
+    Route::get('/support/tickets/{id}', [\App\Http\Controllers\SupportTicketController::class, 'show'])->middleware('throttle:60,1,web-support-show')->whereNumber('id');
+    Route::post('/support/tickets/{id}/replies', [\App\Http\Controllers\SupportTicketController::class, 'reply'])->middleware('throttle:20,1,web-support-reply')->whereNumber('id');
 });
 
 // Protected seller product routes
@@ -2248,23 +2370,63 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('/vouchers/{voucher}/toggle', [App\Http\Controllers\Admin\VoucherController::class, 'toggleStatus']);
         
         // Banner Management
-        Route::get('/banners', function () {
-            return Inertia::render('admin/BannerManagement');
-        })->name('banners');
+        Route::get('/banners', [\App\Http\Controllers\Admin\BannerController::class, 'page'])->name('banners');
+        Route::get('/banners/data', [\App\Http\Controllers\Admin\BannerController::class, 'data'])->middleware('throttle:120,1,admin-banners-read');
+        Route::post('/banners', [\App\Http\Controllers\Admin\BannerController::class, 'store'])->middleware('throttle:30,1,admin-banners-write');
+        Route::post('/banners/{id}', [\App\Http\Controllers\Admin\BannerController::class, 'update'])->middleware('throttle:30,1,admin-banners-write')->whereNumber('id');
+        Route::post('/banners/{id}/toggle', [\App\Http\Controllers\Admin\BannerController::class, 'toggle'])->middleware('throttle:60,1,admin-banners-write')->whereNumber('id');
+        Route::post('/banners/{id}/move', [\App\Http\Controllers\Admin\BannerController::class, 'move'])->middleware('throttle:60,1,admin-banners-write')->whereNumber('id');
+        Route::delete('/banners/{id}', [\App\Http\Controllers\Admin\BannerController::class, 'destroy'])->middleware('throttle:30,1,admin-banners-write')->whereNumber('id');
         
-        Route::get('/manage-registrations', [AdminController::class, 'manageRegistrations'])->name('manage-registrations');
-        Route::post('/registrations/{userId}/approve', [AdminController::class, 'approveRegistration'])->name('registrations.approve');
-        Route::post('/registrations/{userId}/disapprove', [AdminController::class, 'disapproveRegistration'])->name('registrations.disapprove');
         
+        // Generate Reports (Sales Summary / Commission; CSV export)
+        Route::get('/generate-reports', [\App\Http\Controllers\Admin\AdminReportsController::class, 'page'])->name('generate-reports');
+        Route::get('/generate-reports/export', [\App\Http\Controllers\Admin\AdminReportsController::class, 'export'])->middleware('throttle:20,1,admin-report-export')->name('generate-reports.export');
+
+        Route::get('/pending-approval', fn () => redirect('/admin/accounts-approval?status=pending'))->name('pending-approval');
+
+        // ERP: Manage User Accounts
+        Route::get('/user-accounts', [\App\Http\Controllers\Admin\UserAccountsController::class, 'index'])->name('user-accounts');
+        Route::get('/user-accounts/{id}', [\App\Http\Controllers\Admin\UserAccountsController::class, 'show'])->name('user-accounts.show')->whereNumber('id');
+        Route::post('/user-accounts/{id}/status', [\App\Http\Controllers\Admin\UserAccountsController::class, 'updateStatus'])->middleware('throttle:30,1,admin-user-status')->name('user-accounts.status')->whereNumber('id');
+
+        // ERP: Monitor Seller Compliance
+        Route::get('/seller-compliance', [\App\Http\Controllers\Admin\SellerComplianceController::class, 'index'])->name('seller-compliance');
+        Route::post('/seller-compliance/sellers/{seller}/warn', [\App\Http\Controllers\Admin\SellerComplianceController::class, 'warn'])->middleware('throttle:30,1,admin-compliance')->whereNumber('seller');
+        Route::post('/seller-compliance/products/{product}/hide', [\App\Http\Controllers\Admin\SellerComplianceController::class, 'hide'])->middleware('throttle:30,1,admin-compliance')->whereNumber('product');
+        Route::post('/seller-compliance/products/{product}/unhide', [\App\Http\Controllers\Admin\SellerComplianceController::class, 'unhide'])->middleware('throttle:30,1,admin-compliance')->whereNumber('product');
+        Route::delete('/seller-compliance/products/{product}', [\App\Http\Controllers\Admin\SellerComplianceController::class, 'remove'])->middleware('throttle:30,1,admin-compliance')->whereNumber('product');
+
+        // ERP: Manage Complaints and Disputes
+        Route::get('/complaints', [\App\Http\Controllers\Admin\ComplaintsController::class, 'index'])->name('complaints');
+        Route::get('/complaints/{id}', [\App\Http\Controllers\Admin\ComplaintsController::class, 'show'])->whereNumber('id');
+        Route::post('/complaints/{id}', [\App\Http\Controllers\Admin\ComplaintsController::class, 'update'])->middleware('throttle:60,1,admin-complaint-update')->whereNumber('id');
+        Route::get('/complaints/{id}/evidence/{index}', [\App\Http\Controllers\Admin\ComplaintsController::class, 'evidence'])->name('complaints.evidence')->whereNumber(['id', 'index']);
+
+        // ERP: Manage Commission (10%)
+        Route::get('/commission', [\App\Http\Controllers\Admin\CommissionController::class, 'index'])->name('commission');
+
+        // ERP: Manage Platform Settings
+        Route::get('/platform-settings', [\App\Http\Controllers\Admin\PlatformSettingsController::class, 'index'])->name('platform-settings');
+        Route::post('/platform-settings/announcements', [\App\Http\Controllers\Admin\PlatformSettingsController::class, 'saveAnnouncement'])->middleware('throttle:30,1,admin-announce');
+        Route::put('/platform-settings/announcements/{id}', [\App\Http\Controllers\Admin\PlatformSettingsController::class, 'saveAnnouncement'])->middleware('throttle:30,1,admin-announce')->whereNumber('id');
+        Route::post('/platform-settings/announcements/{id}/publish', [\App\Http\Controllers\Admin\PlatformSettingsController::class, 'publishAnnouncement'])->middleware('throttle:10,1,admin-announce-publish')->whereNumber('id');
+        Route::post('/platform-settings/announcements/{id}/unpublish', [\App\Http\Controllers\Admin\PlatformSettingsController::class, 'unpublishAnnouncement'])->middleware('throttle:30,1,admin-announce')->whereNumber('id');
+        Route::delete('/platform-settings/announcements/{id}', [\App\Http\Controllers\Admin\PlatformSettingsController::class, 'deleteAnnouncement'])->middleware('throttle:30,1,admin-announce')->whereNumber('id');
+        Route::post('/platform-settings/policies', [\App\Http\Controllers\Admin\PlatformSettingsController::class, 'savePolicy'])->middleware('throttle:20,1,admin-policy');
+        Route::post('/platform-settings/keywords', [\App\Http\Controllers\Admin\PlatformSettingsController::class, 'saveKeywords'])->middleware('throttle:20,1,admin-keywords');
+
         // Seller approval routes
-        Route::get('/seller-approval', [AdminController::class, 'sellerApproval'])->name('seller-approval');
+        // One approval page for every role that needs admin approval (seller, logistics)
+        Route::get('/accounts-approval', [AdminController::class, 'accountsApproval'])->name('accounts-approval');
+        Route::get('/seller-approval', fn () => redirect('/admin/accounts-approval?type=seller'))->name('seller-approval');
         Route::get('/seller-approval/{userId}/details', [AdminController::class, 'getSellerDetails'])->name('seller-approval.details');
         Route::get('/seller-approval/{userId}/download/{type}', [AdminController::class, 'downloadDocument'])->name('download-document');
         Route::post('/seller-approval/{userId}/approve', [AdminController::class, 'approveSellerRegistration'])->name('seller-approval.approve');
         Route::post('/seller-approval/{userId}/disapprove', [AdminController::class, 'disapproveSellerRegistration'])->name('seller-approval.disapprove');
         
         // Logistics approval routes
-        Route::get('/logistics-approval', [AdminController::class, 'logisticsApproval'])->name('logistics-approval');
+        Route::get('/logistics-approval', fn () => redirect('/admin/accounts-approval?type=logistics'))->name('logistics-approval');
         Route::get('/logistics-approval/{userId}/details', [AdminController::class, 'getLogisticsDetails'])->name('logistics-approval.details');
         Route::post('/logistics-approval/{userId}/approve', [AdminController::class, 'approveLogisticsRegistration'])->name('logistics-approval.approve');
         Route::post('/logistics-approval/{userId}/disapprove', [AdminController::class, 'disapproveLogisticsRegistration'])->name('logistics-approval.disapprove');
@@ -2295,8 +2457,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/notifications/read-all', [\App\Http\Controllers\Admin\AdminAccountController::class, 'markAllRead'])->middleware('throttle:30,1,admin-notif-readall');
         Route::post('/notifications/{id}/read', [\App\Http\Controllers\Admin\AdminAccountController::class, 'markRead'])->middleware('throttle:120,1,admin-notif-read')->whereNumber('id');
         Route::get('/settings', [\App\Http\Controllers\Admin\AdminAccountController::class, 'settingsPage'])->name('settings');
+        Route::post('/settings/platform', [\App\Http\Controllers\Admin\AdminAccountController::class, 'updatePlatform'])->middleware('throttle:20,1,admin-settings-platform');
         Route::post('/settings/profile', [\App\Http\Controllers\Admin\AdminAccountController::class, 'updateProfile'])->middleware('throttle:20,1,admin-settings-profile');
         Route::post('/settings/password', [\App\Http\Controllers\Admin\AdminAccountController::class, 'updatePassword'])->middleware('throttle:5,1,admin-settings-password');
+
+        // Parcel reports (admin reviews / resolves; note is internal)
+        Route::get('/parcel-reports', [\App\Http\Controllers\Admin\ParcelReportsController::class, 'page'])->name('parcel-reports');
+        Route::get('/parcel-reports/feed', [\App\Http\Controllers\Admin\ParcelReportsController::class, 'feed'])->middleware('throttle:120,1,admin-parcel-feed');
+        Route::post('/parcel-reports/{id}/status', [\App\Http\Controllers\Admin\ParcelReportsController::class, 'status'])->middleware('throttle:60,1,admin-parcel-status')->whereNumber('id');
+
+        // Support tickets
+        Route::get('/support', [\App\Http\Controllers\Admin\SupportTicketsController::class, 'page'])->name('support');
+        Route::get('/support/attachments/{id}', [\App\Http\Controllers\SupportAttachmentController::class, 'show'])->middleware('throttle:120,1,admin-support-file')->whereNumber('id');
+        Route::get('/support/feed', [\App\Http\Controllers\Admin\SupportTicketsController::class, 'feed'])->middleware('throttle:120,1,admin-support-feed');
+        Route::get('/support/{id}', [\App\Http\Controllers\Admin\SupportTicketsController::class, 'show'])->middleware('throttle:120,1,admin-support-show')->whereNumber('id');
+        Route::post('/support/{id}/reply', [\App\Http\Controllers\Admin\SupportTicketsController::class, 'reply'])->middleware('throttle:60,1,admin-support-reply')->whereNumber('id');
+        Route::post('/support/{id}/status', [\App\Http\Controllers\Admin\SupportTicketsController::class, 'status'])->middleware('throttle:60,1,admin-support-status')->whereNumber('id');
 
         // Escalated returns (admin decides)
         Route::get('/returns', [\App\Http\Controllers\Admin\ReturnsController::class, 'page'])->name('returns');

@@ -1,3 +1,4 @@
+import { AnnouncementBanner } from '@/components/announcement-banner';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     BarChart3,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { NotificationBell } from '@/components/notification-bell';
+import { CurrentUserAvatar } from '@/components/user-avatar';
 import { BRAND_GRADIENT, CowMark } from '@/components/courier/ui';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
@@ -158,13 +160,6 @@ export default function CourierLayout({ auth, company, activeTab, pageTitle, chi
         };
     }, [drawer]);
 
-    const initials = auth.user.name
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((p) => p[0])
-        .join('')
-        .toUpperCase();
 
     return (
         <>
@@ -199,7 +194,7 @@ export default function CourierLayout({ auth, company, activeTab, pageTitle, chi
 
                 <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
                     {/* Top bar */}
-                    <header className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200/70 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
+                    <header className="relative z-40 flex shrink-0 items-center justify-between gap-3 border-b border-gray-200/70 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
                         <div className="flex min-w-0 items-center gap-3">
                             <button
                                 type="button"
@@ -235,9 +230,7 @@ export default function CourierLayout({ auth, company, activeTab, pageTitle, chi
                                     onClick={() => setShowUserMenu(!showUserMenu)}
                                     className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-gray-100"
                                 >
-                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#2B2249] to-[#6a5a8a] text-xs font-bold text-white">
-                                        {initials || '?'}
-                                    </span>
+                                    <CurrentUserAvatar fallbackName={auth.user.name} className="h-8 w-8 text-xs" />
                                     <span className="hidden max-w-[140px] truncate text-sm font-semibold text-gray-800 md:block">{auth.user.name}</span>
                                     <ChevronDown className="hidden h-4 w-4 text-gray-400 md:block" />
                                 </button>
@@ -263,7 +256,10 @@ export default function CourierLayout({ auth, company, activeTab, pageTitle, chi
                         </div>
                     </header>
 
-                    <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
+                    <main className="flex-1 overflow-auto p-4 sm:p-6">
+                        <AnnouncementBanner className="mb-4" />
+                        {children}
+                    </main>
                 </div>
             </div>
         </>

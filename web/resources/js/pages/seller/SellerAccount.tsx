@@ -513,13 +513,6 @@ function VerificationSection() {
                 </>
             )}
 
-            {/* demo-only controls so you can preview each state; remove once the backend sets this */}
-            <div className={`mt-6 pt-4 border-t border-dashed ${BORDER} flex items-center gap-2 flex-wrap text-xs text-[#6E6570]`}>
-                <span>Preview status (demo only):</span>
-                {(['pending', 'verified', 'rejected'] as const).map((s) => (
-                    <button key={s} type="button" onClick={() => { setStatus(s); setEditing(false); }} className={`px-2.5 py-1 rounded-full font-bold ${status === s ? 'bg-[#4B2E7E] text-white' : `${LAV100} text-[#6E6570]`}`}>{s}</button>
-                ))}
-            </div>
         </Card>
     );
 }

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Head, router, usePage } from "@inertiajs/react";
-import { ArrowLeft, Bike, Loader2, Store } from "lucide-react";
+import { ArrowLeft, Bike, HelpCircle, Loader2, Store } from "lucide-react";
 import { BuyerHeader } from "@/components/buyer-header";
 import { csrfHeaders } from "@/components/notification-bell";
 import { ChatInbox, type ChatThreadView } from "@/components/chat/chat-inbox";
 import { RiderChatPanel } from "@/components/buyer/rider-chat";
+import NeedHelpModal from "@/components/support/need-help-modal";
 
 // ---------------------------------------------------------------------------
 // Buyer inbox (web).
@@ -197,6 +198,7 @@ export default function BuyerMessages() {
       }
     : undefined;
 
+  const [helpOpen, setHelpOpen] = useState(false);
   const tabBtn = (key: "sellers" | "riders", label: string, Icon: typeof Store, count: number) => (
     <button
       type="button"
@@ -238,6 +240,14 @@ export default function BuyerMessages() {
           <div className="flex gap-2">
             {tabBtn("sellers", "Sellers", Store, unread)}
             {tabBtn("riders", "Riders", Bike, riderUnread)}
+            <button
+              type="button"
+              onClick={() => setHelpOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-1.5 text-sm font-semibold text-amber-800 ring-1 ring-amber-200 transition hover:bg-amber-100"
+            >
+              <HelpCircle className="h-4 w-4" />
+              Need Help
+            </button>
           </div>
         </div>
 
@@ -261,6 +271,7 @@ export default function BuyerMessages() {
           <RiderInbox initialOrderId={riderOrderId ?? null} onUnreadTotal={setRiderUnread} />
         </div>
       </main>
+      <NeedHelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 }

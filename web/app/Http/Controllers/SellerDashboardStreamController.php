@@ -98,11 +98,7 @@ class SellerDashboardStreamController extends Controller
         $totalStock = $products->sum('stock');
 
         // Calculate total sold (only from valid orders)
-        $totalSold = OrderItem::where('seller_id', $sellerId)
-            ->whereHas('order', function ($query) {
-                $query->whereNotIn('status', ['cancelled', 'failed']);
-            })
-            ->sum('quantity');
+        $totalSold = \App\Support\SoldStats::total($sellerId);
 
         // Calculate total revenue (only from valid orders)
         $totalRevenue = OrderItem::where('seller_id', $sellerId)
@@ -128,7 +124,7 @@ class SellerDashboardStreamController extends Controller
                     'product_name' => $item->product_name,
                     'quantity' => $item->quantity,
                     'total' => (float) ($item->quantity * $item->unit_price),
-                    'status' => $item->order->status,
+                    'status' => \App\Http\Controllers\SellerDashboardController::mapOrderStatus((string) $item->order->status, $item->order->tracking_status),
                     'created_at' => $item->created_at->diffForHumans(),
                     'is_new' => $item->created_at->greaterThan(now()->subMinutes(5)),
                 ];

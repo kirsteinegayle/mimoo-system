@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../models/courier_models.dart';
@@ -28,6 +29,10 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
   bool _lookingUp = false;
   bool _confirming = false;
   bool _cameraOn = true;
+  // mobile_scanner asks for the camera itself on start; a denial lands in errorBuilder, which shows
+  // this state (with Allow camera / Open Settings) instead of a black box.
+  PermissionStatus _camStatus = PermissionStatus.denied;
+  bool _camDenied = false;
   bool _torchOn = false;
   String? _lastCode;
   DateTime? _lastScanAt;
@@ -43,6 +48,37 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
     _loadFacilities();
   }
 
+  /// Used by the "Allow camera" button and when returning from Settings:
+  /// ask again (unless permanently denied) and restart the preview.
+  Future<void> _retryCamera({bool ask = true}) async {
+    var status = PermissionStatus.denied;
+    try {
+      status = await Permission.camera.status;
+      if (!status.isGranted && !status.isPermanentlyDenied && ask) {
+        status = await Permission.camera.request();
+      }
+    } catch (_) {
+      // plugin unavailable: leave the denied state with manual entry
+    }
+    if (!mounted) return;
+    setState(() {
+      _camStatus = status;
+      _camDenied = !status.isGranted;
+    });
+    if (status.isGranted) {
+      try {
+        await _scanner.start();
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _syncCamStatus() async {
+    try {
+      final status = await Permission.camera.status;
+      if (mounted) setState(() => _camStatus = status);
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -53,6 +89,10 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Back from the system Settings screen: pick up a permission change.
+    if (state == AppLifecycleState.resumed && _camDenied) {
+      unawaited(_retryCamera(ask: false));
+    }
     if (!_scanner.value.isInitialized) return;
     if (state == AppLifecycleState.resumed) {
       unawaited(_scanner.start());
@@ -75,6 +115,7 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
     }
     _lastCode = upper;
     _lastScanAt = now;
+    HapticFeedback.selectionClick(); // a code was read
     _waybillCtrl.text = upper;
     _lookup();
   }
@@ -149,6 +190,7 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
         _selectedFacility!.id,
       );
       if (!mounted) return;
+      HapticFeedback.mediumImpact(); // accepted
       setState(() {
         _confirmMsg = 'Parcel received at ${_selectedFacility!.facilityName}!';
         _confirmColor = kGreen;
@@ -160,9 +202,11 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
       });
     } on ApiException catch (e) {
       if (!mounted) return;
+      // Refused by the server: nothing changed, the reason is shown as-is and the attempt is audited server-side.
+      HapticFeedback.heavyImpact();
       setState(() {
         _confirming = false;
-        _confirmMsg = e.message;
+        _confirmMsg = 'Scan rejected: ${e.message}';
         _confirmColor = kFlash;
       });
     } catch (e) {
@@ -205,11 +249,25 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
                   border: Border.all(color: kBorder),
                 ),
                 child: Stack(fit: StackFit.expand, children: [
-                  MobileScanner(
-                    controller: _scanner,
-                    onDetect: _onDetect,
-                    errorBuilder: (_, __, ___) => _cameraDenied(),
-                  ),
+                  if (_camDenied)
+                    _cameraDenied()
+                  else
+                    MobileScanner(
+                      controller: _scanner,
+                      onDetect: _onDetect,
+                      errorBuilder: (_, __, ___) {
+                        // Denied (or no camera): show the explanation once, outside the build.
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted && !_camDenied) {
+                            setState(() => _camDenied = true);
+                            // Learn WHY (never asked vs. permanently denied) so the panel
+                            // offers "Allow camera" or only "Open Settings" correctly.
+                            unawaited(_syncCamStatus());
+                          }
+                        });
+                        return _cameraDenied();
+                      },
+                    ),
                   IgnorePointer(
                     child: Center(
                       child: LayoutBuilder(
@@ -245,7 +303,11 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
                       ),
                       IconButton(
                         tooltip: 'Hide camera',
-                        onPressed: () => setState(() => _cameraOn = false),
+                        onPressed: () {
+                          // Release the camera while the preview is hidden.
+                          unawaited(_scanner.stop().catchError((_) {}));
+                          setState(() => _cameraOn = false);
+                        },
                         icon: const Icon(Icons.close,
                             color: Colors.white, size: 20),
                       ),
@@ -264,7 +326,7 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
                           borderRadius: BorderRadius.circular(99),
                         ),
                         child: Text('Align the code within the frame',
-                            style: pjs(size: 10, color: Colors.white)),
+                            style: pjs(size: 11, color: Colors.white)),
                       ),
                     ),
                   ),
@@ -389,6 +451,7 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
                 const SizedBox(height: 8),
                 // ignore: deprecated_member_use
                 DropdownButtonFormField<FacilityItem>(
+                  isExpanded: true, // long facility names must ellipsize, not overflow
                   initialValue: _selectedFacility,
                   onChanged: (f) => setState(() => _selectedFacility = f),
                   decoration: InputDecoration(
@@ -401,7 +464,10 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
                   items: _facilities
                       .map((f) => DropdownMenuItem(
                             value: f,
-                            child: Text(f.displayLabel, style: pjs(size: 13)),
+                            child: Text(f.displayLabel,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: pjs(size: 13)),
                           ))
                       .toList(),
                 ),
@@ -456,8 +522,19 @@ class _ScanTabState extends State<ScanTab> with WidgetsBindingObserver {
               textAlign: TextAlign.center,
               style: pjs(size: 11, color: Colors.white60)),
           const SizedBox(height: 6),
+          if (!_camStatus.isPermanentlyDenied)
+            FilledButton.icon(
+              onPressed: () => unawaited(_retryCamera()),
+              style: FilledButton.styleFrom(
+                  backgroundColor: kSecondary, minimumSize: const Size(48, 48)),
+              icon: const Icon(Icons.videocam, size: 18),
+              label: Text('Allow camera',
+                  style: pjs(
+                      size: 12, weight: FontWeight.w700, color: Colors.white)),
+            ),
           TextButton.icon(
             onPressed: () => unawaited(openAppSettings()),
+            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
             icon: const Icon(Icons.settings, size: 16),
             label: Text('Open Settings',
                 style: pjs(size: 12, weight: FontWeight.w700)),

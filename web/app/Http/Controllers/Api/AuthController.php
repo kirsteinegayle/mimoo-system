@@ -32,6 +32,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid email or password.'], 401);
         }
 
+        if ($blocked = \App\Support\AccountStatus::blockReason($user)) {
+            return response()->json(['message' => $blocked], 403);
+        }
+
         if ($user->verification_status !== 'verified') {
             return response()->json(['message' => 'Please verify your email first.'], 403);
         }
@@ -65,6 +69,10 @@ class AuthController extends Controller
 
         if ($user->account_type !== 'buyer') {
             return response()->json(['message' => 'This app is for buyer accounts only.'], 401);
+        }
+
+        if ($blocked = \App\Support\AccountStatus::blockReason($user)) {
+            return response()->json(['message' => $blocked], 403);
         }
 
         if ($user->verification_status !== 'verified') {

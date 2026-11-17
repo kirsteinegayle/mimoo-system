@@ -1,11 +1,13 @@
 import { Head, router } from '@inertiajs/react';
 import { ReactNode, useState } from 'react';
 import CourierLayout from './CourierLayout';
+import { UserAvatar } from '@/components/user-avatar';
 
 interface Rider {
     id: number;
     rider_id: string;
     full_name: string;
+    profile_photo_url?: string | null;
     email: string;
     contact_number: string;
     assigned_branch: {
@@ -21,12 +23,14 @@ interface Rider {
     service_areas: string[];
     region: string;
     province: string | null;
-    municipality_city: string;
+    municipality_city: string | null;
     barangay: string;
     street_address: string;
     postal_code: string | null;
     created_at: string;
 }
+
+const municipalityLabel = (v?: string | null) => (v && v.trim() ? v.trim() : 'Not set');
 
 interface Props {
     auth: {
@@ -253,6 +257,7 @@ export default function RiderManagement({ auth, company, pendingApplications = [
                                                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Contact</th>
                                                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Branch</th>
                                                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Vehicle</th>
+                                                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Municipality</th>
                                                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Applied</th>
                                                 <th className="text-right py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Actions</th>
                                             </tr>
@@ -261,8 +266,13 @@ export default function RiderManagement({ auth, company, pendingApplications = [
                                             {pendingApplications.map((rider) => (
                                                 <tr key={rider.id} className="border-b border-gray-100 hover:bg-gray-50">
                                                     <td className="py-4 px-4">
-                                                        <div className="font-medium text-gray-900">{rider.full_name}</div>
-                                                        <div className="text-sm text-gray-500">{rider.email}</div>
+                                                        <div className="flex items-center gap-3">
+                                                            <UserAvatar src={rider.profile_photo_url} name={rider.full_name} className="h-9 w-9 text-xs" />
+                                                            <div className="min-w-0">
+                                                                <div className="font-medium text-gray-900">{rider.full_name}</div>
+                                                                <div className="text-sm text-gray-500">{rider.email}</div>
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                     <td className="py-4 px-4">
                                                         <div className="text-sm text-gray-900">{rider.contact_number}</div>
@@ -282,6 +292,11 @@ export default function RiderManagement({ auth, company, pendingApplications = [
                                                         {rider.plate_number && (
                                                             <div className="text-xs text-gray-500">{rider.plate_number}</div>
                                                         )}
+                                                    </td>
+                                                    <td className="py-4 px-4">
+                                                        <div className={`text-sm ${municipalityLabel(rider.municipality_city) === 'Not set' ? 'italic text-gray-400' : 'text-gray-900'}`}>
+                                                            {municipalityLabel(rider.municipality_city)}
+                                                        </div>
                                                     </td>
                                                     <td className="py-4 px-4">
                                                         <div className="text-sm text-gray-600">
@@ -346,6 +361,7 @@ export default function RiderManagement({ auth, company, pendingApplications = [
                                                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Contact</th>
                                                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Branch</th>
                                                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Vehicle</th>
+                                                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Municipality</th>
                                                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Status</th>
                                                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Availability</th>
                                                 <th className="text-right py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Actions</th>
@@ -355,8 +371,13 @@ export default function RiderManagement({ auth, company, pendingApplications = [
                                             {allRiders.map((rider) => (
                                                 <tr key={rider.id} className="border-b border-gray-100 hover:bg-gray-50">
                                                     <td className="py-4 px-4">
-                                                        <div className="font-medium text-gray-900">{rider.full_name}</div>
-                                                        <div className="text-sm text-gray-500">{rider.email}</div>
+                                                        <div className="flex items-center gap-3">
+                                                            <UserAvatar src={rider.profile_photo_url} name={rider.full_name} className="h-9 w-9 text-xs" />
+                                                            <div className="min-w-0">
+                                                                <div className="font-medium text-gray-900">{rider.full_name}</div>
+                                                                <div className="text-sm text-gray-500">{rider.email}</div>
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                     <td className="py-4 px-4">
                                                         <div className="text-sm font-mono text-gray-900">{rider.rider_id}</div>
@@ -373,6 +394,11 @@ export default function RiderManagement({ auth, company, pendingApplications = [
                                                         {rider.plate_number && (
                                                             <div className="text-xs text-gray-500">{rider.plate_number}</div>
                                                         )}
+                                                    </td>
+                                                    <td className="py-4 px-4">
+                                                        <div className={`text-sm ${municipalityLabel(rider.municipality_city) === 'Not set' ? 'italic text-gray-400' : 'text-gray-900'}`}>
+                                                            {municipalityLabel(rider.municipality_city)}
+                                                        </div>
                                                     </td>
                                                     <td className="py-4 px-4">
                                                         {getEmploymentBadge(rider.employment_status)}
@@ -531,7 +557,7 @@ export default function RiderManagement({ auth, company, pendingApplications = [
                                     </div>
                                     <div>
                                         <div className="text-gray-600">City/Municipality</div>
-                                        <div className="text-gray-900">{selectedRider.municipality_city}</div>
+                                        <div className="text-gray-900">{municipalityLabel(selectedRider.municipality_city)}</div>
                                     </div>
                                     {selectedRider.province && (
                                         <div>

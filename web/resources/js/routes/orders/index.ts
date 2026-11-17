@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\OrderController::index
- * @see app/Http/Controllers/OrderController.php:364
+ * @see app/Http/Controllers/OrderController.php:541
  * @route '/orders'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\OrderController::index
- * @see app/Http/Controllers/OrderController.php:364
+ * @see app/Http/Controllers/OrderController.php:541
  * @route '/orders'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\OrderController::index
- * @see app/Http/Controllers/OrderController.php:364
+ * @see app/Http/Controllers/OrderController.php:541
  * @route '/orders'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\OrderController::index
- * @see app/Http/Controllers/OrderController.php:364
+ * @see app/Http/Controllers/OrderController.php:541
  * @route '/orders'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\OrderController::index
- * @see app/Http/Controllers/OrderController.php:364
+ * @see app/Http/Controllers/OrderController.php:541
  * @route '/orders'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\OrderController::index
- * @see app/Http/Controllers/OrderController.php:364
+ * @see app/Http/Controllers/OrderController.php:541
  * @route '/orders'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\OrderController::index
- * @see app/Http/Controllers/OrderController.php:364
+ * @see app/Http/Controllers/OrderController.php:541
  * @route '/orders'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\OrderController::success
- * @see app/Http/Controllers/OrderController.php:330
+ * @see app/Http/Controllers/OrderController.php:507
  * @route '/orders/success'
  */
 export const success = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ success.definition = {
 
 /**
 * @see \App\Http\Controllers\OrderController::success
- * @see app/Http/Controllers/OrderController.php:330
+ * @see app/Http/Controllers/OrderController.php:507
  * @route '/orders/success'
  */
 success.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ success.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\OrderController::success
- * @see app/Http/Controllers/OrderController.php:330
+ * @see app/Http/Controllers/OrderController.php:507
  * @route '/orders/success'
  */
 success.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ success.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\OrderController::success
- * @see app/Http/Controllers/OrderController.php:330
+ * @see app/Http/Controllers/OrderController.php:507
  * @route '/orders/success'
  */
 success.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ success.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\OrderController::success
- * @see app/Http/Controllers/OrderController.php:330
+ * @see app/Http/Controllers/OrderController.php:507
  * @route '/orders/success'
  */
     const successForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ success.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\OrderController::success
- * @see app/Http/Controllers/OrderController.php:330
+ * @see app/Http/Controllers/OrderController.php:507
  * @route '/orders/success'
  */
         successForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ success.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\OrderController::success
- * @see app/Http/Controllers/OrderController.php:330
+ * @see app/Http/Controllers/OrderController.php:507
  * @route '/orders/success'
  */
         successForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ success.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     success.form = successForm
 /**
 * @see \App\Http\Controllers\OrderController::show
- * @see app/Http/Controllers/OrderController.php:520
+ * @see app/Http/Controllers/OrderController.php:697
  * @route '/orders/{id}'
  */
 export const show = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -172,7 +172,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\OrderController::show
- * @see app/Http/Controllers/OrderController.php:520
+ * @see app/Http/Controllers/OrderController.php:697
  * @route '/orders/{id}'
  */
 show.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -200,7 +200,7 @@ show.url = (args: { id: string | number } | [id: string | number ] | string | nu
 
 /**
 * @see \App\Http\Controllers\OrderController::show
- * @see app/Http/Controllers/OrderController.php:520
+ * @see app/Http/Controllers/OrderController.php:697
  * @route '/orders/{id}'
  */
 show.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -209,7 +209,7 @@ show.get = (args: { id: string | number } | [id: string | number ] | string | nu
 })
 /**
 * @see \App\Http\Controllers\OrderController::show
- * @see app/Http/Controllers/OrderController.php:520
+ * @see app/Http/Controllers/OrderController.php:697
  * @route '/orders/{id}'
  */
 show.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -219,7 +219,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
 
     /**
 * @see \App\Http\Controllers\OrderController::show
- * @see app/Http/Controllers/OrderController.php:520
+ * @see app/Http/Controllers/OrderController.php:697
  * @route '/orders/{id}'
  */
     const showForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -229,7 +229,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
 
             /**
 * @see \App\Http\Controllers\OrderController::show
- * @see app/Http/Controllers/OrderController.php:520
+ * @see app/Http/Controllers/OrderController.php:697
  * @route '/orders/{id}'
  */
         showForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -238,7 +238,7 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
         })
             /**
 * @see \App\Http\Controllers\OrderController::show
- * @see app/Http/Controllers/OrderController.php:520
+ * @see app/Http/Controllers/OrderController.php:697
  * @route '/orders/{id}'
  */
         showForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

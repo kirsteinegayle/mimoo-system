@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Bike, Loader2, Lock, Send, X } from "lucide-react";
 import { csrfHeaders } from "@/components/notification-bell";
+import { UserAvatar } from "@/components/user-avatar";
 
 // ---------------------------------------------------------------------------
 // Buyer <-> rider delivery chat (web). Same DeliveryChatController and JSON as
@@ -24,6 +25,7 @@ interface Meta {
   job_status: string;
   can_send: boolean;
   counterpart_name: string;
+  counterpart_photo_url?: string | null;
 }
 
 const POLL_MS = 5000;
@@ -152,9 +154,13 @@ export function RiderChatPanel({ orderId, onRead }: { orderId: number; onRead?: 
   return (
     <div className="flex h-full min-h-0 flex-col bg-white text-gray-900">
       <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4B2E7E] text-white">
-          <Bike className="h-4 w-4" />
-        </span>
+        {meta?.counterpart_photo_url ? (
+          <UserAvatar src={meta.counterpart_photo_url} name={meta.counterpart_name ?? "Rider"} className="h-9 w-9 text-xs" />
+        ) : (
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4B2E7E] text-white">
+            <Bike className="h-4 w-4" />
+          </span>
+        )}
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{meta?.counterpart_name ?? "Your rider"}</p>
           <p className="text-xs text-gray-500">{meta ? JOB_STATUS[meta.job_status] ?? meta.job_status : "Delivery rider"}</p>

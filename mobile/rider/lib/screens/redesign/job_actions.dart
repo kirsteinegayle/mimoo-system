@@ -109,12 +109,29 @@ void openMessages(BuildContext context) {
 Future<void> openMockScan(BuildContext context, {MockJob? expected}) async {
   final mock = RiderMock.instance;
   MockJob? scanned;
+  String? serverAction;
+  // API mode: the server validates (and audits) every scan; the screen only shows its answer.
+  final intent = switch (expected?.stage) {
+    MockStage.readyToPickUp => 'pickup',
+    MockStage.pickedUp => 'handoff',
+    MockStage.readyToDeliver => 'delivery',
+    _ => null,
+  };
   await Navigator.of(context).push(MaterialPageRoute<void>(
     builder: (scanContext) => ScanWaybillScreen(
       expectedTracking: expected?.tracking,
       pickupPay: kPickupRate,
       cod: expected?.cod ?? 0,
       onValidate: (code) async {
+        if (!useMock) {
+          try {
+            serverAction = await mock.scanWaybillOnServer(code,
+                intent: intent, expected: expected?.tracking);
+            return ScanResult(ScanOutcome.ok, code);
+          } on ApiException catch (e) {
+            return ScanResult(ScanOutcome.rejected, code, e.message);
+          }
+        }
         final job = mock.byTracking(code) ??
             (expected != null && code == expected.tracking ? expected : null);
         if (expected != null && job?.id != expected.id) {
@@ -135,6 +152,12 @@ Future<void> openMockScan(BuildContext context, {MockJob? expected}) async {
       onConfirmed: (code) async {
         final job = mock.byTracking(code) ??
             (expected?.tracking == code ? expected : null);
+        if (!useMock) {
+          // The server already did the step (see onValidate).
+          scanned = job;
+          if (scanContext.mounted) Navigator.of(scanContext).pop();
+          return;
+        }
         if (job == null) return;
         var ok = false;
         if (job.stage == MockStage.readyToPickUp) {
@@ -152,11 +175,18 @@ Future<void> openMockScan(BuildContext context, {MockJob? expected}) async {
   ));
   final job = scanned;
   if (job == null || !context.mounted) return;
+  final action = serverAction ?? (job.isPickup ? 'pickup' : 'delivery');
   await showSuccess(context,
-      title: job.isPickup ? 'Parcel picked up' : 'Out for delivery',
-      subtitle: job.isPickup
-          ? '${job.tracking} scanned. Next: take it to the hub.'
-          : '${job.tracking} scanned. Head to the buyer.');
+      title: switch (action) {
+        'handoff' => 'Dropped at hub',
+        'delivery' => 'Out for delivery',
+        _ => 'Parcel picked up',
+      },
+      subtitle: switch (action) {
+        'handoff' => '${job.tracking} handed over at the hub.',
+        'delivery' => '${job.tracking} scanned. Head to the buyer.',
+        _ => '${job.tracking} scanned. Next: take it to the hub.',
+      });
 }
 
 /// Bottom-sheet confirmation used by stage actions.

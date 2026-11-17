@@ -12,13 +12,12 @@ import 'chat_screen.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/header_actions.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/user_avatar.dart';
 
 const _kPrimary = AppColors.primary;
-const _kSecondary = AppColors.accent;
 const _kFlash = AppColors.flash;
 const _kSurface = AppColors.surface;
 const _kCard = AppColors.card;
-const _kChip = AppColors.chip;
 const _kBorder = AppColors.border;
 const _kText = AppColors.text;
 const _kSubtext = AppColors.textMuted;
@@ -229,13 +228,7 @@ class _ChatPageState extends State<ChatPage> {
     final unread = t.unreadCount > 0;
     return ListTile(
       tileColor: _kCard,
-      leading: CircleAvatar(
-        backgroundColor: _kChip,
-        backgroundImage: t.sellerPhotoUrl != null ? NetworkImage(t.sellerPhotoUrl!) : null,
-        child: t.sellerPhotoUrl == null
-            ? const Icon(Icons.storefront_outlined, color: _kSecondary)
-            : null,
-      ),
+      leading: UserAvatar(url: t.sellerPhotoUrl, name: t.sellerName, size: 40),
       title: Text(t.sellerName,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,

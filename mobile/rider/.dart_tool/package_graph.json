@@ -22,6 +22,7 @@
         "path",
         "path_provider",
         "permission_handler",
+        "qr_flutter",
         "shared_preferences",
         "sqflite",
         "sqflite_common_ffi_web",
@@ -209,6 +210,14 @@
         "flutter_web_plugins",
         "plugin_platform_interface",
         "web"
+      ]
+    },
+    {
+      "name": "qr_flutter",
+      "version": "4.1.0",
+      "dependencies": [
+        "flutter",
+        "qr"
       ]
     },
     {
@@ -1256,6 +1265,13 @@
     {
       "name": "lists",
       "version": "1.0.1",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "qr",
+      "version": "3.0.3",
       "dependencies": [
         "meta"
       ]

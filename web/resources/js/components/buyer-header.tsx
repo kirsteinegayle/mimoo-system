@@ -3,6 +3,7 @@ import { Link, router } from "@inertiajs/react";
 import { Search, ShoppingCart, LogOut, Package, Heart } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
 import { MessagesIcon } from "@/components/messages-icon";
+import { CurrentUserAvatar } from "@/components/user-avatar";
 
 interface BuyerHeaderProps {
   user?: any;
@@ -100,7 +101,7 @@ export function BuyerHeader({
                   onClick={() => setShowMenu(!showMenu)}
                   className="flex items-center gap-1.5 text-white/90 transition-colors hover:text-white"
                 >
-                  <span className="h-3.5 w-3.5 shrink-0 overflow-hidden rounded-full bg-neutral-200" />
+                  <CurrentUserAvatar fallbackName={username} className="h-4 w-4 text-[7px]" />
                   <span className="max-w-24 truncate">{username}</span>
                 </button>
 
@@ -135,6 +136,9 @@ export function BuyerHeader({
                     </Link>
                     <Link href="/returns" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
                       Returns
+                    </Link>
+                    <Link href="/support" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      Help &amp; Support
                     </Link>
                     <Link
                       href="/settings"

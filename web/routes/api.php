@@ -34,6 +34,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1,login');
 
+// Rider profile pictures with CORS (URL built by App\Support\AvatarUrl).
+Route::get('/avatar/rider/{filename}', [\App\Http\Controllers\Api\AvatarController::class, 'rider'])->middleware('throttle:120,1,avatar-rider');
+
 Route::prefix('buyer')->group(function () {
     // ── Auth ─────────────────────────────────────────────────────────────────
     Route::post('/login',            [AuthController::class, 'buyerLogin'])->middleware('throttle:10,1,buyer-login');
@@ -94,6 +97,7 @@ Route::prefix('buyer')->group(function () {
         // Orders
         Route::post('/checkout',           [BuyerOrderController::class, 'checkout'])->middleware('throttle:10,1,buyer-checkout');
         Route::post('/checkout/preview',   [BuyerOrderController::class, 'checkoutPreview'])->middleware('throttle:60,1,buyer-checkout-preview');
+        Route::get('/shipping/quote',      [BuyerOrderController::class, 'shippingQuote'])->middleware('throttle:60,1,buyer-shipping-quote');
         Route::get('/orders',              [BuyerOrderController::class, 'index']);
         Route::get('/orders/{id}',         [BuyerOrderController::class, 'show']);
         Route::post('/orders/{id}/cancel', [BuyerOrderController::class, 'cancel']);
@@ -104,6 +108,15 @@ Route::prefix('buyer')->group(function () {
         // Rider <-> buyer delivery chat (polling)
         Route::get('/orders/{id}/chat',          [DeliveryChatController::class, 'buyerIndex'])->middleware('throttle:120,1,buyer-delivery-chat')->whereNumber('id');
         Route::post('/orders/{id}/chat',         [DeliveryChatController::class, 'buyerSend'])->middleware('throttle:30,1,buyer-delivery-chat-send')->whereNumber('id');
+        // Parcel problem report (same rules as the web)
+        Route::get('/orders/{id}/parcel-report',  [\App\Http\Controllers\Api\ParcelReportController::class, 'buyerShow'])->middleware('throttle:60,1,buyer-parcel-report-show')->whereNumber('id');
+        Route::post('/orders/{id}/parcel-report', [\App\Http\Controllers\Api\ParcelReportController::class, 'buyerStore'])->middleware('throttle:10,1,buyer-parcel-report')->whereNumber('id');
+        // Support tickets (same controller as the web)
+        Route::get('/support/attachments/{id}', [\App\Http\Controllers\SupportAttachmentController::class, 'show'])->middleware('throttle:120,1,buyer-support-file')->whereNumber('id');
+        Route::get('/support/tickets', [\App\Http\Controllers\SupportTicketController::class, 'index'])->middleware('throttle:60,1,buyer-support-list');
+        Route::post('/support/tickets', [\App\Http\Controllers\SupportTicketController::class, 'store'])->middleware('throttle:5,1,buyer-support-store');
+        Route::get('/support/tickets/{id}', [\App\Http\Controllers\SupportTicketController::class, 'show'])->middleware('throttle:60,1,buyer-support-show')->whereNumber('id');
+        Route::post('/support/tickets/{id}/replies', [\App\Http\Controllers\SupportTicketController::class, 'reply'])->middleware('throttle:20,1,buyer-support-reply')->whereNumber('id');
         Route::post('/orders/{id}/chat/read',    [DeliveryChatController::class, 'buyerRead'])->middleware('throttle:60,1,buyer-delivery-chat-read')->whereNumber('id');
         Route::get('/rider-chats',               [DeliveryChatController::class, 'buyerThreads'])->middleware('throttle:120,1,buyer-rider-chats');
 
@@ -158,6 +171,8 @@ Route::prefix('buyer')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me',      [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    // Published admin announcements for the signed-in user's role (all apps).
+    Route::get('/announcements', [\App\Http\Controllers\PolicyController::class, 'feed'])->middleware('throttle:60,1,announcements');
 });
 
 // ── Courier App (/api/courier-app/*) ─────────────────────────────────────────
@@ -172,6 +187,13 @@ Route::prefix('courier-app')->group(function () {
     Route::middleware(['auth:sanctum', 'courier.role'])->group(function () {
         Route::post('/logout', [CourierAuthController::class, 'logout']);
         Route::get('/me',      [CourierAuthController::class, 'me']);
+        Route::post('/orders/{id}/parcel-report', [\App\Http\Controllers\Api\ParcelReportController::class, 'courierStore'])->middleware('throttle:10,1,courier-parcel-report')->whereNumber('id');
+        // Support tickets (same controller as the web)
+        Route::get('/support/attachments/{id}', [\App\Http\Controllers\SupportAttachmentController::class, 'show'])->middleware('throttle:120,1,courier-support-file')->whereNumber('id');
+        Route::get('/support/tickets', [\App\Http\Controllers\SupportTicketController::class, 'index'])->middleware('throttle:60,1,courier-support-list');
+        Route::post('/support/tickets', [\App\Http\Controllers\SupportTicketController::class, 'store'])->middleware('throttle:5,1,courier-support-store');
+        Route::get('/support/tickets/{id}', [\App\Http\Controllers\SupportTicketController::class, 'show'])->middleware('throttle:60,1,courier-support-show')->whereNumber('id');
+        Route::post('/support/tickets/{id}/replies', [\App\Http\Controllers\SupportTicketController::class, 'reply'])->middleware('throttle:20,1,courier-support-reply')->whereNumber('id');
 
         // Dashboard
         Route::get('/dashboard', [CourierDashboardController::class, 'index']);
@@ -225,6 +247,19 @@ Route::prefix('courier-app')->group(function () {
         Route::post('/facilities',             [CourierFacilityApiController::class, 'store'])->middleware('throttle:20,1,courier-facility-store');
         Route::put('/facilities/{id}',         [CourierFacilityApiController::class, 'update'])->middleware('throttle:20,1,courier-facility-update')->whereNumber('id');
         Route::delete('/facilities/{id}',      [CourierFacilityApiController::class, 'destroy'])->middleware('throttle:20,1,courier-facility-delete')->whereNumber('id');
+        // Same controllers and rules as the web courier pages
+        Route::get('/cod-remittances', [\App\Http\Controllers\Courier\CodRemittanceController::class, 'index'])->middleware('throttle:60,1,courier-app-cod');
+        Route::post('/cod-remittances/{id}/confirm', [\App\Http\Controllers\Courier\CodRemittanceController::class, 'confirm'])->middleware('throttle:30,1,courier-app-cod-confirm')->whereNumber('id');
+        Route::get('/transfers-data', [\App\Http\Controllers\Courier\TransferController::class, 'data'])->middleware('throttle:120,1,courier-app-transfers');
+        Route::post('/transfers', [\App\Http\Controllers\Courier\TransferController::class, 'transfer'])->middleware('throttle:60,1,courier-app-transfer-write');
+        Route::get('/company-settings', [\App\Http\Controllers\Courier\CompanySettingsController::class, 'show']);
+        Route::post('/company-settings', [\App\Http\Controllers\Courier\CompanySettingsController::class, 'update'])->middleware('throttle:20,1,courier-app-company-settings');
+        // Courier Support queue (tickets routed to couriers)
+        Route::get('/staff-support/feed', [\App\Http\Controllers\StaffSupportController::class, 'feed'])->middleware('throttle:120,1,courier-app-staff-support');
+        Route::get('/staff-support/{id}', [\App\Http\Controllers\StaffSupportController::class, 'show'])->middleware('throttle:120,1,courier-app-staff-support')->whereNumber('id');
+        Route::post('/staff-support/{id}/reply', [\App\Http\Controllers\StaffSupportController::class, 'reply'])->middleware('throttle:60,1,courier-app-staff-support-w')->whereNumber('id');
+        Route::post('/staff-support/{id}/status', [\App\Http\Controllers\StaffSupportController::class, 'status'])->middleware('throttle:60,1,courier-app-staff-support-w')->whereNumber('id');
+
         // Delivery rider assignment (creates delivery_jobs for the rider app)
         Route::get('/delivery-riders',         [CourierDeliveryController::class, 'riders'])->middleware('throttle:60,1,courier-delivery-riders');
         Route::post('/delivery-jobs',          [CourierDeliveryController::class, 'assign'])->middleware('throttle:30,1,courier-delivery-assign');
@@ -268,6 +303,7 @@ Route::prefix('rider-app')->group(function () {
         Route::get('/pickups',              [RiderPickupController::class, 'index']);
         Route::get('/pickups/{id}',         [RiderPickupController::class, 'show'])->whereNumber('id');
         Route::post('/pickups/{id}/scan',   [RiderPickupController::class, 'scan'])->middleware('throttle:30,1,rider-scan')->whereNumber('id');
+        Route::post('/scan-waybill', [RiderPickupController::class, 'scanWaybill'])->middleware('throttle:60,1,rider-scan-waybill');
         Route::post('/pickups/{id}/drop-at-hub', [RiderPickupController::class, 'dropAtHub'])->middleware('throttle:30,1,rider-drop')->whereNumber('id');
 
         // History
@@ -284,6 +320,13 @@ Route::prefix('rider-app')->group(function () {
         Route::post('/deliveries/{id}/return',           [RiderDeliveryController::class, 'returnToSender'])->middleware('throttle:30,1,rider-delivery')->whereNumber('id');
 
         // Rider <-> buyer delivery chat (polling). {id} = delivery_jobs.id
+        Route::post('/jobs/{id}/parcel-report', [\App\Http\Controllers\Api\ParcelReportController::class, 'riderStore'])->middleware('throttle:10,1,rider-parcel-report')->whereNumber('id');
+        // Support tickets (same controller as the web)
+        Route::get('/support/attachments/{id}', [\App\Http\Controllers\SupportAttachmentController::class, 'show'])->middleware('throttle:120,1,rider-support-file')->whereNumber('id');
+        Route::get('/support/tickets', [\App\Http\Controllers\SupportTicketController::class, 'index'])->middleware('throttle:60,1,rider-support-list');
+        Route::post('/support/tickets', [\App\Http\Controllers\SupportTicketController::class, 'store'])->middleware('throttle:5,1,rider-support-store');
+        Route::get('/support/tickets/{id}', [\App\Http\Controllers\SupportTicketController::class, 'show'])->middleware('throttle:60,1,rider-support-show')->whereNumber('id');
+        Route::post('/support/tickets/{id}/replies', [\App\Http\Controllers\SupportTicketController::class, 'reply'])->middleware('throttle:20,1,rider-support-reply')->whereNumber('id');
         Route::get('/jobs/{id}/messages',       [DeliveryChatController::class, 'riderIndex'])->middleware('throttle:120,1,rider-chat')->whereNumber('id');
         Route::post('/jobs/{id}/messages',      [DeliveryChatController::class, 'riderSend'])->middleware('throttle:30,1,rider-chat-send')->whereNumber('id');
         Route::post('/jobs/{id}/messages/read', [DeliveryChatController::class, 'riderRead'])->middleware('throttle:60,1,rider-chat-read')->whereNumber('id');

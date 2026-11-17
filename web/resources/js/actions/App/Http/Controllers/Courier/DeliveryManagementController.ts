@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Courier\DeliveryManagementController::assign
- * @see app/Http/Controllers/Courier/DeliveryManagementController.php:89
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:91
  * @route '/courier/delivery-management/assign'
  */
 export const assign = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ assign.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\DeliveryManagementController::assign
- * @see app/Http/Controllers/Courier/DeliveryManagementController.php:89
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:91
  * @route '/courier/delivery-management/assign'
  */
 assign.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ assign.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Courier\DeliveryManagementController::assign
- * @see app/Http/Controllers/Courier/DeliveryManagementController.php:89
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:91
  * @route '/courier/delivery-management/assign'
  */
 assign.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +113,7 @@ assign.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Courier\DeliveryManagementController::assign
- * @see app/Http/Controllers/Courier/DeliveryManagementController.php:89
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:91
  * @route '/courier/delivery-management/assign'
  */
     const assignForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -123,7 +123,7 @@ assign.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Courier\DeliveryManagementController::assign
- * @see app/Http/Controllers/Courier/DeliveryManagementController.php:89
+ * @see app/Http/Controllers/Courier/DeliveryManagementController.php:91
  * @route '/courier/delivery-management/assign'
  */
         assignForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -1,14 +1,22 @@
 import { Link, router } from '@inertiajs/react';
 import {
     AlertTriangle,
+    ChevronDown,
     Bell,
     CheckSquare,
     Cog,
-    Eye,
     FileText,
     Image,
     LayoutDashboard,
+    LifeBuoy,
     LogOut,
+    Percent,
+    Scale,
+    ShieldAlert,
+    SlidersHorizontal,
+    Ticket,
+    Users,
+    PackageX,
     MessageSquare,
     RotateCcw,
     Truck,
@@ -20,30 +28,101 @@ import { useEffect, useState, type ReactNode } from 'react';
 
 export type AdminNavKey =
     | 'dashboard'
+    | 'accounts-approval'
+    | 'seller-approval'
+    | 'logistics-approval'
+    | 'product-approval'
+    | 'user-accounts'
+    | 'seller-compliance'
+    | 'complaints'
+    | 'commission'
+    | 'generate-reports'
+    | 'platform-settings'
     | 'vouchers'
     | 'banners'
     | 'reports'
     | 'returns'
+    | 'parcel-reports'
+    | 'support'
     | 'messages'
-    | 'seller-approval'
-    | 'logistics-approval'
-    | 'product-approval'
     | 'notifications'
-    | 'settings'
-    | 'monitoring';
+    | 'settings';
 
-const navItems: { key: AdminNavKey; label: string; icon: React.ElementType; href: string }[] = [
-    { key: 'dashboard',          label: 'Dashboard',          icon: LayoutDashboard,  href: '/admin/dashboard'          },
-    { key: 'vouchers',           label: 'Vouchers',           icon: FileText,         href: '/admin/vouchers'           },
-    { key: 'banners',            label: 'Banner Management',  icon: Image,            href: '/admin/banners'            },
-    { key: 'seller-approval',    label: 'Seller Approval',    icon: UserCheck,        href: '/admin/seller-approval'    },
-    { key: 'logistics-approval', label: 'Logistics Approval', icon: Truck,            href: '/admin/logistics-approval' },
-    { key: 'product-approval',   label: 'Product Approval',   icon: CheckSquare,      href: '/admin/product-approval'   },
-    { key: 'reports',            label: 'Product Reports',    icon: AlertTriangle,    href: '/admin/reports'            },
-    { key: 'returns',            label: 'Escalated Returns',  icon: RotateCcw,        href: '/admin/returns'            },
-    { key: 'messages',           label: 'Messages',           icon: MessageSquare,    href: '/admin/messages'           },
-    { key: 'monitoring',         label: 'Monitoring',         icon: Eye,              href: '/admin/monitoring'         },
+type NavItem = { key: AdminNavKey; label: string; icon: React.ElementType; href: string };
+
+// Grouped sections (collapsible). The group that holds the current page is always open.
+const navGroups: { title: string; items: NavItem[] }[] = [
+    {
+        title: 'Overview',
+        items: [{ key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' }],
+    },
+    {
+        title: 'Accounts',
+        items: [
+            { key: 'accounts-approval', label: 'Accounts Approval', icon: UserCheck, href: '/admin/accounts-approval' },
+            { key: 'user-accounts', label: 'User Accounts', icon: Users, href: '/admin/user-accounts' },
+            { key: 'seller-compliance', label: 'Seller Compliance', icon: ShieldAlert, href: '/admin/seller-compliance' },
+        ],
+    },
+    {
+        title: 'Catalog & Marketing',
+        items: [
+            { key: 'product-approval', label: 'Product Approval', icon: CheckSquare, href: '/admin/product-approval' },
+            { key: 'reports', label: 'Product Reports', icon: AlertTriangle, href: '/admin/reports' },
+            { key: 'banners', label: 'Banner Management', icon: Image, href: '/admin/banners' },
+            { key: 'vouchers', label: 'Vouchers', icon: Ticket, href: '/admin/vouchers' },
+        ],
+    },
+    {
+        title: 'Orders & Support',
+        items: [
+            { key: 'complaints', label: 'Complaints & Disputes', icon: Scale, href: '/admin/complaints' },
+            { key: 'returns', label: 'Escalated Returns', icon: RotateCcw, href: '/admin/returns' },
+            { key: 'parcel-reports', label: 'Parcel Reports', icon: PackageX, href: '/admin/parcel-reports' },
+            { key: 'support', label: 'Help & Support', icon: LifeBuoy, href: '/admin/support' },
+            { key: 'messages', label: 'Messages', icon: MessageSquare, href: '/admin/messages' },
+        ],
+    },
+    {
+        title: 'Finance & Reports',
+        items: [
+            { key: 'commission', label: 'Commission', icon: Percent, href: '/admin/commission' },
+            { key: 'generate-reports', label: 'Generate Reports', icon: FileText, href: '/admin/generate-reports' },
+        ],
+    },
+    {
+        title: 'System',
+        items: [
+            { key: 'platform-settings', label: 'Platform Settings', icon: SlidersHorizontal, href: '/admin/platform-settings' },
+            { key: 'settings', label: 'Admin Settings', icon: Cog, href: '/admin/settings' },
+        ],
+    },
 ];
+
+const OPEN_KEY = 'mimoo_admin_nav_open';
+
+/** Collapsed groups are remembered per browser; the group of the active page is always shown open. */
+function useCollapsedGroups(active: AdminNavKey) {
+    const [closed, setClosed] = useState<string[]>(() => {
+        try {
+            return JSON.parse(localStorage.getItem(OPEN_KEY) || '[]');
+        } catch {
+            return [];
+        }
+    });
+    const toggle = (title: string) =>
+        setClosed((c) => {
+            const next = c.includes(title) ? c.filter((t) => t !== title) : [...c, title];
+            try {
+                localStorage.setItem(OPEN_KEY, JSON.stringify(next));
+            } catch {
+                /* storage unavailable: still works for this visit */
+            }
+            return next;
+        });
+    const holdsActive = (title: string) => navGroups.find((g) => g.title === title)?.items.some((i) => i.key === active) ?? false;
+    return { isOpen: (title: string) => holdsActive(title) || !closed.includes(title), toggle };
+}
 
 // ─── Shell ────────────────────────────────────────────────────────────────────
 
@@ -77,6 +156,7 @@ function useAdminUnread() {
 
 export default function AdminShell({ active, children }: AdminShellProps) {
     const unread = useAdminUnread();
+    const groups = useCollapsedGroups(active);
     function handleLogout(e: React.FormEvent) {
         e.preventDefault();
         router.post('/admin/logout');
@@ -101,22 +181,40 @@ export default function AdminShell({ active, children }: AdminShellProps) {
                 </div>
 
                 {/* Nav */}
-                <nav className="flex-1 overflow-y-auto px-2 py-4">
-                    {navItems.map(({ key, label, icon: Icon, href }) => (
-                        <Link
-                            key={key}
-                            href={href}
-                            className={[
-                                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                                active === key
-                                    ? 'bg-[#3B1F6B] font-semibold text-white'
-                                    : 'text-white/60 hover:bg-white/5 hover:text-white/90',
-                            ].join(' ')}
-                        >
-                            <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-                            <span className="truncate">{label}</span>
-                        </Link>
-                    ))}
+                <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="Admin navigation">
+                    {navGroups.map((group) => {
+                        const open = groups.isOpen(group.title);
+                        return (
+                            <div key={group.title} className="mb-1">
+                                <button
+                                    type="button"
+                                    onClick={() => groups.toggle(group.title)}
+                                    aria-expanded={open}
+                                    className="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/35 transition-colors hover:text-white/60"
+                                >
+                                    {group.title}
+                                    <ChevronDown className={`h-3 w-3 transition-transform ${open ? '' : '-rotate-90'}`} />
+                                </button>
+                                {open &&
+                                    group.items.map(({ key, label, icon: Icon, href }) => (
+                                        <Link
+                                            key={key}
+                                            href={href}
+                                            aria-current={active === key ? 'page' : undefined}
+                                            className={[
+                                                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                                                active === key
+                                                    ? 'bg-[#3B1F6B] font-semibold text-white'
+                                                    : 'text-white/60 hover:bg-white/5 hover:text-white/90',
+                                            ].join(' ')}
+                                        >
+                                            <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                                            <span className="truncate">{label}</span>
+                                        </Link>
+                                    ))}
+                            </div>
+                        );
+                    })}
                 </nav>
 
                 {/* Logout */}

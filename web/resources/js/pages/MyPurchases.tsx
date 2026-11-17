@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from '@/components/app-modal';
 import { useMemo, useState, useEffect } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import {
@@ -204,7 +205,7 @@ export default function MyPurchases() {
   }
 
   async function handleCancelOrder(orderId: number) {
-    if (!confirm("Are you sure you want to cancel this order?")) return;
+    if (!(await confirmDialog("Are you sure you want to cancel this order?"))) return;
 
     setCancelling(orderId);
     try {

@@ -15,6 +15,7 @@ import '../../services/product_repository.dart';
 import '../chat/chat_screen.dart';
 import '../../utils/animations.dart';
 import '../../theme/app_theme.dart';
+import '../../config/checkout_limits.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const _kPrimary = AppColors.primary;
@@ -57,6 +58,8 @@ class ProductDetailPage extends StatefulWidget {
 class _ProductDetailPageState extends State<ProductDetailPage> {
   int _imageIndex = 0;
   final _pageCtrl = PageController();
+  /// Photo of the variant picked in the sheet (null = show the product's own photos).
+  String? _variantHeroUrl;
 
   // ignore: unused_field, prefer_final_fields
   int _saleSeconds = 4 * 3600 + 28 * 60 + 39;
@@ -162,6 +165,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       builder: (_) => _VariantSheet(
         product: _product,
         buyNow: buyNow,
+        onVariantImage: (url) {
+          if (mounted && _variantHeroUrl != url) setState(() => _variantHeroUrl = url);
+        },
         onConfirm: (variantId, qty) => _onVariantConfirmed(
           variantId: variantId,
           qty: qty,
@@ -378,7 +384,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       height: 300,
       child: Stack(
         children: [
-          PageView.builder(
+          if (_variantHeroUrl != null)
+            Positioned.fill(
+              child: Image.network(
+                _variantHeroUrl!,
+                fit: BoxFit.cover,
+                headers: const {'Accept': 'image/*'},
+                // Variant photo failed to load -> fall back to the main photo.
+                errorBuilder: (_, __, ___) => _imageUrls.isNotEmpty
+                    ? Image.network(_imageUrls.first, fit: BoxFit.cover)
+                    : Container(color: _kChip),
+              ),
+            )
+          else
+            PageView.builder(
             controller: _pageCtrl,
             itemCount: _imageUrls.isEmpty ? 1 : _imageUrls.length,
             onPageChanged: (i) => setState(() => _imageIndex = i),
@@ -1085,9 +1104,12 @@ class _VariantSheet extends StatefulWidget {
     required this.product,
     required this.buyNow,
     required this.onConfirm,
+    this.onVariantImage,
   });
   final Product product;
   final bool buyNow;
+  /// Called with the selected variant's photo URL (null = use the main photo).
+  final void Function(String? url)? onVariantImage;
   // Returns selected variantId (null for no-variant products) and quantity
   final void Function(String? variantId, int qty) onConfirm;
 
@@ -1096,8 +1118,8 @@ class _VariantSheet extends StatefulWidget {
 }
 
 class _VariantSheetState extends State<_VariantSheet> {
-  // Selected variant index (null = no variant selected yet)
-  int? _selectedVariantIndex;
+  // Chosen value per option group, e.g. {Color: Pink, Size: M}
+  final Map<String, String> _sel = {};
   int _qty = 1;
   bool _added = false;
 
@@ -1114,11 +1136,57 @@ class _VariantSheetState extends State<_VariantSheet> {
           .toList()
       : [];
 
-  List<Map<String, dynamic>> get _variantOptions => _p.variantOptions != null
-      ? (_p.variantOptions as List)
-          .map((o) => Map<String, dynamic>.from(o as Map))
-          .toList()
-      : [];
+  /// Option groups (Color, Size, ...) built from the variants themselves, Color first, then Size.
+  List<MapEntry<String, List<String>>> get _groups {
+    final order = <String>[];
+    final vals = <String, List<String>>{};
+    for (final v in _variants) {
+      final c = v['combination'];
+      if (c is! Map) continue;
+      c.forEach((k, val) {
+        if (val == null || '$val'.trim().isEmpty) return;
+        final key = '$k';
+        if (!order.contains(key)) order.add(key);
+        final list = vals.putIfAbsent(key, () => <String>[]);
+        if (!list.contains('$val')) list.add('$val');
+      });
+    }
+    int rank(String n) {
+      final l = n.toLowerCase();
+      if (l.contains('colo')) return 0;
+      if (l.contains('size')) return 1;
+      return 2;
+    }
+
+    final sorted = [...order]..sort((a, b) {
+        final r = rank(a).compareTo(rank(b));
+        return r != 0 ? r : order.indexOf(a).compareTo(order.indexOf(b));
+      });
+    return sorted.map((k) => MapEntry(k, vals[k]!)).toList();
+  }
+
+  bool _matches(Map<String, dynamic> v, Map<String, String> sel) {
+    final c = v['combination'];
+    if (c is! Map) return sel.isEmpty;
+    return sel.entries.every((e) => '${c[e.key]}' == e.value);
+  }
+
+  int _stockOf(Map<String, dynamic> v) => (v['stock'] as num?)?.toInt() ?? 0;
+
+  /// The variant matching every selected option (null until each group has a choice).
+  int? get _selectedVariantIndex {
+    if (!_hasVariants) return null;
+    final groups = _groups;
+    if (groups.isEmpty || groups.any((g) => !_sel.containsKey(g.key))) {
+      return null;
+    }
+    final i = _variants.indexWhere((v) => _matches(v, _sel));
+    return i >= 0 ? i : null;
+  }
+
+  /// A value can be chosen when some in-stock variant has it.
+  bool _valueAvailable(String group, String value) => _variants.any((v) =>
+      _stockOf(v) > 0 && '${(v['combination'] as Map?)?[group]}' == value);
 
   Map<String, dynamic>? get _selectedVariant =>
       (_selectedVariantIndex != null &&
@@ -1145,21 +1213,36 @@ class _VariantSheetState extends State<_VariantSheet> {
     return _p.effectivePrice;
   }
 
-  /// Display image URL: variant image if available, else product main image.
-  String? get _displayImageUrl {
-    if (_hasVariants && _selectedVariantId != null) {
-      // API variants expose an absolute 'image_url' (variant-image endpoint).
-      final url = _selectedVariant?['image_url'];
-      if (url is String && url.isNotEmpty) return url;
+  /// Photo of the current selection. Works with a partial selection too (only "Pink"
+  /// picked): the first matching variant that has a photo. Null = no variant photo.
+  String? get _variantImageUrl {
+    if (!_hasVariants) return null;
+    // API variants expose an absolute 'image_url' (variant-image endpoint).
+    final own = _selectedVariant?['image_url'];
+    if (own is String && own.isNotEmpty) return own;
+    for (final v in _variants) {
+      if (_sel.isNotEmpty && _matches(v, _sel)) {
+        final u = v['image_url'];
+        if (u is String && u.isNotEmpty) return u;
+      }
     }
-    return _p.imageUrl.isNotEmpty ? _p.imageUrl : null;
+    return null;
   }
+
+  /// Display image URL: variant photo if there is one, else the product's main photo.
+  String? get _displayImageUrl =>
+      _variantImageUrl ?? (_p.imageUrl.isNotEmpty ? _p.imageUrl : null);
 
   // ── Stock message shown next to qty stepper ───────────────────────────────
 
   String? _stockMsg; // shown temporarily when user hits max
 
   void _incrementQty() {
+    if (_qty >= kMaxQtyPerCheckout) {
+      setState(() => _stockMsg =
+          'Maximum of $kMaxQtyPerCheckout per product per checkout');
+      return;
+    }
     if (_qty < _maxQty) {
       setState(() {
         _qty++;
@@ -1179,14 +1262,29 @@ class _VariantSheetState extends State<_VariantSheet> {
     }
   }
 
-  void _selectVariant(int index) {
+  /// Choose [value] in [group]; the other groups keep their choice when an in-stock
+  /// variant allows it, otherwise they move to the closest in-stock variant.
+  void _selectValue(String group, String value) {
+    final cands = _variants
+        .where((v) =>
+            _stockOf(v) > 0 && '${(v['combination'] as Map?)?[group]}' == value)
+        .toList();
+    if (cands.isEmpty) return;
+    int score(Map<String, dynamic> v) => _sel.entries
+        .where((e) => e.key != group && '${(v['combination'] as Map?)?[e.key]}' == e.value)
+        .length;
+    cands.sort((a, b) => score(b).compareTo(score(a)));
+    final best = cands.first;
     setState(() {
-      _selectedVariantIndex = index;
-      // Reset qty if it now exceeds the new variant's stock
-      final newMax = (_variants[index]['stock'] as num?)?.toInt() ?? 0;
-      if (_qty > newMax) _qty = newMax.clamp(1, 999);
+      _sel
+        ..clear()
+        ..addAll((best['combination'] as Map)
+            .map((k, v) => MapEntry('$k', '$v')));
+      final newMax = _stockOf(best);
+      if (_qty > newMax) _qty = newMax.clamp(1, kMaxQtyPerCheckout);
       _stockMsg = null;
     });
+    widget.onVariantImage?.call(_variantImageUrl);
   }
 
   @override
@@ -1194,9 +1292,14 @@ class _VariantSheetState extends State<_VariantSheet> {
     super.initState();
     // Pre-select first in-stock variant, or first variant if none in stock
     if (_hasVariants) {
-      final firstInStock =
-          _variants.indexWhere((v) => ((v['stock'] as num?)?.toInt() ?? 0) > 0);
-      _selectedVariantIndex = firstInStock >= 0 ? firstInStock : 0;
+      final firstInStock = _variants.indexWhere((v) => _stockOf(v) > 0);
+      final first = _variants[firstInStock >= 0 ? firstInStock : 0];
+      final c = first['combination'];
+      if (c is Map) {
+        _sel.addAll(c.map((k, v) => MapEntry('$k', '$v')));
+      }
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => widget.onVariantImage?.call(_variantImageUrl));
     }
   }
 
@@ -1312,13 +1415,17 @@ class _VariantSheetState extends State<_VariantSheet> {
               ),
               const Divider(color: _kBorder, height: 24),
 
-              // ── Variant option groups ──────────────────────────────────
+              // ── Variant option groups: one section each (Color, Size, ...) ──
               if (_hasVariants) ...[
-                for (final optGroup in _variantOptions) ...[
+                for (final group in _groups) ...[
                   Row(
                     children: [
-                      Text(optGroup['name'] as String? ?? 'Option',
+                      Text(group.key,
                           style: _pjs(size: 13, weight: FontWeight.w700)),
+                      const SizedBox(width: 8),
+                      if (_sel[group.key] != null)
+                        Text(_sel[group.key]!,
+                            style: _pjs(size: 12, color: _kSubtext)),
                       const Spacer(),
                     ],
                   ),
@@ -1326,18 +1433,11 @@ class _VariantSheetState extends State<_VariantSheet> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: _variants.asMap().entries.map((entry) {
-                      final i = entry.key;
-                      final v = entry.value;
-                      final combo = v['combination'] as Map?;
-                      final label = combo != null
-                          ? combo.values.join(' / ')
-                          : 'Option ${i + 1}';
-                      final vStock = (v['stock'] as num?)?.toInt() ?? 0;
-                      final sel = _selectedVariantIndex == i;
-                      final oos = vStock == 0;
+                    children: group.value.map((value) {
+                      final sel = _sel[group.key] == value;
+                      final oos = !_valueAvailable(group.key, value);
                       return GestureDetector(
-                        onTap: oos ? null : () => _selectVariant(i),
+                        onTap: oos ? null : () => _selectValue(group.key, value),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 9),
@@ -1358,7 +1458,7 @@ class _VariantSheetState extends State<_VariantSheet> {
                             ),
                           ),
                           child: Text(
-                            label,
+                            value,
                             style: _pjs(
                                 size: 11,
                                 weight: FontWeight.w600,

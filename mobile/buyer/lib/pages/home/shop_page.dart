@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/product.dart';
@@ -16,6 +15,7 @@ import '../search/search_page.dart';
 import '../../utils/animations.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/header_actions.dart';
+import '../../widgets/home_banners.dart';
 import '../../widgets/home_voucher_strip.dart';
 
 // ── Mimoo Color Tokens ────────────────────────────────────────────────────────
@@ -134,10 +134,7 @@ class ShopPage extends StatefulWidget {
 }
 
 class _ShopPageState extends State<ShopPage> {
-  late PageController _bannerPageCtrl;
   // ignore: prefer_final_fields
-  int _bannerIndex = 0;
-  Timer? _bannerTimer;
 
   // ── Recommended products from API ─────────────────────────────────────────
   List<Product> _recommended = [];
@@ -152,14 +149,6 @@ class _ShopPageState extends State<ShopPage> {
 
   // ── Hero banner slides ────────────────────────────────────────────────────
   // 3 real images from assets/images/ (banner_hero_* from the design team).
-  // NOTE: banner_hero_1.png is 821.5 KB — larger than ideal but kept as-is
-  // per task instructions (do not modify originals >300 KB).
-  static const _heroSlides = <_HeroSlide>[
-    _HeroSlide(asset: 'assets/images/banner_hero_1.png'),
-    _HeroSlide(asset: 'assets/images/banner_hero_2.jpg'),
-    _HeroSlide(asset: 'assets/images/banner_hero_3.jpg'),
-  ];
-
   // ── Old fake banner data (hidden — kept for reference) ──────────────────────
   // final List<_BannerData> _banners = const [
   //   _BannerData(tag: '✨ New Drop', ...picsum...),
@@ -170,8 +159,6 @@ class _ShopPageState extends State<ShopPage> {
   @override
   void initState() {
     super.initState();
-    _bannerPageCtrl = PageController(viewportFraction: 1.0);
-    _startAutoScroll();
     _loadRecommended();
   }
 
@@ -238,25 +225,8 @@ class _ShopPageState extends State<ShopPage> {
     }
   }
 
-  void _startAutoScroll() {
-    _bannerTimer?.cancel();
-    _bannerTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted || !_bannerPageCtrl.hasClients) return;
-      final next = (_bannerIndex + 1) % _heroSlides.length;
-      // Update index immediately so dots reflect the new slide right away.
-      setState(() => _bannerIndex = next);
-      _bannerPageCtrl.animateToPage(
-        next,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    });
-  }
-
   @override
   void dispose() {
-    _bannerTimer?.cancel();
-    _bannerPageCtrl.dispose();
     super.dispose();
   }
 
@@ -306,70 +276,16 @@ class _ShopPageState extends State<ShopPage> {
 
   // ── Hero Banner (pure images, 3 slides, mouse-draggable on Chrome) ──────────
 
-  Widget _buildBanner() {
-    return Column(
-      children: [
-        SizedBox(
-          height: 210,
-          // ScrollConfiguration: enable mouse drag on Flutter Web.
-          // Without PointerDeviceKind.mouse, Chrome users can only swipe on
-          // touch screens — mouse drag does nothing.
-          child: ScrollConfiguration(
-            behavior: ScrollConfiguration.of(context).copyWith(
-              dragDevices: {
-                PointerDeviceKind.touch,
-                PointerDeviceKind.mouse,
-              },
-            ),
-            child: PageView.builder(
-              controller: _bannerPageCtrl,
-              itemCount: _heroSlides.length,
-              physics: const BouncingScrollPhysics(),
-              onPageChanged: (i) => setState(() => _bannerIndex = i),
-              itemBuilder: (_, i) {
-                final slide = _heroSlides[i];
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: Image.asset(
-                      slide.asset!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: 210,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: MimooColors.surfaceChip,
-                        height: 210,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        // Dot indicators
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(_heroSlides.length, (i) {
-            final isActive = i == _bannerIndex;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: isActive ? 24 : 8,
-              height: 4,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? MimooColors.primaryContainer
-                    : AppColors.outlineVariant,
-                borderRadius: BorderRadius.circular(9999),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
+  Widget _buildBanner() => HomeBanners(onLink: _openBannerLink);
+
+  /// Tap on a banner: `/category/<name>` filters the home list; other links are ignored.
+  void _openBannerLink(String link) {
+    final m = RegExp(r'^/category/(.+)$').firstMatch(link);
+    if (m == null) return;
+    final name = Uri.decodeComponent(m.group(1)!);
+    if (name == _category) return;
+    setState(() => _category = name);
+    _loadRecommended(refresh: true);
   }
 
   // ── Category Row ─────────────────────────────────────────────────────────────
@@ -756,12 +672,6 @@ class _BannerData {
   final IconData ctaIcon;
   final String imageUrl;
   final List<Color> gradient;
-}
-
-// ── Hero Slide (matching web Homepage HeroMainBanner) ──────────────────────────
-class _HeroSlide {
-  const _HeroSlide({this.asset});
-  final String? asset; // null = placeholder (no image)
 }
 
 // ignore: unused_element

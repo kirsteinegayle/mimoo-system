@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import ApprovalWatcher from '@/components/approval-watcher';
 import { CheckCircle2, Clock, Mail } from 'lucide-react';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
@@ -8,6 +9,7 @@ export default function RegisterPending() {
     return (
         <>
             <Head title="Registration Submitted" />
+            <ApprovalWatcher />
 
             <div
                 className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#3B1F6B] to-[#19132A] px-4"

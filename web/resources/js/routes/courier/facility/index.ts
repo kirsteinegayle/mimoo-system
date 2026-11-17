@@ -56,7 +56,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Courier\FacilityController::generate
- * @see app/Http/Controllers/Courier/FacilityController.php:214
+ * @see app/Http/Controllers/Courier/FacilityController.php:210
  * @route '/courier/branch-facility/generate'
  */
 export const generate = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -71,7 +71,7 @@ generate.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\FacilityController::generate
- * @see app/Http/Controllers/Courier/FacilityController.php:214
+ * @see app/Http/Controllers/Courier/FacilityController.php:210
  * @route '/courier/branch-facility/generate'
  */
 generate.url = (options?: RouteQueryOptions) => {
@@ -80,7 +80,7 @@ generate.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Courier\FacilityController::generate
- * @see app/Http/Controllers/Courier/FacilityController.php:214
+ * @see app/Http/Controllers/Courier/FacilityController.php:210
  * @route '/courier/branch-facility/generate'
  */
 generate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -90,7 +90,7 @@ generate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Courier\FacilityController::generate
- * @see app/Http/Controllers/Courier/FacilityController.php:214
+ * @see app/Http/Controllers/Courier/FacilityController.php:210
  * @route '/courier/branch-facility/generate'
  */
     const generateForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -100,7 +100,7 @@ generate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Courier\FacilityController::generate
- * @see app/Http/Controllers/Courier/FacilityController.php:214
+ * @see app/Http/Controllers/Courier/FacilityController.php:210
  * @route '/courier/branch-facility/generate'
  */
         generateForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -111,7 +111,7 @@ generate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     generate.form = generateForm
 /**
 * @see \App\Http\Controllers\Courier\FacilityController::update
- * @see app/Http/Controllers/Courier/FacilityController.php:130
+ * @see app/Http/Controllers/Courier/FacilityController.php:126
  * @route '/courier/branch-facility/{facility}'
  */
 export const update = (args: { facility: number | { id: number } } | [facility: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -126,7 +126,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\FacilityController::update
- * @see app/Http/Controllers/Courier/FacilityController.php:130
+ * @see app/Http/Controllers/Courier/FacilityController.php:126
  * @route '/courier/branch-facility/{facility}'
  */
 update.url = (args: { facility: number | { id: number } } | [facility: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -159,7 +159,7 @@ update.url = (args: { facility: number | { id: number } } | [facility: number | 
 
 /**
 * @see \App\Http\Controllers\Courier\FacilityController::update
- * @see app/Http/Controllers/Courier/FacilityController.php:130
+ * @see app/Http/Controllers/Courier/FacilityController.php:126
  * @route '/courier/branch-facility/{facility}'
  */
 update.put = (args: { facility: number | { id: number } } | [facility: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -169,7 +169,7 @@ update.put = (args: { facility: number | { id: number } } | [facility: number | 
 
     /**
 * @see \App\Http\Controllers\Courier\FacilityController::update
- * @see app/Http/Controllers/Courier/FacilityController.php:130
+ * @see app/Http/Controllers/Courier/FacilityController.php:126
  * @route '/courier/branch-facility/{facility}'
  */
     const updateForm = (args: { facility: number | { id: number } } | [facility: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -184,7 +184,7 @@ update.put = (args: { facility: number | { id: number } } | [facility: number | 
 
             /**
 * @see \App\Http\Controllers\Courier\FacilityController::update
- * @see app/Http/Controllers/Courier/FacilityController.php:130
+ * @see app/Http/Controllers/Courier/FacilityController.php:126
  * @route '/courier/branch-facility/{facility}'
  */
         updateForm.put = (args: { facility: number | { id: number } } | [facility: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -200,7 +200,7 @@ update.put = (args: { facility: number | { id: number } } | [facility: number | 
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\Courier\FacilityController::destroy
- * @see app/Http/Controllers/Courier/FacilityController.php:190
+ * @see app/Http/Controllers/Courier/FacilityController.php:186
  * @route '/courier/branch-facility/{facility}'
  */
 export const destroy = (args: { facility: number | { id: number } } | [facility: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -215,7 +215,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Courier\FacilityController::destroy
- * @see app/Http/Controllers/Courier/FacilityController.php:190
+ * @see app/Http/Controllers/Courier/FacilityController.php:186
  * @route '/courier/branch-facility/{facility}'
  */
 destroy.url = (args: { facility: number | { id: number } } | [facility: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -248,7 +248,7 @@ destroy.url = (args: { facility: number | { id: number } } | [facility: number |
 
 /**
 * @see \App\Http\Controllers\Courier\FacilityController::destroy
- * @see app/Http/Controllers/Courier/FacilityController.php:190
+ * @see app/Http/Controllers/Courier/FacilityController.php:186
  * @route '/courier/branch-facility/{facility}'
  */
 destroy.delete = (args: { facility: number | { id: number } } | [facility: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -258,7 +258,7 @@ destroy.delete = (args: { facility: number | { id: number } } | [facility: numbe
 
     /**
 * @see \App\Http\Controllers\Courier\FacilityController::destroy
- * @see app/Http/Controllers/Courier/FacilityController.php:190
+ * @see app/Http/Controllers/Courier/FacilityController.php:186
  * @route '/courier/branch-facility/{facility}'
  */
     const destroyForm = (args: { facility: number | { id: number } } | [facility: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -273,7 +273,7 @@ destroy.delete = (args: { facility: number | { id: number } } | [facility: numbe
 
             /**
 * @see \App\Http\Controllers\Courier\FacilityController::destroy
- * @see app/Http/Controllers/Courier/FacilityController.php:190
+ * @see app/Http/Controllers/Courier/FacilityController.php:186
  * @route '/courier/branch-facility/{facility}'
  */
         destroyForm.delete = (args: { facility: number | { id: number } } | [facility: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

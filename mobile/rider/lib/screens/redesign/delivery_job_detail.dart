@@ -10,6 +10,7 @@ import '../../mock/rider_mock.dart';
 import '../../widgets/job_widgets.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/success_burst.dart';
+import '../../widgets/waybill_qr_sheet.dart';
 import '../pickup_detail_screen.dart' show showNavigationPicker;
 import 'delivery_chat_screen.dart';
 import 'job_actions.dart';
@@ -204,7 +205,14 @@ class _DeliveryJobDetailScreenState extends State<DeliveryJobDetailScreen> {
   Widget _header(MimooColors c) => Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(job.tracking, style: MT.headlineMd),
+            Row(children: [
+              Flexible(child: Text(job.tracking, style: MT.headlineMd)),
+              Builder(
+                  builder: (ctx) => IconButton(
+                      tooltip: 'Show waybill QR',
+                      onPressed: () => showWaybillQr(ctx, job.tracking),
+                      icon: const Icon(Icons.qr_code_2))),
+            ]),
             const SizedBox(height: 6),
             Wrap(spacing: 6, runSpacing: 6, children: [
               JobTypeTag(job),

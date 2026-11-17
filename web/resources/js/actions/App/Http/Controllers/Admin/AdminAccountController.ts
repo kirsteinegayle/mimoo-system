@@ -441,8 +441,63 @@ settingsPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     settingsPage.form = settingsPageForm
 /**
+* @see \App\Http\Controllers\Admin\AdminAccountController::updatePlatform
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:119
+ * @route '/admin/settings/platform'
+ */
+export const updatePlatform = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: updatePlatform.url(options),
+    method: 'post',
+})
+
+updatePlatform.definition = {
+    methods: ["post"],
+    url: '/admin/settings/platform',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\Admin\AdminAccountController::updatePlatform
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:119
+ * @route '/admin/settings/platform'
+ */
+updatePlatform.url = (options?: RouteQueryOptions) => {
+    return updatePlatform.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Admin\AdminAccountController::updatePlatform
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:119
+ * @route '/admin/settings/platform'
+ */
+updatePlatform.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: updatePlatform.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\Admin\AdminAccountController::updatePlatform
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:119
+ * @route '/admin/settings/platform'
+ */
+    const updatePlatformForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: updatePlatform.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\AdminAccountController::updatePlatform
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:119
+ * @route '/admin/settings/platform'
+ */
+        updatePlatformForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: updatePlatform.url(options),
+            method: 'post',
+        })
+    
+    updatePlatform.form = updatePlatformForm
+/**
 * @see \App\Http\Controllers\Admin\AdminAccountController::updateProfile
- * @see app/Http/Controllers/Admin/AdminAccountController.php:114
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:132
  * @route '/admin/settings/profile'
  */
 export const updateProfile = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -457,7 +512,7 @@ updateProfile.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminAccountController::updateProfile
- * @see app/Http/Controllers/Admin/AdminAccountController.php:114
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:132
  * @route '/admin/settings/profile'
  */
 updateProfile.url = (options?: RouteQueryOptions) => {
@@ -466,7 +521,7 @@ updateProfile.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminAccountController::updateProfile
- * @see app/Http/Controllers/Admin/AdminAccountController.php:114
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:132
  * @route '/admin/settings/profile'
  */
 updateProfile.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -476,7 +531,7 @@ updateProfile.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
 
     /**
 * @see \App\Http\Controllers\Admin\AdminAccountController::updateProfile
- * @see app/Http/Controllers/Admin/AdminAccountController.php:114
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:132
  * @route '/admin/settings/profile'
  */
     const updateProfileForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -486,7 +541,7 @@ updateProfile.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
 
             /**
 * @see \App\Http\Controllers\Admin\AdminAccountController::updateProfile
- * @see app/Http/Controllers/Admin/AdminAccountController.php:114
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:132
  * @route '/admin/settings/profile'
  */
         updateProfileForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -497,7 +552,7 @@ updateProfile.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
     updateProfile.form = updateProfileForm
 /**
 * @see \App\Http\Controllers\Admin\AdminAccountController::updatePassword
- * @see app/Http/Controllers/Admin/AdminAccountController.php:130
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:148
  * @route '/admin/settings/password'
  */
 export const updatePassword = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -512,7 +567,7 @@ updatePassword.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminAccountController::updatePassword
- * @see app/Http/Controllers/Admin/AdminAccountController.php:130
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:148
  * @route '/admin/settings/password'
  */
 updatePassword.url = (options?: RouteQueryOptions) => {
@@ -521,7 +576,7 @@ updatePassword.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminAccountController::updatePassword
- * @see app/Http/Controllers/Admin/AdminAccountController.php:130
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:148
  * @route '/admin/settings/password'
  */
 updatePassword.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -531,7 +586,7 @@ updatePassword.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
 
     /**
 * @see \App\Http\Controllers\Admin\AdminAccountController::updatePassword
- * @see app/Http/Controllers/Admin/AdminAccountController.php:130
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:148
  * @route '/admin/settings/password'
  */
     const updatePasswordForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -541,7 +596,7 @@ updatePassword.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
 
             /**
 * @see \App\Http\Controllers\Admin\AdminAccountController::updatePassword
- * @see app/Http/Controllers/Admin/AdminAccountController.php:130
+ * @see app/Http/Controllers/Admin/AdminAccountController.php:148
  * @route '/admin/settings/password'
  */
         updatePasswordForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -550,6 +605,6 @@ updatePassword.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
         })
     
     updatePassword.form = updatePasswordForm
-const AdminAccountController = { notificationsPage, feed, unreadCount, markAllRead, markRead, settingsPage, updateProfile, updatePassword }
+const AdminAccountController = { notificationsPage, feed, unreadCount, markAllRead, markRead, settingsPage, updatePlatform, updateProfile, updatePassword }
 
 export default AdminAccountController

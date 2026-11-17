@@ -1,5 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
-import registrations from './registrations'
+import generateReports0b82f1 from './generate-reports'
+import userAccountsB83419 from './user-accounts'
+import complaints23c87c from './complaints'
 import sellerApprovalDe7003 from './seller-approval'
 import logisticsApproval9dc57a from './logistics-approval'
 import returns4b8e07 from './returns'
@@ -293,7 +295,8 @@ vouchers.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     vouchers.form = vouchersForm
 /**
- * @see routes/web.php:2251
+* @see \App\Http\Controllers\Admin\BannerController::banners
+ * @see app/Http/Controllers/Admin/BannerController.php:28
  * @route '/admin/banners'
  */
 export const banners = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -307,7 +310,8 @@ banners.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2251
+* @see \App\Http\Controllers\Admin\BannerController::banners
+ * @see app/Http/Controllers/Admin/BannerController.php:28
  * @route '/admin/banners'
  */
 banners.url = (options?: RouteQueryOptions) => {
@@ -315,7 +319,8 @@ banners.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2251
+* @see \App\Http\Controllers\Admin\BannerController::banners
+ * @see app/Http/Controllers/Admin/BannerController.php:28
  * @route '/admin/banners'
  */
 banners.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -323,7 +328,8 @@ banners.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2251
+* @see \App\Http\Controllers\Admin\BannerController::banners
+ * @see app/Http/Controllers/Admin/BannerController.php:28
  * @route '/admin/banners'
  */
 banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -332,7 +338,8 @@ banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2251
+* @see \App\Http\Controllers\Admin\BannerController::banners
+ * @see app/Http/Controllers/Admin/BannerController.php:28
  * @route '/admin/banners'
  */
     const bannersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -341,7 +348,8 @@ banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2251
+* @see \App\Http\Controllers\Admin\BannerController::banners
+ * @see app/Http/Controllers/Admin/BannerController.php:28
  * @route '/admin/banners'
  */
         bannersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -349,7 +357,8 @@ banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2251
+* @see \App\Http\Controllers\Admin\BannerController::banners
+ * @see app/Http/Controllers/Admin/BannerController.php:28
  * @route '/admin/banners'
  */
         bannersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -364,74 +373,74 @@ banners.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     banners.form = bannersForm
 /**
-* @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:117
- * @route '/admin/manage-registrations'
+* @see \App\Http\Controllers\Admin\AdminReportsController::generateReports
+ * @see app/Http/Controllers/Admin/AdminReportsController.php:21
+ * @route '/admin/generate-reports'
  */
-export const manageRegistrations = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: manageRegistrations.url(options),
+export const generateReports = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: generateReports.url(options),
     method: 'get',
 })
 
-manageRegistrations.definition = {
+generateReports.definition = {
     methods: ["get","head"],
-    url: '/admin/manage-registrations',
+    url: '/admin/generate-reports',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:117
- * @route '/admin/manage-registrations'
+* @see \App\Http\Controllers\Admin\AdminReportsController::generateReports
+ * @see app/Http/Controllers/Admin/AdminReportsController.php:21
+ * @route '/admin/generate-reports'
  */
-manageRegistrations.url = (options?: RouteQueryOptions) => {
-    return manageRegistrations.definition.url + queryParams(options)
+generateReports.url = (options?: RouteQueryOptions) => {
+    return generateReports.definition.url + queryParams(options)
 }
 
 /**
-* @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:117
- * @route '/admin/manage-registrations'
+* @see \App\Http\Controllers\Admin\AdminReportsController::generateReports
+ * @see app/Http/Controllers/Admin/AdminReportsController.php:21
+ * @route '/admin/generate-reports'
  */
-manageRegistrations.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: manageRegistrations.url(options),
+generateReports.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: generateReports.url(options),
     method: 'get',
 })
 /**
-* @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:117
- * @route '/admin/manage-registrations'
+* @see \App\Http\Controllers\Admin\AdminReportsController::generateReports
+ * @see app/Http/Controllers/Admin/AdminReportsController.php:21
+ * @route '/admin/generate-reports'
  */
-manageRegistrations.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: manageRegistrations.url(options),
+generateReports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: generateReports.url(options),
     method: 'head',
 })
 
     /**
-* @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:117
- * @route '/admin/manage-registrations'
+* @see \App\Http\Controllers\Admin\AdminReportsController::generateReports
+ * @see app/Http/Controllers/Admin/AdminReportsController.php:21
+ * @route '/admin/generate-reports'
  */
-    const manageRegistrationsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: manageRegistrations.url(options),
+    const generateReportsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: generateReports.url(options),
         method: 'get',
     })
 
             /**
-* @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:117
- * @route '/admin/manage-registrations'
+* @see \App\Http\Controllers\Admin\AdminReportsController::generateReports
+ * @see app/Http/Controllers/Admin/AdminReportsController.php:21
+ * @route '/admin/generate-reports'
  */
-        manageRegistrationsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: manageRegistrations.url(options),
+        generateReportsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: generateReports.url(options),
             method: 'get',
         })
             /**
-* @see \App\Http\Controllers\Admin\AdminController::manageRegistrations
- * @see app/Http/Controllers/Admin/AdminController.php:117
- * @route '/admin/manage-registrations'
+* @see \App\Http\Controllers\Admin\AdminReportsController::generateReports
+ * @see app/Http/Controllers/Admin/AdminReportsController.php:21
+ * @route '/admin/generate-reports'
  */
-        manageRegistrationsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: manageRegistrations.url({
+        generateReportsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: generateReports.url({
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
                             ...(options?.query ?? options?.mergeQuery ?? {}),
@@ -440,10 +449,548 @@ manageRegistrations.head = (options?: RouteQueryOptions): RouteDefinition<'head'
             method: 'get',
         })
     
-    manageRegistrations.form = manageRegistrationsForm
+    generateReports.form = generateReportsForm
 /**
-* @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:236
+ * @see routes/web.php:2386
+ * @route '/admin/pending-approval'
+ */
+export const pendingApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: pendingApproval.url(options),
+    method: 'get',
+})
+
+pendingApproval.definition = {
+    methods: ["get","head"],
+    url: '/admin/pending-approval',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+ * @see routes/web.php:2386
+ * @route '/admin/pending-approval'
+ */
+pendingApproval.url = (options?: RouteQueryOptions) => {
+    return pendingApproval.definition.url + queryParams(options)
+}
+
+/**
+ * @see routes/web.php:2386
+ * @route '/admin/pending-approval'
+ */
+pendingApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: pendingApproval.url(options),
+    method: 'get',
+})
+/**
+ * @see routes/web.php:2386
+ * @route '/admin/pending-approval'
+ */
+pendingApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: pendingApproval.url(options),
+    method: 'head',
+})
+
+    /**
+ * @see routes/web.php:2386
+ * @route '/admin/pending-approval'
+ */
+    const pendingApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: pendingApproval.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/web.php:2386
+ * @route '/admin/pending-approval'
+ */
+        pendingApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: pendingApproval.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/web.php:2386
+ * @route '/admin/pending-approval'
+ */
+        pendingApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: pendingApproval.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    pendingApproval.form = pendingApprovalForm
+/**
+* @see \App\Http\Controllers\Admin\UserAccountsController::userAccounts
+ * @see app/Http/Controllers/Admin/UserAccountsController.php:24
+ * @route '/admin/user-accounts'
+ */
+export const userAccounts = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: userAccounts.url(options),
+    method: 'get',
+})
+
+userAccounts.definition = {
+    methods: ["get","head"],
+    url: '/admin/user-accounts',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Admin\UserAccountsController::userAccounts
+ * @see app/Http/Controllers/Admin/UserAccountsController.php:24
+ * @route '/admin/user-accounts'
+ */
+userAccounts.url = (options?: RouteQueryOptions) => {
+    return userAccounts.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Admin\UserAccountsController::userAccounts
+ * @see app/Http/Controllers/Admin/UserAccountsController.php:24
+ * @route '/admin/user-accounts'
+ */
+userAccounts.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: userAccounts.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Admin\UserAccountsController::userAccounts
+ * @see app/Http/Controllers/Admin/UserAccountsController.php:24
+ * @route '/admin/user-accounts'
+ */
+userAccounts.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: userAccounts.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Admin\UserAccountsController::userAccounts
+ * @see app/Http/Controllers/Admin/UserAccountsController.php:24
+ * @route '/admin/user-accounts'
+ */
+    const userAccountsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: userAccounts.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\UserAccountsController::userAccounts
+ * @see app/Http/Controllers/Admin/UserAccountsController.php:24
+ * @route '/admin/user-accounts'
+ */
+        userAccountsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: userAccounts.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\UserAccountsController::userAccounts
+ * @see app/Http/Controllers/Admin/UserAccountsController.php:24
+ * @route '/admin/user-accounts'
+ */
+        userAccountsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: userAccounts.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    userAccounts.form = userAccountsForm
+/**
+* @see \App\Http\Controllers\Admin\SellerComplianceController::sellerCompliance
+ * @see app/Http/Controllers/Admin/SellerComplianceController.php:44
+ * @route '/admin/seller-compliance'
+ */
+export const sellerCompliance = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: sellerCompliance.url(options),
+    method: 'get',
+})
+
+sellerCompliance.definition = {
+    methods: ["get","head"],
+    url: '/admin/seller-compliance',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Admin\SellerComplianceController::sellerCompliance
+ * @see app/Http/Controllers/Admin/SellerComplianceController.php:44
+ * @route '/admin/seller-compliance'
+ */
+sellerCompliance.url = (options?: RouteQueryOptions) => {
+    return sellerCompliance.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Admin\SellerComplianceController::sellerCompliance
+ * @see app/Http/Controllers/Admin/SellerComplianceController.php:44
+ * @route '/admin/seller-compliance'
+ */
+sellerCompliance.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: sellerCompliance.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Admin\SellerComplianceController::sellerCompliance
+ * @see app/Http/Controllers/Admin/SellerComplianceController.php:44
+ * @route '/admin/seller-compliance'
+ */
+sellerCompliance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: sellerCompliance.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Admin\SellerComplianceController::sellerCompliance
+ * @see app/Http/Controllers/Admin/SellerComplianceController.php:44
+ * @route '/admin/seller-compliance'
+ */
+    const sellerComplianceForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: sellerCompliance.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\SellerComplianceController::sellerCompliance
+ * @see app/Http/Controllers/Admin/SellerComplianceController.php:44
+ * @route '/admin/seller-compliance'
+ */
+        sellerComplianceForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: sellerCompliance.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\SellerComplianceController::sellerCompliance
+ * @see app/Http/Controllers/Admin/SellerComplianceController.php:44
+ * @route '/admin/seller-compliance'
+ */
+        sellerComplianceForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: sellerCompliance.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    sellerCompliance.form = sellerComplianceForm
+/**
+* @see \App\Http\Controllers\Admin\ComplaintsController::complaints
+ * @see app/Http/Controllers/Admin/ComplaintsController.php:24
+ * @route '/admin/complaints'
+ */
+export const complaints = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: complaints.url(options),
+    method: 'get',
+})
+
+complaints.definition = {
+    methods: ["get","head"],
+    url: '/admin/complaints',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Admin\ComplaintsController::complaints
+ * @see app/Http/Controllers/Admin/ComplaintsController.php:24
+ * @route '/admin/complaints'
+ */
+complaints.url = (options?: RouteQueryOptions) => {
+    return complaints.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Admin\ComplaintsController::complaints
+ * @see app/Http/Controllers/Admin/ComplaintsController.php:24
+ * @route '/admin/complaints'
+ */
+complaints.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: complaints.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Admin\ComplaintsController::complaints
+ * @see app/Http/Controllers/Admin/ComplaintsController.php:24
+ * @route '/admin/complaints'
+ */
+complaints.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: complaints.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Admin\ComplaintsController::complaints
+ * @see app/Http/Controllers/Admin/ComplaintsController.php:24
+ * @route '/admin/complaints'
+ */
+    const complaintsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: complaints.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\ComplaintsController::complaints
+ * @see app/Http/Controllers/Admin/ComplaintsController.php:24
+ * @route '/admin/complaints'
+ */
+        complaintsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: complaints.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\ComplaintsController::complaints
+ * @see app/Http/Controllers/Admin/ComplaintsController.php:24
+ * @route '/admin/complaints'
+ */
+        complaintsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: complaints.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    complaints.form = complaintsForm
+/**
+* @see \App\Http\Controllers\Admin\CommissionController::commission
+ * @see app/Http/Controllers/Admin/CommissionController.php:19
+ * @route '/admin/commission'
+ */
+export const commission = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: commission.url(options),
+    method: 'get',
+})
+
+commission.definition = {
+    methods: ["get","head"],
+    url: '/admin/commission',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Admin\CommissionController::commission
+ * @see app/Http/Controllers/Admin/CommissionController.php:19
+ * @route '/admin/commission'
+ */
+commission.url = (options?: RouteQueryOptions) => {
+    return commission.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Admin\CommissionController::commission
+ * @see app/Http/Controllers/Admin/CommissionController.php:19
+ * @route '/admin/commission'
+ */
+commission.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: commission.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Admin\CommissionController::commission
+ * @see app/Http/Controllers/Admin/CommissionController.php:19
+ * @route '/admin/commission'
+ */
+commission.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: commission.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Admin\CommissionController::commission
+ * @see app/Http/Controllers/Admin/CommissionController.php:19
+ * @route '/admin/commission'
+ */
+    const commissionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: commission.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\CommissionController::commission
+ * @see app/Http/Controllers/Admin/CommissionController.php:19
+ * @route '/admin/commission'
+ */
+        commissionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: commission.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\CommissionController::commission
+ * @see app/Http/Controllers/Admin/CommissionController.php:19
+ * @route '/admin/commission'
+ */
+        commissionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: commission.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    commission.form = commissionForm
+/**
+* @see \App\Http\Controllers\Admin\PlatformSettingsController::platformSettings
+ * @see app/Http/Controllers/Admin/PlatformSettingsController.php:21
+ * @route '/admin/platform-settings'
+ */
+export const platformSettings = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: platformSettings.url(options),
+    method: 'get',
+})
+
+platformSettings.definition = {
+    methods: ["get","head"],
+    url: '/admin/platform-settings',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Admin\PlatformSettingsController::platformSettings
+ * @see app/Http/Controllers/Admin/PlatformSettingsController.php:21
+ * @route '/admin/platform-settings'
+ */
+platformSettings.url = (options?: RouteQueryOptions) => {
+    return platformSettings.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Admin\PlatformSettingsController::platformSettings
+ * @see app/Http/Controllers/Admin/PlatformSettingsController.php:21
+ * @route '/admin/platform-settings'
+ */
+platformSettings.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: platformSettings.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Admin\PlatformSettingsController::platformSettings
+ * @see app/Http/Controllers/Admin/PlatformSettingsController.php:21
+ * @route '/admin/platform-settings'
+ */
+platformSettings.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: platformSettings.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Admin\PlatformSettingsController::platformSettings
+ * @see app/Http/Controllers/Admin/PlatformSettingsController.php:21
+ * @route '/admin/platform-settings'
+ */
+    const platformSettingsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: platformSettings.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\PlatformSettingsController::platformSettings
+ * @see app/Http/Controllers/Admin/PlatformSettingsController.php:21
+ * @route '/admin/platform-settings'
+ */
+        platformSettingsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: platformSettings.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\PlatformSettingsController::platformSettings
+ * @see app/Http/Controllers/Admin/PlatformSettingsController.php:21
+ * @route '/admin/platform-settings'
+ */
+        platformSettingsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: platformSettings.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    platformSettings.form = platformSettingsForm
+/**
+* @see \App\Http\Controllers\Admin\AdminController::accountsApproval
+ * @see app/Http/Controllers/Admin/AdminController.php:232
+ * @route '/admin/accounts-approval'
+ */
+export const accountsApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: accountsApproval.url(options),
+    method: 'get',
+})
+
+accountsApproval.definition = {
+    methods: ["get","head"],
+    url: '/admin/accounts-approval',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Admin\AdminController::accountsApproval
+ * @see app/Http/Controllers/Admin/AdminController.php:232
+ * @route '/admin/accounts-approval'
+ */
+accountsApproval.url = (options?: RouteQueryOptions) => {
+    return accountsApproval.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Admin\AdminController::accountsApproval
+ * @see app/Http/Controllers/Admin/AdminController.php:232
+ * @route '/admin/accounts-approval'
+ */
+accountsApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: accountsApproval.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Admin\AdminController::accountsApproval
+ * @see app/Http/Controllers/Admin/AdminController.php:232
+ * @route '/admin/accounts-approval'
+ */
+accountsApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: accountsApproval.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Admin\AdminController::accountsApproval
+ * @see app/Http/Controllers/Admin/AdminController.php:232
+ * @route '/admin/accounts-approval'
+ */
+    const accountsApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: accountsApproval.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\AdminController::accountsApproval
+ * @see app/Http/Controllers/Admin/AdminController.php:232
+ * @route '/admin/accounts-approval'
+ */
+        accountsApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: accountsApproval.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\AdminController::accountsApproval
+ * @see app/Http/Controllers/Admin/AdminController.php:232
+ * @route '/admin/accounts-approval'
+ */
+        accountsApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: accountsApproval.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    accountsApproval.form = accountsApprovalForm
+/**
+ * @see routes/web.php:2422
  * @route '/admin/seller-approval'
  */
 export const sellerApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -457,8 +1004,7 @@ sellerApproval.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:236
+ * @see routes/web.php:2422
  * @route '/admin/seller-approval'
  */
 sellerApproval.url = (options?: RouteQueryOptions) => {
@@ -466,8 +1012,7 @@ sellerApproval.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:236
+ * @see routes/web.php:2422
  * @route '/admin/seller-approval'
  */
 sellerApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -475,8 +1020,7 @@ sellerApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
-* @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:236
+ * @see routes/web.php:2422
  * @route '/admin/seller-approval'
  */
 sellerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -485,8 +1029,7 @@ sellerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
 })
 
     /**
-* @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:236
+ * @see routes/web.php:2422
  * @route '/admin/seller-approval'
  */
     const sellerApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -495,8 +1038,7 @@ sellerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     })
 
             /**
-* @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:236
+ * @see routes/web.php:2422
  * @route '/admin/seller-approval'
  */
         sellerApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -504,8 +1046,7 @@ sellerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
             method: 'get',
         })
             /**
-* @see \App\Http\Controllers\Admin\AdminController::sellerApproval
- * @see app/Http/Controllers/Admin/AdminController.php:236
+ * @see routes/web.php:2422
  * @route '/admin/seller-approval'
  */
         sellerApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -521,7 +1062,7 @@ sellerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     sellerApproval.form = sellerApprovalForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:508
+ * @see app/Http/Controllers/Admin/AdminController.php:517
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
 export const downloadDocument = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -536,7 +1077,7 @@ downloadDocument.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:508
+ * @see app/Http/Controllers/Admin/AdminController.php:517
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
 downloadDocument.url = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions) => {
@@ -562,7 +1103,7 @@ downloadDocument.url = (args: { userId: string | number, type: string | number }
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:508
+ * @see app/Http/Controllers/Admin/AdminController.php:517
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
 downloadDocument.get = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -571,7 +1112,7 @@ downloadDocument.get = (args: { userId: string | number, type: string | number }
 })
 /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:508
+ * @see app/Http/Controllers/Admin/AdminController.php:517
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
 downloadDocument.head = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -581,7 +1122,7 @@ downloadDocument.head = (args: { userId: string | number, type: string | number 
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:508
+ * @see app/Http/Controllers/Admin/AdminController.php:517
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
     const downloadDocumentForm = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -591,7 +1132,7 @@ downloadDocument.head = (args: { userId: string | number, type: string | number 
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:508
+ * @see app/Http/Controllers/Admin/AdminController.php:517
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
         downloadDocumentForm.get = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -600,7 +1141,7 @@ downloadDocument.head = (args: { userId: string | number, type: string | number 
         })
             /**
 * @see \App\Http\Controllers\Admin\AdminController::downloadDocument
- * @see app/Http/Controllers/Admin/AdminController.php:508
+ * @see app/Http/Controllers/Admin/AdminController.php:517
  * @route '/admin/seller-approval/{userId}/download/{type}'
  */
         downloadDocumentForm.head = (args: { userId: string | number, type: string | number } | [userId: string | number, type: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -615,8 +1156,7 @@ downloadDocument.head = (args: { userId: string | number, type: string | number 
     
     downloadDocument.form = downloadDocumentForm
 /**
-* @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:265
+ * @see routes/web.php:2429
  * @route '/admin/logistics-approval'
  */
 export const logisticsApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -630,8 +1170,7 @@ logisticsApproval.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:265
+ * @see routes/web.php:2429
  * @route '/admin/logistics-approval'
  */
 logisticsApproval.url = (options?: RouteQueryOptions) => {
@@ -639,8 +1178,7 @@ logisticsApproval.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:265
+ * @see routes/web.php:2429
  * @route '/admin/logistics-approval'
  */
 logisticsApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -648,8 +1186,7 @@ logisticsApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =>
     method: 'get',
 })
 /**
-* @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:265
+ * @see routes/web.php:2429
  * @route '/admin/logistics-approval'
  */
 logisticsApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -658,8 +1195,7 @@ logisticsApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 })
 
     /**
-* @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:265
+ * @see routes/web.php:2429
  * @route '/admin/logistics-approval'
  */
     const logisticsApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -668,8 +1204,7 @@ logisticsApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
     })
 
             /**
-* @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:265
+ * @see routes/web.php:2429
  * @route '/admin/logistics-approval'
  */
         logisticsApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -677,8 +1212,7 @@ logisticsApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
             method: 'get',
         })
             /**
-* @see \App\Http\Controllers\Admin\AdminController::logisticsApproval
- * @see app/Http/Controllers/Admin/AdminController.php:265
+ * @see routes/web.php:2429
  * @route '/admin/logistics-approval'
  */
         logisticsApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -694,7 +1228,7 @@ logisticsApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
     logisticsApproval.form = logisticsApprovalForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:292
+ * @see app/Http/Controllers/Admin/AdminController.php:321
  * @route '/admin/product-approval'
  */
 export const productApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -709,7 +1243,7 @@ productApproval.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:292
+ * @see app/Http/Controllers/Admin/AdminController.php:321
  * @route '/admin/product-approval'
  */
 productApproval.url = (options?: RouteQueryOptions) => {
@@ -718,7 +1252,7 @@ productApproval.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:292
+ * @see app/Http/Controllers/Admin/AdminController.php:321
  * @route '/admin/product-approval'
  */
 productApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -727,7 +1261,7 @@ productApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 })
 /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:292
+ * @see app/Http/Controllers/Admin/AdminController.php:321
  * @route '/admin/product-approval'
  */
 productApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -737,7 +1271,7 @@ productApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:292
+ * @see app/Http/Controllers/Admin/AdminController.php:321
  * @route '/admin/product-approval'
  */
     const productApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -747,7 +1281,7 @@ productApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:292
+ * @see app/Http/Controllers/Admin/AdminController.php:321
  * @route '/admin/product-approval'
  */
         productApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -756,7 +1290,7 @@ productApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
         })
             /**
 * @see \App\Http\Controllers\Admin\AdminController::productApproval
- * @see app/Http/Controllers/Admin/AdminController.php:292
+ * @see app/Http/Controllers/Admin/AdminController.php:321
  * @route '/admin/product-approval'
  */
         productApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -772,7 +1306,7 @@ productApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     productApproval.form = productApprovalForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:300
+ * @see app/Http/Controllers/Admin/AdminController.php:329
  * @route '/admin/reports'
  */
 export const reports = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -787,7 +1321,7 @@ reports.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:300
+ * @see app/Http/Controllers/Admin/AdminController.php:329
  * @route '/admin/reports'
  */
 reports.url = (options?: RouteQueryOptions) => {
@@ -796,7 +1330,7 @@ reports.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:300
+ * @see app/Http/Controllers/Admin/AdminController.php:329
  * @route '/admin/reports'
  */
 reports.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -805,7 +1339,7 @@ reports.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:300
+ * @see app/Http/Controllers/Admin/AdminController.php:329
  * @route '/admin/reports'
  */
 reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -815,7 +1349,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:300
+ * @see app/Http/Controllers/Admin/AdminController.php:329
  * @route '/admin/reports'
  */
     const reportsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -825,7 +1359,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:300
+ * @see app/Http/Controllers/Admin/AdminController.php:329
  * @route '/admin/reports'
  */
         reportsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -834,7 +1368,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Admin\AdminController::reports
- * @see app/Http/Controllers/Admin/AdminController.php:300
+ * @see app/Http/Controllers/Admin/AdminController.php:329
  * @route '/admin/reports'
  */
         reportsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -849,7 +1383,7 @@ reports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     reports.form = reportsForm
 /**
- * @see routes/web.php:2289
+ * @see routes/web.php:2451
  * @route '/admin/messages'
  */
 export const messages = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -863,7 +1397,7 @@ messages.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:2289
+ * @see routes/web.php:2451
  * @route '/admin/messages'
  */
 messages.url = (options?: RouteQueryOptions) => {
@@ -871,7 +1405,7 @@ messages.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:2289
+ * @see routes/web.php:2451
  * @route '/admin/messages'
  */
 messages.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -879,7 +1413,7 @@ messages.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:2289
+ * @see routes/web.php:2451
  * @route '/admin/messages'
  */
 messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -888,7 +1422,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:2289
+ * @see routes/web.php:2451
  * @route '/admin/messages'
  */
     const messagesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -897,7 +1431,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:2289
+ * @see routes/web.php:2451
  * @route '/admin/messages'
  */
         messagesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -905,7 +1439,7 @@ messages.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:2289
+ * @see routes/web.php:2451
  * @route '/admin/messages'
  */
         messagesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1076,6 +1610,162 @@ settings.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     settings.form = settingsForm
 /**
+* @see \App\Http\Controllers\Admin\ParcelReportsController::parcelReports
+ * @see app/Http/Controllers/Admin/ParcelReportsController.php:24
+ * @route '/admin/parcel-reports'
+ */
+export const parcelReports = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: parcelReports.url(options),
+    method: 'get',
+})
+
+parcelReports.definition = {
+    methods: ["get","head"],
+    url: '/admin/parcel-reports',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Admin\ParcelReportsController::parcelReports
+ * @see app/Http/Controllers/Admin/ParcelReportsController.php:24
+ * @route '/admin/parcel-reports'
+ */
+parcelReports.url = (options?: RouteQueryOptions) => {
+    return parcelReports.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Admin\ParcelReportsController::parcelReports
+ * @see app/Http/Controllers/Admin/ParcelReportsController.php:24
+ * @route '/admin/parcel-reports'
+ */
+parcelReports.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: parcelReports.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Admin\ParcelReportsController::parcelReports
+ * @see app/Http/Controllers/Admin/ParcelReportsController.php:24
+ * @route '/admin/parcel-reports'
+ */
+parcelReports.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: parcelReports.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Admin\ParcelReportsController::parcelReports
+ * @see app/Http/Controllers/Admin/ParcelReportsController.php:24
+ * @route '/admin/parcel-reports'
+ */
+    const parcelReportsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: parcelReports.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\ParcelReportsController::parcelReports
+ * @see app/Http/Controllers/Admin/ParcelReportsController.php:24
+ * @route '/admin/parcel-reports'
+ */
+        parcelReportsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: parcelReports.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\ParcelReportsController::parcelReports
+ * @see app/Http/Controllers/Admin/ParcelReportsController.php:24
+ * @route '/admin/parcel-reports'
+ */
+        parcelReportsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: parcelReports.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    parcelReports.form = parcelReportsForm
+/**
+* @see \App\Http\Controllers\Admin\SupportTicketsController::support
+ * @see app/Http/Controllers/Admin/SupportTicketsController.php:27
+ * @route '/admin/support'
+ */
+export const support = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: support.url(options),
+    method: 'get',
+})
+
+support.definition = {
+    methods: ["get","head"],
+    url: '/admin/support',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Admin\SupportTicketsController::support
+ * @see app/Http/Controllers/Admin/SupportTicketsController.php:27
+ * @route '/admin/support'
+ */
+support.url = (options?: RouteQueryOptions) => {
+    return support.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Admin\SupportTicketsController::support
+ * @see app/Http/Controllers/Admin/SupportTicketsController.php:27
+ * @route '/admin/support'
+ */
+support.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: support.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Admin\SupportTicketsController::support
+ * @see app/Http/Controllers/Admin/SupportTicketsController.php:27
+ * @route '/admin/support'
+ */
+support.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: support.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Admin\SupportTicketsController::support
+ * @see app/Http/Controllers/Admin/SupportTicketsController.php:27
+ * @route '/admin/support'
+ */
+    const supportForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: support.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\SupportTicketsController::support
+ * @see app/Http/Controllers/Admin/SupportTicketsController.php:27
+ * @route '/admin/support'
+ */
+        supportForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: support.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\SupportTicketsController::support
+ * @see app/Http/Controllers/Admin/SupportTicketsController.php:27
+ * @route '/admin/support'
+ */
+        supportForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: support.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    support.form = supportForm
+/**
 * @see \App\Http\Controllers\Admin\ReturnsController::returns
  * @see app/Http/Controllers/Admin/ReturnsController.php:29
  * @route '/admin/returns'
@@ -1155,7 +1845,7 @@ returns.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     returns.form = returnsForm
 /**
 * @see \App\Http\Controllers\Admin\AdminController::logout
- * @see app/Http/Controllers/Admin/AdminController.php:530
+ * @see app/Http/Controllers/Admin/AdminController.php:528
  * @route '/admin/logout'
  */
 export const logout = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1170,7 +1860,7 @@ logout.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::logout
- * @see app/Http/Controllers/Admin/AdminController.php:530
+ * @see app/Http/Controllers/Admin/AdminController.php:528
  * @route '/admin/logout'
  */
 logout.url = (options?: RouteQueryOptions) => {
@@ -1179,7 +1869,7 @@ logout.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AdminController::logout
- * @see app/Http/Controllers/Admin/AdminController.php:530
+ * @see app/Http/Controllers/Admin/AdminController.php:528
  * @route '/admin/logout'
  */
 logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1189,7 +1879,7 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Admin\AdminController::logout
- * @see app/Http/Controllers/Admin/AdminController.php:530
+ * @see app/Http/Controllers/Admin/AdminController.php:528
  * @route '/admin/logout'
  */
     const logoutForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1199,7 +1889,7 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Admin\AdminController::logout
- * @see app/Http/Controllers/Admin/AdminController.php:530
+ * @see app/Http/Controllers/Admin/AdminController.php:528
  * @route '/admin/logout'
  */
         logoutForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1214,8 +1904,14 @@ verify: Object.assign(verify, verify),
 dashboard: Object.assign(dashboard, dashboard),
 vouchers: Object.assign(vouchers, vouchers),
 banners: Object.assign(banners, banners),
-manageRegistrations: Object.assign(manageRegistrations, manageRegistrations),
-registrations: Object.assign(registrations, registrations),
+generateReports: Object.assign(generateReports, generateReports0b82f1),
+pendingApproval: Object.assign(pendingApproval, pendingApproval),
+userAccounts: Object.assign(userAccounts, userAccountsB83419),
+sellerCompliance: Object.assign(sellerCompliance, sellerCompliance),
+complaints: Object.assign(complaints, complaints23c87c),
+commission: Object.assign(commission, commission),
+platformSettings: Object.assign(platformSettings, platformSettings),
+accountsApproval: Object.assign(accountsApproval, accountsApproval),
 sellerApproval: Object.assign(sellerApproval, sellerApprovalDe7003),
 downloadDocument: Object.assign(downloadDocument, downloadDocument),
 logisticsApproval: Object.assign(logisticsApproval, logisticsApproval9dc57a),
@@ -1224,6 +1920,8 @@ reports: Object.assign(reports, reports),
 messages: Object.assign(messages, messages),
 notifications: Object.assign(notifications, notifications),
 settings: Object.assign(settings, settings),
+parcelReports: Object.assign(parcelReports, parcelReports),
+support: Object.assign(support, support),
 returns: Object.assign(returns, returns4b8e07),
 logout: Object.assign(logout, logout),
 }

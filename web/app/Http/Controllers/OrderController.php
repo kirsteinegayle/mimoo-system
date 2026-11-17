@@ -30,8 +30,37 @@ class OrderController extends Controller
             abort(403, 'Only buyers can checkout.');
         }
 
+        // Buy Now: check out ONE product directly. The cart is not read or changed.
+        if ($request->boolean('buy_now')) {
+            $item = $this->buyNowItem([
+                'product_id' => (int) $request->input('product_id'),
+                'quantity' => (int) $request->input('quantity', 1),
+                'variant_id' => $request->input('variant_id') ?: null,
+            ]);
+            if (! $item) {
+                return redirect()->route('cart')->with('error', 'That product is no longer available.');
+            }
+            if (! $item->isValid()) {
+                return redirect('/product/' . $item->product_id)->with('error', $item->getValidationIssue() ?: 'This product is not available for purchase.');
+            }
+
+            return Inertia::render('Checkout', [
+                'cartItems' => collect([$this->checkoutItemRow($item)]),
+                'subtotal' => (float) $item->line_total,
+                'total' => (float) $item->line_total,
+                'savedAddresses' => $this->savedAddresses($user),
+                'codEnabled' => \App\Support\PlatformSettings::codEnabled(),
+                'shippingQuote' => $this->defaultQuote($user, collect([$item])),
+                'buyNow' => [
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'variant_id' => $item->variant_id,
+                ],
+            ]);
+        }
+
         // Get cart with items
-        $cart = Cart::with(['items.product.seller:id,business_name,name'])
+        $cart = Cart::with(['items.product.seller:id,business_name,name,status'])
             ->where('buyer_id', $user->id)
             ->first();
 
@@ -58,20 +87,7 @@ class OrderController extends Controller
         }
 
         // Validate all items
-        $items = $cartItems->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'product_id' => $item->product_id,
-                'product_name' => $item->product->name,
-                'product_image' => $item->product->main_image,
-                'seller_name' => $item->product->seller->business_name ?? $item->product->seller->name,
-                'unit_price' => (float) ($item->product->sale_price ?? $item->product->price),
-                'quantity' => $item->quantity,
-                'line_total' => $item->line_total,
-                'is_valid' => $item->isValid(),
-                'validation_issue' => $item->getValidationIssue(),
-            ];
-        });
+        $items = $cartItems->map(fn ($item) => $this->checkoutItemRow($item));
 
         // Check for invalid items
         if ($items->contains('is_valid', false)) {
@@ -85,7 +101,118 @@ class OrderController extends Controller
             'cartItems' => $items->values(),
             'subtotal' => (float) $subtotal,
             'total' => (float) $subtotal,
+            'savedAddresses' => $this->savedAddresses($user),
+            'codEnabled' => \App\Support\PlatformSettings::codEnabled(),
+            'shippingQuote' => $this->defaultQuote($user, $cartItems),
         ]);
+    }
+
+    /** The buyer's address book for the checkout picker (default first). */
+    private function savedAddresses($user): array
+    {
+        return \App\Models\BuyerAddress::where('buyer_id', $user->id)->orderByDesc('is_default')->orderBy('id')->get()
+            ->map(fn ($a) => [
+                'id' => $a->id, 'label' => $a->label, 'recipient_name' => $a->recipient_name, 'phone' => $a->phone,
+                'region' => $a->region, 'province' => $a->province, 'district' => $a->district,
+                'municipality_city' => $a->municipality_city, 'barangay' => $a->barangay,
+                'street_address' => $a->street_address, 'postal_code' => $a->postal_code, 'is_default' => (bool) $a->is_default,
+            ])->all();
+    }
+
+    /** Parcel weight (kg) of checkout lines. */
+    private function weightOfItems($cartItems): float
+    {
+        return \App\Services\ShippingService::weightOf($cartItems->map(fn ($ci) => [
+            'weight' => $ci->product?->weight, 'quantity' => $ci->quantity,
+        ]));
+    }
+
+    /** First shipping quote, from the buyer's default saved address (null when they have none yet). */
+    private function defaultQuote($user, $cartItems): ?array
+    {
+        $a = \App\Models\BuyerAddress::where('buyer_id', $user->id)->orderByDesc('is_default')->orderBy('id')->first();
+
+        return $a ? $this->quoteArray($a->municipality_city, $a->province, $this->weightOfItems($cartItems)) : null;
+    }
+
+    private function quoteArray(?string $city, ?string $province, float $weight): array
+    {
+        $q = \App\Services\ShippingService::quote($city, $province, $weight);
+
+        return ['fee' => $q['fee'], 'zone' => $q['zone'], 'weight' => $q['weight'], 'logistics' => $q['logistics_name'], 'fallback' => $q['fallback']];
+    }
+
+    /**
+     * GET /api/shipping/quote?city=&province=&cart_item_ids=1,2  (or  &buy_now=1&product_id=&quantity=)
+     * The checkout page calls this whenever the address changes, so the fee follows the address.
+     */
+    public function shippingQuote(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        if ($request->boolean('buy_now')) {
+            $item = $this->buyNowItem([
+                'product_id' => (int) $request->input('product_id'),
+                'quantity' => (int) $request->input('quantity', 1),
+                'variant_id' => $request->input('variant_id') ?: null,
+            ]);
+            $items = collect($item ? [$item] : []);
+        } else {
+            $ids = array_filter(array_map('intval', explode(',', (string) $request->input('cart_item_ids', ''))));
+            $cart = Cart::with('items.product')->where('buyer_id', $user->id)->first();
+            $items = $cart ? $cart->items->when($ids, fn ($c) => $c->whereIn('id', $ids)) : collect();
+        }
+
+        return response()->json($this->quoteArray($request->input('city'), $request->input('province'), $this->weightOfItems($items)));
+    }
+
+    /** One checkout line (shared by the cart checkout and Buy Now). */
+    private function checkoutItemRow(CartItem $item): array
+    {
+        return [
+            'id' => $item->id,
+            'product_id' => $item->product_id,
+            'product_name' => $item->product->name,
+            'product_image' => $item->product->main_image,
+            'seller_name' => $item->product->seller->business_name ?? $item->product->seller->name,
+            'unit_price' => (float) ($item->product->sale_price ?? $item->product->price),
+            'quantity' => $item->quantity,
+            'line_total' => $item->line_total,
+            'is_valid' => $item->isValid(),
+            'validation_issue' => $item->getValidationIssue(),
+        ];
+    }
+
+    /**
+     * Buy Now line: an UNSAVED cart item for one product (+ variant), so the normal checkout
+     * validation / totals / order creation run unchanged and no cart row is created or touched.
+     */
+    private function buyNowItem(array $buyNow): ?CartItem
+    {
+        $product = Product::with('seller:id,business_name,name,status')->find($buyNow['product_id'] ?? 0);
+        if (! $product) {
+            return null;
+        }
+
+        $variantId = $buyNow['variant_id'] ?? null;
+        $variant = null;
+        $stock = $product->stock;
+        if ($variantId && $product->has_variants && $product->variants) {
+            $variant = collect($product->variants)->firstWhere('id', $variantId);
+            if ($variant) {
+                $stock = $variant['stock'];
+            }
+        }
+
+        $item = new CartItem([
+            'product_id' => $product->id,
+            'variant_id' => $variant ? $variantId : null,
+            'quantity' => max(1, min((int) ($buyNow['quantity'] ?? 1), max(1, (int) $stock))),
+        ]);
+        $item->variant_snapshot = $variant;
+        $item->id = 0; // not persisted
+        $item->setRelation('product', $product);
+
+        return $item;
     }
 
     /**
@@ -102,9 +229,21 @@ class OrderController extends Controller
             'cart_item_ids' => ['nullable', 'array'], // Selected cart item IDs
             'cart_item_ids.*' => ['integer'],
             'voucher_code' => ['nullable', 'string', 'max:50'], // Voucher code
+            'shipping_region' => ['nullable', 'string', 'max:100'],
+            'shipping_province' => ['nullable', 'string', 'max:100'],
+            'shipping_municipality_city' => ['nullable', 'string', 'max:100'],
+            'shipping_barangay' => ['nullable', 'string', 'max:100'],
+            'buy_now' => ['nullable', 'array'], // Direct order of one product (cart untouched)
+            'buy_now.product_id' => ['required_with:buy_now', 'integer'],
+            'buy_now.quantity' => ['required_with:buy_now', 'integer', 'min:1'],
+            'buy_now.variant_id' => ['nullable', 'string'],
         ]);
 
         $user = Auth::user();
+
+        if ($validated['payment_method'] === 'cod' && ! \App\Support\PlatformSettings::codEnabled()) {
+            return response()->json(['error' => 'Cash on Delivery is not available right now. Please choose another payment method.'], 422);
+        }
 
         // Only buyers can place orders
         if ($user->account_type !== 'buyer') {
@@ -127,28 +266,39 @@ class OrderController extends Controller
             // START TRANSACTION
             DB::beginTransaction();
 
-            // 1. Load buyer's cart
-            $cart = Cart::with('items.product.seller')
-                ->where('buyer_id', $user->id)
-                ->lockForUpdate() // Lock cart during checkout
-                ->first();
+            $cart = null;
+            if (!empty($validated['buy_now'])) {
+                // Buy Now: order exactly this product; the cart is neither read nor changed.
+                $buyNowItem = $this->buyNowItem($validated['buy_now']);
+                if (!$buyNowItem) {
+                    DB::rollBack();
+                    return response()->json(['error' => 'This product is no longer available.'], 400);
+                }
+                $cartItems = collect([$buyNowItem]);
+            } else {
+                // 1. Load buyer's cart
+                $cart = Cart::with('items.product.seller')
+                    ->where('buyer_id', $user->id)
+                    ->lockForUpdate() // Lock cart during checkout
+                    ->first();
 
-            if (!$cart || $cart->items->isEmpty()) {
-                DB::rollBack();
-                return response()->json(['error' => 'Your cart is empty.'], 400);
-            }
+                if (!$cart || $cart->items->isEmpty()) {
+                    DB::rollBack();
+                    return response()->json(['error' => 'Your cart is empty.'], 400);
+                }
 
-            // Filter items if specific cart_item_ids provided
-            $cartItems = $cart->items;
-            if (!empty($validated['cart_item_ids'])) {
-                $cartItems = $cartItems->filter(function ($item) use ($validated) {
-                    return in_array($item->id, $validated['cart_item_ids']);
-                });
-            }
+                // Filter items if specific cart_item_ids provided
+                $cartItems = $cart->items;
+                if (!empty($validated['cart_item_ids'])) {
+                    $cartItems = $cartItems->filter(function ($item) use ($validated) {
+                        return in_array($item->id, $validated['cart_item_ids']);
+                    });
+                }
 
-            if ($cartItems->isEmpty()) {
-                DB::rollBack();
-                return response()->json(['error' => 'No items selected for checkout.'], 400);
+                if ($cartItems->isEmpty()) {
+                    DB::rollBack();
+                    return response()->json(['error' => 'No items selected for checkout.'], 400);
+                }
             }
 
             // 2. Re-validate every item on server
@@ -165,7 +315,7 @@ class OrderController extends Controller
                     return response()->json(['error' => "Product '{$cartItem->product->name}' is no longer available."], 400);
                 }
 
-                if ($product->status !== 'active') {
+                if ($product->status !== 'active' || $product->sellerIsBlocked()) {
                     DB::rollBack();
                     return response()->json(['error' => "Product '{$product->name}' is not available for purchase."], 400);
                 }
@@ -174,6 +324,12 @@ class OrderController extends Controller
                 if ($product->seller_id === $user->id) {
                     DB::rollBack();
                     return response()->json(['error' => "You cannot purchase your own product '{$product->name}'."], 400);
+                }
+
+                $maxPerCheckout = (int) config('checkout.max_quantity_per_product', 10);
+                if ($cartItem->quantity > $maxPerCheckout) {
+                    DB::rollBack();
+                    return response()->json(['error' => "You can only buy up to {$maxPerCheckout} units of '{$product->name}' per checkout. Please reduce the quantity."], 422);
                 }
 
                 $productIds[] = $product->id;
@@ -266,10 +422,29 @@ class OrderController extends Controller
                 $total = max(0, $total - $voucherDiscount);
             }
 
+            // 3.6. Shipping: fee from the buyer's zone + parcel weight, and which logistics gets the parcel
+            $parsed = Order::parseAddress($validated['shipping_address']);
+            $shipCity = $validated['shipping_municipality_city'] ?? $parsed['city'];
+            $shipProvince = $validated['shipping_province'] ?? $parsed['province'];
+            $weight = \App\Services\ShippingService::weightOf($cartItems->map(fn ($ci) => [
+                'weight' => $ci->product->weight, 'quantity' => $ci->quantity,
+            ]));
+            $quote = \App\Services\ShippingService::quote($shipCity, $shipProvince, $weight);
+            $total += $quote['fee'];
+
             // 4. Create Order
             $order = Order::create([
                 'buyer_id' => $user->id,
                 'total' => $total,
+                'shipping_fee' => $quote['fee'],
+                'shipping_zone' => $quote['zone'],
+                'parcel_weight' => $weight,
+                'logistics_id' => $quote['logistics_id'],
+                'logistics_reason' => \Illuminate\Support\Str::limit($quote['reason'], 250, ''),
+                'shipping_region' => $validated['shipping_region'] ?? $parsed['region'],
+                'shipping_province' => $shipProvince,
+                'shipping_municipality_city' => $shipCity,
+                'shipping_barangay' => $validated['shipping_barangay'] ?? $parsed['barangay'],
                 'status' => 'pending',
                 'payment_status' => 'unpaid',
                 'payment_method' => $validated['payment_method'],
@@ -298,8 +473,10 @@ class OrderController extends Controller
                 ->where('created_at', '>=', now()->subSeconds(5))
                 ->update(['reference_id' => (string) $order->id]);
 
-            // 7. Clear only the checked out items from cart
-            if (!empty($validated['cart_item_ids'])) {
+            // 7. Clear only the checked out items from cart (Buy Now never touched the cart)
+            if (!$cart) {
+                // nothing to clear
+            } elseif (!empty($validated['cart_item_ids'])) {
                 CartItem::whereIn('id', $validated['cart_item_ids'])->delete();
             } else {
                 // If no specific items provided, clear entire cart

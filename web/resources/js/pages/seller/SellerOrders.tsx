@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import SellerShell from "@/layouts/seller/seller-shell";
-import TrackingLine from "@/components/tracking-line";
+import TrackingLine, { trackingLabel } from "@/components/tracking-line";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -59,7 +59,19 @@ interface SellerOrder {
   // Delivery tracking from orders.tracking_* (display only)
   tracking_status?: string | null;
   tracking_message?: string | null;
+  logistics_name?: string | null;
+  logistics_reason?: string | null;
   tracking_updated_at?: string | null;
+  proof_of_delivery?: ProofOfDelivery | null;
+}
+
+interface ProofOfDelivery {
+  job_id: number;
+  delivered_at: string | null;
+  photo_url: string | null;
+  recipient: string | null;
+  cod_collected: number | null;
+  rider: string | null;
 }
 
 interface PageProps {
@@ -255,7 +267,24 @@ function OrderModal({
           <div className="stage-note accent">{TAB_ICON.in_transit}<span>In transit. You'll be notified once the buyer receives this order.</span></div>
         )}
         {order.stage === "delivered" && (
-          <div className="stage-note ok"><ICheck /><span>Delivered {order.delivered_on}. Confirmed once the buyer received the order.</span></div>
+          <div className="stage-note ok"><ICheck /><span>Delivered{order.delivered_on ? ` ${order.delivered_on}` : ""}. The rider's proof of delivery is below.</span></div>
+        )}
+
+        {order.proof_of_delivery && (
+          <div className="detail-section">
+            <h4>Proof of delivery</h4>
+            <div className="detail-grid">
+              <div className="detail-item"><div className="k">Received by</div><div className="v">{order.proof_of_delivery.recipient || "—"}</div></div>
+              <div className="detail-item"><div className="k">Delivered</div><div className="v">{order.proof_of_delivery.delivered_at || "—"}</div></div>
+              {order.proof_of_delivery.rider && <div className="detail-item"><div className="k">Rider</div><div className="v">{order.proof_of_delivery.rider}</div></div>}
+              {order.proof_of_delivery.cod_collected != null && <div className="detail-item"><div className="k">COD collected</div><div className="v num">{peso(order.proof_of_delivery.cod_collected)}</div></div>}
+            </div>
+            {order.proof_of_delivery.photo_url && (
+              <a href={order.proof_of_delivery.photo_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: ".6rem" }}>
+                <img src={order.proof_of_delivery.photo_url} alt="Proof of delivery" style={{ maxWidth: "100%", maxHeight: 260, borderRadius: 10, border: "1px solid #E6DFF2" }} />
+              </a>
+            )}
+          </div>
         )}
         {order.stage === "cancelled" && (
           <div className="stage-note bad"><svg {...S}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" /><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg><span>This order was cancelled and will not be processed.</span></div>
@@ -263,6 +292,14 @@ function OrderModal({
 
         {/* Delivery tracking (renders nothing when the order has no tracking yet) */}
         <TrackingLine tracking={order} className="mb-3" />
+
+        {order.logistics_name && (
+          <div className="detail-section">
+            <h4>Logistics</h4>
+            <p style={{ margin: 0 }}><strong>{order.logistics_name}</strong></p>
+            {order.logistics_reason && <p style={{ margin: "2px 0 0", fontSize: "0.82rem", opacity: 0.75 }}>{order.logistics_reason}</p>}
+          </div>
+        )}
 
         <div className="detail-section">
           <h4>Order items</h4>
@@ -428,7 +465,7 @@ export default function SellerOrders({ orders: initial }: PageProps) {
         buyer: order.buyer_name,
         phone: order.buyer_phone || 'N/A',
         address: order.buyer_address || 'N/A',
-        stage: mapStatusToStage(order.status),
+        stage: mapStatusToStage(order.status, order.tracking_status),
         date: order.created_at,
         created_at: order.created_at,
         payment: order.payment_method || 'Cash on Delivery',
@@ -439,12 +476,15 @@ export default function SellerOrders({ orders: initial }: PageProps) {
         waybill_no: order.waybill_number || null,
         waybill_printed: !!order.waybill_printed_at,
         tracking: null,
-        delivered_on: null,
         is_new: false,
         total: order.total, // Add total from backend
         tracking_status: order.tracking_status ?? null,
         tracking_message: order.tracking_message ?? null,
+        logistics_name: order.logistics_name ?? null,
+        logistics_reason: order.logistics_reason ?? null,
         tracking_updated_at: order.tracking_updated_at ?? null,
+        proof_of_delivery: order.proof_of_delivery ?? null,
+        delivered_on: order.proof_of_delivery?.delivered_at ?? null,
       }));
       
       setOrders(mappedOrders);
@@ -456,7 +496,12 @@ export default function SellerOrders({ orders: initial }: PageProps) {
     }
   }
 
-  function mapStatusToStage(status: string): Stage {
+  function mapStatusToStage(status: string, trackingStatus?: string | null): Stage {
+    // The rider's proof of delivery sets tracking_status = 'delivered' while orders.status stays
+    // 'shipped' until the buyer confirms, so the seller must read the tracking to see "Delivered".
+    if ((status === 'shipped' || status === 'in_transit') && trackingStatus === 'delivered') {
+      return 'delivered';
+    }
     switch (status) {
       case 'pending':
         return 'new';
@@ -606,7 +651,12 @@ export default function SellerOrders({ orders: initial }: PageProps) {
                     <td className="cell-muted">{o.buyer}</td>
                     <td className="cell-muted">{o.items.map((i) => `${i.name} ×${i.qty}`).join(", ")}</td>
                     <td className="num">{peso(orderTotal(o))}</td>
-                    <td><span className={`mini-pill ${PILL[o.stage]}`}>{LABEL[o.stage]}</span></td>
+                    <td>
+                      <span className={`mini-pill ${PILL[o.stage]}`}>{LABEL[o.stage]}</span>
+                      {o.stage === "in_transit" && trackingLabel(o.tracking_status) && (
+                        <div className="cell-muted" style={{ fontSize: ".7rem", marginTop: 2 }}>{trackingLabel(o.tracking_status)}</div>
+                      )}
+                    </td>
                     <td className="cell-muted num">{o.date}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '.4rem' }}>

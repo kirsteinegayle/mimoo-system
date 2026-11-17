@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/courier-app/messaging/contacts'
  */
 const contacts99f2dbc5b0e433eda5d6946e898499f7 = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ contacts99f2dbc5b0e433eda5d6946e898499f7.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/courier-app/messaging/contacts'
  */
 contacts99f2dbc5b0e433eda5d6946e898499f7.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ contacts99f2dbc5b0e433eda5d6946e898499f7.url = (options?: RouteQueryOptions) => 
 
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/courier-app/messaging/contacts'
  */
 contacts99f2dbc5b0e433eda5d6946e898499f7.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ contacts99f2dbc5b0e433eda5d6946e898499f7.get = (options?: RouteQueryOptions): Ro
 })
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/courier-app/messaging/contacts'
  */
 contacts99f2dbc5b0e433eda5d6946e898499f7.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ contacts99f2dbc5b0e433eda5d6946e898499f7.head = (options?: RouteQueryOptions): R
 
     /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/courier-app/messaging/contacts'
  */
     const contacts99f2dbc5b0e433eda5d6946e898499f7Form = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ contacts99f2dbc5b0e433eda5d6946e898499f7.head = (options?: RouteQueryOptions): R
 
             /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/courier-app/messaging/contacts'
  */
         contacts99f2dbc5b0e433eda5d6946e898499f7Form.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ contacts99f2dbc5b0e433eda5d6946e898499f7.head = (options?: RouteQueryOptions): R
         })
             /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/courier-app/messaging/contacts'
  */
         contacts99f2dbc5b0e433eda5d6946e898499f7Form.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ contacts99f2dbc5b0e433eda5d6946e898499f7.head = (options?: RouteQueryOptions): R
     contacts99f2dbc5b0e433eda5d6946e898499f7.form = contacts99f2dbc5b0e433eda5d6946e898499f7Form
     /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/rider-app/messaging/contacts'
  */
 const contacts65f866cd947fb2c8eedf5055fb1a8391 = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ contacts65f866cd947fb2c8eedf5055fb1a8391.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/rider-app/messaging/contacts'
  */
 contacts65f866cd947fb2c8eedf5055fb1a8391.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ contacts65f866cd947fb2c8eedf5055fb1a8391.url = (options?: RouteQueryOptions) => 
 
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/rider-app/messaging/contacts'
  */
 contacts65f866cd947fb2c8eedf5055fb1a8391.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ contacts65f866cd947fb2c8eedf5055fb1a8391.get = (options?: RouteQueryOptions): Ro
 })
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/rider-app/messaging/contacts'
  */
 contacts65f866cd947fb2c8eedf5055fb1a8391.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ contacts65f866cd947fb2c8eedf5055fb1a8391.head = (options?: RouteQueryOptions): R
 
     /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/rider-app/messaging/contacts'
  */
     const contacts65f866cd947fb2c8eedf5055fb1a8391Form = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ contacts65f866cd947fb2c8eedf5055fb1a8391.head = (options?: RouteQueryOptions): R
 
             /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/rider-app/messaging/contacts'
  */
         contacts65f866cd947fb2c8eedf5055fb1a8391Form.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ contacts65f866cd947fb2c8eedf5055fb1a8391.head = (options?: RouteQueryOptions): R
         })
             /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/api/rider-app/messaging/contacts'
  */
         contacts65f866cd947fb2c8eedf5055fb1a8391Form.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ contacts65f866cd947fb2c8eedf5055fb1a8391.head = (options?: RouteQueryOptions): R
     contacts65f866cd947fb2c8eedf5055fb1a8391.form = contacts65f866cd947fb2c8eedf5055fb1a8391Form
     /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/messaging/contacts'
  */
 const contacts5764e2c22d368e69a5649da4506cec22 = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -172,7 +172,7 @@ contacts5764e2c22d368e69a5649da4506cec22.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/messaging/contacts'
  */
 contacts5764e2c22d368e69a5649da4506cec22.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ contacts5764e2c22d368e69a5649da4506cec22.url = (options?: RouteQueryOptions) => 
 
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/messaging/contacts'
  */
 contacts5764e2c22d368e69a5649da4506cec22.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -190,7 +190,7 @@ contacts5764e2c22d368e69a5649da4506cec22.get = (options?: RouteQueryOptions): Ro
 })
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/messaging/contacts'
  */
 contacts5764e2c22d368e69a5649da4506cec22.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -200,7 +200,7 @@ contacts5764e2c22d368e69a5649da4506cec22.head = (options?: RouteQueryOptions): R
 
     /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/messaging/contacts'
  */
     const contacts5764e2c22d368e69a5649da4506cec22Form = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -210,7 +210,7 @@ contacts5764e2c22d368e69a5649da4506cec22.head = (options?: RouteQueryOptions): R
 
             /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/messaging/contacts'
  */
         contacts5764e2c22d368e69a5649da4506cec22Form.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -219,7 +219,7 @@ contacts5764e2c22d368e69a5649da4506cec22.head = (options?: RouteQueryOptions): R
         })
             /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/messaging/contacts'
  */
         contacts5764e2c22d368e69a5649da4506cec22Form.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -235,7 +235,7 @@ contacts5764e2c22d368e69a5649da4506cec22.head = (options?: RouteQueryOptions): R
     contacts5764e2c22d368e69a5649da4506cec22.form = contacts5764e2c22d368e69a5649da4506cec22Form
     /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/admin/messaging/contacts'
  */
 const contacts433d836913ee786bb270490fa45c429e = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -250,7 +250,7 @@ contacts433d836913ee786bb270490fa45c429e.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/admin/messaging/contacts'
  */
 contacts433d836913ee786bb270490fa45c429e.url = (options?: RouteQueryOptions) => {
@@ -259,7 +259,7 @@ contacts433d836913ee786bb270490fa45c429e.url = (options?: RouteQueryOptions) => 
 
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/admin/messaging/contacts'
  */
 contacts433d836913ee786bb270490fa45c429e.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -268,7 +268,7 @@ contacts433d836913ee786bb270490fa45c429e.get = (options?: RouteQueryOptions): Ro
 })
 /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/admin/messaging/contacts'
  */
 contacts433d836913ee786bb270490fa45c429e.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -278,7 +278,7 @@ contacts433d836913ee786bb270490fa45c429e.head = (options?: RouteQueryOptions): R
 
     /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/admin/messaging/contacts'
  */
     const contacts433d836913ee786bb270490fa45c429eForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -288,7 +288,7 @@ contacts433d836913ee786bb270490fa45c429e.head = (options?: RouteQueryOptions): R
 
             /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/admin/messaging/contacts'
  */
         contacts433d836913ee786bb270490fa45c429eForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -297,7 +297,7 @@ contacts433d836913ee786bb270490fa45c429e.head = (options?: RouteQueryOptions): R
         })
             /**
 * @see \App\Http\Controllers\MessagingController::contacts
- * @see app/Http/Controllers/MessagingController.php:95
+ * @see app/Http/Controllers/MessagingController.php:97
  * @route '/admin/messaging/contacts'
  */
         contacts433d836913ee786bb270490fa45c429eForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -326,7 +326,7 @@ export const contacts = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/courier-app/messaging/threads'
  */
 const threadse08d7a3d9056fb311d2071c52d87189e = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -341,7 +341,7 @@ threadse08d7a3d9056fb311d2071c52d87189e.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/courier-app/messaging/threads'
  */
 threadse08d7a3d9056fb311d2071c52d87189e.url = (options?: RouteQueryOptions) => {
@@ -350,7 +350,7 @@ threadse08d7a3d9056fb311d2071c52d87189e.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/courier-app/messaging/threads'
  */
 threadse08d7a3d9056fb311d2071c52d87189e.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -359,7 +359,7 @@ threadse08d7a3d9056fb311d2071c52d87189e.get = (options?: RouteQueryOptions): Rou
 })
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/courier-app/messaging/threads'
  */
 threadse08d7a3d9056fb311d2071c52d87189e.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -369,7 +369,7 @@ threadse08d7a3d9056fb311d2071c52d87189e.head = (options?: RouteQueryOptions): Ro
 
     /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/courier-app/messaging/threads'
  */
     const threadse08d7a3d9056fb311d2071c52d87189eForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -379,7 +379,7 @@ threadse08d7a3d9056fb311d2071c52d87189e.head = (options?: RouteQueryOptions): Ro
 
             /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/courier-app/messaging/threads'
  */
         threadse08d7a3d9056fb311d2071c52d87189eForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -388,7 +388,7 @@ threadse08d7a3d9056fb311d2071c52d87189e.head = (options?: RouteQueryOptions): Ro
         })
             /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/courier-app/messaging/threads'
  */
         threadse08d7a3d9056fb311d2071c52d87189eForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -404,7 +404,7 @@ threadse08d7a3d9056fb311d2071c52d87189e.head = (options?: RouteQueryOptions): Ro
     threadse08d7a3d9056fb311d2071c52d87189e.form = threadse08d7a3d9056fb311d2071c52d87189eForm
     /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/rider-app/messaging/threads'
  */
 const threadsc989ddd62369c253cb83e50f03450883 = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -419,7 +419,7 @@ threadsc989ddd62369c253cb83e50f03450883.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/rider-app/messaging/threads'
  */
 threadsc989ddd62369c253cb83e50f03450883.url = (options?: RouteQueryOptions) => {
@@ -428,7 +428,7 @@ threadsc989ddd62369c253cb83e50f03450883.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/rider-app/messaging/threads'
  */
 threadsc989ddd62369c253cb83e50f03450883.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -437,7 +437,7 @@ threadsc989ddd62369c253cb83e50f03450883.get = (options?: RouteQueryOptions): Rou
 })
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/rider-app/messaging/threads'
  */
 threadsc989ddd62369c253cb83e50f03450883.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -447,7 +447,7 @@ threadsc989ddd62369c253cb83e50f03450883.head = (options?: RouteQueryOptions): Ro
 
     /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/rider-app/messaging/threads'
  */
     const threadsc989ddd62369c253cb83e50f03450883Form = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -457,7 +457,7 @@ threadsc989ddd62369c253cb83e50f03450883.head = (options?: RouteQueryOptions): Ro
 
             /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/rider-app/messaging/threads'
  */
         threadsc989ddd62369c253cb83e50f03450883Form.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -466,7 +466,7 @@ threadsc989ddd62369c253cb83e50f03450883.head = (options?: RouteQueryOptions): Ro
         })
             /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/api/rider-app/messaging/threads'
  */
         threadsc989ddd62369c253cb83e50f03450883Form.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -482,7 +482,7 @@ threadsc989ddd62369c253cb83e50f03450883.head = (options?: RouteQueryOptions): Ro
     threadsc989ddd62369c253cb83e50f03450883.form = threadsc989ddd62369c253cb83e50f03450883Form
     /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/messaging/threads'
  */
 const threads666df28610d04ede46b3b9b19a3d6478 = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -497,7 +497,7 @@ threads666df28610d04ede46b3b9b19a3d6478.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/messaging/threads'
  */
 threads666df28610d04ede46b3b9b19a3d6478.url = (options?: RouteQueryOptions) => {
@@ -506,7 +506,7 @@ threads666df28610d04ede46b3b9b19a3d6478.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/messaging/threads'
  */
 threads666df28610d04ede46b3b9b19a3d6478.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -515,7 +515,7 @@ threads666df28610d04ede46b3b9b19a3d6478.get = (options?: RouteQueryOptions): Rou
 })
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/messaging/threads'
  */
 threads666df28610d04ede46b3b9b19a3d6478.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -525,7 +525,7 @@ threads666df28610d04ede46b3b9b19a3d6478.head = (options?: RouteQueryOptions): Ro
 
     /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/messaging/threads'
  */
     const threads666df28610d04ede46b3b9b19a3d6478Form = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -535,7 +535,7 @@ threads666df28610d04ede46b3b9b19a3d6478.head = (options?: RouteQueryOptions): Ro
 
             /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/messaging/threads'
  */
         threads666df28610d04ede46b3b9b19a3d6478Form.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -544,7 +544,7 @@ threads666df28610d04ede46b3b9b19a3d6478.head = (options?: RouteQueryOptions): Ro
         })
             /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/messaging/threads'
  */
         threads666df28610d04ede46b3b9b19a3d6478Form.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -560,7 +560,7 @@ threads666df28610d04ede46b3b9b19a3d6478.head = (options?: RouteQueryOptions): Ro
     threads666df28610d04ede46b3b9b19a3d6478.form = threads666df28610d04ede46b3b9b19a3d6478Form
     /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/admin/messaging/threads'
  */
 const threads24309fe3296a5e202fa2fdbb048ad822 = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -575,7 +575,7 @@ threads24309fe3296a5e202fa2fdbb048ad822.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/admin/messaging/threads'
  */
 threads24309fe3296a5e202fa2fdbb048ad822.url = (options?: RouteQueryOptions) => {
@@ -584,7 +584,7 @@ threads24309fe3296a5e202fa2fdbb048ad822.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/admin/messaging/threads'
  */
 threads24309fe3296a5e202fa2fdbb048ad822.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -593,7 +593,7 @@ threads24309fe3296a5e202fa2fdbb048ad822.get = (options?: RouteQueryOptions): Rou
 })
 /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/admin/messaging/threads'
  */
 threads24309fe3296a5e202fa2fdbb048ad822.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -603,7 +603,7 @@ threads24309fe3296a5e202fa2fdbb048ad822.head = (options?: RouteQueryOptions): Ro
 
     /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/admin/messaging/threads'
  */
     const threads24309fe3296a5e202fa2fdbb048ad822Form = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -613,7 +613,7 @@ threads24309fe3296a5e202fa2fdbb048ad822.head = (options?: RouteQueryOptions): Ro
 
             /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/admin/messaging/threads'
  */
         threads24309fe3296a5e202fa2fdbb048ad822Form.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -622,7 +622,7 @@ threads24309fe3296a5e202fa2fdbb048ad822.head = (options?: RouteQueryOptions): Ro
         })
             /**
 * @see \App\Http\Controllers\MessagingController::threads
- * @see app/Http/Controllers/MessagingController.php:102
+ * @see app/Http/Controllers/MessagingController.php:104
  * @route '/admin/messaging/threads'
  */
         threads24309fe3296a5e202fa2fdbb048ad822Form.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -651,7 +651,7 @@ export const threads = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/api/courier-app/messaging/start'
  */
 const start94a0363bff313e6c1d74f851d444dd45 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -666,7 +666,7 @@ start94a0363bff313e6c1d74f851d444dd45.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/api/courier-app/messaging/start'
  */
 start94a0363bff313e6c1d74f851d444dd45.url = (options?: RouteQueryOptions) => {
@@ -675,7 +675,7 @@ start94a0363bff313e6c1d74f851d444dd45.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/api/courier-app/messaging/start'
  */
 start94a0363bff313e6c1d74f851d444dd45.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -685,7 +685,7 @@ start94a0363bff313e6c1d74f851d444dd45.post = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/api/courier-app/messaging/start'
  */
     const start94a0363bff313e6c1d74f851d444dd45Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -695,7 +695,7 @@ start94a0363bff313e6c1d74f851d444dd45.post = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/api/courier-app/messaging/start'
  */
         start94a0363bff313e6c1d74f851d444dd45Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -706,7 +706,7 @@ start94a0363bff313e6c1d74f851d444dd45.post = (options?: RouteQueryOptions): Rout
     start94a0363bff313e6c1d74f851d444dd45.form = start94a0363bff313e6c1d74f851d444dd45Form
     /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/api/rider-app/messaging/start'
  */
 const start45fd6f86f3e3c9d4ba0c610afe7775ee = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -721,7 +721,7 @@ start45fd6f86f3e3c9d4ba0c610afe7775ee.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/api/rider-app/messaging/start'
  */
 start45fd6f86f3e3c9d4ba0c610afe7775ee.url = (options?: RouteQueryOptions) => {
@@ -730,7 +730,7 @@ start45fd6f86f3e3c9d4ba0c610afe7775ee.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/api/rider-app/messaging/start'
  */
 start45fd6f86f3e3c9d4ba0c610afe7775ee.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -740,7 +740,7 @@ start45fd6f86f3e3c9d4ba0c610afe7775ee.post = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/api/rider-app/messaging/start'
  */
     const start45fd6f86f3e3c9d4ba0c610afe7775eeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -750,7 +750,7 @@ start45fd6f86f3e3c9d4ba0c610afe7775ee.post = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/api/rider-app/messaging/start'
  */
         start45fd6f86f3e3c9d4ba0c610afe7775eeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -761,7 +761,7 @@ start45fd6f86f3e3c9d4ba0c610afe7775ee.post = (options?: RouteQueryOptions): Rout
     start45fd6f86f3e3c9d4ba0c610afe7775ee.form = start45fd6f86f3e3c9d4ba0c610afe7775eeForm
     /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/messaging/start'
  */
 const starta4dcc59b19e74e686583ddbe06f04a13 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -776,7 +776,7 @@ starta4dcc59b19e74e686583ddbe06f04a13.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/messaging/start'
  */
 starta4dcc59b19e74e686583ddbe06f04a13.url = (options?: RouteQueryOptions) => {
@@ -785,7 +785,7 @@ starta4dcc59b19e74e686583ddbe06f04a13.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/messaging/start'
  */
 starta4dcc59b19e74e686583ddbe06f04a13.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -795,7 +795,7 @@ starta4dcc59b19e74e686583ddbe06f04a13.post = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/messaging/start'
  */
     const starta4dcc59b19e74e686583ddbe06f04a13Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -805,7 +805,7 @@ starta4dcc59b19e74e686583ddbe06f04a13.post = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/messaging/start'
  */
         starta4dcc59b19e74e686583ddbe06f04a13Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -816,7 +816,7 @@ starta4dcc59b19e74e686583ddbe06f04a13.post = (options?: RouteQueryOptions): Rout
     starta4dcc59b19e74e686583ddbe06f04a13.form = starta4dcc59b19e74e686583ddbe06f04a13Form
     /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/admin/messaging/start'
  */
 const startb5c9f2a4e28781f8156824475d7e6778 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -831,7 +831,7 @@ startb5c9f2a4e28781f8156824475d7e6778.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/admin/messaging/start'
  */
 startb5c9f2a4e28781f8156824475d7e6778.url = (options?: RouteQueryOptions) => {
@@ -840,7 +840,7 @@ startb5c9f2a4e28781f8156824475d7e6778.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/admin/messaging/start'
  */
 startb5c9f2a4e28781f8156824475d7e6778.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -850,7 +850,7 @@ startb5c9f2a4e28781f8156824475d7e6778.post = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/admin/messaging/start'
  */
     const startb5c9f2a4e28781f8156824475d7e6778Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -860,7 +860,7 @@ startb5c9f2a4e28781f8156824475d7e6778.post = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\MessagingController::start
- * @see app/Http/Controllers/MessagingController.php:113
+ * @see app/Http/Controllers/MessagingController.php:115
  * @route '/admin/messaging/start'
  */
         startb5c9f2a4e28781f8156824475d7e6778Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -884,7 +884,7 @@ export const start = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
 const messages919093515162affc8167623ea9070af1 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -899,7 +899,7 @@ messages919093515162affc8167623ea9070af1.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
 messages919093515162affc8167623ea9070af1.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -927,7 +927,7 @@ messages919093515162affc8167623ea9070af1.url = (args: { id: string | number } | 
 
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
 messages919093515162affc8167623ea9070af1.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -936,7 +936,7 @@ messages919093515162affc8167623ea9070af1.get = (args: { id: string | number } | 
 })
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
 messages919093515162affc8167623ea9070af1.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -946,7 +946,7 @@ messages919093515162affc8167623ea9070af1.head = (args: { id: string | number } |
 
     /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
     const messages919093515162affc8167623ea9070af1Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -956,7 +956,7 @@ messages919093515162affc8167623ea9070af1.head = (args: { id: string | number } |
 
             /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
         messages919093515162affc8167623ea9070af1Form.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -965,7 +965,7 @@ messages919093515162affc8167623ea9070af1.head = (args: { id: string | number } |
         })
             /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
         messages919093515162affc8167623ea9070af1Form.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -981,7 +981,7 @@ messages919093515162affc8167623ea9070af1.head = (args: { id: string | number } |
     messages919093515162affc8167623ea9070af1.form = messages919093515162affc8167623ea9070af1Form
     /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
 const messagesc7cf492ed2120c56900363e0282acc3c = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -996,7 +996,7 @@ messagesc7cf492ed2120c56900363e0282acc3c.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
 messagesc7cf492ed2120c56900363e0282acc3c.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1024,7 +1024,7 @@ messagesc7cf492ed2120c56900363e0282acc3c.url = (args: { id: string | number } | 
 
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
 messagesc7cf492ed2120c56900363e0282acc3c.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1033,7 +1033,7 @@ messagesc7cf492ed2120c56900363e0282acc3c.get = (args: { id: string | number } | 
 })
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
 messagesc7cf492ed2120c56900363e0282acc3c.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1043,7 +1043,7 @@ messagesc7cf492ed2120c56900363e0282acc3c.head = (args: { id: string | number } |
 
     /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
     const messagesc7cf492ed2120c56900363e0282acc3cForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1053,7 +1053,7 @@ messagesc7cf492ed2120c56900363e0282acc3c.head = (args: { id: string | number } |
 
             /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
         messagesc7cf492ed2120c56900363e0282acc3cForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1062,7 +1062,7 @@ messagesc7cf492ed2120c56900363e0282acc3c.head = (args: { id: string | number } |
         })
             /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
         messagesc7cf492ed2120c56900363e0282acc3cForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1078,7 +1078,7 @@ messagesc7cf492ed2120c56900363e0282acc3c.head = (args: { id: string | number } |
     messagesc7cf492ed2120c56900363e0282acc3c.form = messagesc7cf492ed2120c56900363e0282acc3cForm
     /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/messaging/threads/{id}/messages'
  */
 const messages2ab2aaac96f3db228e4111668b58393f = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1093,7 +1093,7 @@ messages2ab2aaac96f3db228e4111668b58393f.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/messaging/threads/{id}/messages'
  */
 messages2ab2aaac96f3db228e4111668b58393f.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1121,7 +1121,7 @@ messages2ab2aaac96f3db228e4111668b58393f.url = (args: { id: string | number } | 
 
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/messaging/threads/{id}/messages'
  */
 messages2ab2aaac96f3db228e4111668b58393f.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1130,7 +1130,7 @@ messages2ab2aaac96f3db228e4111668b58393f.get = (args: { id: string | number } | 
 })
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/messaging/threads/{id}/messages'
  */
 messages2ab2aaac96f3db228e4111668b58393f.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1140,7 +1140,7 @@ messages2ab2aaac96f3db228e4111668b58393f.head = (args: { id: string | number } |
 
     /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/messaging/threads/{id}/messages'
  */
     const messages2ab2aaac96f3db228e4111668b58393fForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1150,7 +1150,7 @@ messages2ab2aaac96f3db228e4111668b58393f.head = (args: { id: string | number } |
 
             /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/messaging/threads/{id}/messages'
  */
         messages2ab2aaac96f3db228e4111668b58393fForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1159,7 +1159,7 @@ messages2ab2aaac96f3db228e4111668b58393f.head = (args: { id: string | number } |
         })
             /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/messaging/threads/{id}/messages'
  */
         messages2ab2aaac96f3db228e4111668b58393fForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1175,7 +1175,7 @@ messages2ab2aaac96f3db228e4111668b58393f.head = (args: { id: string | number } |
     messages2ab2aaac96f3db228e4111668b58393f.form = messages2ab2aaac96f3db228e4111668b58393fForm
     /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/admin/messaging/threads/{id}/messages'
  */
 const messagesa3c2d209e77c92a6e8f931a5126ca7c5 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1190,7 +1190,7 @@ messagesa3c2d209e77c92a6e8f931a5126ca7c5.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/admin/messaging/threads/{id}/messages'
  */
 messagesa3c2d209e77c92a6e8f931a5126ca7c5.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1218,7 +1218,7 @@ messagesa3c2d209e77c92a6e8f931a5126ca7c5.url = (args: { id: string | number } | 
 
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/admin/messaging/threads/{id}/messages'
  */
 messagesa3c2d209e77c92a6e8f931a5126ca7c5.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1227,7 +1227,7 @@ messagesa3c2d209e77c92a6e8f931a5126ca7c5.get = (args: { id: string | number } | 
 })
 /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/admin/messaging/threads/{id}/messages'
  */
 messagesa3c2d209e77c92a6e8f931a5126ca7c5.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1237,7 +1237,7 @@ messagesa3c2d209e77c92a6e8f931a5126ca7c5.head = (args: { id: string | number } |
 
     /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/admin/messaging/threads/{id}/messages'
  */
     const messagesa3c2d209e77c92a6e8f931a5126ca7c5Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1247,7 +1247,7 @@ messagesa3c2d209e77c92a6e8f931a5126ca7c5.head = (args: { id: string | number } |
 
             /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/admin/messaging/threads/{id}/messages'
  */
         messagesa3c2d209e77c92a6e8f931a5126ca7c5Form.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1256,7 +1256,7 @@ messagesa3c2d209e77c92a6e8f931a5126ca7c5.head = (args: { id: string | number } |
         })
             /**
 * @see \App\Http\Controllers\MessagingController::messages
- * @see app/Http/Controllers/MessagingController.php:130
+ * @see app/Http/Controllers/MessagingController.php:132
  * @route '/admin/messaging/threads/{id}/messages'
  */
         messagesa3c2d209e77c92a6e8f931a5126ca7c5Form.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1285,7 +1285,7 @@ export const messages = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
 const send919093515162affc8167623ea9070af1 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1300,7 +1300,7 @@ send919093515162affc8167623ea9070af1.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
 send919093515162affc8167623ea9070af1.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1328,7 +1328,7 @@ send919093515162affc8167623ea9070af1.url = (args: { id: string | number } | [id:
 
 /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
 send919093515162affc8167623ea9070af1.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1338,7 +1338,7 @@ send919093515162affc8167623ea9070af1.post = (args: { id: string | number } | [id
 
     /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
     const send919093515162affc8167623ea9070af1Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1348,7 +1348,7 @@ send919093515162affc8167623ea9070af1.post = (args: { id: string | number } | [id
 
             /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/api/courier-app/messaging/threads/{id}/messages'
  */
         send919093515162affc8167623ea9070af1Form.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1359,7 +1359,7 @@ send919093515162affc8167623ea9070af1.post = (args: { id: string | number } | [id
     send919093515162affc8167623ea9070af1.form = send919093515162affc8167623ea9070af1Form
     /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
 const sendc7cf492ed2120c56900363e0282acc3c = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1374,7 +1374,7 @@ sendc7cf492ed2120c56900363e0282acc3c.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
 sendc7cf492ed2120c56900363e0282acc3c.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1402,7 +1402,7 @@ sendc7cf492ed2120c56900363e0282acc3c.url = (args: { id: string | number } | [id:
 
 /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
 sendc7cf492ed2120c56900363e0282acc3c.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1412,7 +1412,7 @@ sendc7cf492ed2120c56900363e0282acc3c.post = (args: { id: string | number } | [id
 
     /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
     const sendc7cf492ed2120c56900363e0282acc3cForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1422,7 +1422,7 @@ sendc7cf492ed2120c56900363e0282acc3c.post = (args: { id: string | number } | [id
 
             /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/api/rider-app/messaging/threads/{id}/messages'
  */
         sendc7cf492ed2120c56900363e0282acc3cForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1433,7 +1433,7 @@ sendc7cf492ed2120c56900363e0282acc3c.post = (args: { id: string | number } | [id
     sendc7cf492ed2120c56900363e0282acc3c.form = sendc7cf492ed2120c56900363e0282acc3cForm
     /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/messaging/threads/{id}/messages'
  */
 const send2ab2aaac96f3db228e4111668b58393f = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1448,7 +1448,7 @@ send2ab2aaac96f3db228e4111668b58393f.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/messaging/threads/{id}/messages'
  */
 send2ab2aaac96f3db228e4111668b58393f.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1476,7 +1476,7 @@ send2ab2aaac96f3db228e4111668b58393f.url = (args: { id: string | number } | [id:
 
 /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/messaging/threads/{id}/messages'
  */
 send2ab2aaac96f3db228e4111668b58393f.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1486,7 +1486,7 @@ send2ab2aaac96f3db228e4111668b58393f.post = (args: { id: string | number } | [id
 
     /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/messaging/threads/{id}/messages'
  */
     const send2ab2aaac96f3db228e4111668b58393fForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1496,7 +1496,7 @@ send2ab2aaac96f3db228e4111668b58393f.post = (args: { id: string | number } | [id
 
             /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/messaging/threads/{id}/messages'
  */
         send2ab2aaac96f3db228e4111668b58393fForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1507,7 +1507,7 @@ send2ab2aaac96f3db228e4111668b58393f.post = (args: { id: string | number } | [id
     send2ab2aaac96f3db228e4111668b58393f.form = send2ab2aaac96f3db228e4111668b58393fForm
     /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/admin/messaging/threads/{id}/messages'
  */
 const senda3c2d209e77c92a6e8f931a5126ca7c5 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1522,7 +1522,7 @@ senda3c2d209e77c92a6e8f931a5126ca7c5.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/admin/messaging/threads/{id}/messages'
  */
 senda3c2d209e77c92a6e8f931a5126ca7c5.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1550,7 +1550,7 @@ senda3c2d209e77c92a6e8f931a5126ca7c5.url = (args: { id: string | number } | [id:
 
 /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/admin/messaging/threads/{id}/messages'
  */
 senda3c2d209e77c92a6e8f931a5126ca7c5.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1560,7 +1560,7 @@ senda3c2d209e77c92a6e8f931a5126ca7c5.post = (args: { id: string | number } | [id
 
     /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/admin/messaging/threads/{id}/messages'
  */
     const senda3c2d209e77c92a6e8f931a5126ca7c5Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1570,7 +1570,7 @@ senda3c2d209e77c92a6e8f931a5126ca7c5.post = (args: { id: string | number } | [id
 
             /**
 * @see \App\Http\Controllers\MessagingController::send
- * @see app/Http/Controllers/MessagingController.php:152
+ * @see app/Http/Controllers/MessagingController.php:154
  * @route '/admin/messaging/threads/{id}/messages'
  */
         senda3c2d209e77c92a6e8f931a5126ca7c5Form.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1594,7 +1594,7 @@ export const send = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/api/courier-app/messaging/threads/{id}/read'
  */
 const read567105180dd48a6bc78bd55620b07edd = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1609,7 +1609,7 @@ read567105180dd48a6bc78bd55620b07edd.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/api/courier-app/messaging/threads/{id}/read'
  */
 read567105180dd48a6bc78bd55620b07edd.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1637,7 +1637,7 @@ read567105180dd48a6bc78bd55620b07edd.url = (args: { id: string | number } | [id:
 
 /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/api/courier-app/messaging/threads/{id}/read'
  */
 read567105180dd48a6bc78bd55620b07edd.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1647,7 +1647,7 @@ read567105180dd48a6bc78bd55620b07edd.post = (args: { id: string | number } | [id
 
     /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/api/courier-app/messaging/threads/{id}/read'
  */
     const read567105180dd48a6bc78bd55620b07eddForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1657,7 +1657,7 @@ read567105180dd48a6bc78bd55620b07edd.post = (args: { id: string | number } | [id
 
             /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/api/courier-app/messaging/threads/{id}/read'
  */
         read567105180dd48a6bc78bd55620b07eddForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1668,7 +1668,7 @@ read567105180dd48a6bc78bd55620b07edd.post = (args: { id: string | number } | [id
     read567105180dd48a6bc78bd55620b07edd.form = read567105180dd48a6bc78bd55620b07eddForm
     /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/api/rider-app/messaging/threads/{id}/read'
  */
 const read63518b1fbf547e987f3541849b20c6e0 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1683,7 +1683,7 @@ read63518b1fbf547e987f3541849b20c6e0.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/api/rider-app/messaging/threads/{id}/read'
  */
 read63518b1fbf547e987f3541849b20c6e0.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1711,7 +1711,7 @@ read63518b1fbf547e987f3541849b20c6e0.url = (args: { id: string | number } | [id:
 
 /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/api/rider-app/messaging/threads/{id}/read'
  */
 read63518b1fbf547e987f3541849b20c6e0.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1721,7 +1721,7 @@ read63518b1fbf547e987f3541849b20c6e0.post = (args: { id: string | number } | [id
 
     /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/api/rider-app/messaging/threads/{id}/read'
  */
     const read63518b1fbf547e987f3541849b20c6e0Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1731,7 +1731,7 @@ read63518b1fbf547e987f3541849b20c6e0.post = (args: { id: string | number } | [id
 
             /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/api/rider-app/messaging/threads/{id}/read'
  */
         read63518b1fbf547e987f3541849b20c6e0Form.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1742,7 +1742,7 @@ read63518b1fbf547e987f3541849b20c6e0.post = (args: { id: string | number } | [id
     read63518b1fbf547e987f3541849b20c6e0.form = read63518b1fbf547e987f3541849b20c6e0Form
     /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/messaging/threads/{id}/read'
  */
 const read53c20fa3c79c4ad4f7f1b7f334cabf5d = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1757,7 +1757,7 @@ read53c20fa3c79c4ad4f7f1b7f334cabf5d.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/messaging/threads/{id}/read'
  */
 read53c20fa3c79c4ad4f7f1b7f334cabf5d.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1785,7 +1785,7 @@ read53c20fa3c79c4ad4f7f1b7f334cabf5d.url = (args: { id: string | number } | [id:
 
 /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/messaging/threads/{id}/read'
  */
 read53c20fa3c79c4ad4f7f1b7f334cabf5d.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1795,7 +1795,7 @@ read53c20fa3c79c4ad4f7f1b7f334cabf5d.post = (args: { id: string | number } | [id
 
     /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/messaging/threads/{id}/read'
  */
     const read53c20fa3c79c4ad4f7f1b7f334cabf5dForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1805,7 +1805,7 @@ read53c20fa3c79c4ad4f7f1b7f334cabf5d.post = (args: { id: string | number } | [id
 
             /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/messaging/threads/{id}/read'
  */
         read53c20fa3c79c4ad4f7f1b7f334cabf5dForm.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1816,7 +1816,7 @@ read53c20fa3c79c4ad4f7f1b7f334cabf5d.post = (args: { id: string | number } | [id
     read53c20fa3c79c4ad4f7f1b7f334cabf5d.form = read53c20fa3c79c4ad4f7f1b7f334cabf5dForm
     /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/admin/messaging/threads/{id}/read'
  */
 const read932cec2d8f9fdf14654e68bc507a6641 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1831,7 +1831,7 @@ read932cec2d8f9fdf14654e68bc507a6641.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/admin/messaging/threads/{id}/read'
  */
 read932cec2d8f9fdf14654e68bc507a6641.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1859,7 +1859,7 @@ read932cec2d8f9fdf14654e68bc507a6641.url = (args: { id: string | number } | [id:
 
 /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/admin/messaging/threads/{id}/read'
  */
 read932cec2d8f9fdf14654e68bc507a6641.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1869,7 +1869,7 @@ read932cec2d8f9fdf14654e68bc507a6641.post = (args: { id: string | number } | [id
 
     /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/admin/messaging/threads/{id}/read'
  */
     const read932cec2d8f9fdf14654e68bc507a6641Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1879,7 +1879,7 @@ read932cec2d8f9fdf14654e68bc507a6641.post = (args: { id: string | number } | [id
 
             /**
 * @see \App\Http\Controllers\MessagingController::read
- * @see app/Http/Controllers/MessagingController.php:186
+ * @see app/Http/Controllers/MessagingController.php:188
  * @route '/admin/messaging/threads/{id}/read'
  */
         read932cec2d8f9fdf14654e68bc507a6641Form.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1903,7 +1903,7 @@ export const read = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/courier-app/messaging/messages/{id}/image'
  */
 const image2616d361f345d14840d44f9b4f8bcabe = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1918,7 +1918,7 @@ image2616d361f345d14840d44f9b4f8bcabe.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/courier-app/messaging/messages/{id}/image'
  */
 image2616d361f345d14840d44f9b4f8bcabe.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1946,7 +1946,7 @@ image2616d361f345d14840d44f9b4f8bcabe.url = (args: { id: string | number } | [id
 
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/courier-app/messaging/messages/{id}/image'
  */
 image2616d361f345d14840d44f9b4f8bcabe.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1955,7 +1955,7 @@ image2616d361f345d14840d44f9b4f8bcabe.get = (args: { id: string | number } | [id
 })
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/courier-app/messaging/messages/{id}/image'
  */
 image2616d361f345d14840d44f9b4f8bcabe.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1965,7 +1965,7 @@ image2616d361f345d14840d44f9b4f8bcabe.head = (args: { id: string | number } | [i
 
     /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/courier-app/messaging/messages/{id}/image'
  */
     const image2616d361f345d14840d44f9b4f8bcabeForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1975,7 +1975,7 @@ image2616d361f345d14840d44f9b4f8bcabe.head = (args: { id: string | number } | [i
 
             /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/courier-app/messaging/messages/{id}/image'
  */
         image2616d361f345d14840d44f9b4f8bcabeForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1984,7 +1984,7 @@ image2616d361f345d14840d44f9b4f8bcabe.head = (args: { id: string | number } | [i
         })
             /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/courier-app/messaging/messages/{id}/image'
  */
         image2616d361f345d14840d44f9b4f8bcabeForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2000,7 +2000,7 @@ image2616d361f345d14840d44f9b4f8bcabe.head = (args: { id: string | number } | [i
     image2616d361f345d14840d44f9b4f8bcabe.form = image2616d361f345d14840d44f9b4f8bcabeForm
     /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/rider-app/messaging/messages/{id}/image'
  */
 const image626d096af178f20baf872393c0fb072b = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2015,7 +2015,7 @@ image626d096af178f20baf872393c0fb072b.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/rider-app/messaging/messages/{id}/image'
  */
 image626d096af178f20baf872393c0fb072b.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -2043,7 +2043,7 @@ image626d096af178f20baf872393c0fb072b.url = (args: { id: string | number } | [id
 
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/rider-app/messaging/messages/{id}/image'
  */
 image626d096af178f20baf872393c0fb072b.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2052,7 +2052,7 @@ image626d096af178f20baf872393c0fb072b.get = (args: { id: string | number } | [id
 })
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/rider-app/messaging/messages/{id}/image'
  */
 image626d096af178f20baf872393c0fb072b.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2062,7 +2062,7 @@ image626d096af178f20baf872393c0fb072b.head = (args: { id: string | number } | [i
 
     /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/rider-app/messaging/messages/{id}/image'
  */
     const image626d096af178f20baf872393c0fb072bForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2072,7 +2072,7 @@ image626d096af178f20baf872393c0fb072b.head = (args: { id: string | number } | [i
 
             /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/rider-app/messaging/messages/{id}/image'
  */
         image626d096af178f20baf872393c0fb072bForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2081,7 +2081,7 @@ image626d096af178f20baf872393c0fb072b.head = (args: { id: string | number } | [i
         })
             /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/api/rider-app/messaging/messages/{id}/image'
  */
         image626d096af178f20baf872393c0fb072bForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2097,7 +2097,7 @@ image626d096af178f20baf872393c0fb072b.head = (args: { id: string | number } | [i
     image626d096af178f20baf872393c0fb072b.form = image626d096af178f20baf872393c0fb072bForm
     /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/messaging/messages/{id}/image'
  */
 const image18952448136d1c30af337e6946439bf8 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2112,7 +2112,7 @@ image18952448136d1c30af337e6946439bf8.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/messaging/messages/{id}/image'
  */
 image18952448136d1c30af337e6946439bf8.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -2140,7 +2140,7 @@ image18952448136d1c30af337e6946439bf8.url = (args: { id: string | number } | [id
 
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/messaging/messages/{id}/image'
  */
 image18952448136d1c30af337e6946439bf8.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2149,7 +2149,7 @@ image18952448136d1c30af337e6946439bf8.get = (args: { id: string | number } | [id
 })
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/messaging/messages/{id}/image'
  */
 image18952448136d1c30af337e6946439bf8.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2159,7 +2159,7 @@ image18952448136d1c30af337e6946439bf8.head = (args: { id: string | number } | [i
 
     /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/messaging/messages/{id}/image'
  */
     const image18952448136d1c30af337e6946439bf8Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2169,7 +2169,7 @@ image18952448136d1c30af337e6946439bf8.head = (args: { id: string | number } | [i
 
             /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/messaging/messages/{id}/image'
  */
         image18952448136d1c30af337e6946439bf8Form.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2178,7 +2178,7 @@ image18952448136d1c30af337e6946439bf8.head = (args: { id: string | number } | [i
         })
             /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/messaging/messages/{id}/image'
  */
         image18952448136d1c30af337e6946439bf8Form.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2194,7 +2194,7 @@ image18952448136d1c30af337e6946439bf8.head = (args: { id: string | number } | [i
     image18952448136d1c30af337e6946439bf8.form = image18952448136d1c30af337e6946439bf8Form
     /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/admin/messaging/messages/{id}/image'
  */
 const imagebd4ad2848153ef913f33e0d8fe7b2b49 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2209,7 +2209,7 @@ imagebd4ad2848153ef913f33e0d8fe7b2b49.definition = {
 
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/admin/messaging/messages/{id}/image'
  */
 imagebd4ad2848153ef913f33e0d8fe7b2b49.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -2237,7 +2237,7 @@ imagebd4ad2848153ef913f33e0d8fe7b2b49.url = (args: { id: string | number } | [id
 
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/admin/messaging/messages/{id}/image'
  */
 imagebd4ad2848153ef913f33e0d8fe7b2b49.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2246,7 +2246,7 @@ imagebd4ad2848153ef913f33e0d8fe7b2b49.get = (args: { id: string | number } | [id
 })
 /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/admin/messaging/messages/{id}/image'
  */
 imagebd4ad2848153ef913f33e0d8fe7b2b49.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2256,7 +2256,7 @@ imagebd4ad2848153ef913f33e0d8fe7b2b49.head = (args: { id: string | number } | [i
 
     /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/admin/messaging/messages/{id}/image'
  */
     const imagebd4ad2848153ef913f33e0d8fe7b2b49Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2266,7 +2266,7 @@ imagebd4ad2848153ef913f33e0d8fe7b2b49.head = (args: { id: string | number } | [i
 
             /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/admin/messaging/messages/{id}/image'
  */
         imagebd4ad2848153ef913f33e0d8fe7b2b49Form.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2275,7 +2275,7 @@ imagebd4ad2848153ef913f33e0d8fe7b2b49.head = (args: { id: string | number } | [i
         })
             /**
 * @see \App\Http\Controllers\MessagingController::image
- * @see app/Http/Controllers/MessagingController.php:197
+ * @see app/Http/Controllers/MessagingController.php:199
  * @route '/admin/messaging/messages/{id}/image'
  */
         imagebd4ad2848153ef913f33e0d8fe7b2b49Form.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

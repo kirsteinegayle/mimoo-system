@@ -167,16 +167,16 @@ export function Footer() {
 
             {/* Links */}
             <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-              <Link href="/privacy" className="hover:text-violet-400 transition-colors">
+              <Link href="/policies/privacy" className="hover:text-violet-400 transition-colors">
                 Privacy Policy
               </Link>
               <span className="text-gray-700">•</span>
-              <Link href="/terms" className="hover:text-violet-400 transition-colors">
+              <Link href="/policies/terms" className="hover:text-violet-400 transition-colors">
                 Terms of Service
               </Link>
               <span className="text-gray-700">•</span>
-              <Link href="/cookies" className="hover:text-violet-400 transition-colors">
-                Cookie Policy
+              <Link href="/policies/prohibited_items" className="hover:text-violet-400 transition-colors">
+                Prohibited Items
               </Link>
             </div>
 

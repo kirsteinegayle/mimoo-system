@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../services/courier_repository.dart';
 import '../../theme/mimoo_theme.dart';
 import '../../widgets/courier_shared.dart';
+import '../../widgets/user_avatar.dart';
 
 /// Rider Management, READ-ONLY (GET /api/courier-app/riders): riders of this
 /// courier with vehicle, plate, online / offline and account status.
@@ -17,6 +18,7 @@ class RiderManagementPage extends StatefulWidget {
 
 class _RiderManagementPageState extends State<RiderManagementPage> {
   List<CourierRiderItem> _items = [];
+  String _query = '';
   int _online = 0;
   bool _loading = true;
   String? _error;
@@ -47,6 +49,16 @@ class _RiderManagementPageState extends State<RiderManagementPage> {
         _error = ApiService.friendlyError(e);
       });
     }
+  }
+
+  List<CourierRiderItem> get _shown {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return _items;
+    return _items
+        .where((r) => '${r.name} ${r.contactNumber ?? ''} ${r.plateNumber ?? ''}'
+            .toLowerCase()
+            .contains(q))
+        .toList();
   }
 
   @override
@@ -87,6 +99,10 @@ class _RiderManagementPageState extends State<RiderManagementPage> {
                         ]),
                       ),
                       const SizedBox(height: 10),
+                      CourierSearchField(
+                          hint: 'Search riders',
+                          onChanged: (v) => setState(() => _query = v)),
+                      const SizedBox(height: 10),
                       Text('${_items.length} riders · $_online online',
                           style: pjs(
                               size: 12,
@@ -102,8 +118,16 @@ class _RiderManagementPageState extends State<RiderManagementPage> {
                                 'No riders yet. Approved rider applications appear here.',
                           ),
                         )
+                      else if (_shown.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 40),
+                          child: CourierEmptyState(
+                            icon: Icons.search_off,
+                            message: 'No riders match your search.',
+                          ),
+                        )
                       else
-                        ..._items.map(_card),
+                        ..._shown.map(_card),
                     ],
                   ),
                 ),
@@ -126,11 +150,11 @@ class _RiderManagementPageState extends State<RiderManagementPage> {
         border: Border.all(color: kBorder),
       ),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        CircleAvatar(
-          radius: 20,
-          backgroundColor: kChip,
-          child: Icon(Icons.two_wheeler,
-              color: r.isOnline ? kGreen : kSubtext, size: 20),
+        UserAvatar(
+          url: r.photoUrl,
+          name: r.name,
+          size: 40,
+          border: Border.all(color: r.isOnline ? kGreen : kBorder, width: 2),
         ),
         const SizedBox(width: 12),
         Expanded(

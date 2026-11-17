@@ -6,6 +6,7 @@ import { Star, ChevronRight, Minus, Plus, Package, ShoppingCart, Flag, Heart, Me
 import { BuyerHeader } from "@/components/buyer-header";
 import { FollowButton } from "@/components/buyer/follow-button";
 import { toast } from "sonner";
+import { UserAvatar } from "@/components/user-avatar";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -165,9 +166,10 @@ function ProductImageGallery({
   useEffect(() => {
     if (variantImage) {
       const variantIndex = displayImages.indexOf(variantImage);
-      if (variantIndex !== -1) {
-        setSelectedIndex(variantIndex);
-      }
+      setSelectedIndex(variantIndex !== -1 ? variantIndex : 0);
+    } else {
+      // No variant selected, or the variant has no photo of its own: show the main photo.
+      setSelectedIndex(0);
     }
   }, [variantImage]);
   
@@ -298,7 +300,8 @@ function ProductInfo({
   // Use variant price/stock if available
   const effectivePrice = currentVariant?.price ?? product.effective_price;
   const effectiveStock = currentVariant?.stock ?? product.stock;
-  const maxQuantity = effectiveStock; // Max = available stock
+  const maxPerCheckout = (usePage().props as { max_per_checkout?: number }).max_per_checkout ?? 10;
+  const maxQuantity = Math.min(effectiveStock, maxPerCheckout); // Max = stock, capped per checkout
   
   // Check if all variant options are selected
   const isVariantComplete = !product.has_variants || 
@@ -409,14 +412,20 @@ function ProductInfo({
           </div>
         </div>
         
-        {/* Weight */}
-        {product.weight && (
-          <div className="flex items-center gap-2 text-sm text-neutral-600">
-            <Package className="h-4 w-4" />
-            <span>Weight: {product.weight} kg</span>
-          </div>
-        )}
       </div>
+
+      {/* Product details (read-only; the seller edits them in Add/Edit Product > Basic Information) */}
+      {(product.category || product.brand || product.sku || product.weight) && (
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-neutral-700">Product Details</h3>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm">
+            {product.category && (<><dt className="text-neutral-500">Category</dt><dd className="font-medium text-neutral-800">{product.category}</dd></>)}
+            {product.brand && (<><dt className="text-neutral-500">Brand</dt><dd className="font-medium text-neutral-800">{product.brand}</dd></>)}
+            {product.sku && (<><dt className="text-neutral-500">SKU</dt><dd className="font-medium text-neutral-800">{currentVariant?.sku || product.sku}</dd></>)}
+            {product.weight && (<><dt className="text-neutral-500">Weight</dt><dd className="font-medium text-neutral-800">{product.weight} kg</dd></>)}
+          </dl>
+        </div>
+      )}
 
       {/* Quantity selector - only show if in stock */}
       {effectiveStock > 0 && role !== "seller" && (
@@ -459,7 +468,7 @@ function ProductInfo({
               </button>
             </div>
             <span className="text-xs text-neutral-500">
-              {maxQuantity} available
+              {effectiveStock} available · max {maxPerCheckout} per order
             </span>
           </div>
         </div>
@@ -520,15 +529,10 @@ function ProductInfo({
                   toast.error('Please select all options first');
                   return;
                 }
-                // Add to cart with REPLACE mode (for Buy Now)
-                const cartItemData = await onAddToCart(quantity, currentVariant?.id, true);
-                
-                if (cartItemData && cartItemData.id) {
-                  // Redirect to checkout with only this item selected
-                  setTimeout(() => {
-                    router.visit(`/checkout?items=${cartItemData.id}`);
-                  }, 500);
-                }
+                // Buy Now goes straight to checkout with only this item; the cart is not touched.
+                const params = new URLSearchParams({ buy_now: '1', product_id: String(product.id), quantity: String(quantity) });
+                if (currentVariant?.id) params.set('variant_id', currentVariant.id);
+                router.visit(`/checkout?${params.toString()}`);
               }}
               disabled={!isVariantComplete}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-violet-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-800 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -591,12 +595,6 @@ function SellerInfo({
   // seller themself and for non-buyer accounts.
   const canChat = !!sellerId && (!user || (user.account_type === "buyer" && Number(user.id) !== Number(sellerId)));
   const chatHref = `/messages?seller_id=${sellerId}${productId ? `&product_id=${productId}` : ""}`;
-  const initials = sellerName
-    .split(' ')
-    .map(word => word[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
 
   // Real seller rating (all reviews of this seller's products).
   const rating = sellerRating?.avg ?? 0;
@@ -606,17 +604,7 @@ function SellerInfo({
     <div className="rounded-xl border border-neutral-200 bg-white p-6">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          {profilePhoto ? (
-            <img 
-              src={profilePhoto} 
-              alt={sellerName} 
-              className="h-16 w-16 shrink-0 rounded-full object-cover border-2 border-violet-100"
-            />
-          ) : (
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-violet-900 text-xl font-bold text-white">
-              {initials}
-            </div>
-          )}
+          <UserAvatar src={profilePhoto} name={sellerName} className="h-16 w-16 text-xl border-2 border-violet-100" />
           <div>
             <p className="text-lg font-bold text-neutral-900">
               {sellerName}
@@ -722,6 +710,15 @@ export default function ProductDetail({ auth, product, reviews: initialReviews }
         Object.entries(v.combination).every(([key, val]) => selectedVariant[key] === val)
       )
     : null;
+
+  // Photo for the current selection. Works with a PARTIAL selection too (e.g. only "Pink" chosen,
+  // size not picked yet): the first variant that matches what is selected and has a photo wins.
+  const selectedEntries = Object.entries(selectedVariant).filter(([, v]) => !!v);
+  const variantImage: string | null =
+    currentVariant?.image ||
+    (product.has_variants && selectedEntries.length > 0
+      ? product.variants?.find(v => !!v.image && selectedEntries.every(([k, val]) => v.combination[k] === val))?.image ?? null
+      : null);
 
   // Collect all variant images for display
   const allVariantImages = product.has_variants && product.variants
@@ -959,7 +956,7 @@ export default function ProductDetail({ auth, product, reviews: initialReviews }
           <ProductImageGallery 
             images={product.images} 
             productName={product.name}
-            variantImage={currentVariant?.image}
+            variantImage={variantImage}
             allVariantImages={allVariantImages}
           />
           <ProductInfo 
@@ -1047,9 +1044,8 @@ export default function ProductDetail({ auth, product, reviews: initialReviews }
                 {reviewList.map((r) => (
                   <div key={r.id} className="border-b border-neutral-200 pb-6 last:border-0 last:pb-0">
                     <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
-                        {r.buyer_name.substring(0, 1).toUpperCase()}
-                      </div>
+                      {/* Masked name only: no buyer photo, so the masking is not undone. */}
+                      <UserAvatar src={null} name={r.buyer_name} className="h-10 w-10 text-sm" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between mb-2 gap-3">
                           <div>

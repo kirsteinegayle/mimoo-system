@@ -23,6 +23,10 @@ class RegisterResponse implements RegisterResponseContract
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        if ($user) {
+            \App\Http\Controllers\Auth\ApprovalStatusController::remember($request, $user); // after invalidate(): new session
+        }
+
         // Redirect directly to pending approval page for sellers/logistics
         // They don't need email verification before approval
         return redirect()->route('register.pending')

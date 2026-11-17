@@ -1,5 +1,7 @@
+import { alertDialog } from '@/components/app-modal';
 import { Head, Link, router } from '@inertiajs/react';
 import { ReactNode, useState } from 'react';
+import { CurrentUserAvatar } from '@/components/user-avatar';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
 const fontSyne = { fontFamily: 'Syne, sans-serif' };
@@ -20,6 +22,8 @@ interface ParcelData {
     weight: number;
     confirmed_at: string;
     status: string;
+    eligible_courier_ids?: number[]; // best-matching couriers for this buyer address
+    eligible_tier?: string | null;
 }
 
 interface CourierData {
@@ -60,44 +64,15 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
 
     // Get eligible couriers based on selected parcels' cities/municipalities
     const getEligibleCouriers = () => {
+        // Nothing selected: no courier is offered. The server computes, per parcel, the best-matching
+        // couriers for the buyer's address; a courier is offered only if it is eligible for EVERY selected parcel.
         if (selectedParcels.length === 0) {
-            // No parcels selected - show all couriers
-            return couriers;
+            return [];
         }
 
-        // Get cities/municipalities of selected parcels
-        const selectedCities = new Set<string>();
-        parcels.forEach(parcel => {
-            if (selectedParcels.includes(parcel.id)) {
-                selectedCities.add(parcel.city);
-            }
-        });
+        const chosen = parcels.filter(p => selectedParcels.includes(p.id));
 
-        // Filter couriers that service at least one of the selected cities
-        // If courier has no service_areas defined, they are eligible for all (fallback)
-        const eligible = couriers.filter(courier => {
-            if (!courier.service_areas || courier.service_areas.length === 0) {
-                // No service areas defined - courier services everywhere (temporary fallback)
-                return true;
-            }
-
-            // Check if courier services any of the selected cities/municipalities
-            // Match by city/municipality name (case-insensitive)
-            return Array.from(selectedCities).some(city => 
-                courier.service_areas.some(area => {
-                    const areaLower = area.toLowerCase();
-                    const cityLower = city.toLowerCase();
-                    
-                    // Match if area contains city OR city contains area
-                    // Examples:
-                    // - "City of Calamba" matches "Calamba"
-                    // - "Santa Cruz" matches "City of Santa Cruz"
-                    return areaLower.includes(cityLower) || cityLower.includes(areaLower);
-                })
-            );
-        });
-
-        return eligible;
+        return couriers.filter(courier => chosen.every(p => (p.eligible_courier_ids ?? []).includes(courier.id)));
     };
 
     const eligibleCouriers = getEligibleCouriers();
@@ -145,11 +120,11 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
 
     const handleAssign = async () => {
         if (selectedParcels.length === 0) {
-            alert('Please select at least one parcel');
+            alertDialog('Please select at least one parcel');
             return;
         }
         if (!selectedCourier) {
-            alert('Please select a courier');
+            alertDialog('Please select a courier');
             return;
         }
         
@@ -178,7 +153,7 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
             
             if (response.ok) {
                 setShowAssignModal(false);
-                alert(data.message || 'Parcels assigned successfully!');
+                alertDialog(data.message || 'Parcels assigned successfully!');
                 
                 // Show errors if any
                 if (data.errors && data.errors.length > 0) {
@@ -189,12 +164,12 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
                 router.reload();
             } else {
                 setShowAssignModal(false);
-                alert(data.error || 'Failed to assign parcels');
+                alertDialog(data.error || 'Failed to assign parcels');
             }
         } catch (error) {
             console.error('Assignment error:', error);
             setShowAssignModal(false);
-            alert('Failed to assign parcels. Please try again.');
+            alertDialog('Failed to assign parcels. Please try again.');
         } finally {
             setAssigning(false);
         }
@@ -207,7 +182,7 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
         { id: 'courier-applications', label: 'Courier Applications', icon: 'file-text', href: '/logistics/courier-applications' },
         { id: 'delivery-monitoring', label: 'Delivery Monitoring', icon: 'monitor', href: '/logistics/delivery-monitoring' },
         { id: 'riders', label: 'Riders', icon: 'bike', href: '/logistics/riders' },
-        { id: 'branches-checklists', label: 'Branches & Checklists', icon: 'checklist', href: '/logistics/branches-checklists' },
+        { id: 'branches-facilities', label: 'Branches & Facilities', icon: 'checklist', href: '/logistics/branches-facilities' },
         { id: 'zones-rates', label: 'Zones & Rates', icon: 'zones', href: '/logistics/zones-rates' },
         { id: 'cod-remittance', label: 'COD & Remittance', icon: 'chart-bar', href: '/logistics/cod-remittance' },
         { id: 'reports', label: 'Reports', icon: 'chart', href: '/logistics/reports' },
@@ -347,9 +322,9 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
                                 <div className="relative">
                                     <button 
                                         onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="w-9 h-9 rounded-full bg-[#2B2249] text-white flex items-center justify-center text-sm font-bold hover:bg-[#3d2e5f] transition"
+                                        className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center hover:opacity-90 transition"
                                     >
-                                        {auth.user.name.charAt(0)}
+                                        <CurrentUserAvatar fallbackName={auth.user.name} className="h-9 w-9 text-sm" />
                                     </button>
                                     {showUserMenu && (
                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
@@ -562,10 +537,7 @@ export default function SortAssign({ auth, company, parcels = [], couriers = [] 
                                                     ))
                                                 ) : (
                                                     <option disabled className="text-gray-500">
-                                                        {selectedParcels.length > 0 
-                                                            ? 'No couriers service the selected destinations' 
-                                                            : 'No approved couriers available'
-                                                        }
+                                                        {selectedParcels.length > 0 ? 'No single courier covers every selected destination' : 'Select parcels first'}
                                                     </option>
                                                 )}
                                             </select>

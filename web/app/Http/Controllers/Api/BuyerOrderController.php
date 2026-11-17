@@ -157,6 +157,10 @@ class BuyerOrderController extends Controller
 
         $user = $request->user();
 
+        if (! \App\Support\PlatformSettings::codEnabled()) {
+            return response()->json(['message' => 'Cash on Delivery is not available right now. Please try again later.'], 422);
+        }
+
         // ── Address book snapshot ─────────────────────────────────────────────
         $shippingParts = [];
         if (! empty($validated['address_id'])) {
@@ -231,7 +235,7 @@ class BuyerOrderController extends Controller
                 }
 
                 // Mobile adds approval_status check (web only checks status)
-                if ($product->status !== 'active' || $product->approval_status !== 'approved') {
+                if ($product->status !== 'active' || $product->approval_status !== 'approved' || $product->sellerIsBlocked()) {
                     DB::rollBack();
                     return response()->json([
                         'message' => "'{$product->name}' is not available for purchase.",
@@ -242,6 +246,15 @@ class BuyerOrderController extends Controller
                     DB::rollBack();
                     return response()->json([
                         'message' => "You cannot purchase your own product '{$product->name}'.",
+                    ], 422);
+                }
+
+                $maxPerCheckout = (int) config('checkout.max_quantity_per_product', 10);
+                if ($cartItem->quantity > $maxPerCheckout) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => "You can only buy up to {$maxPerCheckout} units of '{$product->name}' per checkout. Please reduce the quantity.",
+                        'max_per_checkout' => $maxPerCheckout,
                     ], 422);
                 }
 
@@ -329,9 +342,26 @@ class BuyerOrderController extends Controller
                 $appliedVoucher  = $check['voucher'];
             }
 
+            // Shipping fee (buyer zone + parcel weight) and the logistics that gets the parcel (same as web)
+            $parsed = Order::parseAddress($validated['shipping_address']);
+            $weight = \App\Services\ShippingService::weightOf($cartItems->map(fn ($ci) => [
+                'weight' => $ci->product->weight, 'quantity' => $ci->quantity,
+            ]));
+            $quote  = \App\Services\ShippingService::quote($shippingParts['shipping_municipality_city'] ?? $parsed['city'], $shippingParts['shipping_province'] ?? $parsed['province'], $weight);
+            $total  = round($total + $quote['fee'], 2);
+
             $order = Order::create([
                 'buyer_id'        => $user->id,
                 'total'           => $total,
+                'shipping_fee'    => $quote['fee'],
+                'shipping_zone'   => $quote['zone'],
+                'parcel_weight'   => $weight,
+                'logistics_id'    => $quote['logistics_id'],
+                'logistics_reason' => \Illuminate\Support\Str::limit($quote['reason'], 250, ''),
+                'shipping_region' => $parsed['region'],
+                'shipping_province' => $parsed['province'],
+                'shipping_municipality_city' => $parsed['city'],
+                'shipping_barangay' => $parsed['barangay'],
                 'status'          => 'pending',
                 'payment_status'  => 'unpaid',
                 'payment_method'  => $validated['payment_method'],
@@ -494,6 +524,43 @@ class BuyerOrderController extends Controller
     // GET /api/buyer/orders/{id}
     // Single order detail — 404 if it doesn't belong to the buyer.
     // ─────────────────────────────────────────────────────────────────────────
+    /**
+     * GET /api/buyer/shipping/quote?cart_item_ids=1,2&address_id=5   (or &city=&province=)
+     * The shipping fee the order will be charged: the same ShippingService as web checkout (buyer zone + parcel
+     * weight, standard fallback fee, never 0). The app calls it again whenever the delivery address changes.
+     */
+    public function shippingQuote(Request $request): JsonResponse
+    {
+        if ($err = $this->buyerGuard($request)) return $err;
+
+        $user = $request->user();
+        $city = $request->input('city');
+        $province = $request->input('province');
+        if ($request->filled('address_id')) {
+            $a = BuyerAddress::where('buyer_id', $user->id)->find($request->input('address_id'));
+            if (! $a) {
+                return response()->json(['message' => 'Address not found.'], 404);
+            }
+            [$city, $province] = [$a->municipality_city, $a->province];
+        } elseif (! $city) {
+            // free-typed address: read the city / province out of the text, like order placement does
+            $parsed = Order::parseAddress((string) $request->input('shipping_address'));
+            [$city, $province] = [$parsed['city'], $parsed['province']];
+        }
+
+        $ids = array_filter(array_map('intval', explode(',', (string) $request->input('cart_item_ids', ''))));
+        $cart = Cart::with('items.product')->where('buyer_id', $user->id)->first();
+        $items = $cart ? $cart->items->when($ids, fn ($c) => $c->whereIn('id', $ids)) : collect();
+
+        $weight = \App\Services\ShippingService::weightOf($items->map(fn ($i) => ['weight' => $i->product?->weight, 'quantity' => $i->quantity]));
+        $q = \App\Services\ShippingService::quote($city, $province, $weight);
+
+        return response()->json(['data' => [
+            'shipping_fee' => (float) $q['fee'], 'zone' => $q['zone'], 'weight' => $q['weight'],
+            'logistics' => $q['logistics_name'], 'standard_rate' => (bool) $q['fallback'],
+        ]]);
+    }
+
     public function show(Request $request, int $id): JsonResponse
     {
         if ($err = $this->buyerGuard($request)) return $err;

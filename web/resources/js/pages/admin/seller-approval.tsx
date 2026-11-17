@@ -1,3 +1,4 @@
+import { confirmDialog, alertDialog } from '@/components/app-modal';
 import { Head, router } from '@inertiajs/react';
 import {
     CheckCircle2,
@@ -22,7 +23,7 @@ interface Registration {
     email: string;
     account_type: string;
     business_name: string | null;
-    status: 'pending' | 'approved' | 'disapproved';
+    status: 'pending' | 'approved' | 'disapproved' | 'suspended' | 'deactivated';
     created_at: string;
     approved_at: string | null;
 }
@@ -110,11 +111,13 @@ const columns = ['Applicant', 'Role', 'Business / Permit', 'Documents', 'Date Ap
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
-function StatusBadge({ status }: { status: 'pending' | 'approved' | 'disapproved' }) {
+function StatusBadge({ status }: { status: Registration['status'] }) {
     const map = {
         pending:     'text-amber-600  bg-amber-50  border-amber-200',
         approved:    'text-emerald-600 bg-emerald-50 border-emerald-200',
         disapproved: 'text-red-500    bg-red-50    border-red-200',
+        suspended:   'text-orange-600 bg-orange-50 border-orange-200',
+        deactivated: 'text-gray-600   bg-gray-100   border-gray-300',
     };
     return (
         <span className={`inline-block rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${map[status]}`}>
@@ -156,22 +159,22 @@ export default function SellerApproval({ registrations, stats, filters, paginati
             setSelectedSeller(data);
         } catch (error) {
             console.error('Failed to load seller details:', error);
-            alert('Failed to load seller details');
+            alertDialog('Failed to load seller details');
             setShowModal(false);
         } finally {
             setLoadingDetails(false);
         }
     }
 
-    function handleApprove(userId: number) {
-        if (confirm('Are you sure you want to approve this seller registration?')) {
+    async function handleApprove(userId: number) {
+        if (await confirmDialog('Are you sure you want to approve this seller registration?')) {
             router.post(`/admin/seller-approval/${userId}/approve`);
             setShowModal(false);
         }
     }
 
-    function handleDisapprove(userId: number) {
-        if (confirm('Are you sure you want to disapprove this seller registration?')) {
+    async function handleDisapprove(userId: number) {
+        if (await confirmDialog('Are you sure you want to disapprove this seller registration?')) {
             router.post(`/admin/seller-approval/${userId}/disapprove`);
             setShowModal(false);
         }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/checkout_limits.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/product.dart';
 import '../../models/wishlist_item.dart';
@@ -852,7 +853,7 @@ class _WishlistVariantSheetState extends State<_WishlistVariantSheet> {
                     // Cap at available stock
                     final maxQty =
                         widget.item.stock > 0 ? widget.item.stock : 1;
-                    if (_qty < maxQty) setState(() => _qty++);
+                    if (_qty < maxQty && _qty < kMaxQtyPerCheckout) setState(() => _qty++);
                   },
                 ),
               ],

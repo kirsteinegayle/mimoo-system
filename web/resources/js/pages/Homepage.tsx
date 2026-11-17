@@ -1,5 +1,6 @@
 "use client";
 
+import { AnnouncementBanner } from '@/components/announcement-banner';
 import { useRef, useState, useEffect, type FormEvent } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import {
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { SignupModal } from "@/components/signup-modal";
 import { NotificationBell } from "@/components/notification-bell";
+import { UserAvatar, useCurrentAvatar } from "@/components/user-avatar";
 import { MessagesIcon } from "@/components/messages-icon";
 import { Footer } from "@/components/footer";
 import { toast } from "sonner";
@@ -132,33 +134,26 @@ interface HomepageProps {
     category?: string;
   };
   vouchers?: any[];
+  banners?: { hero: any[]; secondary: any[]; sidebar: any[] };
 }
 
 // ---------------------------------------------------------------------------
 // Small building blocks
 // ---------------------------------------------------------------------------
 
-function HeroMainBanner() {
+interface LiveBanner { id: number; title: string; image: string; link_url: string | null }
+interface LiveBanners { hero: LiveBanner[]; secondary: LiveBanner[]; sidebar: LiveBanner[] }
+
+/** Wraps a banner in its link (when the admin set one). */
+function BannerLink({ banner, children, className }: { banner: LiveBanner; children: React.ReactNode; className?: string }) {
+  return banner.link_url ? <a href={banner.link_url} className={className}>{children}</a> : <div className={className}>{children}</div>;
+}
+
+function HeroMainBanner({ banners }: { banners: LiveBanner[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  
-  const slides = [
-    {
-      title: 'Main promo banner 1',
-      bgColor: 'bg-violet-100',
-      image: '/images/main banner 1.jpg',
-    },
-    {
-      title: 'Main promo banner 2',
-      bgColor: 'bg-blue-100',
-      image: '/images/main banner 2.jpg',
-    },
-    {
-      title: 'Main promo banner 3',
-      bgColor: 'bg-pink-100',
-      image: null,
-    },
-  ];
+
+  const slides = banners.map((b) => ({ ...b, bgColor: 'bg-violet-100' }));
 
   useEffect(() => {
     if (isPaused) return;
@@ -169,6 +164,8 @@ function HeroMainBanner() {
 
     return () => clearInterval(timer);
   }, [slides.length, isPaused]);
+
+  if (slides.length === 0) return null;
 
   return (
     <div className="relative overflow-hidden rounded-xl min-h-48 sm:min-h-56">
@@ -181,15 +178,9 @@ function HeroMainBanner() {
               index === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
           >
-            {slide.image ? (
-              <div className="relative h-full w-full">
-                <img src={slide.image} alt={slide.title} className="w-full h-full object-cover rounded-xl" />
-              </div>
-            ) : (
-              <div className={`flex items-center justify-center rounded-xl ${slide.bgColor} text-xs font-medium text-neutral-400 h-full`}>
-                {slide.title}
-              </div>
-            )}
+            <BannerLink banner={slide} className="relative block h-full w-full">
+              <img src={slide.image} alt={slide.title} className="w-full h-full object-cover rounded-xl" />
+            </BannerLink>
           </div>
         ))}
       </div>
@@ -250,61 +241,20 @@ function HeroMainBanner() {
   );
 }
 
-// Each banner box uses the real aspect ratio of its image file, so
-// object-fill never stretches. Images are absolutely positioned inside the
-// box, so they never push the row height around.
-function SmallPlaceholderBanner({ label }: { label: string }) {
-  let imageSrc: string | null = null;
-  let ratioClass = "min-h-24";
-  if (label === "Perfume & makeup offers") {
-    imageSrc = "/images/perfumes banner.jpg";
-    ratioClass = "aspect-[1199/439]"; // image is 1199 x 439
-  } else if (label === "iPhone offers") {
-    imageSrc = "/images/phones banner.jpg";
-    ratioClass = "aspect-[1200/600]"; // image is 1200 x 600
-  }
-
+// Secondary (left stack) and sidebar (right) banners come from Banner Management.
+function SmallBanner({ banner }: { banner: LiveBanner }) {
   return (
-    <div
-      className={`relative flex items-center justify-center overflow-hidden rounded-xl bg-neutral-200 text-xs font-medium text-neutral-400 ${ratioClass}`}
-    >
-      {imageSrc ? (
-        <img
-          src={imageSrc}
-          alt={label}
-          className="absolute inset-0 h-full w-full object-fill"
-        />
-      ) : (
-        label
-      )}
-    </div>
+    <BannerLink banner={banner} className="relative block min-h-24 overflow-hidden rounded-xl bg-neutral-200">
+      <img src={banner.image} alt={banner.title} className="block h-full w-full object-cover" />
+    </BannerLink>
   );
 }
 
-// Image is 415 x 356. On mobile it keeps its own ratio; from sm up it
-// stretches to the row height (which matches its ratio by design).
-function BuyOneGetOneBanner() {
+function SideBanner({ banner }: { banner: LiveBanner }) {
   return (
-    <div className="relative aspect-[415/356] overflow-hidden rounded-xl bg-neutral-200 sm:aspect-auto">
-      <img
-        src="/images/payday sale.png"
-        alt="Payday sale"
-        className="absolute inset-0 h-full w-full object-fill"
-      />
-    </div>
-  );
-}
-
-// Image is 1080 x 1080 (square).
-function SuperSeratusBanner() {
-  return (
-    <div className="relative aspect-square overflow-hidden rounded-xl bg-neutral-200 sm:aspect-auto">
-      <img
-        src="/images/sale banner.jpg"
-        alt="Sale Banner"
-        className="absolute inset-0 h-full w-full object-fill"
-      />
-    </div>
+    <BannerLink banner={banner} className="relative block aspect-[415/356] overflow-hidden rounded-xl bg-neutral-200 sm:aspect-auto">
+      <img src={banner.image} alt={banner.title} className="absolute inset-0 h-full w-full object-cover" />
+    </BannerLink>
   );
 }
 
@@ -717,6 +667,7 @@ function Header({
   onCategoryFilter?: (category: string) => void;
   initialCategory?: string;
 }) {
+  const me = useCurrentAvatar();
   const [query, setQuery] = useState("");
   const [showMenu, setShowMenu] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
@@ -775,15 +726,7 @@ function Header({
                   onClick={() => setShowMenu(!showMenu)}
                   className="flex items-center gap-1.5 text-white/90 transition-colors hover:text-white"
                 >
-                  <span className="h-3.5 w-3.5 shrink-0 overflow-hidden rounded-full bg-neutral-200">
-                    {avatarUrl && (
-                      <img
-                        src={avatarUrl}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    )}
-                  </span>
+                  <UserAvatar src={avatarUrl ?? me?.url ?? null} name={me?.name || username} className="h-4 w-4 text-[7px]" />
                   <span className="max-w-24 truncate">{username}</span>
                 </button>
 
@@ -811,6 +754,9 @@ function Header({
                     </Link>
                     <Link href="/returns" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
                       Returns
+                    </Link>
+                    <Link href="/support" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setShowMenu(false)}>
+                      Help &amp; Support
                     </Link>
                     <Link
                       href="/settings"
@@ -1021,7 +967,7 @@ function Header({
 // Page
 // ---------------------------------------------------------------------------
 
-export default function Homepage({ auth, initialProducts = [], filters = {}, vouchers = [] }: HomepageProps) {
+export default function Homepage({ auth, initialProducts = [], filters = {}, vouchers = [], banners = { hero: [], secondary: [], sidebar: [] } }: HomepageProps) {
   const user = auth?.user;
   
   const role: UserRole = user ? (user.account_type as UserRole) : "guest";
@@ -1215,6 +1161,7 @@ export default function Homepage({ auth, initialProducts = [], filters = {}, vou
       />
 
       <main className="mx-auto max-w-6xl px-4 py-4 sm:py-6">
+        <AnnouncementBanner className="mb-4" />
         {/* Active Filters Display */}
         {(activeFilters.search || activeFilters.category) && (
           <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-violet-50 p-3 border border-violet-200">
@@ -1284,16 +1231,17 @@ export default function Homepage({ auth, initialProducts = [], filters = {}, vou
             columns come out the same height with no stretching:
             perfume+phone stack : payday : sale  ≈  372 : 390 : 334 */}
         <section className="flex flex-col gap-2 sm:gap-3">
-          <HeroMainBanner />
+          <HeroMainBanner banners={banners.hero} />
 
-          <div className="grid grid-cols-[162fr_173fr] gap-2 sm:grid-cols-[372fr_390fr_334fr] sm:gap-3">
-            <div className="flex flex-col gap-2 sm:gap-3">
-              <SmallPlaceholderBanner label="Perfume & makeup offers" />
-              <SmallPlaceholderBanner label="iPhone offers" />
+          {(banners.secondary.length > 0 || banners.sidebar.length > 0) && (
+            <div className="grid grid-cols-[162fr_173fr] gap-2 sm:grid-cols-[372fr_390fr_334fr] sm:gap-3">
+              <div className="flex flex-col gap-2 sm:gap-3">
+                {banners.secondary.slice(0, 2).map((b) => <SmallBanner key={b.id} banner={b} />)}
+              </div>
+              {banners.sidebar[0] ? <SideBanner banner={banners.sidebar[0]} /> : <div />}
+              {banners.sidebar[1] ? <SideBanner banner={banners.sidebar[1]} /> : <div />}
             </div>
-            <BuyOneGetOneBanner />
-            <SuperSeratusBanner />
-          </div>
+          )}
         </section>
 
         {/* Browse by categories */}

@@ -1,8 +1,8 @@
+import ApprovalStatusController from './ApprovalStatusController'
 import EmailVerificationController from './EmailVerificationController'
-import SocialiteController from './SocialiteController'
 const Auth = {
-    EmailVerificationController: Object.assign(EmailVerificationController, EmailVerificationController),
-SocialiteController: Object.assign(SocialiteController, SocialiteController),
+    ApprovalStatusController: Object.assign(ApprovalStatusController, ApprovalStatusController),
+EmailVerificationController: Object.assign(EmailVerificationController, EmailVerificationController),
 }
 
 export default Auth

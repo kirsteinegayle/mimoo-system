@@ -1,12 +1,13 @@
+import { AnnouncementBanner } from '@/components/announcement-banner';
 import { Link, router } from '@inertiajs/react';
 import {
     Box,
     ChevronDown,
     Cog,
+    LifeBuoy,
     LayoutDashboard,
     LogOut,
     MessageSquare,
-    Package,
     RotateCcw,
     ShoppingBag,
     TrendingUp,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { NotificationBell } from '@/components/notification-bell';
+import { CurrentUserAvatar } from '@/components/user-avatar';
 import type { FormEvent, ReactNode } from 'react';
 
 // ─── Nav definition ───────────────────────────────────────────────────────────
@@ -27,6 +29,7 @@ export type SellerNavKey =
     | 'analytics'
     | 'messages'
     | 'returns'
+    | 'support'
     | 'settings';
 
 const navItems: { key: SellerNavKey; label: string; icon: React.ElementType; href: string }[] = [
@@ -37,6 +40,7 @@ const navItems: { key: SellerNavKey; label: string; icon: React.ElementType; hre
     { key: 'analytics',  label: 'Analytics',  icon: TrendingUp,      href: '/seller/analytics'  },
     { key: 'messages',   label: 'Messages',   icon: MessageSquare,   href: '/seller/messages'   },
     { key: 'returns',    label: 'Returns & Reviews', icon: RotateCcw, href: '/seller/returns'    },
+    { key: 'support',    label: 'Help & Support', icon: LifeBuoy,    href: '/seller/support'    },
     { key: 'settings',   label: 'Settings',   icon: Cog,             href: '/seller/settings'   },
 ];
 
@@ -143,9 +147,7 @@ export default function SellerShell({ active, children }: SellerShellProps) {
                         </button>
                     </form>
                     <div className="mt-2 flex items-center gap-2 px-3 py-2">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#9B5DE5] text-[10px] font-bold">
-                            S
-                        </span>
+                        <CurrentUserAvatar fallbackName="Seller" className="h-6 w-6 text-[10px]" />
                         <span className="truncate text-xs text-white/65">SELLER</span>
                     </div>
                 </div>
@@ -179,9 +181,7 @@ export default function SellerShell({ active, children }: SellerShellProps) {
                                 onClick={() => setAccountMenuOpen(!accountMenuOpen)}
                                 className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 hover:bg-gray-50 transition"
                             >
-                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#3B1F6B] text-[10px] font-bold text-white">
-                                    <Package className="h-3 w-3" />
-                                </span>
+                                <CurrentUserAvatar fallbackName="Seller" className="h-6 w-6 text-[10px]" />
                                 <span className="text-xs font-semibold text-gray-700">My Account</span>
                                 <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} />
                             </button>
@@ -224,6 +224,7 @@ export default function SellerShell({ active, children }: SellerShellProps) {
 
                 {/* Page content (scrollable) */}
                 <main className="flex-1 overflow-y-auto px-8 pt-10 pb-16">
+                    <AnnouncementBanner className="mb-6" />
                     {children}
                 </main>
             </div>

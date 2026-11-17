@@ -1,5 +1,7 @@
 ﻿import { Head, Link, router } from '@inertiajs/react';
 import { ReactNode, useState } from 'react';
+import { CurrentUserAvatar } from '@/components/user-avatar';
+import CodSettlements from '@/components/logistics/cod-settlements';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
 const fontSyne = { fontFamily: 'Syne, sans-serif' };
@@ -89,7 +91,7 @@ export default function CODRemittance({ auth }: Props) {
         { id: 'courier-applications', label: 'Courier Applications', icon: 'file-text', href: '/logistics/courier-applications' },
         { id: 'delivery-monitoring', label: 'Delivery Monitoring', icon: 'monitor', href: '/logistics/delivery-monitoring' },
         { id: 'riders', label: 'Riders', icon: 'bike', href: '/logistics/riders' },
-        { id: 'branches-checklists', label: 'Branches & Checklists', icon: 'checklist', href: '/logistics/branches-checklists' },
+        { id: 'branches-facilities', label: 'Branches & Facilities', icon: 'checklist', href: '/logistics/branches-facilities' },
         { id: 'zones-rates', label: 'Zones & Rates', icon: 'zones', href: '/logistics/zones-rates' },
         { id: 'cod-remittance', label: 'COD & Remittance', icon: 'chart-bar', href: '/logistics/cod-remittance' },
         { id: 'reports', label: 'Reports', icon: 'chart', href: '/logistics/reports' },
@@ -224,9 +226,9 @@ export default function CODRemittance({ auth }: Props) {
                                 <div className="relative">
                                     <button 
                                         onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="w-9 h-9 rounded-full bg-[#2B2249] text-white flex items-center justify-center text-sm font-bold hover:bg-[#3d2e5f] transition"
+                                        className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center hover:opacity-90 transition"
                                     >
-                                        {auth.user.name.charAt(0)}
+                                        <CurrentUserAvatar fallbackName={auth.user.name} className="h-9 w-9 text-sm" />
                                     </button>
                                     {showUserMenu && (
                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
@@ -262,120 +264,7 @@ export default function CODRemittance({ auth }: Props) {
 
                     {/* Content Area */}
                     <main className="flex-1 overflow-auto p-6 bg-gray-50">
-                        <div className="max-w-7xl mx-auto">
-                            {/* Top Action Buttons */}
-                            <div className="flex items-center justify-between mb-6">
-                                <button className="px-4 py-2 bg-[#E8E3F0] text-[#5B4B6E] rounded-lg text-sm font-semibold hover:bg-[#D4CEE0] transition flex items-center gap-2">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="2" y="5" width="20" height="14" rx="2"/>
-                                        <line x1="2" y1="10" x2="22" y2="10"/>
-                                    </svg>
-                                    CASH OPERATIONS
-                                </button>
-                                
-                                <button className="px-4 py-2 bg-[#E8E3F0] text-[#5B4B6E] rounded-lg text-sm font-semibold hover:bg-[#D4CEE0] transition flex items-center gap-2">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <line x1="12" y1="20" x2="12" y2="10"/>
-                                        <line x1="18" y1="20" x2="18" y2="4"/>
-                                        <line x1="6" y1="20" x2="6" y2="16"/>
-                                    </svg>
-                                    Reports
-                                </button>
-                            </div>
-
-                            {/* Main Content - Two Columns */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Unremitted COD Card */}
-                                <div className="bg-white rounded-xl border border-gray-200 p-6">
-                                    <div className="mb-6">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-1" style={fontSyncopate}>Unremitted COD</h3>
-                                        <p className="text-sm text-gray-500">Charged for rider. Expected to be sum of cash collected on delivered parcels.</p>
-                                    </div>
-
-                                    {/* Riders List */}
-                                    <div className="space-y-6">
-                                        {unremittedRiders.map((rider, idx) => (
-                                            <div key={idx} className="border-t border-gray-100 pt-6 first:border-t-0 first:pt-0">
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div>
-                                                        <h4 className="text-base font-bold text-gray-900">{rider.name}</h4>
-                                                        <p className="text-xs text-gray-500">{rider.id} "¢ {rider.parcels}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="text-xs text-gray-500 mb-1">Expected</div>
-                                                        <div className="text-lg font-bold text-gray-900">â‚±{rider.collected.toFixed(2)}</div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label className="block text-xs text-gray-500 mb-1">Collected â‚±</label>
-                                                        <input
-                                                            type="text"
-                                                            defaultValue={rider.collected.toFixed(2)}
-                                                            className="w-full px-3 py-2 bg-[#E8E3F0] border border-[#D4CEE0] rounded-lg text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#B8B0C8]"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs text-gray-500 mb-1">Reference</label>
-                                                        <input
-                                                            type="text"
-                                                            placeholder={rider.reference}
-                                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#2B2249]"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <button className="w-full mt-4 px-4 py-2 bg-[#3D2E54] text-white rounded-lg text-sm font-semibold hover:bg-[#2E2240] transition">
-                                                    Record
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Recent Remittances Card */}
-                                <div className="bg-white rounded-xl border border-gray-200 p-6">
-                                    <div className="mb-6">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-1" style={fontSyncopate}>Recent Remittances</h3>
-                                        <p className="text-sm text-gray-500">Catch may update the rider COD balance and writes an audit entry.</p>
-                                    </div>
-
-                                    {/* Remittances List */}
-                                    <div className="space-y-4">
-                                        {recentRemittances.map((remittance, idx) => (
-                                            <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition">
-                                                <div className="flex items-start justify-between mb-3">
-                                                    <div>
-                                                        <h4 className="text-base font-bold text-gray-900">{remittance.name}</h4>
-                                                        <p className="text-xs text-gray-500">{remittance.id} "¢ {remittance.timestamp}</p>
-                                                        <div className="flex gap-4 mt-2 text-xs">
-                                                            <div>
-                                                                <span className="text-gray-500">Expected </span>
-                                                                <span className="font-semibold text-gray-900">{remittance.expected}</span>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-gray-500">Collected </span>
-                                                                <span className="font-semibold text-gray-900">{remittance.collected}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        {remittance.status ? (
-                                                            <button className="px-3 py-1 bg-[#3D2E54] text-white rounded text-xs font-semibold hover:bg-[#2E2240] transition">
-                                                                {remittance.status}
-                                                            </button>
-                                                        ) : (
-                                                            <div className="text-xs text-gray-500">{remittance.time}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <CodSettlements />
                     </main>
                 </div>
             </div>

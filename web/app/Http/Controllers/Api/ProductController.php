@@ -25,6 +25,7 @@ class ProductController extends Controller
         return Product::with('seller:id,business_name,first_name,last_name,name,profile_photo')
             ->withCount('reviews')
             ->withAvg('reviews', 'rating')
+            ->sellerActive() // hide suspended / deactivated sellers
             ->where('status', 'active')
             ->where('approval_status', 'approved');
         // SoftDeletes trait automatically excludes deleted_at IS NOT NULL rows.
@@ -50,7 +51,9 @@ class ProductController extends Controller
     /** Store photo URL served through GET /api/buyer/seller-photo/{type}/{filename}. */
     public static function sellerPhotoUrl(?string $path): ?string
     {
-        if (empty($path)) {
+        // Tolerate old values ('/storage/...', 'http://localhost/storage/...').
+        $path = \App\Support\AvatarUrl::normalize($path);
+        if (empty($path) || str_starts_with($path, 'ext:')) {
             return null;
         }
         if (str_starts_with($path, 'store_photos/profiles/')) {
@@ -203,7 +206,7 @@ class ProductController extends Controller
     // ─────────────────────────────────────────────────────────────────────────
     public function categories(): JsonResponse
     {
-        $rows = Product::where('status', 'active')
+        $rows = Product::sellerActive()->where('status', 'active')
             ->where('approval_status', 'approved')
             ->whereNotNull('category')
             ->where('category', '!=', '')

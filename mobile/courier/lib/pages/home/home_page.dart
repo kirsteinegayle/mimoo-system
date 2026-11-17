@@ -4,7 +4,12 @@ import '../../services/courier_repository.dart';
 import '../../state/auth_service.dart';
 import '../../theme/mimoo_theme.dart';
 import '../account/account_tab.dart';
+import '../account/company_settings_page.dart';
 import '../branch_assign/branch_assign_page.dart';
+import '../cod/cod_remittance_page.dart';
+import '../facilities/facilities_page.dart';
+import '../support/support_page.dart';
+import '../transfers/transfers_page.dart';
 import '../dashboard/dashboard_tab.dart';
 import '../delivery/delivery_management_page.dart';
 import '../messages/messages_page.dart';
@@ -105,12 +110,11 @@ class _HomePageState extends State<HomePage> {
         onNotifications: () => _openPage(const NotificationsPage()),
         onMessages: () => _openPage(const MessagesPage()),
         onRiderManagement: () => _openPage(const RiderManagementPage()),
-        // Placeholder only: no backend call (CourierFeatures.codRemittance).
-        onCodRemittance: () => _openPage(const CourierMenuPage(
-          title: 'COD & Remittance',
-          icon: Icons.account_balance_wallet_outlined,
-          message: 'Coming soon. COD and remittance records will appear here.',
-        )),
+        onCodRemittance: () => _openPage(const CodRemittancePage()),
+        onTransfers: () => _openPage(const TransfersPage()),
+        onFacilities: () => _openPage(const FacilitiesPage()),
+        onSupport: () => _openPage(const SupportPage()),
+        onCompanySettings: () => _openPage(const CompanySettingsPage()),
         onHelpCenter: () => _openPage(const HelpCenterPage()),
       ),
       body: IndexedStack(index: _selectedIndex, children: _tabs),
@@ -144,6 +148,10 @@ class _CourierDrawer extends StatelessWidget {
     required this.onMessages,
     required this.onRiderManagement,
     required this.onCodRemittance,
+    required this.onTransfers,
+    required this.onFacilities,
+    required this.onSupport,
+    required this.onCompanySettings,
     required this.onHelpCenter,
   });
 
@@ -152,6 +160,10 @@ class _CourierDrawer extends StatelessWidget {
   final VoidCallback onMessages;
   final VoidCallback onRiderManagement;
   final VoidCallback onCodRemittance;
+  final VoidCallback onTransfers;
+  final VoidCallback onFacilities;
+  final VoidCallback onSupport;
+  final VoidCallback onCompanySettings;
   final VoidCallback onHelpCenter;
 
   @override
@@ -215,18 +227,39 @@ class _CourierDrawer extends StatelessWidget {
                       label: 'Message',
                       onTap: onMessages,
                     ),
-                  const Divider(height: 16, indent: 16, endIndent: 16),
+                  const _DrawerSection('Operations'),
+                  _DrawerItem(
+                    icon: Icons.swap_horiz,
+                    label: 'Sorting & Transfers',
+                    onTap: onTransfers,
+                  ),
+                  _DrawerItem(
+                    icon: Icons.warehouse_outlined,
+                    label: 'Branches & Facilities',
+                    onTap: onFacilities,
+                  ),
                   _DrawerItem(
                     icon: Icons.groups_outlined,
                     label: 'Rider Management',
                     onTap: onRiderManagement,
                   ),
+                  const _DrawerSection('Money'),
                   _DrawerItem(
                     icon: Icons.account_balance_wallet_outlined,
                     label: 'COD & Remittance',
                     onTap: onCodRemittance,
                   ),
-                  const Divider(height: 16, indent: 16, endIndent: 16),
+                  const _DrawerSection('Company'),
+                  _DrawerItem(
+                    icon: Icons.business_outlined,
+                    label: 'Company Settings',
+                    onTap: onCompanySettings,
+                  ),
+                  _DrawerItem(
+                    icon: Icons.support_agent_outlined,
+                    label: 'Support',
+                    onTap: onSupport,
+                  ),
                   _DrawerItem(
                     icon: Icons.help_outline,
                     label: 'Help Center',
@@ -240,6 +273,18 @@ class _CourierDrawer extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DrawerSection extends StatelessWidget {
+  const _DrawerSection(this.title);
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+        child: Text(title.toUpperCase(),
+            style: pjs(size: 11, weight: FontWeight.w800, color: kSubtext)),
+      );
 }
 
 class _DrawerItem extends StatelessWidget {
@@ -263,6 +308,7 @@ class _DrawerItem extends StatelessWidget {
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+      minVerticalPadding: 12,
       onTap: onTap,
     );
   }
@@ -362,7 +408,7 @@ class _BadgeIcon extends StatelessWidget {
               child: Text(
                 count > 9 ? '9+' : '$count',
                 style:
-                    pjs(size: 9, weight: FontWeight.w900, color: Colors.white),
+                    pjs(size: 11, weight: FontWeight.w900, color: Colors.white),
               ),
             ),
           ),

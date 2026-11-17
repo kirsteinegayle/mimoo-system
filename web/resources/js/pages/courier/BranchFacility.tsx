@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import CourierLayout from './CourierLayout';
 import { ReactNode, useState, useEffect, useRef } from 'react';
 import * as psgcApi from '../../services/psgcApi';
 import CustomSelect from '../../components/CustomSelect';
@@ -45,7 +46,6 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [showGenerateModal, setShowGenerateModal] = useState(false);
     const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
     const [selectedFacilityForManagement, setSelectedFacilityForManagement] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -78,8 +78,12 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
     // Use facilities from props
     const facilities = initialFacilities || [];
 
+    // Submit state: blocks double submits, shows server validation errors
+    const [saving, setSaving] = useState(false);
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
     // Form state
-    const [formData, setFormData] = useState({
+    const emptyForm = {
         facility_name: '',
         facility_type: 'Branch' as 'Main Hub' | 'Sorting Hub' | 'Branch',
         parent_facility: '',
@@ -91,19 +95,12 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
         manager: '',
         contact: '',
         coverage: [] as string[]
-    });
-
-    // Generate branches form state
-    const [generateForm, setGenerateForm] = useState({
-        selectedCities: [] as string[],
-        parentFacility: '',
-        region: '',
-        province: ''
-    });
+    };
+    const [formData, setFormData] = useState(emptyForm);
 
     // Load regions when modal opens
     useEffect(() => {
-        if ((showAddModal || showEditModal || showGenerateModal) && psgcRegions.length === 0 && !regionsLoading) {
+        if ((showAddModal || showEditModal) && psgcRegions.length === 0 && !regionsLoading) {
             setRegionsLoading(true);
             psgcApi.fetchRegions().then(({ data }) => {
                 setPsgcRegions(data);
@@ -111,12 +108,12 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                 setRegionsLoading(false);
             });
         }
-    }, [showAddModal, showEditModal, showGenerateModal]);
+    }, [showAddModal, showEditModal]);
 
     // Load provinces when region is selected
     useEffect(() => {
-        if ((showAddModal || showEditModal || showGenerateModal) && (formData.region || generateForm.region)) {
-            const regionToUse = showGenerateModal ? generateForm.region : formData.region;
+        if ((showAddModal || showEditModal) && formData.region) {
+            const regionToUse = formData.region;
             const regionCode = regionNameToCodeMap.current.get(regionToUse);
             
             if (regionCode) {
@@ -140,12 +137,12 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                 });
             }
         }
-    }, [showAddModal, showEditModal, showGenerateModal, formData.region, generateForm.region]);
+    }, [showAddModal, showEditModal, formData.region]);
 
     // Load cities when province is selected
     useEffect(() => {
-        if ((showAddModal || showEditModal || showGenerateModal) && (formData.province || generateForm.province)) {
-            const provinceToUse = showGenerateModal ? generateForm.province : formData.province;
+        if ((showAddModal || showEditModal) && formData.province) {
+            const provinceToUse = formData.province;
             const provinceCode = provinceNameToCodeMap.current.get(provinceToUse);
             
             if (provinceCode) {
@@ -158,13 +155,14 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                 });
             }
         }
-    }, [showAddModal, showEditModal, showGenerateModal, formData.province, generateForm.province]);
+    }, [showAddModal, showEditModal, formData.province]);
 
     const handleLogout = () => {
         router.post('/logout');
     };
 
     const handleAddFacility = () => {
+        setFormErrors({});
         // Reset form
         setFormData({
             facility_name: '',
@@ -183,6 +181,7 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
     };
 
     const handleEditFacility = (facility: Facility) => {
+        setFormErrors({});
         setSelectedFacility(facility);
         setFormData({
             facility_name: facility.facility_name,
@@ -205,70 +204,77 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
         setShowDeleteModal(true);
     };
 
-    const handleSaveFacility = () => {
+    const buildPayload = () => {
         // Find parent facility ID if parent is selected
-        const parentFacilityId = formData.parent_facility 
-            ? facilities.find(f => f.facility_name === formData.parent_facility)?.id 
+        const parentFacilityId = formData.parent_facility
+            ? facilities.find(f => f.facility_name === formData.parent_facility)?.id ?? null
             : null;
 
-        router.post('/courier/branch-facility', {
-            facility_name: formData.facility_name,
+        return {
+            facility_name: formData.facility_name.trim(),
             facility_type: formData.facility_type,
             parent_facility_id: parentFacilityId,
             status: formData.status,
             region: formData.region,
             province: formData.province || null,
             city: formData.city,
-            address: formData.address,
-            manager_name: formData.manager,
-            contact_number: formData.contact,
+            address: formData.address.trim(),
+            manager_name: formData.manager.trim(),
+            contact_number: formData.contact.trim(),
             coverage_cities: formData.coverage,
-        }, {
+        };
+    };
+
+    // Quick client-side checks so the user sees what is missing before the request is sent.
+    const validateForm = (): Record<string, string> => {
+        const e: Record<string, string> = {};
+        if (!formData.facility_name.trim()) e.facility_name = 'Facility name is required.';
+        if (formData.facility_type !== 'Main Hub' && !formData.parent_facility && facilities.length > 0) {
+            e.parent_facility_id = 'Select a parent facility (Main Hub or Sorting Hub).';
+        }
+        if (!formData.region) e.region = 'Region is required.';
+        if (!formData.city) e.city = 'City / municipality is required.';
+        if (!formData.address.trim()) e.address = 'Address is required.';
+        if (!formData.manager.trim()) e.manager_name = 'Manager name is required.';
+        if (!/^(09|\+639)\d{9}$/.test(formData.contact.trim())) e.contact_number = 'Contact number must be 09XXXXXXXXX or +639XXXXXXXXX.';
+        if (formData.coverage.length === 0) e.coverage_cities = 'Add at least one covered city.';
+        return e;
+    };
+
+    const submitFacility = (method: 'post' | 'put', url: string, onDone: () => void) => {
+        if (saving) return; // ignore double clicks while a request is in flight
+        const clientErrors = validateForm();
+        setFormErrors(clientErrors);
+        if (Object.keys(clientErrors).length > 0) return;
+
+        setSaving(true);
+        router[method](url, buildPayload(), {
+            preserveScroll: true,
             onSuccess: () => {
-                setShowAddModal(false);
-                setFormData({
-                    facility_name: '',
-                    facility_type: 'Branch',
-                    parent_facility: '',
-                    status: 'Active',
-                    region: '',
-                    province: '',
-                    city: '',
-                    address: '',
-                    manager: '',
-                    contact: '',
-                    coverage: []
-                });
-            }
+                setFormErrors({});
+                onDone();
+            },
+            onError: (errors) => setFormErrors(errors as Record<string, string>),
+            onFinish: () => setSaving(false),
+        });
+    };
+
+    const handleSaveFacility = () => {
+        submitFacility('post', '/courier/branch-facility', () => {
+            setShowAddModal(false);
+            handleAddFacility_reset();
         });
     };
 
     const handleUpdateFacility = () => {
         if (!selectedFacility) return;
-
-        const parentFacilityId = formData.parent_facility 
-            ? facilities.find(f => f.facility_name === formData.parent_facility)?.id 
-            : null;
-
-        router.put(`/courier/branch-facility/${selectedFacility.id}`, {
-            facility_name: formData.facility_name,
-            facility_type: formData.facility_type,
-            parent_facility_id: parentFacilityId,
-            status: formData.status,
-            region: formData.region,
-            province: formData.province || null,
-            city: formData.city,
-            address: formData.address,
-            manager_name: formData.manager,
-            contact_number: formData.contact,
-            coverage_cities: formData.coverage,
-        }, {
-            onSuccess: () => {
-                setShowEditModal(false);
-                setSelectedFacility(null);
-            }
+        submitFacility('put', `/courier/branch-facility/${selectedFacility.id}`, () => {
+            setShowEditModal(false);
+            setSelectedFacility(null);
         });
     };
+
+    const handleAddFacility_reset = () => setFormData(emptyForm);
 
     const confirmDelete = () => {
         if (!selectedFacility) return;
@@ -291,6 +297,17 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
         }
     };
 
+    const handleCoverageSelectAll = () => {
+        setFormData(prev => ({
+            ...prev,
+            coverage: Array.from(new Set([...prev.coverage, ...psgcCities.map(c => c.name)])),
+        }));
+    };
+
+    const handleCoverageClearAll = () => {
+        setFormData(prev => ({ ...prev, coverage: [] }));
+    };
+
     const handleCoverageRemove = (city: string) => {
         setFormData(prev => ({ 
             ...prev, 
@@ -298,67 +315,6 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
         }));
     };
 
-    const handleGenerateBranches = () => {
-        if (generateForm.selectedCities.length === 0) {
-            alert('Please select at least one city');
-            return;
-        }
-
-        if (!generateForm.parentFacility) {
-            alert('Please select a parent facility');
-            return;
-        }
-
-        if (!generateForm.region) {
-            alert('Please select a region');
-            return;
-        }
-
-        const parentFacilityId = facilities.find(f => f.facility_name === generateForm.parentFacility)?.id;
-
-        router.post('/courier/branch-facility/generate', {
-            cities: generateForm.selectedCities,
-            parent_facility_id: parentFacilityId,
-            region: generateForm.region,
-            province: generateForm.province || null,
-        }, {
-            onSuccess: () => {
-                setShowGenerateModal(false);
-                setGenerateForm({
-                    selectedCities: [],
-                    parentFacility: '',
-                    region: '',
-                    province: ''
-                });
-            }
-        });
-    };
-
-    const handleToggleCitySelection = (city: string) => {
-        setGenerateForm(prev => ({
-            ...prev,
-            selectedCities: prev.selectedCities.includes(city)
-                ? prev.selectedCities.filter(c => c !== city)
-                : [...prev.selectedCities, city]
-        }));
-    };
-
-    const handleSelectAllCities = () => {
-        const availableCities = (company.service_areas || []).filter(
-            city => !facilities.some(f => f.city === city)
-        );
-        setGenerateForm(prev => ({
-            ...prev,
-            selectedCities: availableCities
-        }));
-    };
-
-    const handleDeselectAllCities = () => {
-        setGenerateForm(prev => ({
-            ...prev,
-            selectedCities: []
-        }));
-    };
 
     // Filter facilities
     const filteredFacilities = facilities.filter(facility => {
@@ -523,115 +479,7 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
             
-            <div className="flex h-screen bg-gray-50" style={fontSyne}>
-                {/* Sidebar */}
-                <aside className="w-64 bg-[#2B2249] text-white flex-shrink-0 hidden lg:block overflow-y-auto scrollbar-hide">
-                    <div className="p-6">
-                        <Link href="/" className="flex items-center gap-2 mb-8">
-                            <span className="w-8 h-8 rounded-full bg-[#9B5DE5]" />
-                            <span className="font-bold text-xl tracking-widest" style={fontSyncopate}>
-                                mimoo
-                            </span>
-                        </Link>
-
-                        <nav className="space-y-1">
-                            {navItems.map((item) => (
-                                <Link
-                                    key={item.id}
-                                    href={item.href}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition ${
-                                        item.id === 'branch-facility'
-                                            ? 'bg-[#2E2240] text-white'
-                                            : 'text-gray-300 hover:bg-[#2E2240]/50 hover:text-white'
-                                    }`}
-                                >
-                                    {getIcon(item.icon)}
-                                    {item.label}
-                                </Link>
-                            ))}
-                        </nav>
-                    </div>
-
-                    <div className="absolute bottom-0 left-0 w-64 border-t border-white/10 bg-[#2B2249]">
-                        <Link
-                            href="/courier/settings"
-                            className="w-full flex items-center gap-3 px-6 py-4 text-sm font-medium text-gray-300 hover:bg-[#2E2240]/50 hover:text-white transition"
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="3"/>
-                                <path d="M12 1v6m0 6v6"/>
-                                <path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24"/>
-                                <path d="m19.07 4.93-4.24 4.24m-5.66 5.66-4.24 4.24"/>
-                            </svg>
-                            Company Settings
-                        </Link>
-                    </div>
-                </aside>
-
-                {/* Main Content */}
-                <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-                    {/* Top Bar */}
-                    <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-6">
-                                <h1 className="text-base font-bold text-gray-900">
-                                    {company.name}
-                                </h1>
-                                <span className="text-sm text-gray-400">/</span>
-                                <h2 className="text-base font-semibold text-gray-900">Branch & Facility</h2>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <Link href="/courier/messages" aria-label="Messages" title="Messages" className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                                </Link>
-                                <button className="p-2 hover:bg-gray-100 rounded-lg transition relative">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                                    </svg>
-                                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                                </button>
-                                <div className="relative">
-                                    <button 
-                                        onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="w-9 h-9 rounded-full bg-[#2B2249] text-white flex items-center justify-center text-sm font-bold hover:bg-[#3d2e5f] transition"
-                                    >
-                                        {auth.user.name.charAt(0)}
-                                    </button>
-                                    {showUserMenu && (
-                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                                            <Link
-                                                href="/courier/settings"
-                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <circle cx="12" cy="12" r="3"/>
-                                                        <path d="M12 1v6m0 6v6"/>
-                                                    </svg>
-                                                    Settings
-                                                </div>
-                                            </Link>
-                                            <button
-                                                onClick={handleLogout}
-                                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition flex items-center gap-2"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                                                    <polyline points="16 17 21 12 16 7"/>
-                                                    <line x1="21" y1="12" x2="9" y2="12"/>
-                                                </svg>
-                                                Log out
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </header>
-
-                    {/* Content Area */}
-                    <main className="flex-1 overflow-auto p-6 bg-gray-50">
+            <CourierLayout auth={auth} company={company} activeTab="branch-facility" pageTitle="Branch & Facility">
                         <div className="max-w-7xl mx-auto space-y-6">
                             {/* Facility Selection Banner - NEW */}
                             {!selectedFacilityForManagement && (
@@ -647,17 +495,6 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={() => setShowGenerateModal(true)}
-                                                className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-[#3B1F6B] text-[#3B1F6B] rounded-lg font-semibold hover:bg-[#F1EDFB] transition"
-                                            >
-                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                                                    <polyline points="3.29 7 12 12 20.71 7"/>
-                                                    <line x1="12" y1="22" x2="12" y2="12"/>
-                                                </svg>
-                                                Auto-Generate Branches
-                                            </button>
                                             <button
                                                 onClick={handleAddFacility}
                                                 className="flex items-center gap-2 px-5 py-2.5 bg-[#3B1F6B] text-white rounded-lg font-semibold hover:bg-[#2E1850] transition"
@@ -1125,9 +962,7 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                                 </>
                             )}
                         </div>
-                    </main>
-                </div>
-            </div>
+                    </CourierLayout>
 
             {/* Add/Edit Modal */}
             {(showAddModal || showEditModal) && (
@@ -1152,6 +987,16 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                         </div>
 
                         <div className="p-6 space-y-6">
+                            {Object.keys(formErrors).length > 0 && (
+                                <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                    <p className="mb-1 font-semibold">Please fix the following:</p>
+                                    <ul className="list-disc space-y-0.5 pl-5">
+                                        {Object.entries(formErrors).map(([k, msg]) => (
+                                            <li key={k}>{msg}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                             {/* Basic Information */}
                             <div>
                                 <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">
@@ -1362,7 +1207,28 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                                             disabled={psgcCities.length === 0}
                                         />
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="mb-3 flex items-center gap-3 text-sm">
+                                        <button
+                                            type="button"
+                                            onClick={handleCoverageSelectAll}
+                                            disabled={psgcCities.length === 0 || psgcCities.every(c => formData.coverage.includes(c.name))}
+                                            className="font-semibold text-[#3B1F6B] hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline"
+                                        >
+                                            Select All{psgcCities.length > 0 ? ` (${psgcCities.length})` : ''}
+                                        </button>
+                                        <span className="text-gray-300">|</span>
+                                        <button
+                                            type="button"
+                                            onClick={handleCoverageClearAll}
+                                            disabled={formData.coverage.length === 0}
+                                            className="font-semibold text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline"
+                                        >
+                                            Clear All
+                                        </button>
+                                        <span className="ml-auto text-xs text-gray-500">{formData.coverage.length} selected</span>
+                                    </div>
+                                    {formErrors.coverage_cities && <p className="mb-2 text-xs text-red-600">{formErrors.coverage_cities}</p>}
+                                    <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
                                         {formData.coverage.map((city, index) => (
                                             <div
                                                 key={index}
@@ -1401,9 +1267,10 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                             </button>
                             <button
                                 onClick={showAddModal ? handleSaveFacility : handleUpdateFacility}
-                                className="px-5 py-2.5 bg-[#3B1F6B] text-white rounded-lg font-semibold hover:bg-[#2E1850] transition"
+                                disabled={saving}
+                                className="px-5 py-2.5 bg-[#3B1F6B] text-white rounded-lg font-semibold hover:bg-[#2E1850] transition disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                {showAddModal ? 'Add Facility' : 'Save Changes'}
+                                {saving ? 'Saving…' : showAddModal ? 'Add Facility' : 'Save Changes'}
                             </button>
                         </div>
                     </div>
@@ -1446,211 +1313,6 @@ export default function BranchFacility({ auth, company, facilities: initialFacil
                                     Delete
                                 </button>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Auto-Generate Branches Modal */}
-            {showGenerateModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-gray-900" style={fontSyncopate}>
-                                Auto-Generate Branches
-                            </h3>
-                            <button
-                                onClick={() => setShowGenerateModal(false)}
-                                className="text-gray-400 hover:text-gray-600 transition"
-                            >
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
-                        </div>
-
-                        <div className="p-6 space-y-6">
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <div className="flex gap-3">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-600 flex-shrink-0 mt-0.5">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <line x1="12" y1="16" x2="12" y2="12"/>
-                                        <line x1="12" y1="8" x2="12.01" y2="8"/>
-                                    </svg>
-                                    <div className="text-sm text-blue-900">
-                                        <p className="font-semibold mb-1">How does this work?</p>
-                                        <p>This feature automatically creates one branch for each selected city from your registered service areas. Each branch will be pre-configured with the city as its coverage area.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Parent Facility Selection */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Parent Facility <span className="text-red-600">*</span>
-                                </label>
-                                <p className="text-xs text-gray-500 mb-2">
-                                    All generated branches will be under this parent facility
-                                </p>
-                                <CustomSelect
-                                    value={generateForm.parentFacility}
-                                    onChange={(value) => setGenerateForm(prev => ({ ...prev, parentFacility: value }))}
-                                    options={facilities
-                                        .filter(f => f.facility_type === 'Main Hub' || f.facility_type === 'Sorting Hub')
-                                        .map(f => ({ value: f.facility_name, label: `${f.facility_name} (${f.facility_type})` }))}
-                                    placeholder="Select parent facility"
-                                />
-                            </div>
-
-                            {/* Region & Province Selection */}
-                            <div>
-                                <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">
-                                    Default Location
-                                </h4>
-                                <p className="text-xs text-gray-500 mb-3">
-                                    Set the default region and province for all generated branches
-                                </p>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                            Region <span className="text-red-600">*</span>
-                                        </label>
-                                        <CustomSelect
-                                            value={generateForm.region}
-                                            onChange={(value) => {
-                                                setGenerateForm(prev => ({ ...prev, region: value, province: '' }));
-                                            }}
-                                            options={psgcRegions.map(r => ({ value: r.name, label: r.name }))}
-                                            placeholder={regionsLoading ? 'Loading regions...' : 'Select region'}
-                                            disabled={regionsLoading}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                            Province (optional)
-                                        </label>
-                                        <CustomSelect
-                                            value={generateForm.province}
-                                            onChange={(value) => setGenerateForm(prev => ({ ...prev, province: value }))}
-                                            options={psgcProvinces.map(p => ({ value: p.name, label: p.name }))}
-                                            placeholder={
-                                                !generateForm.region 
-                                                    ? 'Select region first'
-                                                    : provincesLoading
-                                                    ? 'Loading provinces...'
-                                                    : psgcProvinces.length === 0
-                                                    ? 'No provinces (e.g., NCR)'
-                                                    : 'Select province'
-                                            }
-                                            disabled={!generateForm.region || provincesLoading || psgcProvinces.length === 0}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* City Selection */}
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            Select Cities <span className="text-red-600">*</span>
-                                        </label>
-                                        <p className="text-xs text-gray-500 mt-0.5">
-                                            Choose cities from your registered service areas
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={handleSelectAllCities}
-                                            className="text-xs text-[#3B1F6B] hover:underline font-medium"
-                                        >
-                                            Select All
-                                        </button>
-                                        <span className="text-gray-300">|</span>
-                                        <button
-                                            type="button"
-                                            onClick={handleDeselectAllCities}
-                                            className="text-xs text-gray-600 hover:underline font-medium"
-                                        >
-                                            Clear
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {company.service_areas && company.service_areas.length > 0 ? (
-                                    <div className="border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
-                                        <div className="divide-y divide-gray-200">
-                                            {company.service_areas.map((city) => {
-                                                const alreadyHasBranch = facilities.some(f => f.city === city);
-                                                const isSelected = generateForm.selectedCities.includes(city);
-
-                                                return (
-                                                    <label
-                                                        key={city}
-                                                        className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition ${
-                                                            alreadyHasBranch 
-                                                                ? 'bg-gray-50 opacity-60 cursor-not-allowed' 
-                                                                : 'hover:bg-[#F1EDFB]'
-                                                        }`}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={isSelected}
-                                                            onChange={() => !alreadyHasBranch && handleToggleCitySelection(city)}
-                                                            disabled={alreadyHasBranch}
-                                                            className="w-4 h-4 text-[#3B1F6B] border-gray-300 rounded focus:ring-[#3B1F6B] disabled:cursor-not-allowed"
-                                                        />
-                                                        <span className={`flex-1 text-sm ${alreadyHasBranch ? 'text-gray-500' : 'text-gray-900'}`}>
-                                                            {city}
-                                                        </span>
-                                                        {alreadyHasBranch && (
-                                                            <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded">
-                                                                Already exists
-                                                            </span>
-                                                        )}
-                                                    </label>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="border border-gray-200 rounded-lg p-8 text-center">
-                                        <svg className="w-12 h-12 mx-auto mb-3 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                            <circle cx="12" cy="10" r="3"/>
-                                        </svg>
-                                        <p className="text-sm font-medium text-gray-900 mb-1">No Service Areas Found</p>
-                                        <p className="text-xs text-gray-500">
-                                            Your account doesn't have registered service areas yet.
-                                        </p>
-                                    </div>
-                                )}
-
-                                {generateForm.selectedCities.length > 0 && (
-                                    <div className="mt-3 text-sm text-gray-700">
-                                        <span className="font-semibold">{generateForm.selectedCities.length}</span> {generateForm.selectedCities.length === 1 ? 'city' : 'cities'} selected
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3">
-                            <button
-                                onClick={() => setShowGenerateModal(false)}
-                                className="px-5 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleGenerateBranches}
-                                disabled={generateForm.selectedCities.length === 0 || !generateForm.parentFacility || !generateForm.region}
-                                className="px-5 py-2.5 bg-[#3B1F6B] text-white rounded-lg font-semibold hover:bg-[#2E1850] transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Generate {generateForm.selectedCities.length > 0 && `(${generateForm.selectedCities.length})`} Branches
-                            </button>
                         </div>
                     </div>
                 </div>

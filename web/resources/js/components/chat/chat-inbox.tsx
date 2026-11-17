@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, ImagePlus, Loader2, MessageSquare, Search, Send, X } from "lucide-react";
 import { csrfHeaders, timeAgo } from "@/components/notification-bell";
+import { UserAvatar } from "@/components/user-avatar";
 
 // ---------------------------------------------------------------------------
 // Shared buyer <-> seller chat inbox (threads list + conversation + composer).
@@ -66,11 +67,6 @@ async function getJson(url: string) {
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
   return json;
-}
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return ((parts[0]?.[0] ?? "?") + (parts[1]?.[0] ?? "")).toUpperCase();
 }
 
 function clock(iso: string | null) {
@@ -370,16 +366,7 @@ export function ChatInbox({
                       }`}
                       style={isActive ? { background: tint(accent, "12"), borderLeftColor: accent } : undefined}
                     >
-                      {t.photoUrl ? (
-                        <img src={t.photoUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
-                      ) : (
-                        <span
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                          style={{ background: accent }}
-                        >
-                          {initials(t.name)}
-                        </span>
-                      )}
+                      <UserAvatar src={t.photoUrl} name={t.name} className="h-10 w-10 text-xs" />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center justify-between gap-2">
                           <span className="flex min-w-0 items-center gap-1.5">
@@ -442,12 +429,7 @@ export function ChatInbox({
               >
                 <ArrowLeft className="h-5 w-5 text-gray-600" />
               </button>
-              <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                style={{ background: accent }}
-              >
-                {initials(title || "?")}
-              </span>
+              <UserAvatar src={active?.photoUrl ?? null} name={title || "?"} className="h-10 w-10 text-xs" />
               <div className="min-w-0 flex-1">
                 <p className="flex min-w-0 items-center gap-1.5">
                   <span className="truncate text-sm font-semibold text-gray-900">{title || "Conversation"}</span>

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../services/delivery_chat_repository.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/user_avatar.dart';
 
 /// Text chat with the delivery rider of one order.
 /// Polls every 5 s while the page is open (no websocket). Read-only once the
@@ -37,6 +38,7 @@ class _DeliveryChatPageState extends State<DeliveryChatPage> {
   bool _noRider = false;
   String? _error;
   String? _riderName;
+  String? _riderPhotoUrl;
 
   int get _lastId => _messages.isEmpty ? 0 : _messages.last.id;
 
@@ -68,6 +70,7 @@ class _DeliveryChatPageState extends State<DeliveryChatPage> {
         _error = null;
         _canSend = page.canSend;
         _riderName = page.riderName ?? _riderName;
+        _riderPhotoUrl = page.riderPhotoUrl ?? _riderPhotoUrl;
       });
       if (added.any((m) => !m.mine)) _repo.markRead(widget.orderId);
       if (added.isNotEmpty) _scrollToEnd();
@@ -146,11 +149,19 @@ class _DeliveryChatPageState extends State<DeliveryChatPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(_riderName != null ? 'Chat with $_riderName' : 'Chat with Rider',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-          Text(widget.orderNumber,
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+        title: Row(children: [
+          UserAvatar(url: _riderPhotoUrl, name: _riderName ?? 'Rider', size: 34),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(_riderName != null ? 'Chat with $_riderName' : 'Chat with Rider',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              Text(widget.orderNumber,
+                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            ]),
+          ),
         ]),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,

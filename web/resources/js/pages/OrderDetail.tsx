@@ -1,9 +1,11 @@
+import { confirmDialog } from '@/components/app-modal';
 import { Head, Link, router } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { BuyerHeader } from "@/components/buyer-header";
 import { trackingLabel } from "@/components/tracking-line";
 import { Package, MapPin, Truck, Clock, CheckCircle2, XCircle, MessageCircle, RotateCcw, Star, CheckCircle, Bike, Camera, Loader2 } from "lucide-react";
 import { RiderChatModal } from "@/components/buyer/rider-chat";
+import { ParcelReportCard } from "@/components/buyer/parcel-report";
 import { csrfHeaders } from "@/components/notification-bell";
 import { ReturnRequestModal, ReturnStatusBadge, ReviewModal, Stars, type ReviewTarget } from "@/components/buyer/returns-reviews";
 
@@ -184,7 +186,7 @@ export default function OrderDetail({ order, auth, returnReasons = [] }: PagePro
 
   // "Order received": same endpoint/rules as the buyer app (shipped -> completed).
   async function markReceived() {
-    if (receiving || !window.confirm("Confirm you have received this order? This cannot be undone.")) return;
+    if (receiving || !(await confirmDialog("Confirm you have received this order? This cannot be undone."))) return;
     setReceiving(true);
     setReceiveError(null);
     try {
@@ -532,6 +534,9 @@ export default function OrderDetail({ order, auth, returnReasons = [] }: PagePro
           </div>
         )}
 
+        {/* Parcel problem report (damaged / lost / wrong item / not received) */}
+        <ParcelReportCard orderId={order.id} />
+
         {/* Order summary */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
@@ -559,11 +564,22 @@ export default function OrderDetail({ order, auth, returnReasons = [] }: PagePro
             </div>
           </div>
 
+          {!order.can_cancel && order.status !== 'cancelled' && order.status !== 'pending' && (
+            <div className="mt-6 border-t border-gray-200 pt-6">
+              <a
+                href={`/complaints?order=${order.id}`}
+                className="block w-full rounded-lg border border-gray-200 px-4 py-2 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                Report a problem with this order
+              </a>
+            </div>
+          )}
+
           {order.can_cancel && (
             <div className="mt-6 pt-6 border-t border-gray-200">
               <button
-                onClick={() => {
-                  if (confirm("Are you sure you want to cancel this order?")) {
+                onClick={async () => {
+                  if (await confirmDialog("Are you sure you want to cancel this order?")) {
                     // Handle cancel order
                     window.location.href = `/api/orders/${order.id}/cancel`;
                   }

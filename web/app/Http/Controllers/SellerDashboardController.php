@@ -34,7 +34,7 @@ class SellerDashboardController extends Controller
         
         $currentMonthSalesTotal = OrderItem::whereIn('product_id', $productIds)
             ->whereHas('order', function ($query) use ($startDate, $currentMonthStart, $currentMonthEnd) {
-                $query->whereNotIn('status', ['cancelled', 'failed'])
+                $query->sale()
                     ->where('created_at', '>=', $startDate)
                     ->whereBetween('created_at', [$currentMonthStart, $currentMonthEnd]);
             })
@@ -43,7 +43,7 @@ class SellerDashboardController extends Controller
             
         $currentMonthOrdersCount = OrderItem::whereIn('product_id', $productIds)
             ->whereHas('order', function ($query) use ($startDate, $currentMonthStart, $currentMonthEnd) {
-                $query->whereNotIn('status', ['cancelled', 'failed'])
+                $query->sale()
                     ->where('created_at', '>=', $startDate)
                     ->whereBetween('created_at', [$currentMonthStart, $currentMonthEnd]);
             })
@@ -58,7 +58,7 @@ class SellerDashboardController extends Controller
             
             $sales = OrderItem::whereIn('product_id', $productIds)
                 ->whereHas('order', function ($query) use ($startDate, $monthStart, $monthEnd) {
-                    $query->whereNotIn('status', ['cancelled', 'failed'])
+                    $query->sale()
                         ->where('created_at', '>=', $startDate)
                         ->whereBetween('created_at', [$monthStart, $monthEnd]);
                 })
@@ -74,7 +74,7 @@ class SellerDashboardController extends Controller
         // Calculate total sales (only from valid orders after start date)
         $totalSales = OrderItem::whereIn('product_id', $productIds)
             ->whereHas('order', function ($query) use ($startDate) {
-                $query->whereNotIn('status', ['cancelled', 'failed'])
+                $query->sale()
                     ->where('created_at', '>=', $startDate);
             })
             ->selectRaw('SUM(quantity * unit_price) as revenue')
@@ -83,7 +83,7 @@ class SellerDashboardController extends Controller
         // Calculate previous month sales for growth (with date filter)
         $previousMonthSales = OrderItem::whereIn('product_id', $productIds)
             ->whereHas('order', function ($query) use ($startDate) {
-                $query->whereNotIn('status', ['cancelled', 'failed'])
+                $query->sale()
                     ->where('created_at', '>=', $startDate)
                     ->whereBetween('created_at', [
                         now()->subMonths(2)->startOfMonth(),
@@ -95,7 +95,7 @@ class SellerDashboardController extends Controller
 
         $currentMonthSales = OrderItem::whereIn('product_id', $productIds)
             ->whereHas('order', function ($query) use ($startDate) {
-                $query->whereNotIn('status', ['cancelled', 'failed'])
+                $query->sale()
                     ->where('created_at', '>=', $startDate)
                     ->whereBetween('created_at', [
                         now()->startOfMonth(),
@@ -116,7 +116,7 @@ class SellerDashboardController extends Controller
         // Count total orders (with date filter)
         $totalOrders = OrderItem::whereIn('product_id', $productIds)
             ->whereHas('order', function ($query) use ($startDate) {
-                $query->whereNotIn('status', ['cancelled', 'failed'])
+                $query->sale()
                     ->where('created_at', '>=', $startDate);
             })
             ->distinct('order_id')
@@ -147,7 +147,7 @@ class SellerDashboardController extends Controller
             ->with(['buyer', 'items' => function ($query) use ($productIds) {
                 $query->whereIn('product_id', $productIds);
             }])
-            ->whereNotIn('status', ['cancelled', 'failed'])
+            ->sale()
             ->where('created_at', '>=', $startDate)
             ->orderBy('created_at', 'desc')
             ->limit(10)
@@ -163,7 +163,7 @@ class SellerDashboardController extends Controller
                     'buyer_name' => $order->buyer->name ?? 'Unknown',
                     'item' => $itemNames ?: 'N/A',
                     'total' => (float) $sellerTotal,
-                    'status' => $this->mapOrderStatus($order->status),
+                    'status' => self::mapOrderStatus($order->status, $order->tracking_status),
                     'date' => $order->created_at->format('M d, Y'),
                 ];
             });
@@ -171,7 +171,7 @@ class SellerDashboardController extends Controller
         // Get top products by revenue (with date filter)
         $topProducts = OrderItem::whereIn('product_id', $productIds)
             ->whereHas('order', function ($query) use ($startDate) {
-                $query->whereNotIn('status', ['cancelled', 'failed'])
+                $query->sale()
                     ->where('created_at', '>=', $startDate);
             })
             ->select('product_id', 'product_name')
@@ -218,17 +218,18 @@ class SellerDashboardController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'account_type' => $user->account_type,
-                    'profile_photo' => $user->profile_photo ? asset('storage/' . $user->profile_photo) : null,
+                    'profile_photo' => \App\Support\AvatarUrl::fromPath($user->profile_photo),
                     'cover_photo' => $user->cover_photo ? asset('storage/' . $user->cover_photo) : null,
                 ],
             ],
             'seller' => [
                 'store_name' => $user->business_name ?? $user->name,
                 'business_name' => $user->business_name,
-                'profile_photo_url' => $user->profile_photo ? asset('storage/' . $user->profile_photo) : null,
+                'profile_photo_url' => \App\Support\AvatarUrl::fromPath($user->profile_photo),
                 'cover_photo_url' => $user->cover_photo ? asset('storage/' . $user->cover_photo) : null,
             ],
             'stats' => [
+                'total_sold' => \App\Support\SoldStats::total($sellerId),
                 'total_sales' => (float) $totalSales,
                 'sales_growth' => round($salesGrowth, 1),
                 'total_orders' => $totalOrders,
@@ -254,13 +255,28 @@ class SellerDashboardController extends Controller
     /**
      * Map order status to display status.
      */
-    private function mapOrderStatus(string $status): string
+    public static function mapOrderStatus(string $status, ?string $trackingStatus = null): string
     {
+        // Courier / rider updates live in orders.tracking_status; orders.status stays
+        // 'shipped' until the buyer confirms, so the seller label follows the tracking.
+        if (in_array($status, ['shipped', 'in_transit'], true)) {
+            return match ($trackingStatus) {
+                'delivered' => 'Delivered',
+                'out_for_delivery' => 'Out for Delivery',
+                'delivery_failed' => 'Delivery Failed',
+                'returning_to_sender' => 'Returning to Sender',
+                'scanned_at_facility' => 'At Sorting Facility',
+                'accepted_courier' => 'Courier Accepted',
+                'picked_up' => 'Picked Up',
+                'assigned_courier', 'received_logistics' => 'Awaiting Pickup',
+                default => 'In Transit',
+            };
+        }
+
         return match ($status) {
             'pending' => 'To Ship',
             'paid' => 'To Ship',
             'packed' => 'To Ship',
-            'shipped', 'in_transit' => 'In Transit',
             'completed' => 'Delivered',
             default => ucfirst($status),
         };

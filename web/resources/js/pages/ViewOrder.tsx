@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "rea
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import { Search, ShoppingCart, LogOut } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
+import { UserAvatar, useCurrentAvatar } from "@/components/user-avatar";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -175,6 +176,7 @@ function Header({
   onSearch?: (query: string) => void;
   onLogout?: () => void;
 }) {
+  const me = useCurrentAvatar();
   const [query, setQuery] = useState("");
   const [showMenu, setShowMenu] = useState(false);
   
@@ -200,9 +202,7 @@ function Header({
                   onClick={() => setShowMenu(!showMenu)}
                   className="flex items-center gap-1.5 text-white/90 transition-colors hover:text-white"
                 >
-                  <span className="h-3.5 w-3.5 shrink-0 overflow-hidden rounded-full bg-neutral-200">
-                    {avatarUrl && <img src={avatarUrl} alt="" className="h-full w-full object-cover" />}
-                  </span>
+                  <UserAvatar src={avatarUrl ?? me?.url ?? null} name={me?.name || username} className="h-4 w-4 text-[7px]" />
                   <span className="max-w-24 truncate">{username}</span>
                 </button>
 

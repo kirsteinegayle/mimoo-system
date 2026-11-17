@@ -9,7 +9,7 @@ import { RoleInbox } from '@/components/chat/role-inbox';
 const mapThread = (t: any): ChatThreadView => ({
     id: t.id,
     name: t.buyer_name || 'Buyer',
-    photoUrl: null,
+    photoUrl: t.buyer_photo_url ?? null,
     product: t.product ?? null,
     lastMessage: t.last_message ?? null,
     lastMessageAt: t.last_message_at ?? null,

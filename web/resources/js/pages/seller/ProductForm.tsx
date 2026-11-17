@@ -1,3 +1,4 @@
+import { alertDialog } from '@/components/app-modal';
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft, ImagePlus, Plus, Save, Trash2, X } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent } from 'react';
@@ -80,6 +81,8 @@ export default function ProductForm({ product }: ProductFormProps) {
     const [images, setImages] = useState<string[]>(product?.images || []);
     const [mainIdx, setMainIdx] = useState(product?.mainIdx || 0);
     const [saving, setSaving] = useState(false);
+    // Variants removed one by one (most recent last) so "Undo" can restore them in place.
+    const [removedVariants, setRemovedVariants] = useState<{ variant: Variant; index: number }[]>([]);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -99,7 +102,7 @@ export default function ProductForm({ product }: ProductFormProps) {
 
         Array.from(files).forEach(file => {
             if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
-                alert(`${file.name} is too large. Max ${MAX_IMAGE_MB}MB.`);
+                alertDialog(`${file.name} is too large. Max ${MAX_IMAGE_MB}MB.`);
                 return;
             }
 
@@ -147,14 +150,14 @@ export default function ProductForm({ product }: ProductFormProps) {
 
     const generateVariants = () => {
         if (form.variant_options.length === 0) {
-            alert('Please add at least one variant option');
+            alertDialog('Please add at least one variant option');
             return;
         }
 
         // Check if all options have values
         const hasEmptyOption = form.variant_options.some(opt => !opt.name || opt.values.length === 0);
         if (hasEmptyOption) {
-            alert('Please fill in all option names and add values before generating variants');
+            alertDialog('Please fill in all option names and add values before generating variants');
             return;
         }
 
@@ -192,8 +195,31 @@ export default function ProductForm({ product }: ProductFormProps) {
             };
         });
 
+        setRemovedVariants([]);
         setForm(prev => ({ ...prev, variants: newVariants }));
-        alert(`Generated ${newVariants.length} variants!`);
+        alertDialog(`Generated ${newVariants.length} variants!`);
+    };
+
+    // Delete one generated variant (any row, including 0 stock) and remember it for Undo.
+    const deleteVariant = (id: string) => {
+        const index = form.variants.findIndex(v => v.id === id);
+        if (index < 0) return;
+        const variant = form.variants[index];
+        setRemovedVariants(r => [...r, { variant, index }]);
+        setForm(prev => ({ ...prev, variants: prev.variants.filter(v => v.id !== id) }));
+    };
+
+    // Restore the last removed variant at its old position.
+    const undoDeleteVariant = () => {
+        const last = removedVariants[removedVariants.length - 1];
+        if (!last) return;
+        setRemovedVariants(r => r.slice(0, -1));
+        setForm(prev => {
+            if (prev.variants.some(v => v.id === last.variant.id)) return prev;
+            const next = [...prev.variants];
+            next.splice(Math.min(last.index, next.length), 0, last.variant);
+            return { ...prev, variants: next };
+        });
     };
 
     const updateVariant = (id: string, field: keyof Variant, value: any) => {
@@ -277,7 +303,7 @@ export default function ProductForm({ product }: ProductFormProps) {
                 preserveScroll: false,
             });
         } catch (error: any) {
-            alert(error.message || 'Failed to save product');
+            alertDialog(error.message || 'Failed to save product');
         } finally {
             setSaving(false);
         }
@@ -357,6 +383,36 @@ export default function ProductForm({ product }: ProductFormProps) {
                                         onChange={handleChange}
                                         className="w-full rounded-lg border-2 border-gray-200 px-4 py-2.5 focus:border-[#4B2E7E] focus:outline-none"
                                         placeholder="e.g. Pedigree"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Product details (seller edits here; buyers only see them read-only on the product page) */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="mb-1 block text-sm font-semibold text-gray-700">SKU *</label>
+                                    <input
+                                        type="text"
+                                        name="sku"
+                                        value={form.sku}
+                                        onChange={handleChange}
+                                        className={`w-full rounded-lg border-2 px-4 py-2.5 ${errors.sku ? 'border-red-300' : 'border-gray-200'} focus:border-[#4B2E7E] focus:outline-none`}
+                                        placeholder="e.g. DOG-FOOD-001"
+                                    />
+                                    {errors.sku && <p className="mt-1 text-xs text-red-600">{errors.sku}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="mb-1 block text-sm font-semibold text-gray-700">Weight (kg)</label>
+                                    <input
+                                        type="number"
+                                        name="weight"
+                                        value={form.weight}
+                                        onChange={handleChange}
+                                        step="0.01"
+                                        min="0"
+                                        className="w-full rounded-lg border-2 border-gray-200 px-4 py-2.5 focus:border-[#4B2E7E] focus:outline-none"
+                                        placeholder="0.00"
                                     />
                                 </div>
                             </div>
@@ -483,34 +539,6 @@ export default function ProductForm({ product }: ProductFormProps) {
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="mb-1 block text-sm font-semibold text-gray-700">SKU *</label>
-                                    <input
-                                        type="text"
-                                        name="sku"
-                                        value={form.sku}
-                                        onChange={handleChange}
-                                        className={`w-full rounded-lg border-2 px-4 py-2.5 ${errors.sku ? 'border-red-300' : 'border-gray-200'} focus:border-[#4B2E7E] focus:outline-none`}
-                                        placeholder="e.g. DOG-FOOD-001"
-                                    />
-                                    {errors.sku && <p className="mt-1 text-xs text-red-600">{errors.sku}</p>}
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-sm font-semibold text-gray-700">Weight (kg)</label>
-                                    <input
-                                        type="number"
-                                        name="weight"
-                                        value={form.weight}
-                                        onChange={handleChange}
-                                        step="0.01"
-                                        min="0"
-                                        className="w-full rounded-lg border-2 border-gray-200 px-4 py-2.5 focus:border-[#4B2E7E] focus:outline-none"
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -618,26 +646,21 @@ export default function ProductForm({ product }: ProductFormProps) {
                             {/* Generated Variants Table */}
                             {form.variants.length > 0 && (
                                 <div className="space-y-3">
-                                    {/* Total Stock Display */}
-                                    <div className="rounded-lg bg-green-50 border-2 border-green-200 px-4 py-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-semibold text-green-900">
-                                                Total Product Stock (Auto-calculated):
-                                            </span>
-                                            <span className="text-xl font-bold text-green-700">
-                                                {form.variants.reduce((total, v) => total + (v.stock || 0), 0)} units
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-green-700 mt-1">
-                                            This is the sum of all variant stocks below
-                                        </p>
-                                    </div>
-
                                     <div className="rounded-lg border-2 border-gray-200 overflow-hidden">
-                                        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                                        <div className="flex items-center justify-between bg-gray-50 px-4 py-2 border-b border-gray-200">
                                             <h3 className="text-sm font-semibold text-gray-700">
                                                 Generated Variants ({form.variants.length})
                                             </h3>
+                                            {removedVariants.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={undoDeleteVariant}
+                                                    className="rounded border border-[#4B2E7E] px-3 py-1 text-xs font-semibold text-[#4B2E7E] hover:bg-[#F9F7FC]"
+                                                    title="Restore the last removed variant"
+                                                >
+                                                    Undo remove ({removedVariants.length})
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="max-h-96 overflow-y-auto">
                                             <table className="w-full">
@@ -647,6 +670,7 @@ export default function ProductForm({ product }: ProductFormProps) {
                                                         <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">SKU</th>
                                                         <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Price (₱)</th>
                                                         <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Stock</th>
+                                                        <th className="px-4 py-2"><span className="sr-only">Delete</span></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -682,6 +706,17 @@ export default function ProductForm({ product }: ProductFormProps) {
                                                                     min="0"
                                                                     className="w-full rounded border border-gray-200 px-2 py-1 text-sm focus:border-[#4B2E7E] focus:outline-none"
                                                                 />
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => deleteVariant(variant.id)}
+                                                                    className="rounded p-1.5 text-red-500 hover:bg-red-50"
+                                                                    title="Delete this variant"
+                                                                    aria-label={`Delete variant ${Object.values(variant.combination).join(' / ')}`}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </button>
                                                             </td>
                                                         </tr>
                                                     ))}

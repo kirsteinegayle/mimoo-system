@@ -108,7 +108,25 @@ class AdminAccountController extends Controller
                 'email'        => AdminSetting::get('email', ''),
             ],
             'codeChangedAt' => AdminSetting::query()->whereKey(self::CODE_KEY)->value('updated_at'),
+            'platform' => \App\Support\PlatformSettings::current(),
+            'logisticsOptions' => \App\Models\User::where('account_type', 'logistics')->where('role', 'logistics_staff')->where('status', 'approved')
+                ->orderBy('company_name')->get(['id', 'company_name', 'business_name', 'name'])
+                ->map(fn ($u) => ['id' => $u->id, 'name' => $u->company_name ?: ($u->business_name ?: $u->name)])->values(),
         ]);
+    }
+
+    /** Platform settings (see App\Support\PlatformSettings: each one is read by real behaviour). */
+    public function updatePlatform(Request $request): JsonResponse
+    {
+        $data = $request->validate(\App\Support\PlatformSettings::rules(), [
+            'platform_name.required' => 'Please enter the platform name.',
+            'commission_percent.max' => 'The commission cannot be more than 50%.',
+        ]);
+        if ($error = \App\Support\PlatformSettings::save($data)) {
+            return response()->json(['message' => $error, 'errors' => ['default_logistics_id' => [$error]]], 422);
+        }
+
+        return response()->json(['message' => 'Platform settings saved.']);
     }
 
     public function updateProfile(Request $request): JsonResponse

@@ -1,5 +1,7 @@
 ﻿import { Head, Link, router } from '@inertiajs/react';
 import { ReactNode, useState } from 'react';
+import { CurrentUserAvatar } from '@/components/user-avatar';
+import ZonesRatesManager from '@/components/logistics/zones-rates-manager';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
 const fontSyne = { fontFamily: 'Syne, sans-serif' };
@@ -54,7 +56,7 @@ export default function ZonesRates({ auth }: Props) {
         { id: 'courier-applications', label: 'Courier Applications', icon: 'file-text', href: '/logistics/courier-applications' },
         { id: 'delivery-monitoring', label: 'Delivery Monitoring', icon: 'monitor', href: '/logistics/delivery-monitoring' },
         { id: 'riders', label: 'Riders', icon: 'bike', href: '/logistics/riders' },
-        { id: 'branches-checklists', label: 'Branches & Checklists', icon: 'checklist', href: '/logistics/branches-checklists' },
+        { id: 'branches-facilities', label: 'Branches & Facilities', icon: 'checklist', href: '/logistics/branches-facilities' },
         { id: 'zones-rates', label: 'Zones & Rates', icon: 'zones', href: '/logistics/zones-rates' },
         { id: 'cod-remittance', label: 'COD & Remittance', icon: 'chart-bar', href: '/logistics/cod-remittance' },
         { id: 'reports', label: 'Reports', icon: 'chart', href: '/logistics/reports' },
@@ -189,9 +191,9 @@ export default function ZonesRates({ auth }: Props) {
                                 <div className="relative">
                                     <button 
                                         onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="w-9 h-9 rounded-full bg-[#2B2249] text-white flex items-center justify-center text-sm font-bold hover:bg-[#3d2e5f] transition"
+                                        className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center hover:opacity-90 transition"
                                     >
-                                        {auth.user.name.charAt(0)}
+                                        <CurrentUserAvatar fallbackName={auth.user.name} className="h-9 w-9 text-sm" />
                                     </button>
                                     {showUserMenu && (
                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
@@ -227,227 +229,7 @@ export default function ZonesRates({ auth }: Props) {
 
                     {/* Content Area */}
                     <main className="flex-1 overflow-auto p-6 bg-gray-50">
-                        <div className="max-w-7xl mx-auto">
-                            {/* Top Action Buttons */}
-                            <div className="flex items-center justify-between mb-6">
-                                <button className="px-4 py-2 bg-[#E8E3F0] text-[#5B4B6E] rounded-lg text-sm font-semibold hover:bg-[#D4CEE0] transition flex items-center gap-2">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                        <circle cx="12" cy="10" r="3"/>
-                                    </svg>
-                                    CHECKOUT CONFIGURATIONS
-                                </button>
-                                
-                                <button className="px-4 py-2 bg-[#E8E3F0] text-[#5B4B6E] rounded-lg text-sm font-semibold hover:bg-[#D4CEE0] transition flex items-center gap-2">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                                        <polyline points="14 2 14 8 20 8"/>
-                                    </svg>
-                                    Support
-                                </button>
-                            </div>
-
-                            {/* Main Content - Two Columns */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                {/* Add Zone Form - Left Column */}
-                                <div className="lg:col-span-1">
-                                    <div className="bg-white rounded-xl border border-gray-200 p-6">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-6" style={fontSyncopate}>Add Zone</h3>
-
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Zone name</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="e.g. Metro Manila"
-                                                    value={zoneName}
-                                                    onChange={(e) => setZoneName(e.target.value)}
-                                                    className="w-full px-4 py-2 bg-[#E8E3F0] border border-[#D4CEE0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8B0C8]"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Region</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="e.g. NCR"
-                                                    value={region}
-                                                    onChange={(e) => setRegion(e.target.value)}
-                                                    className="w-full px-4 py-2 bg-[#E8E3F0] border border-[#D4CEE0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8B0C8]"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Areas / barangays</label>
-                                                <textarea
-                                                    placeholder="Comma-separated: Makati, Taguig, Pasig"
-                                                    value={areas}
-                                                    onChange={(e) => setAreas(e.target.value)}
-                                                    rows={4}
-                                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249] resize-none"
-                                                />
-                                            </div>
-
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="checkbox"
-                                                    id="serviceable"
-                                                    checked={serviceable}
-                                                    onChange={(e) => setServiceable(e.target.checked)}
-                                                    className="w-4 h-4 text-[#5B4B6E] border-gray-300 rounded focus:ring-[#B8B0C8]"
-                                                />
-                                                <label htmlFor="serviceable" className="text-sm text-gray-700">
-                                                    Serviceable at checkout
-                                                </label>
-                                            </div>
-
-                                            <button className="w-full px-4 py-3 bg-[#3D2E54] text-white rounded-lg text-sm font-semibold hover:bg-[#2E2240] transition">
-                                                Add Zone
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Zones List - Right Column */}
-                                <div className="lg:col-span-2 space-y-6">
-                                    {zones.map((zone, idx) => (
-                                        <div key={idx} className="bg-white rounded-xl border border-gray-200 p-6">
-                                            <div className="flex items-start justify-between mb-6">
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-gray-900 mb-1" style={fontSyncopate}>{zone.name}</h3>
-                                                    <p className="text-sm text-gray-500">{zone.region} "” {zone.areas}</p>
-                                                </div>
-                                                {zone.serviceable && (
-                                                    <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                                                        Serviceable
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                {/* Name Field */}
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Name</label>
-                                                        <input
-                                                            type="text"
-                                                            defaultValue={zone.name}
-                                                            className="w-full px-4 py-2 bg-[#E8E3F0] border border-[#D4CEE0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8B0C8]"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Region</label>
-                                                        <input
-                                                            type="text"
-                                                            defaultValue={zone.region}
-                                                            className="w-full px-4 py-2 bg-[#E8E3F0] border border-[#D4CEE0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8B0C8]"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Areas Field */}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Areas</label>
-                                                    <input
-                                                        type="text"
-                                                        defaultValue={zone.areas}
-                                                        className="w-full px-4 py-2 bg-[#E8E3F0] border border-[#D4CEE0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8B0C8]"
-                                                    />
-                                                </div>
-
-                                                {/* Serviceable Checkbox */}
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <input
-                                                            type="checkbox"
-                                                            id={`serviceable-${idx}`}
-                                                            defaultChecked={zone.serviceable}
-                                                            className="w-4 h-4 text-[#5B4B6E] border-gray-300 rounded focus:ring-[#B8B0C8]"
-                                                        />
-                                                        <label htmlFor={`serviceable-${idx}`} className="text-sm text-gray-700">
-                                                            Serviceable
-                                                        </label>
-                                                    </div>
-                                                    <button className="text-sm text-[#5B4B6E] hover:underline font-semibold">
-                                                        Save Zone
-                                                    </button>
-                                                </div>
-
-                                                {/* Rate Tiers Table */}
-                                                {zone.tiers.length > 0 && (
-                                                    <div className="mt-6">
-                                                        <div className="overflow-x-auto">
-                                                            <table className="w-full text-sm">
-                                                                <thead className="bg-gray-50 border-b border-gray-200">
-                                                                    <tr>
-                                                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Weight Tier</th>
-                                                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Base Fee</th>
-                                                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Per kg</th>
-                                                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Sample 3 kg</th>
-                                                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase"></th>
-                                                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase"></th>
-                                                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase"></th>
-                                                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase"></th>
-                                                                        <th className="px-4 py-2 text-right text-xs font-semibold text-gray-600 uppercase"></th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody className="divide-y divide-gray-100">
-                                                                    {zone.tiers.map((tier, tierIdx) => (
-                                                                        <tr key={tierIdx} className="hover:bg-gray-50">
-                                                                            <td className="px-4 py-3 font-semibold text-gray-900">{tier.weight}</td>
-                                                                            <td className="px-4 py-3">â‚±{tier.base.toFixed(2)}</td>
-                                                                            <td className="px-4 py-3">â‚±{tier.perKg.toFixed(2)}</td>
-                                                                            <td className="px-4 py-3">â‚±{tier.sample3kg.toFixed(2)}</td>
-                                                                            <td className="px-4 py-3 text-gray-600">{tier.col5.toFixed(2)}</td>
-                                                                            <td className="px-4 py-3 text-gray-600">{tier.col6.toFixed(2)}</td>
-                                                                            <td className="px-4 py-3 text-gray-600">{tier.col7.toFixed(2)}</td>
-                                                                            <td className="px-4 py-3 text-gray-600">{tier.col7.toFixed(2)}</td>
-                                                                            <td className="px-4 py-3 text-right">
-                                                                                <button className="text-[#5B4B6E] hover:underline text-xs font-semibold">
-                                                                                    Save
-                                                                                </button>
-                                                                            </td>
-                                                                        </tr>
-                                                                    ))}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-
-                                                        {/* Add Tier Section */}
-                                                        <div className="mt-4 grid grid-cols-4 gap-3">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Base â‚±"
-                                                                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249]"
-                                                            />
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Per kg â‚±"
-                                                                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249]"
-                                                            />
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Min kg"
-                                                                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249]"
-                                                            />
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Max kg"
-                                                                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B2249]"
-                                                            />
-                                                        </div>
-
-                                                        <button className="mt-3 px-4 py-2 bg-[#3D2E54] text-white rounded-lg text-sm font-semibold hover:bg-[#2E2240] transition">
-                                                            Add Tier
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
+                        <ZonesRatesManager />
                     </main>
                 </div>
             </div>

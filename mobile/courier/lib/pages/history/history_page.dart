@@ -254,7 +254,7 @@ class _HistoryPageState extends State<HistoryPage> {
         ]),
         const SizedBox(height: 4),
         Text('${s.from} to ${s.to}',
-            style: pjs(size: 10, color: Colors.white60)),
+            style: pjs(size: 11, color: Colors.white60)),
       ]),
     );
   }
@@ -265,7 +265,7 @@ class _HistoryPageState extends State<HistoryPage> {
         Text(value,
             style: pjs(
                 size: 14, weight: FontWeight.w900, color: Colors.white)),
-        Text(label, style: pjs(size: 10, color: Colors.white60)),
+        Text(label, style: pjs(size: 11, color: Colors.white60)),
       ]),
     );
   }
@@ -366,12 +366,12 @@ class _PaymentCard extends StatelessWidget {
                             color: kGreen)),
                   ]),
                   Text('${payment.reference} · ${payment.date}',
-                      style: pjs(size: 10, color: kSubtext)),
+                      style: pjs(size: 11, color: kSubtext)),
                   Text(payment.route,
                       style: pjs(size: 11, color: kSubtext)),
                   if (payment.discrepancy)
                     Text('Completed with discrepancy',
-                        style: pjs(size: 10, color: Colors.orange)),
+                        style: pjs(size: 11, color: Colors.orange)),
                 ]),
           ),
           const Icon(Icons.chevron_right, color: kSubtext, size: 19),

@@ -1,3 +1,4 @@
+import { alertDialog } from '@/components/app-modal';
 import AdminShell from '@/layouts/admin/admin-shell';
 import { Head, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
@@ -22,6 +23,7 @@ interface Product {
         id: number;
         name: string;
         email: string;
+        status?: string;
     };
     approved_by?: string;
     approved_at?: string;
@@ -36,6 +38,7 @@ interface ProductsResponse {
         per_page: number;
         total: number;
     };
+    stats?: { total: number; pending: number; approved: number; rejected: number };
 }
 
 export default function ProductApprovalPage() {
@@ -52,6 +55,7 @@ export default function ProductApprovalPage() {
     const [rejectionReason, setRejectionReason] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [counts, setCounts] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
 
     // Wait for component to mount before making API calls
     useEffect(() => {
@@ -106,7 +110,7 @@ export default function ProductApprovalPage() {
                     } catch (e) {
                         console.error('Could not parse error as JSON');
                     }
-                    alert('Session expired. Please refresh the page.');
+                    alertDialog('Session expired. Please refresh the page.');
                     return;
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -116,6 +120,7 @@ export default function ProductApprovalPage() {
             console.log('Products fetched successfully:', data);
             
             setProducts(data.data || []);
+            if (data.stats) setCounts(data.stats);
             setMeta(data.meta || { current_page: 1, last_page: 1, per_page: 20, total: 0 });
         } catch (error) {
             console.error('Failed to fetch products - Error details:', error);
@@ -141,14 +146,14 @@ export default function ProductApprovalPage() {
                 fetchProducts();
                 setShowModal(false);
                 setShowConfirmApprove(false);
-                alert('Product approved successfully!');
+                alertDialog('Product approved successfully!');
             } else {
                 const error = await response.json();
-                alert(error.error || 'Failed to approve product');
+                alertDialog(error.error || 'Failed to approve product');
             }
         } catch (error) {
             console.error('Failed to approve product:', error);
-            alert('Failed to approve product');
+            alertDialog('Failed to approve product');
         } finally {
             setActionLoading(false);
         }
@@ -156,7 +161,7 @@ export default function ProductApprovalPage() {
 
     const handleReject = async (productId: number) => {
         if (!rejectionReason.trim()) {
-            alert('Please provide a rejection reason');
+            alertDialog('Please provide a rejection reason');
             return;
         }
 
@@ -176,14 +181,14 @@ export default function ProductApprovalPage() {
                 setShowModal(false);
                 setShowConfirmReject(false);
                 setRejectionReason('');
-                alert('Product rejected successfully!');
+                alertDialog('Product rejected successfully!');
             } else {
                 const error = await response.json();
-                alert(error.error || 'Failed to reject product');
+                alertDialog(error.error || 'Failed to reject product');
             }
         } catch (error) {
             console.error('Failed to reject product:', error);
-            alert('Failed to reject product');
+            alertDialog('Failed to reject product');
         } finally {
             setActionLoading(false);
         }
@@ -197,11 +202,7 @@ export default function ProductApprovalPage() {
         setRejectionReason('');
     };
 
-    const stats = {
-        pending: meta.total || 0, // Use total from API instead of filtering local products
-        approved: 0,
-        rejected: 0,
-    };
+    const stats = counts; // per-status counts come from the API (drafts excluded)
 
     return (
         <AdminShell active="product-approval">
@@ -220,7 +221,7 @@ export default function ProductApprovalPage() {
                             <Clock className="h-5 w-5 text-yellow-600" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-gray-900">{meta.total}</p>
+                            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
                             <p className="text-xs text-gray-500">Total Products</p>
                         </div>
                     </div>
@@ -372,11 +373,17 @@ export default function ProductApprovalPage() {
                                             <div>
                                                 <p className="font-medium text-gray-900">{product.name}</p>
                                                 <p className="text-xs text-gray-500">{product.sku}</p>
+                                                {product.brand && <p className="text-xs text-gray-500">Brand: {product.brand}</p>}
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <p className="text-sm text-gray-900">{product.seller.name}</p>
+                                        <p className="text-sm text-gray-900">
+                                            {product.seller.name}
+                                            {(product.seller.status === 'deactivated' || product.seller.status === 'suspended') && (
+                                                <span className="ml-2 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-bold uppercase text-gray-700">Seller {product.seller.status}</span>
+                                            )}
+                                        </p>
                                         <p className="text-xs text-gray-500">{product.seller.email}</p>
                                     </td>
                                     <td className="px-4 py-3">

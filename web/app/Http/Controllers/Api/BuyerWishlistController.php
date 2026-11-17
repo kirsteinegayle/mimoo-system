@@ -113,7 +113,7 @@ class BuyerWishlistController extends Controller
             return response()->json(['message' => 'Product not found.'], 404);
         }
 
-        if ($product->status !== 'active' || $product->approval_status !== 'approved') {
+        if ($product->status !== 'active' || $product->approval_status !== 'approved' || $product->sellerIsBlocked()) {
             return response()->json([
                 'message' => 'This product is not available.',
             ], 422);

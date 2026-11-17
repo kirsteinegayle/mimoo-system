@@ -37,10 +37,22 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'max_per_checkout' => (int) config('checkout.max_quantity_per_product', 10),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                // Same serialisation as before, plus `avatar` (URL or null) for the
+                // shared headers/sidebars. Built by App\Support\AvatarUrl.
+                'user' => ($u = $request->user())
+                    ? $u->toArray() + ['avatar' => \App\Support\AvatarUrl::forUser($u)]
+                    : null,
             ],
+            // Current user's avatar for every header/sidebar. A separate key because
+            // many pages pass their own `auth` prop, which replaces the shared one.
+            'currentAvatar' => fn () => ($cu = $request->user())
+                ? ['url' => \App\Support\AvatarUrl::forUser($cu), 'name' => (string) ($cu->business_name ?: ($cu->company_name ?? null) ?: $cu->name)]
+                : null,
+            // Published admin announcements for this user's role (buyer / seller / courier dashboards).
+            'announcements' => fn () => \App\Models\Announcement::forUser($request->user()),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

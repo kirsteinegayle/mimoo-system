@@ -5,6 +5,7 @@ import '../../services/courier_repository.dart';
 import '../../services/api_service.dart';
 import '../../state/auth_service.dart';
 import '../../theme/mimoo_theme.dart';
+import '../../widgets/courier_shared.dart';
 import '../messages/messages_page.dart';
 import '../riders/rider_management_page.dart';
 import '../trips/trip_detail_page.dart';
@@ -123,7 +124,7 @@ class _DashboardTabState extends State<DashboardTab> {
           if (_loading) ...[
             const _SkeletonGrid(),
           ] else if (_error != null) ...[
-            _ErrorState(message: _error!, onRetry: _load),
+            CourierErrorState(message: _error!, onRetry: _load),
           ] else if (_stats != null) ...[
             _QuickActions(
               stats: _stats!,
@@ -215,13 +216,15 @@ class _QuickActions extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Quick Actions', style: pjs(size: 15, weight: FontWeight.w800)),
       const SizedBox(height: 10),
-      GridView.count(
-        crossAxisCount: 3,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
+      GridView(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          mainAxisExtent: _gridExtent(context, 104),
+        ),
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        childAspectRatio: 1.05,
         children: actions
             .map((a) => _QuickActionTile(
                 icon: a.$1, label: a.$2, badge: a.$3, color: a.$4, onTap: a.$5))
@@ -275,6 +278,7 @@ class _QuickActionTile extends StatelessWidget {
                 Text(label,
                     textAlign: TextAlign.center,
                     maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: pjs(size: 11, weight: FontWeight.w700)),
               ]),
             ),
@@ -397,13 +401,15 @@ class _StatsGrid extends StatelessWidget {
       ),
     ];
 
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
+    return GridView(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        mainAxisExtent: _gridExtent(context, 124),
+      ),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.4,
       children: tiles
           .map((t) => _StatCard(
                 icon: t.$1,
@@ -441,7 +447,10 @@ class _StatCard extends StatelessWidget {
         const Spacer(),
         Text('$count',
             style: pjs(size: 26, weight: FontWeight.w900, color: kText)),
-        Text(label, style: pjs(size: 11, color: kSubtext)),
+        Text(label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: pjs(size: 11, color: kSubtext)),
       ]),
     );
   }
@@ -471,36 +480,6 @@ class _SkeletonGrid extends StatelessWidget {
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.wifi_off_outlined, size: 48, color: kSubtext),
-          const SizedBox(height: 12),
-          Text(message,
-              style: pjs(size: 13, color: kSubtext),
-              textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: onRetry,
-            style: FilledButton.styleFrom(backgroundColor: kPrimary),
-            child: Text('Try again',
-                style: pjs(
-                    size: 13, weight: FontWeight.w700, color: Colors.white)),
-          ),
-        ]),
-      ),
-    );
-  }
-}
-
 class _DispatchTimeline extends StatelessWidget {
   const _DispatchTimeline({required this.events});
   final List<TimelineEvent> events;
@@ -522,7 +501,7 @@ class _DispatchTimeline extends StatelessWidget {
               style: pjs(size: 14, weight: FontWeight.w800)),
           const Spacer(),
           Text('Latest ${events.length}',
-              style: pjs(size: 10, color: kSubtext)),
+              style: pjs(size: 11, color: kSubtext)),
         ]),
         const Divider(height: 16, color: kBorder),
         if (events.isEmpty)
@@ -620,7 +599,7 @@ class _TimelineRow extends StatelessWidget {
                       if (event.waybillNumber != null) ...[
                         const SizedBox(width: 6),
                         Text('· ${event.waybillNumber}',
-                            style: pjs(size: 10, color: kSubtext)),
+                            style: pjs(size: 11, color: kSubtext)),
                       ],
                       if (event.isCurrent) ...[
                         const Spacer(),
@@ -640,3 +619,7 @@ class _TimelineRow extends StatelessWidget {
     );
   }
 }
+
+/// Tile height that grows with the user's font size, so labels never overflow on small phones.
+double _gridExtent(BuildContext context, double base) =>
+    base * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 2.0);

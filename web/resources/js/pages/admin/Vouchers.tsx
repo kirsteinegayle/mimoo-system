@@ -1,3 +1,4 @@
+import { confirmDialog } from '@/components/app-modal';
 import { Head, router } from '@inertiajs/react';
 import { Plus, Ticket, Calendar, DollarSign, Users, Search, Edit2, Trash2, Eye, EyeOff, X, Info } from 'lucide-react';
 import { useState } from 'react';
@@ -159,8 +160,8 @@ export default function Vouchers({ vouchers = [] }: Props) {
     };
 
     // Handle delete
-    const handleDelete = (id: number) => {
-        if (!confirm('Are you sure you want to delete this voucher?')) return;
+    const handleDelete = async (id: number) => {
+        if (!(await confirmDialog('Are you sure you want to delete this voucher?'))) return;
 
         router.delete(`/admin/vouchers/${id}`, {
             onSuccess: () => {

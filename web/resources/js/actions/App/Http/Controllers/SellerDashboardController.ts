@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\SellerDashboardController::updateStoreName
- * @see app/Http/Controllers/SellerDashboardController.php:273
+ * @see app/Http/Controllers/SellerDashboardController.php:289
  * @route '/seller/store-name'
  */
 export const updateStoreName = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -94,7 +94,7 @@ updateStoreName.definition = {
 
 /**
 * @see \App\Http\Controllers\SellerDashboardController::updateStoreName
- * @see app/Http/Controllers/SellerDashboardController.php:273
+ * @see app/Http/Controllers/SellerDashboardController.php:289
  * @route '/seller/store-name'
  */
 updateStoreName.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ updateStoreName.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\SellerDashboardController::updateStoreName
- * @see app/Http/Controllers/SellerDashboardController.php:273
+ * @see app/Http/Controllers/SellerDashboardController.php:289
  * @route '/seller/store-name'
  */
 updateStoreName.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -113,7 +113,7 @@ updateStoreName.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => (
 
     /**
 * @see \App\Http\Controllers\SellerDashboardController::updateStoreName
- * @see app/Http/Controllers/SellerDashboardController.php:273
+ * @see app/Http/Controllers/SellerDashboardController.php:289
  * @route '/seller/store-name'
  */
     const updateStoreNameForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -128,7 +128,7 @@ updateStoreName.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => (
 
             /**
 * @see \App\Http\Controllers\SellerDashboardController::updateStoreName
- * @see app/Http/Controllers/SellerDashboardController.php:273
+ * @see app/Http/Controllers/SellerDashboardController.php:289
  * @route '/seller/store-name'
  */
         updateStoreNameForm.put = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

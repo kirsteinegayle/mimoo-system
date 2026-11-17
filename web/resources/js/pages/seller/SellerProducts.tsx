@@ -1,3 +1,4 @@
+import { alertDialog } from '@/components/app-modal';
 import { Head, router } from '@inertiajs/react';
 import { Copy, Eye, ImagePlus, MoreVertical, Package, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -75,6 +76,7 @@ interface Product {
     price: number;
     salePrice: number | null;
     stock: number;
+    sold?: number;
     sku: string;
     weight?: number | null;
     status: Status;
@@ -282,6 +284,8 @@ export default function SellerProducts({ auth, seller, products: initialProducts
     // Variation states
     const [newOptionName, setNewOptionName] = useState('');
     const [newOptionValue, setNewOptionValue] = useState<Record<number, string>>({});
+    // Variants removed one by one (most recent last) so "Undo" can put them back where they were.
+    const [removedVariants, setRemovedVariants] = useState<{ variant: Variant; index: number }[]>([]);
 
     // Fetch products from API on mount
     useEffect(() => {
@@ -303,6 +307,7 @@ export default function SellerProducts({ auth, seller, products: initialProducts
                     price: parseFloat(p.price) || 0,
                     salePrice: p.sale_price ? parseFloat(p.sale_price) : null,
                     stock: p.stock || 0,
+                    sold: p.sold || 0,
                     sku: p.sku || '',
                     weight: p.weight ? parseFloat(p.weight) : null,
                     status: p.status === 'active' ? 'published' as Status : 'draft' as Status,
@@ -472,18 +477,18 @@ export default function SellerProducts({ auth, seller, products: initialProducts
         e.target.value = '';
         if (!file) return;
         if (!file.type.startsWith('image/')) {
-            alert('Please use a JPG, PNG or WEBP image.');
+            alertDialog('Please use a JPG, PNG or WEBP image.');
             return;
         }
         if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
-            alert(`Image is too large. Max ${MAX_IMAGE_MB}MB.`);
+            alertDialog(`Image is too large. Max ${MAX_IMAGE_MB}MB.`);
             return;
         }
         try {
             const imageDataUrl = await readImage(file);
             updateVariant(variantIndex, 'image', imageDataUrl);
         } catch {
-            alert('Could not read that image. Try another one.');
+            alertDialog('Could not read that image. Try another one.');
         }
     };
 
@@ -584,6 +589,7 @@ export default function SellerProducts({ auth, seller, products: initialProducts
             stock: 0,
         }));
         
+        setRemovedVariants([]);
         setForm(f => ({ ...f, variants: newVariants }));
         showToast(`Generated ${newVariants.length} variants`);
     };
@@ -596,6 +602,27 @@ export default function SellerProducts({ auth, seller, products: initialProducts
                 i === index ? { ...v, [field]: value } : v
             )
         }));
+    };
+
+    // Delete one generated variant (any row, including 0 stock) and remember it for Undo.
+    const deleteVariant = (index: number) => {
+        const variant = form.variants[index];
+        if (!variant) return;
+        setRemovedVariants(r => [...r, { variant, index }]);
+        setForm(f => ({ ...f, variants: f.variants.filter((_, i) => i !== index) }));
+    };
+
+    // Restore the last removed variant at its old position.
+    const undoDeleteVariant = () => {
+        const last = removedVariants[removedVariants.length - 1];
+        if (!last) return;
+        setRemovedVariants(r => r.slice(0, -1));
+        setForm(f => {
+            if (f.variants.some(v => v.id === last.variant.id)) return f;
+            const next = [...f.variants];
+            next.splice(Math.min(last.index, next.length), 0, last.variant);
+            return { ...f, variants: next };
+        });
     };
 
     // Bulk apply price to all variants
@@ -878,6 +905,7 @@ export default function SellerProducts({ auth, seller, products: initialProducts
                                         <th className={`${TH} hidden md:table-cell`}>Category</th>
                                         <th className={TH}>Price</th>
                                         <th className={`${TH} hidden sm:table-cell`}>Stock</th>
+                                        <th className={`${TH} hidden sm:table-cell`}>Sold</th>
                                         <th className={`${TH} hidden lg:table-cell`}>Approval</th>
                                         <th className={`${TH} w-14 pr-5`}><span className="sr-only">Actions</span></th>
                                     </tr>
@@ -920,6 +948,9 @@ export default function SellerProducts({ auth, seller, products: initialProducts
                                                             </small>
                                                         )}
                                                     </div>
+                                                </td>
+                                                <td className={`px-4 py-3.5 text-sm font-semibold hidden sm:table-cell ${rowBorder}`}>
+                                                    {(p.sold ?? 0).toLocaleString()}
                                                 </td>
                                                 <td className={`px-4 py-3.5 text-sm hidden lg:table-cell ${rowBorder}`}>
                                                     <span
@@ -1383,6 +1414,16 @@ export default function SellerProducts({ auth, seller, products: initialProducts
                                                         Variants {form.variants.length > 0 && `(${form.variants.length})`}
                                                     </h4>
                                                     <div className="flex gap-2">
+                                                        {removedVariants.length > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={undoDeleteVariant}
+                                                                className="text-xs font-semibold text-[#4B2E7E] hover:bg-[#F9F7FC] px-3 py-1.5 rounded border border-[#B9A6DE]"
+                                                                title="Restore the last removed variant"
+                                                            >
+                                                                Undo remove ({removedVariants.length})
+                                                            </button>
+                                                        )}
                                                         {form.variants.length > 0 && (
                                                             <button
                                                                 type="button"
@@ -1417,6 +1458,7 @@ export default function SellerProducts({ auth, seller, products: initialProducts
                                                                         <th className="text-left px-3 py-2 font-semibold text-[#2A1B4D]">SKU</th>
                                                                         <th className="text-left px-3 py-2 font-semibold text-[#2A1B4D]">Price</th>
                                                                         <th className="text-left px-3 py-2 font-semibold text-[#2A1B4D]">Stock</th>
+                                                                        <th className="px-3 py-2"><span className="sr-only">Delete</span></th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -1484,6 +1526,17 @@ export default function SellerProducts({ auth, seller, products: initialProducts
                                                                                     onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
                                                                                     className="w-full text-sm border border-[#B9A6DE] rounded px-2 py-1 outline-none focus:border-[#4B2E7E]"
                                                                                 />
+                                                                            </td>
+                                                                            <td className="px-3 py-2 text-right">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => deleteVariant(index)}
+                                                                                    className="rounded p-1.5 text-red-500 hover:bg-red-50"
+                                                                                    title="Delete this variant"
+                                                                                    aria-label={`Delete variant ${formatCombination(variant.combination)}`}
+                                                                                >
+                                                                                    <Trash2 className="w-4 h-4" />
+                                                                                </button>
                                                                             </td>
                                                                         </tr>
                                                                     ))}
@@ -1719,7 +1772,7 @@ export default function SellerProducts({ auth, seller, products: initialProducts
                                                     });
                                                 
                                                 if (updates.length === 0) {
-                                                    alert('Please enter at least one amount to add');
+                                                    alertDialog('Please enter at least one amount to add');
                                                     return;
                                                 }
                                                 
@@ -1820,7 +1873,7 @@ export default function SellerProducts({ auth, seller, products: initialProducts
                                             onClick={async () => {
                                                 const amount = parseInt(restockAmount);
                                                 if (!amount || amount <= 0) {
-                                                    alert('Please enter a valid amount');
+                                                    alertDialog('Please enter a valid amount');
                                                     return;
                                                 }
                                                 

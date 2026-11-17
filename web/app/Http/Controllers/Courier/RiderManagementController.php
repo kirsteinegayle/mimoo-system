@@ -30,6 +30,7 @@ class RiderManagementController extends Controller
                     'id' => $rider->id,
                     'rider_id' => $rider->rider_id,
                     'full_name' => $rider->full_name,
+                    'profile_photo_url' => \App\Support\AvatarUrl::fromPath($rider->profile_picture),
                     'email' => $rider->email,
                     'contact_number' => $rider->contact_number,
                     'assigned_branch' => $rider->assigned_branch_id ? [
@@ -66,6 +67,7 @@ class RiderManagementController extends Controller
                     'id' => $rider->id,
                     'rider_id' => $rider->rider_id,
                     'full_name' => $rider->full_name,
+                    'profile_photo_url' => \App\Support\AvatarUrl::fromPath($rider->profile_picture),
                     'email' => $rider->email,
                     'contact_number' => $rider->contact_number,
                     'assigned_branch' => [

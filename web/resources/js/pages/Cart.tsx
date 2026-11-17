@@ -57,7 +57,7 @@ interface CartData {
 // ---------------------------------------------------------------------------
 
 export default function Cart() {
-  const { auth, suggestedProducts = [] } = usePage<{ auth: { user: any }, suggestedProducts: any[] }>().props;
+  const { auth, suggestedProducts = [], max_per_checkout: maxPerCheckout = 10 } = usePage<{ auth: { user: any }, suggestedProducts: any[], max_per_checkout?: number }>().props;
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const user = auth?.user;
   const role: UserRole = user?.account_type ? (user.account_type as UserRole) : "guest";
@@ -160,6 +160,10 @@ export default function Cart() {
 
   async function updateQuantity(itemId: number, newQty: number) {
     if (newQty < 1) return;
+    if (newQty > maxPerCheckout) {
+      toast.error(`You can only buy up to ${maxPerCheckout} units of the same product per checkout.`);
+      return;
+    }
     
     setUpdating(itemId);
     try {
@@ -402,7 +406,7 @@ export default function Cart() {
                   <div className={`text-[0.72rem] mt-1.5 font-medium ${
                     !item.is_valid ? 'text-red-600' : item.max_quantity < 5 ? 'text-orange-600' : 'text-green-600'
                   }`}>
-                    {item.is_valid ? `${item.max_quantity} in stock` : item.validation_issue}
+                    {item.is_valid ? `${item.max_quantity} in stock · max ${maxPerCheckout} per checkout` : item.validation_issue}
                   </div>
                 </div>
                 <div className="text-right whitespace-nowrap">
@@ -429,7 +433,8 @@ export default function Cart() {
                     </span>
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      disabled={item.quantity >= item.max_quantity || updating === item.id}
+                      disabled={item.quantity >= Math.min(item.max_quantity, maxPerCheckout) || updating === item.id}
+                      title={item.quantity >= maxPerCheckout ? `Maximum of ${maxPerCheckout} per product per checkout` : undefined}
                       className="w-[30px] h-[30px] flex items-center justify-center text-[#2A1B4D] text-base font-bold bg-white hover:bg-[#F3EFFA] disabled:text-[#E6DFF2] disabled:cursor-not-allowed transition"
                     >
                       +

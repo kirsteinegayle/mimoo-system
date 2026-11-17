@@ -205,7 +205,7 @@ class _TripCard extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               'Loaded ${trip.loadedCount}/${trip.parcelsCount}',
-              style: pjs(size: 10, color: kSubtext),
+              style: pjs(size: 11, color: kSubtext),
             ),
           ],
           if (trip.declineReason != null || trip.cancellationReason != null)

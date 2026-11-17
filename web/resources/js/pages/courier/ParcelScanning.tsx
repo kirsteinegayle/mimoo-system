@@ -1,4 +1,6 @@
+import { alertDialog } from '@/components/app-modal';
 import { Head, Link, router } from '@inertiajs/react';
+import CourierLayout from './CourierLayout';
 import { ReactNode, useState, useRef, useEffect } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 
@@ -71,7 +73,7 @@ export default function ParcelScanning({ auth, company, facilities }: Props) {
 
     const startScanner = async () => {
         if (!selectedFacility) {
-            alert('Please select a facility first');
+            alertDialog('Please select a facility first');
             return;
         }
 
@@ -159,7 +161,7 @@ export default function ParcelScanning({ auth, company, facilities }: Props) {
 
     const toggleManualEntry = async () => {
         if (!selectedFacility) {
-            alert('Please select a facility first');
+            alertDialog('Please select a facility first');
             return;
         }
         
@@ -186,7 +188,7 @@ export default function ParcelScanning({ auth, company, facilities }: Props) {
             
             if (!response.ok) {
                 const errorData = await response.json();
-                alert(errorData.message || 'Parcel not found');
+                alertDialog(errorData.message || 'Parcel not found');
                 setProcessing(false);
                 return;
             }
@@ -209,7 +211,7 @@ export default function ParcelScanning({ auth, company, facilities }: Props) {
             setShowConfirmation(true);
         } catch (error) {
             console.error('Scan error:', error);
-            alert('Failed to scan parcel. Please try again.');
+            alertDialog('Failed to scan parcel. Please try again.');
         } finally {
             setProcessing(false);
         }
@@ -249,13 +251,13 @@ export default function ParcelScanning({ auth, company, facilities }: Props) {
                 // Success - reset state
                 setShowConfirmation(false);
                 setScannedParcel(null);
-                alert(data.message || 'Parcel received successfully!');
+                alertDialog(data.message || 'Parcel received successfully!');
             } else {
-                alert(data.message || 'Failed to process parcel. Please try again.');
+                alertDialog(data.message || 'Failed to process parcel. Please try again.');
             }
         } catch (error) {
             console.error('Confirmation error:', error);
-            alert('Failed to confirm parcel receipt. Please try again.');
+            alertDialog('Failed to confirm parcel receipt. Please try again.');
         } finally {
             setProcessing(false);
         }
@@ -364,115 +366,7 @@ export default function ParcelScanning({ auth, company, facilities }: Props) {
                 }
             `}</style>
             
-            <div className="flex h-screen bg-gray-50" style={fontSyne}>
-                {/* Sidebar */}
-                <aside className="w-64 bg-[#2B2249] text-white flex-shrink-0 hidden lg:block overflow-y-auto scrollbar-hide">
-                    <div className="p-6">
-                        <Link href="/" className="flex items-center gap-2 mb-8">
-                            <span className="w-8 h-8 rounded-full bg-[#9B5DE5]" />
-                            <span className="font-bold text-xl tracking-widest" style={fontSyncopate}>
-                                mimoo
-                            </span>
-                        </Link>
-
-                        <nav className="space-y-1">
-                            {navItems.map((item) => (
-                                <Link
-                                    key={item.id}
-                                    href={item.href}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition ${
-                                        item.id === 'parcel-scanning'
-                                            ? 'bg-[#2E2240] text-white'
-                                            : 'text-gray-300 hover:bg-[#2E2240]/50 hover:text-white'
-                                    }`}
-                                >
-                                    {getIcon(item.icon)}
-                                    {item.label}
-                                </Link>
-                            ))}
-                        </nav>
-                    </div>
-
-                    <div className="absolute bottom-0 left-0 w-64 border-t border-white/10 bg-[#2B2249]">
-                        <Link
-                            href="/courier/settings"
-                            className="w-full flex items-center gap-3 px-6 py-4 text-sm font-medium text-gray-300 hover:bg-[#2E2240]/50 hover:text-white transition"
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="3"/>
-                                <path d="M12 1v6m0 6v6"/>
-                                <path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24"/>
-                                <path d="m19.07 4.93-4.24 4.24m-5.66 5.66-4.24 4.24"/>
-                            </svg>
-                            Company Settings
-                        </Link>
-                    </div>
-                </aside>
-
-                {/* Main Content */}
-                <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-                    {/* Top Bar */}
-                    <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-6">
-                                <h1 className="text-base font-bold text-gray-900">
-                                    {company.name}
-                                </h1>
-                                <span className="text-sm text-gray-400">/</span>
-                                <h2 className="text-base font-semibold text-gray-900">Parcel Scanning</h2>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <Link href="/courier/messages" aria-label="Messages" title="Messages" className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                                </Link>
-                                <button className="p-2 hover:bg-gray-100 rounded-lg transition relative">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                                    </svg>
-                                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                                </button>
-                                <div className="relative">
-                                    <button 
-                                        onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="w-9 h-9 rounded-full bg-[#2B2249] text-white flex items-center justify-center text-sm font-bold hover:bg-[#3d2e5f] transition"
-                                    >
-                                        {auth.user.name.charAt(0)}
-                                    </button>
-                                    {showUserMenu && (
-                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                                            <Link
-                                                href="/courier/settings"
-                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <circle cx="12" cy="12" r="3"/>
-                                                        <path d="M12 1v6m0 6v6"/>
-                                                    </svg>
-                                                    Settings
-                                                </div>
-                                            </Link>
-                                            <button
-                                                onClick={handleLogout}
-                                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition flex items-center gap-2"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                                                    <polyline points="16 17 21 12 16 7"/>
-                                                    <line x1="21" y1="12" x2="9" y2="12"/>
-                                                </svg>
-                                                Log out
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </header>
-
-                    {/* Content Area */}
-                    <main className="flex-1 overflow-auto p-6 bg-gray-50">
+            <CourierLayout auth={auth} company={company} activeTab="parcel-scanning" pageTitle="Parcel Scanning">
                         <div className="max-w-6xl mx-auto space-y-6">
                             {/* Facility Selector */}
                             <div className="bg-gradient-to-r from-[#3B1F6B] to-[#5B3A8F] rounded-2xl p-6 text-white">
@@ -724,9 +618,7 @@ export default function ParcelScanning({ auth, company, facilities }: Props) {
                                 )}
                             </div>
                         </div>
-                    </main>
-                </div>
-            </div>
+                    </CourierLayout>
 
             {/* Confirmation Modal */}
             {showConfirmation && scannedParcel && (

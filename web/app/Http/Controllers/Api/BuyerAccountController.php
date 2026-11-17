@@ -509,7 +509,7 @@ class BuyerAccountController extends Controller
         $user->profile_photo = 'buyer_photos/' . $filename;
         $user->save();
 
-        $photoUrl = url(Storage::url('buyer_photos/' . $filename));
+        $photoUrl = \App\Support\AvatarUrl::fromPath('buyer_photos/' . $filename);
 
         return response()->json([
             'message' => 'Profile photo updated.',

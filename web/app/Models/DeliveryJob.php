@@ -50,7 +50,7 @@ class DeliveryJob extends Model
         'order_id', 'rider_user_id', 'personnel_id', 'courier_id', 'facility_id',
         'assigned_by', 'status', 'attempt_count', 'max_attempts', 'failure_reasons',
         'last_attempt_at', 'cod_amount', 'cod_collected', 'cod_collected_at',
-        'cod_remittance_id', 'pod_photo_path', 'pod_uploaded_at', 'otp_verified_at',
+        'cod_remittance_id', 'pod_photo_path', 'pod_uploaded_at', 'pod_recipient_name', 'otp_verified_at',
         'assigned_at', 'out_for_delivery_at', 'delivered_at', 'returned_at',
     ];
 

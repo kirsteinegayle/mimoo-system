@@ -87,6 +87,7 @@ class CartController extends Controller
             'quantity'         => $item->quantity,
             'line_total'       => (float) $item->line_total,
             'max_quantity'     => $product->stock,
+            'max_per_checkout' => (int) config('checkout.max_quantity_per_product', 10),
             'stock_status'     => $product->stock_status,
             'is_valid'         => $item->isValid(),
             'validation_issue' => $item->getValidationIssue(),
@@ -143,7 +144,7 @@ class CartController extends Controller
         if ($product->trashed()) {
             return response()->json(['message' => 'This product is no longer available.'], 422);
         }
-        if ($product->status !== 'active') {
+        if ($product->status !== 'active' || $product->sellerIsBlocked()) {
             return response()->json(['message' => 'This product is not available for purchase.'], 422);
         }
         if ($product->approval_status !== 'approved') {
@@ -169,6 +170,20 @@ class CartController extends Controller
 
         if ($stockToCheck == 0) {
             return response()->json(['message' => 'This product is out of stock.'], 422);
+        }
+
+        // Enforce max quantity per product per checkout
+        $maxPerCheckout = (int) config('checkout.max_quantity_per_product', 10);
+        $existingQty = 0;
+        if (empty($validated['replace_quantity'])) {
+            $existingQty = (int) CartItem::whereHas('cart', fn ($q) => $q->where('buyer_id', $request->user()->id))
+                ->where('product_id', $product->id)->value('quantity');
+        }
+        if ((int) $validated['quantity'] + $existingQty > $maxPerCheckout) {
+            return response()->json([
+                'message' => "You can only buy up to {$maxPerCheckout} units of the same product per checkout.",
+                'max_per_checkout' => $maxPerCheckout,
+            ], 422);
         }
 
         // Cap quantity silently (same as website)
@@ -246,6 +261,14 @@ class CartController extends Controller
 
         if (! $product || $product->trashed() || $product->status !== 'active') {
             return response()->json(['message' => 'This product is no longer available.'], 422);
+        }
+
+        $maxPerCheckout = (int) config('checkout.max_quantity_per_product', 10);
+        if ($validated['quantity'] > $maxPerCheckout) {
+            return response()->json([
+                'message' => "You can only buy up to {$maxPerCheckout} units of the same product per checkout.",
+                'max_per_checkout' => $maxPerCheckout,
+            ], 422);
         }
 
         if ($validated['quantity'] > $product->stock) {

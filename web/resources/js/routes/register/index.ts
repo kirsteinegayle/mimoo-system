@@ -56,7 +56,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     
     store.form = storeForm
 /**
- * @see routes/web.php:1752
+ * @see routes/web.php:1848
  * @route '/register/seller'
  */
 export const seller = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -70,7 +70,7 @@ seller.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1752
+ * @see routes/web.php:1848
  * @route '/register/seller'
  */
 seller.url = (options?: RouteQueryOptions) => {
@@ -78,7 +78,7 @@ seller.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1752
+ * @see routes/web.php:1848
  * @route '/register/seller'
  */
 seller.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -86,7 +86,7 @@ seller.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1752
+ * @see routes/web.php:1848
  * @route '/register/seller'
  */
 seller.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -95,7 +95,7 @@ seller.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1752
+ * @see routes/web.php:1848
  * @route '/register/seller'
  */
     const sellerForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -104,7 +104,7 @@ seller.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1752
+ * @see routes/web.php:1848
  * @route '/register/seller'
  */
         sellerForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -112,7 +112,7 @@ seller.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1752
+ * @see routes/web.php:1848
  * @route '/register/seller'
  */
         sellerForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -127,7 +127,7 @@ seller.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     seller.form = sellerForm
 /**
- * @see routes/web.php:1756
+ * @see routes/web.php:1852
  * @route '/register/logistics'
  */
 export const logistics = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -141,7 +141,7 @@ logistics.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1756
+ * @see routes/web.php:1852
  * @route '/register/logistics'
  */
 logistics.url = (options?: RouteQueryOptions) => {
@@ -149,7 +149,7 @@ logistics.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1756
+ * @see routes/web.php:1852
  * @route '/register/logistics'
  */
 logistics.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -157,7 +157,7 @@ logistics.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1756
+ * @see routes/web.php:1852
  * @route '/register/logistics'
  */
 logistics.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -166,7 +166,7 @@ logistics.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1756
+ * @see routes/web.php:1852
  * @route '/register/logistics'
  */
     const logisticsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -175,7 +175,7 @@ logistics.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1756
+ * @see routes/web.php:1852
  * @route '/register/logistics'
  */
         logisticsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -183,7 +183,7 @@ logistics.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1756
+ * @see routes/web.php:1852
  * @route '/register/logistics'
  */
         logisticsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -198,7 +198,7 @@ logistics.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     logistics.form = logisticsForm
 /**
- * @see routes/web.php:1760
+ * @see routes/web.php:1856
  * @route '/register/courier'
  */
 export const courier = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -212,7 +212,7 @@ courier.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1760
+ * @see routes/web.php:1856
  * @route '/register/courier'
  */
 courier.url = (options?: RouteQueryOptions) => {
@@ -220,7 +220,7 @@ courier.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1760
+ * @see routes/web.php:1856
  * @route '/register/courier'
  */
 courier.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -228,7 +228,7 @@ courier.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1760
+ * @see routes/web.php:1856
  * @route '/register/courier'
  */
 courier.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -237,7 +237,7 @@ courier.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1760
+ * @see routes/web.php:1856
  * @route '/register/courier'
  */
     const courierForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -246,7 +246,7 @@ courier.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1760
+ * @see routes/web.php:1856
  * @route '/register/courier'
  */
         courierForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -254,7 +254,7 @@ courier.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1760
+ * @see routes/web.php:1856
  * @route '/register/courier'
  */
         courierForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -347,7 +347,85 @@ rider.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     rider.form = riderForm
 /**
- * @see routes/web.php:1778
+* @see \App\Http\Controllers\Auth\ApprovalStatusController::approvalStatus
+ * @see app/Http/Controllers/Auth/ApprovalStatusController.php:33
+ * @route '/register/approval-status'
+ */
+export const approvalStatus = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: approvalStatus.url(options),
+    method: 'get',
+})
+
+approvalStatus.definition = {
+    methods: ["get","head"],
+    url: '/register/approval-status',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Auth\ApprovalStatusController::approvalStatus
+ * @see app/Http/Controllers/Auth/ApprovalStatusController.php:33
+ * @route '/register/approval-status'
+ */
+approvalStatus.url = (options?: RouteQueryOptions) => {
+    return approvalStatus.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Auth\ApprovalStatusController::approvalStatus
+ * @see app/Http/Controllers/Auth/ApprovalStatusController.php:33
+ * @route '/register/approval-status'
+ */
+approvalStatus.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: approvalStatus.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Auth\ApprovalStatusController::approvalStatus
+ * @see app/Http/Controllers/Auth/ApprovalStatusController.php:33
+ * @route '/register/approval-status'
+ */
+approvalStatus.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: approvalStatus.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Auth\ApprovalStatusController::approvalStatus
+ * @see app/Http/Controllers/Auth/ApprovalStatusController.php:33
+ * @route '/register/approval-status'
+ */
+    const approvalStatusForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: approvalStatus.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Auth\ApprovalStatusController::approvalStatus
+ * @see app/Http/Controllers/Auth/ApprovalStatusController.php:33
+ * @route '/register/approval-status'
+ */
+        approvalStatusForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: approvalStatus.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Auth\ApprovalStatusController::approvalStatus
+ * @see app/Http/Controllers/Auth/ApprovalStatusController.php:33
+ * @route '/register/approval-status'
+ */
+        approvalStatusForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: approvalStatus.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    approvalStatus.form = approvalStatusForm
+/**
+ * @see routes/web.php:1878
  * @route '/register/pending'
  */
 export const pending = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -361,7 +439,7 @@ pending.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1778
+ * @see routes/web.php:1878
  * @route '/register/pending'
  */
 pending.url = (options?: RouteQueryOptions) => {
@@ -369,7 +447,7 @@ pending.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1778
+ * @see routes/web.php:1878
  * @route '/register/pending'
  */
 pending.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -377,7 +455,7 @@ pending.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1778
+ * @see routes/web.php:1878
  * @route '/register/pending'
  */
 pending.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -386,7 +464,7 @@ pending.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:1778
+ * @see routes/web.php:1878
  * @route '/register/pending'
  */
     const pendingForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -395,7 +473,7 @@ pending.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:1778
+ * @see routes/web.php:1878
  * @route '/register/pending'
  */
         pendingForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -403,7 +481,7 @@ pending.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:1778
+ * @see routes/web.php:1878
  * @route '/register/pending'
  */
         pendingForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -423,6 +501,7 @@ seller: Object.assign(seller, seller),
 logistics: Object.assign(logistics, logistics),
 courier: Object.assign(courier, courier),
 rider: Object.assign(rider, riderBc906a),
+approvalStatus: Object.assign(approvalStatus, approvalStatus),
 pending: Object.assign(pending, pending),
 }
 

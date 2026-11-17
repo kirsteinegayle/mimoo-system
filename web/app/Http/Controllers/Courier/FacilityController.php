@@ -102,24 +102,20 @@ class FacilityController extends Controller
             'coverage_cities.*' => ['required', 'string'],
         ]);
 
-        // Generate facility code
-        $facilityCode = $this->generateFacilityCode($courier->id, $validated['facility_type']);
-
-        $facility = CourierFacility::create([
+        $this->createWithUniqueCode([
             'courier_id' => $courier->id,
             'facility_name' => $validated['facility_name'],
-            'facility_code' => $facilityCode,
             'facility_type' => $validated['facility_type'],
-            'parent_facility_id' => $validated['parent_facility_id'],
+            'parent_facility_id' => $validated['parent_facility_id'] ?? null,
             'status' => $validated['status'],
             'region' => $validated['region'],
-            'province' => $validated['province'],
+            'province' => $validated['province'] ?? null,
             'city' => $validated['city'],
             'address' => $validated['address'],
             'manager_name' => $validated['manager_name'],
             'contact_number' => $validated['contact_number'],
             'coverage_cities' => $validated['coverage_cities'],
-        ]);
+        ], $validated['facility_type']);
 
         return redirect()->back()->with('success', 'Facility created successfully.');
     }
@@ -280,10 +276,32 @@ class FacilityController extends Controller
             default => 'FAC',
         };
 
-        $count = CourierFacility::where('courier_id', $courierId)
-            ->where('facility_type', $facilityType)
-            ->count();
+        // Highest existing suffix + 1 (NOT a row count): deleting a facility must
+        // never make the next code collide with an existing one.
+        $max = CourierFacility::where('courier_id', $courierId)
+            ->where('facility_code', 'like', $prefix . '-%')
+            ->pluck('facility_code')
+            ->map(fn ($code) => (int) substr((string) $code, strlen($prefix) + 1))
+            ->max() ?? 0;
 
-        return $prefix . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+        return $prefix . '-' . str_pad((string) ($max + 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Create a facility, retrying with a fresh code if a concurrent request took the same one.
+     */
+    private function createWithUniqueCode(array $attributes, string $facilityType): CourierFacility
+    {
+        for ($attempt = 1; ; $attempt++) {
+            try {
+                return CourierFacility::create($attributes + [
+                    'facility_code' => $this->generateFacilityCode((int) $attributes['courier_id'], $facilityType),
+                ]);
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                if ($attempt >= 5) {
+                    throw $e;
+                }
+            }
+        }
     }
 }

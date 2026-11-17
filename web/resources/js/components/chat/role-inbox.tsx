@@ -39,7 +39,7 @@ const mapThread = (t: any): ChatThreadView => ({
   id: t.id,
   badge: t.counterpart_role ? ROLE_LABEL[t.counterpart_role] ?? t.counterpart_role : null,
   name: t.counterpart_name || "Conversation",
-  photoUrl: null,
+  photoUrl: t.counterpart_photo_url ?? null,
   product: null,
   lastMessage: t.last_message
     ? { id: t.last_message.id, thread_id: t.id, is_mine: false, body: t.last_message.body ?? null, image_url: null, read_at: null, created_at: t.last_message.created_at ?? null }

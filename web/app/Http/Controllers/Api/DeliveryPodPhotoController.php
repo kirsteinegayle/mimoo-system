@@ -57,6 +57,36 @@ class DeliveryPodPhotoController extends Controller
     }
 
     /**
+     * GET /pod/{id}/photo (web session). Same file as show(), for the seller / courier / admin web pages.
+     * Allowed: the admin session (master-code login), or a logged-in seller / courier company / hub staff
+     * who is on that delivery. Everyone else gets 403.
+     */
+    public function showWeb(Request $request, int $id): Response
+    {
+        $job = DeliveryJob::with('order:id,buyer_id')->find($id);
+        if (! $job) {
+            return response()->json(['message' => 'Delivery job not found.'], 404);
+        }
+
+        $allowed = (bool) $request->session()->get('admin_verified', false);
+        $user = $request->user();
+        if (! $allowed && $user) {
+            $role = $user->role ?? $user->account_type;
+            $allowed = match ($role) {
+                'seller'                      => $job->order !== null && $job->order->items()->where('seller_id', $user->id)->exists(),
+                'courier', 'logistics_staff'  => $job->courier_id !== null
+                    && (int) $job->courier_id === (int) \App\Support\CourierCompanyResolver::resolveId($user),
+                default                       => false,
+            };
+        }
+        if (! $allowed) {
+            return response()->json(['message' => 'You are not allowed to view this photo.'], 403);
+        }
+
+        return $this->photoResponse($job);
+    }
+
+    /**
      * GET /api/buyer/orders/{id}/pod-photo (Sanctum, buyer only)
      *
      * Latest delivery job of the buyer's own order that has a POD photo.

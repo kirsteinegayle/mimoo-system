@@ -1,5 +1,6 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ReactNode, useRef, useState, useEffect } from 'react';
+import { BannerCarousel, type LiveBanners } from '@/components/banner-carousel';
 
 const fontSyncopate = { fontFamily: 'Syncopate, sans-serif' };
 const fontPoppins = { fontFamily: 'Poppins, sans-serif' };
@@ -114,7 +115,20 @@ function BoxIcon() {
     );
 }
 
+interface BestSeller {
+    id: number;
+    name: string;
+    category: string | null;
+    price: number;
+    sale_price: number | null;
+    image: string | null;
+    sold: number;
+}
+
+const peso = (n: number) => '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
 export default function Landing() {
+    const { bestSellers = [], banners = { hero: [], secondary: [], sidebar: [] } } = usePage<{ bestSellers?: BestSeller[]; banners?: LiveBanners }>().props;
     const scrollerRef = useRef<HTMLDivElement>(null);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
@@ -402,38 +416,49 @@ export default function Landing() {
                             — mimoo picks —
                         </p>
                         <p className="text-sm text-gray-500 mt-2">
-                            A taste of the bestsellers in buyer's carts visiting us over the last 7 days.
+                            Our top-selling products, based on orders delivered to buyers.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                        {[1, 2, 3].map((item) => (
-                            <div key={item} className="group cursor-pointer">
-                                <div className="relative bg-gray-100 rounded-2xl overflow-hidden mb-3 aspect-[4/3]">
-                                    <span className="absolute top-3 left-3 bg-[#3B1F6B] text-white text-xs font-semibold px-3 py-1 rounded-full" style={fontSFCompact}>
-                                        Bestseller
-                                    </span>
-                                    {/* Placeholder for product image */}
-                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                        <BoxIcon />
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 mb-1">Health & Wellness</p>
-                                    <h3 className="text-sm font-semibold text-gray-900 mb-2 group-hover:text-[#3B1F6B] transition">
-                                        Anti Depressant Medicine
-                                    </h3>
-                                    <div className="flex items-center gap-1 mb-2">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <span key={star} className="text-yellow-400 text-xs">★</span>
-                                        ))}
-                                        <span className="text-xs text-gray-400 ml-1">(4.9)</span>
-                                    </div>
-                                    <p className="text-lg font-bold text-[#3B1F6B]">₱999</p>
-                                </div>
+                    {bestSellers.length === 0 ? (
+                        <div className="mb-8 rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center">
+                            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center text-gray-300">
+                                <BoxIcon />
                             </div>
-                        ))}
-                    </div>
+                            <p className="text-sm font-semibold text-gray-700">Best sellers will appear here soon</p>
+                            <p className="mt-1 text-xs text-gray-500">As soon as shoppers start receiving their orders, the top products show up on this page.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                            {bestSellers.map((p) => (
+                                <Link key={p.id} href={`/product/${p.id}`} className="group block">
+                                    <div className="relative bg-gray-100 rounded-2xl overflow-hidden mb-3 aspect-[4/3]">
+                                        <span className="absolute top-3 left-3 z-10 bg-[#3B1F6B] text-white text-xs font-semibold px-3 py-1 rounded-full" style={fontSFCompact}>
+                                            Bestseller
+                                        </span>
+                                        {p.image ? (
+                                            <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                <BoxIcon />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        {p.category && <p className="text-xs text-gray-500 mb-1">{p.category}</p>}
+                                        <h3 className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#3B1F6B] transition">{p.name}</h3>
+                                        <div className="flex items-baseline justify-between gap-2">
+                                            <p className="text-lg font-bold text-[#3B1F6B]">
+                                                {peso(p.sale_price ?? p.price)}
+                                                {p.sale_price != null && <span className="ml-2 text-xs font-normal text-gray-400 line-through">{peso(p.price)}</span>}
+                                            </p>
+                                            <span className="text-xs text-gray-500">{p.sold.toLocaleString()} sold</span>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
 
                     <div className="text-center">
                         <Link
@@ -446,6 +471,15 @@ export default function Landing() {
                     </div>
                 </div>
             </section>
+
+            {/* Live banners from Admin > Banner Management */}
+            {banners.hero.length > 0 && (
+                <section className="bg-white px-4 sm:px-6 pt-6">
+                    <div className="max-w-7xl mx-auto">
+                        <BannerCarousel banners={banners.hero} />
+                    </div>
+                </section>
+            )}
 
             {/* Promo banner */}
             <section className="bg-white px-4 sm:px-6 py-6">

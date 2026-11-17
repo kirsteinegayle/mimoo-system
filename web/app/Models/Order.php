@@ -37,6 +37,11 @@ class Order extends Model
         'courier_assigned_at',
         'courier_accepted_at',
         'current_facility_id',
+        'shipping_fee',
+        'shipping_zone',
+        'parcel_weight',
+        'logistics_id',
+        'logistics_reason',
     ];
 
     protected $casts = [
@@ -117,6 +122,29 @@ class Order extends Model
     {
         return $query->whereDoesntHave('returnRequests', function ($q) {
             $q->whereIn('status', \App\Models\ReturnRequest::OPEN_STATUSES);
+        });
+    }
+
+    /**
+     * Scope: orders that were actually delivered - completed (buyer confirmed / auto-completed) or
+     * handed over by the rider with proof of delivery (tracking_status = delivered, status still
+     * shipped / in_transit until the buyer confirms). Cancelled / failed orders never count.
+     */
+    /**
+     * An order that counts as a sale for revenue / analytics: not cancelled, failed or refunded.
+     * Single definition shared by the seller dashboard, seller analytics and the admin sales report.
+     */
+    public function scopeSale($query)
+    {
+        return $query->whereNotIn('status', ['cancelled', 'failed'])
+            ->where(fn ($w) => $w->whereNull('payment_status')->orWhere('payment_status', '!=', 'refunded'));
+    }
+
+    public function scopeDelivered($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('status', 'completed')
+                ->orWhere(fn ($d) => $d->whereIn('status', ['shipped', 'in_transit', 'delivered'])->where('tracking_status', 'delivered'));
         });
     }
 

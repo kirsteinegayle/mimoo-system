@@ -14,6 +14,7 @@ const TRACKING_LABELS: Record<string, string> = {
     received_logistics: 'Received by logistics',
     assigned_courier: 'Assigned to courier',
     accepted_courier: 'Accepted by courier',
+    picked_up: 'Picked up by courier',
     scanned_at_facility: 'At sorting facility',
     out_for_delivery: 'Out for delivery',
     delivered: 'Delivered',

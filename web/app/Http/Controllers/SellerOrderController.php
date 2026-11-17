@@ -32,12 +32,21 @@ class SellerOrderController extends Controller
                 $query->where('seller_id', $seller->id)->with('product');
             }, 'buyer:id,name,first_name,last_name,email,contact_number'])
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($order) {
+            ->get();
+
+        // Proof of delivery (photo / recipient / time) for delivered orders, read once for the whole list.
+        $proofs = \App\Support\DeliveryProof::forOrders($orders->pluck('id'));
+
+        $logistics = \App\Models\User::whereIn('id', $orders->pluck('logistics_id')->filter()->unique())
+            ->get(['id', 'company_name', 'business_name', 'name'])
+            ->mapWithKeys(fn ($u) => [$u->id => $u->company_name ?: ($u->business_name ?: $u->name)]);
+
+        $orders = $orders->map(function ($order) use ($proofs, $logistics) {
                 return [
                     'id' => $order->id,
                     'order_number' => 'MIM-' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
                     ...$order->buyerFields(),
+                    'proof_of_delivery' => $proofs[$order->id] ?? null,
                     'status' => $order->status,
                     'payment_status' => $order->payment_status,
                     'payment_method' => $order->payment_method,
@@ -51,6 +60,9 @@ class SellerOrderController extends Controller
                     'tracking_status' => $order->tracking_status,
                     'tracking_message' => $order->tracking_message,
                     'tracking_updated_at' => $order->tracking_updated_at?->format('M d, Y h:i A'),
+                    // Which logistics gets the parcel and why (chosen at checkout from the buyer's zone / rates)
+                    'logistics_name' => $order->logistics_id ? ($logistics[$order->logistics_id] ?? null) : null,
+                    'logistics_reason' => $order->logistics_reason,
                     'items' => $order->items->map(function ($item) {
                         return [
                             'name' => $item->product_name,

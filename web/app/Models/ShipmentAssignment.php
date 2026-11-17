@@ -17,6 +17,17 @@ class ShipmentAssignment extends Model
         static::updated(function (ShipmentAssignment $sa) {
             \App\Services\SellerNotificationService::shipmentUpdated($sa);
             \App\Services\CourierNotificationService::assignmentUpdated($sa);
+            // Seller / buyer tracking: show "Picked up" as soon as the rider collects the parcel.
+            if ($sa->wasChanged('pickup_status') && $sa->pickup_status === 'picked_up') {
+                try {
+                    $order = \App\Models\Order::find($sa->order_id);
+                    if ($order && ! in_array($order->tracking_status, ['scanned_at_facility', 'out_for_delivery', 'delivered'], true)) {
+                        $order->updateTracking('picked_up', 'Parcel picked up from the seller by the courier.');
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('Pickup tracking update failed: ' . $e->getMessage());
+                }
+            }
             // Rejected / cancelled with no delivery job: do not leave the order stuck in_transit.
             if (($sa->wasChanged('assignment_status') && $sa->assignment_status === 'rejected')
                 || ($sa->wasChanged('pickup_status') && $sa->pickup_status === 'cancelled')) {

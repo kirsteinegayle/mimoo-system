@@ -52,6 +52,10 @@ class RiderAuthController extends Controller
             return response()->json(['message' => 'This app is for rider accounts only.'], 401);
         }
 
+        if ($blocked = \App\Support\AccountStatus::blockReason($user)) {
+            return response()->json(['message' => $blocked], 403);
+        }
+
         // Must be approved and email-verified.
         if ($user->status !== 'approved') {
             return response()->json(['message' => 'Your account has not been approved yet.'], 401);
@@ -130,6 +134,9 @@ class RiderAuthController extends Controller
             // and courier company. hub is null when no branch is linked.
             'hub'             => $this->hubPayload($this->riderHub($user, $personnel)),
             'courier_company' => $this->courierCompanyName($personnel),
+            // Additive: avatar URL or null (users.profile_photo, else the rider
+            // application picture). The app shows initials when null.
+            'profile_photo_url' => \App\Support\AvatarUrl::forUser($user),
         ] + $this->vehiclePayload($user, $personnel) + [
             // Additive: shift status (POST /check-in, /check-out).
             'is_online'          => (bool) $personnel->is_online,
@@ -149,11 +156,13 @@ class RiderAuthController extends Controller
             ->where('verification_status', 'approved')
             ->where('courier_company_id', $personnel->courier_id)
             ->latest('id')
-            ->first(['vehicle_type', 'plate_number']);
+            ->first(['vehicle_type', 'plate_number', 'city_municipality']);
 
         return [
             'vehicle_type' => $app?->vehicle_type,
             'plate_number' => $app?->plate_number,
+            // Additive, display only (riders.city_municipality); null when no application.
+            'city_municipality' => $app?->city_municipality,
         ];
     }
 }

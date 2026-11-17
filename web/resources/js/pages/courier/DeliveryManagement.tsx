@@ -28,6 +28,11 @@ interface DeliveryOrder {
         status: string;
         rider_name: string | null;
         assigned_at: string | null;
+        pod?: {
+            photo_url: string | null;
+            recipient: string | null;
+            delivered_at: string | null;
+        } | null;
     } | null;
 }
 
@@ -178,6 +183,20 @@ export default function DeliveryManagement({ auth, company, orders = [], riders 
                     <Bike className="h-3.5 w-3.5 text-gray-400" />
                     {order.job.rider_name || 'Unknown rider'}
                 </p>
+                {order.job.pod && (
+                    <p className="text-xs text-gray-600">
+                        Received by {order.job.pod.recipient || '—'}
+                        {order.job.pod.delivered_at ? ` · ${order.job.pod.delivered_at}` : ''}
+                        {order.job.pod.photo_url && (
+                            <>
+                                {' · '}
+                                <a href={order.job.pod.photo_url} target="_blank" rel="noopener noreferrer" className="font-semibold text-[#4B2E7E] hover:underline">
+                                    View POD photo
+                                </a>
+                            </>
+                        )}
+                    </p>
+                )}
             </div>
         ) : order.assignable ? (
             <StatusBadge status="waiting" />

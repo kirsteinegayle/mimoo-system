@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../services/courier_repository.dart';
 import '../../theme/mimoo_theme.dart';
 import '../../widgets/courier_shared.dart';
+import '../shipments/waybill_page.dart';
 
 /// Delivery Management (bottom tab): same data and rules as the web page.
 ///
@@ -21,6 +22,7 @@ class DeliveryManagementPage extends StatefulWidget {
 
 class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
   List<DeliveryOrderItem> _orders = [];
+  String _query = '';
   List<DeliveryRiderItem> _riders = [];
   String? _ridersMessage;
   bool _loading = true;
@@ -138,6 +140,16 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
     }
   }
 
+  List<DeliveryOrderItem> get _shownOrders {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return _orders;
+    return _orders
+        .where((o) => '${o.orderNumber} ${o.waybillNumber} ${o.shippingName} ${o.shippingAddress}'
+            .toLowerCase()
+            .contains(q))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -181,6 +193,12 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
               ),
             ],
             const SizedBox(height: 12),
+            if (_orders.isNotEmpty) ...[
+              CourierSearchField(
+                  hint: 'Search order, waybill or recipient',
+                  onChanged: (v) => setState(() => _query = v)),
+              const SizedBox(height: 12),
+            ],
             if (_orders.isEmpty)
               const Padding(
                 padding: EdgeInsets.only(top: 40),
@@ -190,8 +208,16 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
                       'No orders for delivery yet. Orders appear here after your company accepts the shipment.',
                 ),
               )
+            else if (_shownOrders.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(top: 40),
+                child: CourierEmptyState(
+                  icon: Icons.search_off,
+                  message: 'No orders match your search.',
+                ),
+              )
             else
-              ..._orders.map(_orderCard),
+              ..._shownOrders.map(_orderCard),
           ],
         ),
       ),
@@ -215,7 +241,7 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(value, style: pjs(size: 18, weight: FontWeight.w900, color: color)),
-            Text(label, style: pjs(size: 10, color: kSubtext)),
+            Text(label, style: pjs(size: 11, color: kSubtext)),
           ]),
         ),
       );
@@ -233,16 +259,17 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
         CourierStatusBadge(status: o.jobStatus!),
       ]);
     } else if (!o.pickedUp) {
-      action = Row(children: [
-        const Icon(Icons.hourglass_empty, size: 16, color: Colors.orange),
-        const SizedBox(width: 6),
-        Text('Awaiting pickup',
-            style: pjs(size: 12, weight: FontWeight.w700, color: Colors.orange)),
-        if (o.pickupStatus != null) ...[
-          const SizedBox(width: 6),
-          CourierStatusBadge(status: o.pickupStatus!),
+      action = Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          const Icon(Icons.hourglass_empty, size: 16, color: Colors.orange),
+          Text('Awaiting pickup',
+              style: pjs(size: 12, weight: FontWeight.w700, color: Colors.orange)),
+          if (o.pickupStatus != null) CourierStatusBadge(status: o.pickupStatus!),
         ],
-      ]);
+      );
     } else if (o.assignable) {
       action = Align(
         alignment: Alignment.centerRight,
@@ -276,7 +303,30 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
           CourierStatusBadge(status: o.status),
         ]),
         if (o.waybillNumber.isNotEmpty)
-          Text(o.waybillNumber, style: pjs(size: 11, color: kSubtext)),
+          Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
+            Text(o.waybillNumber, style: pjs(size: 11, color: kSubtext)),
+            // Show the QR so the web scanner (or another phone) can read this parcel.
+            TextButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => WaybillPage(
+                    waybillNumber: o.waybillNumber,
+                    orderNumber: o.orderNumber,
+                    destination: o.shippingAddress,
+                    paymentMethod: o.paymentMethod,
+                    totalAmount: o.codAmount > 0
+                        ? '₱${o.codAmount.toStringAsFixed(2)}'
+                        : null,
+                  ),
+                ),
+              ),
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              icon: const Icon(Icons.qr_code_2, size: 18),
+              label: Text('View waybill',
+                  style: pjs(size: 12, weight: FontWeight.w700)),
+            ),
+          ]),
         const SizedBox(height: 6),
         Text(o.shippingName, style: pjs(size: 12, weight: FontWeight.w600)),
         Text(o.shippingAddress, style: pjs(size: 12, color: kSubtext)),

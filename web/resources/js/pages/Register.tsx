@@ -235,6 +235,8 @@ export default function Registration() {
     const [barangays, setBarangays] = useState<Barangay[]>([]);
     const [loading, setLoading] = useState({ regions: false, provinces: false, cities: false, barangays: false });
 
+    const submittingRef = useRef(false);
+    const submittedOkRef = useRef(false);
     const { data, setData, post, processing, errors, transform } = useForm<FormShape>({
         first_name: '',
         last_name: '',
@@ -447,12 +449,16 @@ export default function Registration() {
         setClientErrors({});
         if (step < TOTAL_STEPS) goTo(step + 1);
         else {
+            // Block double submit (double-click / Enter twice) before React re-renders `processing`.
+            if (submittingRef.current || processing) return;
+            submittingRef.current = true;
             const email = data.email.trim();
             console.log('Submitting buyer registration for:', email);
             // Na-normalized na ng transform() sa taas
             post('/register', {
                 forceFormData: true,
                 onSuccess: (response) => {
+                    submittedOkRef.current = true; // keep the button locked while we leave the page
                     console.log('Buyer registration success, redirecting to OTP...', response);
                     // Force redirect to OTP page
                     window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
@@ -465,6 +471,7 @@ export default function Registration() {
                     });
                 },
                 onFinish: () => {
+                    if (!submittedOkRef.current) submittingRef.current = false; // failed: allow a retry
                     console.log('Buyer registration request finished');
                 },
             });

@@ -1,4 +1,5 @@
 import AuthController from './AuthController'
+import AvatarController from './AvatarController'
 import BuyerPasswordController from './BuyerPasswordController'
 import ProductController from './ProductController'
 import BuyerSellerController from './BuyerSellerController'
@@ -13,6 +14,7 @@ import BuyerOrderController from './BuyerOrderController'
 import BuyerDeliveryCodeController from './BuyerDeliveryCodeController'
 import DeliveryPodPhotoController from './DeliveryPodPhotoController'
 import DeliveryChatController from './DeliveryChatController'
+import ParcelReportController from './ParcelReportController'
 import BuyerVoucherController from './BuyerVoucherController'
 import BuyerAddressController from './BuyerAddressController'
 import BuyerFollowController from './BuyerFollowController'
@@ -37,6 +39,7 @@ import SellerChatController from './SellerChatController'
 import SellerStorePhotoController from './SellerStorePhotoController'
 const Api = {
     AuthController: Object.assign(AuthController, AuthController),
+AvatarController: Object.assign(AvatarController, AvatarController),
 BuyerPasswordController: Object.assign(BuyerPasswordController, BuyerPasswordController),
 ProductController: Object.assign(ProductController, ProductController),
 BuyerSellerController: Object.assign(BuyerSellerController, BuyerSellerController),
@@ -51,6 +54,7 @@ BuyerOrderController: Object.assign(BuyerOrderController, BuyerOrderController),
 BuyerDeliveryCodeController: Object.assign(BuyerDeliveryCodeController, BuyerDeliveryCodeController),
 DeliveryPodPhotoController: Object.assign(DeliveryPodPhotoController, DeliveryPodPhotoController),
 DeliveryChatController: Object.assign(DeliveryChatController, DeliveryChatController),
+ParcelReportController: Object.assign(ParcelReportController, ParcelReportController),
 BuyerVoucherController: Object.assign(BuyerVoucherController, BuyerVoucherController),
 BuyerAddressController: Object.assign(BuyerAddressController, BuyerAddressController),
 BuyerFollowController: Object.assign(BuyerFollowController, BuyerFollowController),

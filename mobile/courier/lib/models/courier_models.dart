@@ -494,12 +494,16 @@ class ConversationSummary {
     this.otherCompany,
     this.lastMessage,
     this.lastMessageAt,
+    this.otherPhotoUrl,
   });
 
   final int id;
   final String subject;
   final String otherName;
   final String? otherCompany;
+
+  /// Counterpart avatar URL (null = icon).
+  final String? otherPhotoUrl;
   final String? lastMessage;
   final String? lastMessageAt;
   final int unread;
@@ -512,6 +516,7 @@ class ConversationSummary {
       subject: _roleLabel(j['counterpart_role']?.toString()),
       otherName: _readString(j['counterpart_name'], fallback: 'Conversation'),
       otherCompany: _roleLabel(j['counterpart_role']?.toString()),
+      otherPhotoUrl: j['counterpart_photo_url']?.toString(),
       lastMessage: last?['body']?.toString(),
       lastMessageAt: _shortTime(j['last_message_at']?.toString()),
       unread: _readInt(j['unread_count']),
@@ -923,6 +928,7 @@ class CourierProfile {
     this.loadCapacityKg,
     this.licenseNumber,
     this.licenseExpiry,
+    this.photoUrl,
   });
 
   final int id;
@@ -940,6 +946,9 @@ class CourierProfile {
   final String? licenseNumber;
   final String? licenseExpiry;
   final List<CourierDocumentItem> documents;
+
+  /// Avatar URL (null = company icon).
+  final String? photoUrl;
 
   factory CourierProfile.fromJson(Map<String, dynamic> j) {
     final vehicle = _readMap(j['vehicle']) ?? const {};
@@ -978,6 +987,7 @@ class CourierProfile {
           .map(
               (d) => CourierDocumentItem.fromJson(Map<String, dynamic>.from(d)))
           .toList(),
+      photoUrl: j['profile_photo_url']?.toString(),
     );
   }
 }
@@ -1332,9 +1342,13 @@ class CourierRiderItem {
     this.vehicleType,
     this.plateNumber,
     this.lastCheckedInAt,
+    this.photoUrl,
   });
 
   final int personnelId;
+
+  /// Rider avatar URL (null = initials).
+  final String? photoUrl;
   final String name;
   final String status;
   final bool approved;
@@ -1356,6 +1370,7 @@ class CourierRiderItem {
         vehicleType: j['vehicle_type']?.toString(),
         plateNumber: j['plate_number']?.toString(),
         lastCheckedInAt: j['last_checked_in_at']?.toString(),
+        photoUrl: j['profile_photo_url']?.toString(),
       );
 }
 

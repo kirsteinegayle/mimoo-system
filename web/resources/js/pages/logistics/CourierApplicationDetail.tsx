@@ -1,3 +1,4 @@
+import { confirmDialog, alertDialog } from '@/components/app-modal';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -102,7 +103,7 @@ const Field = ({ label, value }: { label: string; value: string | number | null 
     </div>
 );
 
-const FileField = ({ label, path }: { label: string; path: string | null }) => {
+const FileField = ({ label, path, applicationId, type }: { label: string; path: string | null; applicationId: number; type: string }) => {
     if (!path) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 py-3 border-b border-gray-100 last:border-0">
@@ -128,7 +129,7 @@ const FileField = ({ label, path }: { label: string; path: string | null }) => {
                         <span className="text-sm font-medium text-gray-700">{fileName}</span>
                     </div>
                     <a 
-                        href={`/storage/${path}`}
+                        href={`/logistics/courier-applications/${applicationId}/document/${type}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm font-medium text-purple-600 hover:text-purple-700"
@@ -195,7 +196,7 @@ export default function CourierApplicationDetail({ auth, application }: Props) {
             : [];
     
     const handleApprove = async () => {
-        if (!confirm(`Are you sure you want to APPROVE ${application.company_name}?\n\nThis will give them access to the courier dashboard.`)) {
+        if (!(await confirmDialog(`Are you sure you want to APPROVE ${application.company_name}?\n\nThis will give them access to the courier dashboard.`))) {
             return;
         }
         
@@ -213,14 +214,14 @@ export default function CourierApplicationDetail({ auth, application }: Props) {
             const data = await response.json();
             
             if (response.ok) {
-                alert('✅ Courier application approved successfully!');
+                alertDialog('✅ Courier application approved successfully!');
                 router.visit('/logistics/courier-applications');
             } else {
-                alert('❌ ' + (data.error || 'Failed to approve application'));
+                alertDialog('❌ ' + (data.error || 'Failed to approve application'));
             }
         } catch (error) {
             console.error('Error approving courier:', error);
-            alert('❌ Network error. Please try again.');
+            alertDialog('❌ Network error. Please try again.');
         } finally {
             setIsApproving(false);
         }
@@ -234,7 +235,7 @@ export default function CourierApplicationDetail({ auth, application }: Props) {
         }
         
         if (!reason.trim()) {
-            alert('Please enter a rejection reason.');
+            alertDialog('Please enter a rejection reason.');
             return;
         }
         
@@ -253,14 +254,14 @@ export default function CourierApplicationDetail({ auth, application }: Props) {
             const data = await response.json();
             
             if (response.ok) {
-                alert('✅ Courier application rejected.');
+                alertDialog('✅ Courier application rejected.');
                 router.visit('/logistics/courier-applications');
             } else {
-                alert('❌ ' + (data.error || 'Failed to reject application'));
+                alertDialog('❌ ' + (data.error || 'Failed to reject application'));
             }
         } catch (error) {
             console.error('Error rejecting courier:', error);
-            alert('❌ Network error. Please try again.');
+            alertDialog('❌ Network error. Please try again.');
         } finally {
             setIsRejecting(false);
         }
@@ -348,7 +349,7 @@ export default function CourierApplicationDetail({ auth, application }: Props) {
                                 <Field label="Contact Number" value={application.company_contact_number} />
                                 <Field label="Website" value={application.company_website} />
                                 {application.company_logo && (
-                                    <FileField label="Company Logo" path={application.company_logo} />
+                                    <FileField label="Company Logo" path={application.company_logo} applicationId={application.id} type="company_logo" />
                                 )}
                             </dl>
                         </Section>
@@ -368,11 +369,11 @@ export default function CourierApplicationDetail({ auth, application }: Props) {
                         {/* Step 3: Business Documents */}
                         <Section title="Business Documents">
                             <dl className="divide-y divide-gray-100">
-                                <FileField label="DTI/SEC Certificate" path={application.dti_sec_certificate} />
-                                <FileField label="Mayor's Permit" path={application.mayors_permit} />
-                                <FileField label="Operating Permits" path={application.operating_permits} />
-                                <FileField label="Representative Valid ID" path={application.rep_valid_id} />
-                                <FileField label="Proof of Address" path={application.proof_of_address} />
+                                <FileField label="DTI/SEC Certificate" path={application.dti_sec_certificate} applicationId={application.id} type="sec_certificate" />
+                                <FileField label="Mayor's Permit" path={application.mayors_permit} applicationId={application.id} type="business_permit" />
+                                <FileField label="Operating Permits" path={application.operating_permits} applicationId={application.id} type="operating_permits" />
+                                <FileField label="Representative Valid ID" path={application.rep_valid_id} applicationId={application.id} type="valid_id" />
+                                <FileField label="Proof of Address" path={application.proof_of_address} applicationId={application.id} type="proof_of_address" />
                             </dl>
                         </Section>
                         

@@ -134,7 +134,7 @@ verify.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     verify.form = verifyForm
 /**
 * @see \App\Http\Controllers\Auth\EmailVerificationController::resend
- * @see app/Http/Controllers/Auth/EmailVerificationController.php:98
+ * @see app/Http/Controllers/Auth/EmailVerificationController.php:101
  * @route '/verify-email/resend'
  */
 export const resend = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -149,7 +149,7 @@ resend.definition = {
 
 /**
 * @see \App\Http\Controllers\Auth\EmailVerificationController::resend
- * @see app/Http/Controllers/Auth/EmailVerificationController.php:98
+ * @see app/Http/Controllers/Auth/EmailVerificationController.php:101
  * @route '/verify-email/resend'
  */
 resend.url = (options?: RouteQueryOptions) => {
@@ -158,7 +158,7 @@ resend.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Auth\EmailVerificationController::resend
- * @see app/Http/Controllers/Auth/EmailVerificationController.php:98
+ * @see app/Http/Controllers/Auth/EmailVerificationController.php:101
  * @route '/verify-email/resend'
  */
 resend.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -168,7 +168,7 @@ resend.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Auth\EmailVerificationController::resend
- * @see app/Http/Controllers/Auth/EmailVerificationController.php:98
+ * @see app/Http/Controllers/Auth/EmailVerificationController.php:101
  * @route '/verify-email/resend'
  */
     const resendForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -178,7 +178,7 @@ resend.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Auth\EmailVerificationController::resend
- * @see app/Http/Controllers/Auth/EmailVerificationController.php:98
+ * @see app/Http/Controllers/Auth/EmailVerificationController.php:101
  * @route '/verify-email/resend'
  */
         resendForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -91,7 +91,7 @@ class RiderRegistrationController extends Controller
                 'privacy_accepted_at' => now(),
             ]);
 
-            // TODO: Send notification to all courier companies about new rider application
+            \App\Services\CourierNotificationService::riderApplied($rider);
             // TODO: Send confirmation email to rider
 
             return response()->json([

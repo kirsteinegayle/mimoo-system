@@ -185,6 +185,32 @@ class ApiService {
     return h;
   }
 
+  /// Authorization header for widgets that load protected files (e.g. ticket images).
+  static Map<String, String> get authHeaders => _headers();
+
+  /// Absolute URL of a server path such as `/api/courier-app/support/attachments/5`.
+  static String absoluteUrl(String serverPath) {
+    final origin = _baseUrl.replaceAll(RegExp(r'/api$'), '');
+    return serverPath.startsWith('http') ? serverPath : '$origin$serverPath';
+  }
+
+  /// Uploads several files under one field (e.g. `attachments[]`) with optional text fields.
+  static Future<dynamic> postMultipartFiles(
+    String endpoint, {
+    required String field,
+    required List<({List<int> bytes, String filename})> files,
+    Map<String, String> fields = const {},
+  }) async {
+    final request = http.MultipartRequest('POST', _uri(endpoint))
+      ..headers.addAll(_headers());
+    request.fields.addAll(fields);
+    for (final f in files) {
+      request.files.add(http.MultipartFile.fromBytes(field, f.bytes, filename: f.filename));
+    }
+    final streamed = await httpClient.send(request).timeout(_timeout);
+    return _handle(await http.Response.fromStream(streamed));
+  }
+
   static Uri _uri(String endpoint) {
     final path = endpoint.startsWith('/') ? endpoint : '/$endpoint';
     return Uri.parse('$_baseUrl$path');
